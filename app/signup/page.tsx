@@ -36,6 +36,7 @@ export default function SignUpPage() {
         setMessage(data.message || "Error registering user.");
       }
     } catch (error) {
+      console.error("Registration error:", error); // ✅ Solución aplicada
       setMessage("Failed to connect to the server.");
     }
   };
