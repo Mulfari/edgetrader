@@ -99,7 +99,10 @@ export default function LandingPage() {
                 },
               ].map((testimonial, index) => (
                 <div key={index} className="bg-white p-6 rounded-lg shadow">
-                  <p className="text-gray-600 mb-4">"{testimonial.quote}"</p>
+<p className="text-gray-600 mb-4">
+  &quot;YourBrand has completely transformed our workflow. Highly recommended!&quot;
+</p>
+
                   <div className="font-medium text-gray-900">{testimonial.name}</div>
                   <div className="text-gray-500">{testimonial.role}</div>
                 </div>
