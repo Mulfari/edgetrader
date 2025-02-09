@@ -1,4 +1,5 @@
-"use client";
+"use client"; // Esta línea marca el archivo para ser ejecutado en el cliente
+
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -96,7 +97,7 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?&nbsp;
+              Don&apos;t have an account?&nbsp;
               <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
                 Sign up
               </Link>
