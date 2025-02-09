@@ -240,25 +240,25 @@ export default function AccountsPage() {
       <header className="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-10">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <Link href="/dashboard" className="mr-4">
-                <button className="flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors duration-200">
-                  <ArrowLeft className="h-5 w-5 mr-2" />
-                  <span>Back to Dashboard</span>
-                </button>
+            <div className="flex items-center space-x-4">
+              <Link
+                href="/dashboard"
+                className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors duration-200"
+              >
+                <ArrowLeft className="h-5 w-5" />
               </Link>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Accounts</h1>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Accounts</h1>
             </div>
             {isAuthenticated && (
               <button
-                className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+                className="flex items-center px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
                 onClick={() => {
                   setEditingAccount(null)
                   setNewAccount({ exchange: "", apiKey: "", apiSecret: "", name: "" })
                   setShowAddAccount(true)
                 }}
               >
-                <Plus className="h-5 w-5 mr-2" />
+                <Plus className="h-4 w-4 mr-2" />
                 Add Account
               </button>
             )}
@@ -462,3 +462,4 @@ export default function AccountsPage() {
     </div>
   )
 }
+
