@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, AlertCircle, Loader2, Github, Twitter } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function SignUpPage() {
@@ -21,7 +21,6 @@ export default function SignUpPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Verificar la fortaleza de la contraseña
     let strength = 0;
     if (password.length > 7) strength++;
     if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
@@ -78,7 +77,7 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
@@ -88,30 +87,28 @@ export default function SignUpPage() {
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white dark:bg-gray-800 py-8 px-6 shadow-lg rounded-lg sm:px-10">
           {success ? (
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
               <div className="text-green-500 text-5xl mb-4">🎉</div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Sign Up Successful!</h3>
               <p className="text-gray-600 dark:text-gray-300 mb-4">Welcome to YourBrand. Your account has been created.</p>
-              <Link href="/login" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                Go to Login
-              </Link>
+              <Link href="/login" className="btn-primary">Go to Login</Link>
             </motion.div>
           ) : (
             <form className="space-y-6" onSubmit={handleRegister}>
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                <label htmlFor="name" className="input-label">Full Name</label>
                 <input id="name" type="text" required value={name} onChange={(e) => setName(e.target.value)} className="input-field" />
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email address</label>
+                <label htmlFor="email" className="input-label">Email address</label>
                 <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" />
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                <label htmlFor="password" className="input-label">Password</label>
                 <div className="relative">
                   <input id="password" type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} className="input-field" />
                   <button type="button" className="eye-icon" onClick={() => setShowPassword(!showPassword)}>
@@ -121,7 +118,7 @@ export default function SignUpPage() {
               </div>
 
               <div>
-                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirm Password</label>
+                <label htmlFor="confirm-password" className="input-label">Confirm Password</label>
                 <div className="relative">
                   <input id="confirm-password" type={showConfirmPassword ? "text" : "password"} required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="input-field" />
                   <button type="button" className="eye-icon" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
