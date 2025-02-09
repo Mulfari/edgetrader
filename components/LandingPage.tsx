@@ -5,6 +5,7 @@ import { ArrowRight, Menu, X, Play, Check, Star, ArrowUp } from "lucide-react"
 import { ThemeToggle } from "./ThemeToggle"
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence, useInView } from "framer-motion"
+import Image from "next/image";
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -40,14 +41,7 @@ export default function LandingPage() {
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [])
-
+  
   const testimonials = [
     {
       name: "John Doe",
@@ -71,6 +65,15 @@ export default function LandingPage() {
       rating: 4,
     },
   ]
+
+  useEffect(() => {
+    const testimonialsLength = testimonials.length;
+    const interval = setInterval(() => {
+      setCurrentTestimonial((prev) => (prev + 1) % testimonialsLength);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [testimonials.length]); // ✅ Se agregó dependencia  
+
 
   const faqItems = [
     {
@@ -296,14 +299,17 @@ export default function LandingPage() {
                 transition={{ duration: 0.5 }}
                 className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col items-center text-center"
               >
-                <img
-                  src={testimonials[currentTestimonial].avatar || "/placeholder.svg"}
-                  alt={testimonials[currentTestimonial].name}
-                  className="w-20 h-20 rounded-full object-cover mb-4"
-                />
-                <p className="text-gray-600 dark:text-gray-300 mb-4 italic">
-                  "{testimonials[currentTestimonial].quote}"
-                </p>
+<Image
+  src={testimonials[currentTestimonial].avatar || "/placeholder.svg"}
+  alt={testimonials[currentTestimonial].name}
+  width={100} // ✅ Optimización con next/image
+  height={100}
+  className="w-20 h-20 rounded-full object-cover mb-4"
+/>
+<p className="text-gray-600 dark:text-gray-300 mb-4 italic">
+  &quot;{testimonials[currentTestimonial].quote}&quot;
+</p>
+
                 <div className="font-medium text-gray-900 dark:text-white">{testimonials[currentTestimonial].name}</div>
                 <div className="text-gray-500 dark:text-gray-400">{testimonials[currentTestimonial].role}</div>
                 <div className="flex items-center mt-2">
