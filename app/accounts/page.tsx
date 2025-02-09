@@ -37,7 +37,7 @@ export default function AccountsPage() {
     const token = localStorage.getItem("token");
 
     try {
-      const res = await fetch("/api/accounts", {
+      const res = await fetch("https://edgetrader.vercel.app/subaccounts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -52,16 +52,18 @@ export default function AccountsPage() {
         }),
       });
 
-      const data = await res.json();
-
-      if (res.ok) {
-        alert("Cuenta guardada correctamente.");
-        setShowAddAccount(false);
-        setNewAccount({ exchange: "", apiKey: "", apiSecret: "", name: "" });
-      } else {
-        console.error("Error:", data.error);
-        alert("Error al guardar la cuenta: " + data.error);
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("Error en la API:", errorData);
+        alert("Error al guardar la cuenta: " + (errorData.error || "Desconocido"));
+        return;
       }
+
+      const data = await res.json();
+      alert("Cuenta guardada correctamente.");
+      setShowAddAccount(false);
+      setNewAccount({ exchange: "", apiKey: "", apiSecret: "", name: "" });
+
     } catch (error) {
       console.error("Error de red:", error);
       alert("No se pudo conectar con el servidor.");
