@@ -1,40 +1,34 @@
-// pages/login.tsx
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(null);
   const router = useRouter();
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage(null); // Reset the message
 
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
-      if (response.ok) {
-        console.log('Login successful:', data);
-        setMessage('Login successful! Redirecting...');
-        setTimeout(() => {
-          // Redirect to another page or dashboard after login
-          router.push('/dashboard');
-        }, 2000);
-      } else {
-        throw new Error(data.message || 'Failed to login');
+      if (!response.ok) {
+        throw new Error('Failed to login. Please check your credentials.');
       }
-    } catch (error: any) {
-      console.error('Login error:', error.message);
-      setMessage(error.message || 'An error occurred during login');
+
+      const data = await response.json();
+      console.log('Login successful:', data);
+      router.push('/dashboard');  // Redirect to the dashboard or appropriate page
+    } catch (error) {
+      setMessage(error.message);
     }
   };
 
@@ -48,7 +42,9 @@ export default function LoginPage() {
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email address</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email address
+              </label>
               <div className="mt-1">
                 <input
                   id="email"
@@ -64,7 +60,9 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
               <div className="mt-1">
                 <input
                   id="password"
@@ -79,6 +77,30 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {message && (
+              <div className="text-red-500 text-sm">{message}</div>
+            )}
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                  Remember me
+                </label>
+              </div>
+
+              <div className="text-sm">
+                <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
+                  Forgot your password?
+                </a>
+              </div>
+            </div>
+
             <div>
               <button
                 type="submit"
@@ -87,21 +109,40 @@ export default function LoginPage() {
                 Log in
               </button>
             </div>
-
-            {message && (
-              <div className="mt-2 text-center text-sm text-red-500">{message}</div>
-            )}
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?&nbsp;
-              <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
-                Sign up
-              </Link>
-            </p>
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or</span>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="text-center">
+                <p className="text-sm text-gray-600">
+                  Don&apos;t have an account?&nbsp;
+                  <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
+                    Sign up
+                  </Link>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <Link
+          href="/"
+          className="flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to home
+        </Link>
       </div>
     </div>
   );
