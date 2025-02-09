@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
-import { Plus, X, ChevronDown, Eye, EyeOff, Trash2, Edit2, Search, RefreshCw } from "lucide-react"
+import { Plus, X, ChevronDown, Eye, EyeOff, Trash2, Edit2, Search, RefreshCw, ArrowLeft } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import Link from "next/link"
 
 function getToken(): string | null {
   return localStorage.getItem("token") || null
@@ -239,7 +240,15 @@ export default function AccountsPage() {
       <header className="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-10">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Accounts</h1>
+            <div className="flex items-center">
+              <Link href="/dashboard" className="mr-4">
+                <button className="flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors duration-200">
+                  <ArrowLeft className="h-5 w-5 mr-2" />
+                  <span>Back to Dashboard</span>
+                </button>
+              </Link>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Accounts</h1>
+            </div>
             {isAuthenticated && (
               <button
                 className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
@@ -453,4 +462,3 @@ export default function AccountsPage() {
     </div>
   )
 }
-
