@@ -1,7 +1,5 @@
-"use client"
 import { useState } from "react";
-import { useRouter } from "next/router"; // Corregido para importar correctamente desde 'next/router'
-import { Plus, Users } from "lucide-react";
+import { Plus } from "lucide-react";
 
 export default function AccountsPage() {
   const [showAddAccount, setShowAddAccount] = useState(false);
@@ -11,7 +9,6 @@ export default function AccountsPage() {
     apiSecret: '',
     name: '',
   });
-  const router = useRouter();
 
   const handleAddAccount = () => {
     console.log('Account data:', newAccount);
