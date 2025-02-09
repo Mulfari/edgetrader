@@ -301,10 +301,9 @@ export default function LandingPage() {
                   alt={testimonials[currentTestimonial].name}
                   className="w-20 h-20 rounded-full object-cover mb-4"
                 />
-<p className="text-gray-600 dark:text-gray-300 mb-4 italic">
-  &ldquo;{testimonials[currentTestimonial].quote}&rdquo;
-</p>
-
+                <p className="text-gray-600 dark:text-gray-300 mb-4 italic">
+                  "{testimonials[currentTestimonial].quote}"
+                </p>
                 <div className="font-medium text-gray-900 dark:text-white">{testimonials[currentTestimonial].name}</div>
                 <div className="text-gray-500 dark:text-gray-400">{testimonials[currentTestimonial].role}</div>
                 <div className="flex items-center mt-2">
@@ -549,4 +548,3 @@ function NavLinks({ activeSection }: { activeSection: string }) {
     </>
   )
 }
-
