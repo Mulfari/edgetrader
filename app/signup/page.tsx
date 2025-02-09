@@ -1,22 +1,55 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowLeft, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function SignUpPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
   const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    // Verificar la fortaleza de la contraseña
+    let strength = 0;
+    if (password.length > 7) strength++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    if (/[^a-zA-Z\d]/.test(password)) strength++;
+    setPasswordStrength(strength);
+  }, [password]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setMessage("");
+
+    if (!name || !email || !password || !confirmPassword) {
+      setMessage("Please fill in all fields.");
+      setIsLoading(false);
+      return;
+    }
 
     if (password !== confirmPassword) {
       setMessage("Passwords do not match.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (passwordStrength < 3) {
+      setMessage("Please choose a stronger password.");
+      setIsLoading(false);
       return;
     }
 
@@ -30,152 +63,90 @@ export default function SignUpPage() {
       const data = await res.json();
 
       if (res.ok) {
+        setSuccess(true);
         setMessage("Account created successfully! Redirecting...");
         setTimeout(() => router.push("/login"), 2000);
       } else {
         setMessage(data.message || "Error registering user.");
       }
     } catch (error) {
-      console.error("Registration error:", error); // ✅ Solución aplicada
+      console.error("Registration error:", error);
       setMessage("Failed to connect to the server.");
     }
+
+    setIsLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Create your account</h2>
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleRegister}>
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <div className="mt-1">
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-            </div>
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="sm:mx-auto sm:w-full sm:max-w-md">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">Create your account</h2>
+      </motion.div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password-confirm" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password-confirm"
-                  name="password-confirm"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center">
-              <input
-                id="terms-and-privacy"
-                name="terms-and-privacy"
-                type="checkbox"
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                required
-              />
-              <label htmlFor="terms-and-privacy" className="ml-2 block text-sm text-gray-900">
-                I agree to the{" "}
-                <Link href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
-                  Terms
-                </Link>{" "}
-                and{" "}
-                <Link href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
-                  Privacy Policy
-                </Link>
-              </label>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Sign up
-              </button>
-            </div>
-
-            {message && (
-              <p className="mt-2 text-center text-sm text-gray-600">{message}</p>
-            )}
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?&nbsp;
-              <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-                Log in
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          {success ? (
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+              <div className="text-green-500 text-5xl mb-4">🎉</div>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Sign Up Successful!</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">Welcome to YourBrand. Your account has been created.</p>
+              <Link href="/login" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                Go to Login
               </Link>
-            </p>
-          </div>
-        </div>
-      </div>
+            </motion.div>
+          ) : (
+            <form className="space-y-6" onSubmit={handleRegister}>
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                <input id="name" type="text" required value={name} onChange={(e) => setName(e.target.value)} className="input-field" />
+              </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <Link
-          href="/"
-          className="flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-900"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to home
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email address</label>
+                <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                <div className="relative">
+                  <input id="password" type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} className="input-field" />
+                  <button type="button" className="eye-icon" onClick={() => setShowPassword(!showPassword)}>
+                    {showPassword ? <EyeOff className="icon" /> : <Eye className="icon" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirm Password</label>
+                <div className="relative">
+                  <input id="confirm-password" type={showConfirmPassword ? "text" : "password"} required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="input-field" />
+                  <button type="button" className="eye-icon" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                    {showConfirmPassword ? <EyeOff className="icon" /> : <Eye className="icon" />}
+                  </button>
+                </div>
+              </div>
+
+              {message && <div className="text-red-500 text-sm flex items-center"><AlertCircle className="h-5 w-5 mr-2" />{message}</div>}
+
+              <div>
+                <button type="submit" disabled={isLoading} className="btn-primary">
+                  {isLoading ? <><Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" /> Signing up...</> : "Sign up"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.2 }} className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <Link href="/" className="flex items-center justify-center text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to home
         </Link>
-      </div>
+      </motion.div>
     </div>
   );
 }
