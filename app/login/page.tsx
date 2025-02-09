@@ -1,4 +1,4 @@
-"use client";
+"use client";  // 👈 Esto es obligatorio para usar useRouter()
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -8,11 +8,10 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const router = useRouter();
+  const router = useRouter(); // useRouter() solo en componentes cliente
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage("");
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
@@ -24,9 +23,9 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        localStorage.setItem("token", data.access_token); // Guardar token en localStorage
+        localStorage.setItem("token", data.access_token); // Guardar el token
         setMessage("Login exitoso! Redirigiendo...");
-        setTimeout(() => router.push("/dashboard"), 2000); // Redirigir al dashboard
+        setTimeout(() => router.push("/dashboard"), 2000);
       } else {
         setMessage(data.message || "Credenciales incorrectas.");
       }
