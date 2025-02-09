@@ -1,79 +1,77 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { useState, useEffect } from "react"
+import { Plus, X, ChevronDown, Eye, EyeOff } from "lucide-react"
 
-// Función para obtener el token JWT desde localStorage
 function getToken(): string | null {
-  return localStorage.getItem("token") || null;
+  return localStorage.getItem("token") || null
 }
 
 interface Account {
-  id: string;
-  exchange: string;
-  apiKey: string;
-  apiSecret: string;
-  name: string;
+  id: string
+  exchange: string
+  apiKey: string
+  apiSecret: string
+  name: string
 }
 
-// Componente principal
 export default function AccountsPage() {
-  const [showAddAccount, setShowAddAccount] = useState(false);
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [showAddAccount, setShowAddAccount] = useState(false)
+  const [accounts, setAccounts] = useState<Account[]>([])
   const [newAccount, setNewAccount] = useState({
     exchange: "",
     apiKey: "",
     apiSecret: "",
     name: "",
-  });
-
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  })
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [showApiSecret, setShowApiSecret] = useState(false)
 
   useEffect(() => {
-    const token = getToken();
+    const token = getToken()
     if (token) {
-      setIsAuthenticated(true);
-      fetchAccounts();
+      setIsAuthenticated(true)
+      fetchAccounts()
     } else {
-      setIsAuthenticated(false);
+      setIsAuthenticated(false)
     }
-  }, []);
+  }, [])
 
   const fetchAccounts = async () => {
-    const token = getToken();
-    if (!token) return;
+    const token = getToken()
+    if (!token) return
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
       const res = await fetch(`${API_URL}/subaccounts`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      });
+      })
 
       if (!res.ok) {
-        const errorData = await res.json();
-        console.error("Error al obtener cuentas:", errorData);
-        return;
+        const errorData = await res.json()
+        console.error("Error al obtener cuentas:", errorData)
+        return
       }
 
-      const data: Account[] = await res.json();
-      setAccounts(data);
+      const data: Account[] = await res.json()
+      setAccounts(data)
     } catch (error) {
-      console.error("Error de red:", error);
+      console.error("Error de red:", error)
     }
-  };
+  }
 
   const handleAddAccount = async () => {
-    const token = getToken();
+    const token = getToken()
     if (!token) {
-      alert("Error: No estás autenticado. Inicia sesión nuevamente.");
-      return;
+      alert("Error: No estás autenticado. Inicia sesión nuevamente.")
+      return
     }
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
       const res = await fetch(`${API_URL}/subaccounts`, {
         method: "POST",
         headers: {
@@ -81,116 +79,164 @@ export default function AccountsPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(newAccount),
-      });
+      })
 
       if (!res.ok) {
-        const errorData = await res.json();
-        console.error("Error en la API:", errorData);
-        alert("Error al guardar la cuenta: " + (errorData.message || "Desconocido"));
-        return;
+        const errorData = await res.json()
+        console.error("Error en la API:", errorData)
+        alert("Error al guardar la cuenta: " + (errorData.message || "Desconocido"))
+        return
       }
 
-      alert("✅ Cuenta guardada correctamente.");
-      setShowAddAccount(false);
-      setNewAccount({ exchange: "", apiKey: "", apiSecret: "", name: "" });
-      fetchAccounts(); // Refrescar la lista de cuentas después de guardar
-
+      alert("✅ Cuenta guardada correctamente.")
+      setShowAddAccount(false)
+      setNewAccount({ exchange: "", apiKey: "", apiSecret: "", name: "" })
+      fetchAccounts()
     } catch (error) {
-      console.error("Error de red:", error);
-      alert("❌ No se pudo conectar con el servidor.");
+      console.error("Error de red:", error)
+      alert("❌ No se pudo conectar con el servidor.")
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800">
+      <header className="bg-white dark:bg-gray-800 shadow-md">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Accounts</h1>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Accounts</h1>
           {isAuthenticated ? (
             <button
-              className="mt-4 flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="mt-4 flex items-center px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
               onClick={() => setShowAddAccount(true)}
             >
               <Plus className="h-5 w-5 mr-2" />
               Add Account
             </button>
           ) : (
-            <p className="mt-4 text-red-500">Debes iniciar sesión para ver tus cuentas.</p>
+            <p className="mt-4 text-red-500 bg-red-100 dark:bg-red-900 p-4 rounded-lg">
+              You must log in to view your accounts.
+            </p>
           )}
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {/* Mostrar lista de cuentas */}
         {isAuthenticated && accounts.length > 0 && (
-          <ul className="mt-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-            {accounts.map((account) => (
-              <li key={account.id} className="py-3 flex justify-between border-b border-gray-300 dark:border-gray-700">
-                <span className="font-medium text-gray-800 dark:text-gray-200">
-                  {account.name} ({account.exchange})
-                </span>
-                <span className="text-gray-500 dark:text-gray-400">
-                  {account.apiKey.slice(0, 4)}****
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-6 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+            <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Your Accounts</h2>
+            <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+              {accounts.map((account) => (
+                <li
+                  key={account.id}
+                  className="py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 rounded-lg px-4"
+                >
+                  <div className="flex items-center">
+                    <span className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-300 font-bold text-lg mr-4">
+                      {account.name[0].toUpperCase()}
+                    </span>
+                    <div>
+                      <span className="font-medium text-gray-800 dark:text-gray-200">{account.name}</span>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{account.exchange}</p>
+                    </div>
+                  </div>
+                  <span className="text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full text-sm">
+                    {account.apiKey.slice(0, 4)}****
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
-        {/* Formulario para agregar una nueva cuenta */}
         {showAddAccount && isAuthenticated && (
-          <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow space-y-6 mt-6">
-            <h2 className="text-lg font-bold">Add New Account</h2>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Select Exchange</label>
-              <select
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50"
-                value={newAccount.exchange}
-                onChange={(e) => setNewAccount({ ...newAccount, exchange: e.target.value })}
-              >
-                <option value="">Select one</option>
-                <option value="bybit">Bybit</option>
-                <option value="binance">Binance</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">API Key</label>
-              <input
-                type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50"
-                value={newAccount.apiKey}
-                onChange={(e) => setNewAccount({ ...newAccount, apiKey: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">API Secret</label>
-              <input
-                type="password"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50"
-                value={newAccount.apiSecret}
-                onChange={(e) => setNewAccount({ ...newAccount, apiSecret: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Account Name</label>
-              <input
-                type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50"
-                value={newAccount.name}
-                onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
-              />
-            </div>
-            <div className="flex justify-end space-x-4">
-              <button className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors" onClick={() => setShowAddAccount(false)}>
-                Cancel
-              </button>
-              <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors" onClick={handleAddAccount}>
-                Save
-              </button>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl space-y-6 max-w-md w-full">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Add New Account</h2>
+                <button
+                  onClick={() => setShowAddAccount(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Select Exchange
+                  </label>
+                  <div className="relative">
+                    <select
+                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      value={newAccount.exchange}
+                      onChange={(e) => setNewAccount({ ...newAccount, exchange: e.target.value })}
+                    >
+                      <option value="">Select one</option>
+                      <option value="bybit">Bybit</option>
+                      <option value="binance">Binance</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
+                      <ChevronDown className="h-4 w-4" />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">API Key</label>
+                  <input
+                    type="text"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    value={newAccount.apiKey}
+                    onChange={(e) => setNewAccount({ ...newAccount, apiKey: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">API Secret</label>
+                  <div className="relative">
+                    <input
+                      type={showApiSecret ? "text" : "password"}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white pr-10"
+                      value={newAccount.apiSecret}
+                      onChange={(e) => setNewAccount({ ...newAccount, apiSecret: e.target.value })}
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+                      onClick={() => setShowApiSecret(!showApiSecret)}
+                    >
+                      {showApiSecret ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Account Name
+                  </label>
+                  <input
+                    type="text"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    value={newAccount.name}
+                    onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-4 mt-6">
+                <button
+                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+                  onClick={() => setShowAddAccount(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+                  onClick={handleAddAccount}
+                >
+                  Save
+                </button>
+              </div>
             </div>
           </div>
         )}
       </main>
     </div>
-  );
+  )
 }
+
