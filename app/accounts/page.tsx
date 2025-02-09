@@ -3,24 +3,23 @@
 import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 
-// 📌 Define la estructura de una subcuenta
-interface SubAccount {
+// Función para obtener el token JWT desde localStorage
+function getToken(): string | null {
+  return localStorage.getItem("token") || null;
+}
+
+interface Account {
   id: string;
   exchange: string;
   apiKey: string;
   apiSecret: string;
   name: string;
-  createdAt: string;
 }
 
-// 📌 Función para obtener el token JWT desde localStorage
-function getToken(): string | null {
-  return localStorage.getItem("token") || null;
-}
-
+// Componente principal
 export default function AccountsPage() {
   const [showAddAccount, setShowAddAccount] = useState(false);
-  const [accounts, setAccounts] = useState<SubAccount[]>([]); // ✅ Tipo definido
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [newAccount, setNewAccount] = useState({
     exchange: "",
     apiKey: "",
@@ -34,13 +33,12 @@ export default function AccountsPage() {
     const token = getToken();
     if (token) {
       setIsAuthenticated(true);
-      fetchAccounts(); // ✅ Cargar cuentas al montar el componente
+      fetchAccounts();
     } else {
       setIsAuthenticated(false);
     }
   }, []);
 
-  // 🔹 Función para obtener cuentas desde el backend
   const fetchAccounts = async () => {
     const token = getToken();
     if (!token) return;
@@ -55,15 +53,15 @@ export default function AccountsPage() {
       });
 
       if (!res.ok) {
-        console.error("Error al obtener cuentas:", res.statusText);
+        const errorData = await res.json();
+        console.error("Error al obtener cuentas:", errorData);
         return;
       }
 
-      const data: SubAccount[] = await res.json(); // ✅ Define el tipo de respuesta
-      console.log("Cuentas obtenidas:", data);
+      const data: Account[] = await res.json();
       setAccounts(data);
     } catch (error) {
-      console.error("Error de red al obtener cuentas:", error);
+      console.error("Error de red:", error);
     }
   };
 
@@ -82,12 +80,7 @@ export default function AccountsPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          exchange: newAccount.exchange,
-          apiKey: newAccount.apiKey,
-          apiSecret: newAccount.apiSecret,
-          name: newAccount.name,
-        }),
+        body: JSON.stringify(newAccount),
       });
 
       if (!res.ok) {
@@ -97,11 +90,11 @@ export default function AccountsPage() {
         return;
       }
 
-      await res.json();
       alert("✅ Cuenta guardada correctamente.");
       setShowAddAccount(false);
       setNewAccount({ exchange: "", apiKey: "", apiSecret: "", name: "" });
-      fetchAccounts(); // ✅ Recargar cuentas después de agregar
+      fetchAccounts(); // Refrescar la lista de cuentas después de guardar
+
     } catch (error) {
       console.error("Error de red:", error);
       alert("❌ No se pudo conectar con el servidor.");
@@ -112,9 +105,7 @@ export default function AccountsPage() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Accounts
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Accounts</h1>
           {isAuthenticated ? (
             <button
               className="mt-4 flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
@@ -124,34 +115,29 @@ export default function AccountsPage() {
               Add Account
             </button>
           ) : (
-            <p className="mt-4 text-red-500">Debes iniciar sesión para agregar cuentas.</p>
+            <p className="mt-4 text-red-500">Debes iniciar sesión para ver tus cuentas.</p>
           )}
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {/* 🔹 Mostrar cuentas */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-          <h2 className="text-lg font-bold mb-4">Tus Cuentas</h2>
-          {accounts.length > 0 ? (
-            <ul>
-              {accounts.map((account, index) => (
-                <li key={account.id} className="py-3 flex justify-between border-b border-gray-300 dark:border-gray-700">
-                  <span className="font-medium text-gray-800 dark:text-gray-200">
-                    {account.name} ({account.exchange})
-                  </span>
-                  <span className="text-gray-500 dark:text-gray-400">
-                    {account.apiKey?.slice(0, 4)}****
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-600 dark:text-gray-400">No tienes cuentas creadas.</p>
-          )}
-        </div>
+        {/* Mostrar lista de cuentas */}
+        {isAuthenticated && accounts.length > 0 && (
+          <ul className="mt-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+            {accounts.map((account) => (
+              <li key={account.id} className="py-3 flex justify-between border-b border-gray-300 dark:border-gray-700">
+                <span className="font-medium text-gray-800 dark:text-gray-200">
+                  {account.name} ({account.exchange})
+                </span>
+                <span className="text-gray-500 dark:text-gray-400">
+                  {account.apiKey.slice(0, 4)}****
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
 
-        {/* Formulario para agregar cuenta */}
+        {/* Formulario para agregar una nueva cuenta */}
         {showAddAccount && isAuthenticated && (
           <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow space-y-6 mt-6">
             <h2 className="text-lg font-bold">Add New Account</h2>
@@ -185,11 +171,20 @@ export default function AccountsPage() {
                 onChange={(e) => setNewAccount({ ...newAccount, apiSecret: e.target.value })}
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Account Name</label>
+              <input
+                type="text"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50"
+                value={newAccount.name}
+                onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
+              />
+            </div>
             <div className="flex justify-end space-x-4">
-              <button className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600" onClick={() => setShowAddAccount(false)}>
+              <button className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors" onClick={() => setShowAddAccount(false)}>
                 Cancel
               </button>
-              <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700" onClick={handleAddAccount}>
+              <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors" onClick={handleAddAccount}>
                 Save
               </button>
             </div>
