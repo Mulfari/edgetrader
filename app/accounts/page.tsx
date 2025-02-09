@@ -60,13 +60,13 @@ export default function AccountsPage() {
       }
 
       const data = await res.json();
-      alert("Cuenta guardada correctamente.");
+      alert("✅ Cuenta guardada correctamente.");
       setShowAddAccount(false);
       setNewAccount({ exchange: "", apiKey: "", apiSecret: "", name: "" });
 
     } catch (error) {
       console.error("Error de red:", error);
-      alert("No se pudo conectar con el servidor.");
+      alert("❌ No se pudo conectar con el servidor.");
     }
   };
 
