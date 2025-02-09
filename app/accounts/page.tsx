@@ -27,15 +27,15 @@ export default function AccountsPage() {
   });
 
   const handleAddAccount = async () => {
-    const userId = getUserIdFromToken(); // Obtener el userId del token
-
+    const userId = getUserIdFromToken();
+  
     if (!userId) {
       alert("Error: No se pudo obtener el ID del usuario.");
       return;
     }
-
+  
     const token = localStorage.getItem("token");
-
+  
     try {
       const res = await fetch("https://edgetrader.vercel.app/subaccounts", {
         method: "POST",
@@ -51,24 +51,24 @@ export default function AccountsPage() {
           name: newAccount.name,
         }),
       });
-
+  
       if (!res.ok) {
         const errorData = await res.json();
         console.error("Error en la API:", errorData);
         alert("Error al guardar la cuenta: " + (errorData.error || "Desconocido"));
         return;
       }
-
-      const data = await res.json();
+  
+      await res.json(); // ✅ Eliminamos `data`, pero mantenemos la ejecución correcta
       alert("✅ Cuenta guardada correctamente.");
       setShowAddAccount(false);
       setNewAccount({ exchange: "", apiKey: "", apiSecret: "", name: "" });
-
+  
     } catch (error) {
       console.error("Error de red:", error);
       alert("❌ No se pudo conectar con el servidor.");
     }
-  };
+  };  
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
