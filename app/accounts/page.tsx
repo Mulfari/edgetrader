@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Plus, X, ChevronDown, Eye, EyeOff, Trash2, Edit2 } from "lucide-react"
+import { useState, useEffect, useCallback, useMemo } from "react"
+import { Plus, X, ChevronDown, Eye, EyeOff, Trash2, Edit2, Search, RefreshCw } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 
 function getToken(): string | null {
   return localStorage.getItem("token") || null
@@ -14,6 +15,13 @@ interface Account {
   apiSecret: string
   name: string
 }
+
+const exchangeOptions = [
+  { value: "bybit", label: "Bybit" },
+  { value: "binance", label: "Binance" },
+  { value: "kucoin", label: "KuCoin" },
+  { value: "ftx", label: "FTX" },
+]
 
 export default function AccountsPage() {
   const [showAddAccount, setShowAddAccount] = useState(false)
@@ -29,19 +37,11 @@ export default function AccountsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editingAccount, setEditingAccount] = useState<Account | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [sortBy, setSortBy] = useState<"name" | "exchange">("name")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
 
-  useEffect(() => {
-    const token = getToken()
-    if (token) {
-      setIsAuthenticated(true)
-      fetchAccounts()
-    } else {
-      setIsAuthenticated(false)
-      setIsLoading(false)
-    }
-  }, [])
-
-  const fetchAccounts = async () => {
+  const fetchAccounts = useCallback(async () => {
     const token = getToken()
     if (!token) return
 
@@ -69,7 +69,18 @@ export default function AccountsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    const token = getToken()
+    if (token) {
+      setIsAuthenticated(true)
+      fetchAccounts()
+    } else {
+      setIsAuthenticated(false)
+      setIsLoading(false)
+    }
+  }, [fetchAccounts])
 
   const handleAddAccount = async () => {
     const token = getToken()
@@ -80,8 +91,11 @@ export default function AccountsPage() {
 
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
-      const res = await fetch(`${API_URL}/subaccounts`, {
-        method: "POST",
+      const method = editingAccount ? "PUT" : "POST"
+      const url = editingAccount ? `${API_URL}/subaccounts/${editingAccount.id}` : `${API_URL}/subaccounts`
+
+      const res = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -96,9 +110,10 @@ export default function AccountsPage() {
 
       setShowAddAccount(false)
       setNewAccount({ exchange: "", apiKey: "", apiSecret: "", name: "" })
+      setEditingAccount(null)
       fetchAccounts()
     } catch (error) {
-      console.error("Error adding account:", error)
+      console.error("Error adding/updating account:", error)
     }
   }
 
@@ -144,6 +159,20 @@ export default function AccountsPage() {
     }
   }
 
+  const filteredAndSortedAccounts = useMemo(() => {
+    return accounts
+      .filter(
+        (account) =>
+          account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          account.exchange.toLowerCase().includes(searchTerm.toLowerCase()),
+      )
+      .sort((a, b) => {
+        if (a[sortBy] < b[sortBy]) return sortOrder === "asc" ? -1 : 1
+        if (a[sortBy] > b[sortBy]) return sortOrder === "asc" ? 1 : -1
+        return 0
+      })
+  }, [accounts, searchTerm, sortBy, sortOrder])
+
   const renderAccountForm = () => (
     <div className="space-y-4">
       <div>
@@ -155,8 +184,11 @@ export default function AccountsPage() {
             onChange={(e) => setNewAccount({ ...newAccount, exchange: e.target.value })}
           >
             <option value="">Select one</option>
-            <option value="bybit">Bybit</option>
-            <option value="binance">Binance</option>
+            {exchangeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
             <ChevronDown className="h-4 w-4" />
@@ -204,120 +236,219 @@ export default function AccountsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800">
-      <header className="bg-white dark:bg-gray-800 shadow-md">
+      <header className="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-10">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Accounts</h1>
-          {isAuthenticated && (
-            <button
-              className="mt-4 flex items-center px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
-              onClick={() => {
-                setEditingAccount(null)
-                setNewAccount({ exchange: "", apiKey: "", apiSecret: "", name: "" })
-                setShowAddAccount(true)
-              }}
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Add Account
-            </button>
-          )}
+          <div className="flex justify-between items-center">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Accounts</h1>
+            {isAuthenticated && (
+              <button
+                className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+                onClick={() => {
+                  setEditingAccount(null)
+                  setNewAccount({ exchange: "", apiKey: "", apiSecret: "", name: "" })
+                  setShowAddAccount(true)
+                }}
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Add Account
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {!isAuthenticated && (
-          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg mb-6" role="alert">
-            <p className="font-bold">Authentication Required</p>
-            <p>Please log in to view and manage your accounts.</p>
-          </div>
-        )}
+        <AnimatePresence>
+          {!isAuthenticated && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg mb-6"
+              role="alert"
+            >
+              <p className="font-bold">Authentication Required</p>
+              <p>Please log in to view and manage your accounts.</p>
+            </motion.div>
+          )}
 
-        {error && (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6" role="alert">
-            <p className="font-bold">Error</p>
-            <p>{error}</p>
-          </div>
-        )}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6"
+              role="alert"
+            >
+              <p className="font-bold">Error</p>
+              <p>{error}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-indigo-500"></div>
           </div>
         ) : (
-          isAuthenticated &&
-          accounts.length > 0 && (
+          isAuthenticated && (
             <div className="mt-6 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
-              <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Your Accounts</h2>
-              <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-                {accounts.map((account) => (
-                  <li
-                    key={account.id}
-                    className="py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 rounded-lg px-4"
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">Your Accounts</h2>
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search accounts..."
+                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  </div>
+                  <button
+                    onClick={fetchAccounts}
+                    className="p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                    title="Refresh accounts"
                   >
-                    <div className="flex items-center">
-                      <span className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-300 font-bold text-lg mr-4">
-                        {account.name[0].toUpperCase()}
-                      </span>
-                      <div>
-                        <span className="font-medium text-gray-800 dark:text-gray-200">{account.name}</span>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{account.exchange}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full text-sm">
-                        {account.apiKey.slice(0, 4)}****
-                      </span>
-                      <button
-                        onClick={() => handleEditAccount(account)}
-                        className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200"
+                    <RefreshCw size={18} />
+                  </button>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                        onClick={() => {
+                          setSortBy("name")
+                          setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                        }}
                       >
-                        <Edit2 className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteAccount(account.id)}
-                        className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
+                        Name {sortBy === "name" && (sortOrder === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                        onClick={() => {
+                          setSortBy("exchange")
+                          setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                        }}
                       >
-                        <Trash2 className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                        Exchange {sortBy === "exchange" && (sortOrder === "asc" ? "▲" : "▼")}
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                      >
+                        API Key
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                      >
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                    {filteredAndSortedAccounts.map((account) => (
+                      <motion.tr
+                        key={account.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+                              <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-300 font-bold text-lg">
+                                {account.name[0].toUpperCase()}
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">{account.name}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{account.exchange}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {account.apiKey.slice(0, 4)}****
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => handleEditAccount(account)}
+                            className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-200 mr-4"
+                          >
+                            <Edit2 className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteAccount(account.id)}
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200"
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </button>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )
         )}
 
-        {showAddAccount && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl space-y-6 max-w-md w-full">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {editingAccount ? "Edit Account" : "Add New Account"}
-                </h2>
-                <button
-                  onClick={() => setShowAddAccount(false)}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                >
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
-              {renderAccountForm()}
-              <div className="flex justify-end space-x-4 mt-6">
-                <button
-                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
-                  onClick={() => setShowAddAccount(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
-                  onClick={handleAddAccount}
-                >
-                  {editingAccount ? "Update" : "Save"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {showAddAccount && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl space-y-6 max-w-md w-full"
+              >
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {editingAccount ? "Edit Account" : "Add New Account"}
+                  </h2>
+                  <button
+                    onClick={() => setShowAddAccount(false)}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+                {renderAccountForm()}
+                <div className="flex justify-end space-x-4 mt-6">
+                  <button
+                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+                    onClick={() => setShowAddAccount(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+                    onClick={handleAddAccount}
+                  >
+                    {editingAccount ? "Update" : "Save"}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   )
