@@ -43,13 +43,15 @@ export default function AccountsPage() {
   }, []);
 
   const handleAddAccount = async () => {
-    const userId = getUserIdFromToken(); // Obtener el userId del token
+    const userId = getUserIdFromToken();
     const token = getToken();
-
+  
+    console.log("🔹 Enviando token al backend:", token); // ✅ Verifica que el token no sea null
+  
     if (!userId || !token) {
       alert("Error: No estás autenticado. Inicia sesión nuevamente.");
       return;
-    }
+    }  
 
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
