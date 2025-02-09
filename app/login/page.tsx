@@ -1,7 +1,7 @@
+// pages/login.tsx
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -9,26 +9,32 @@ export default function LoginPage() {
   const [message, setMessage] = useState('');
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
     try {
-      const res = await fetch('/api/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
-      if (res.ok) {
+
+      const data = await response.json();
+      if (response.ok) {
+        console.log('Login successful:', data);
         setMessage('Login successful! Redirecting...');
-        setTimeout(() => router.push('/dashboard'), 2000); // Asume que el usuario será redirigido a '/dashboard' después del login
+        setTimeout(() => {
+          // Redirect to another page or dashboard after login
+          router.push('/dashboard');
+        }, 2000);
       } else {
-        setMessage(data.message || 'Failed to login.');
+        throw new Error(data.message || 'Failed to login');
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      setMessage('Failed to connect to the server.');
+    } catch (error: any) {
+      console.error('Login error:', error.message);
+      setMessage(error.message || 'An error occurred during login');
     }
   };
 
@@ -40,11 +46,9 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleLogin}>
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email address</label>
               <div className="mt-1">
                 <input
                   id="email"
@@ -60,9 +64,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
               <div className="mt-1">
                 <input
                   id="password"
@@ -87,7 +89,7 @@ export default function LoginPage() {
             </div>
 
             {message && (
-              <p className="mt-2 text-center text-sm text-gray-600">{message}</p>
+              <div className="mt-2 text-center text-sm text-red-500">{message}</div>
             )}
           </form>
 
@@ -100,16 +102,6 @@ export default function LoginPage() {
             </p>
           </div>
         </div>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <Link
-          href="/"
-          className="flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-900"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to home
-        </Link>
       </div>
     </div>
   );
