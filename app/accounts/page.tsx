@@ -3,28 +3,24 @@
 import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 
-// Función para obtener el token JWT desde localStorage
+// 📌 Define la estructura de una subcuenta
+interface SubAccount {
+  id: string;
+  exchange: string;
+  apiKey: string;
+  apiSecret: string;
+  name: string;
+  createdAt: string;
+}
+
+// 📌 Función para obtener el token JWT desde localStorage
 function getToken(): string | null {
   return localStorage.getItem("token") || null;
 }
 
-// Función para obtener el userId desde el token JWT
-function getUserIdFromToken(): string | null {
-  const token = getToken();
-  if (!token) return null;
-
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1])); // Decodificar el token JWT
-    return payload.sub || null; // Retornar el userId (sub)
-  } catch (error) {
-    console.error("Error decoding token:", error);
-    return null;
-  }
-}
-
 export default function AccountsPage() {
   const [showAddAccount, setShowAddAccount] = useState(false);
-  const [accounts, setAccounts] = useState<any[]>([]); // 🔹 Estado para almacenar cuentas
+  const [accounts, setAccounts] = useState<SubAccount[]>([]); // ✅ Tipo definido
   const [newAccount, setNewAccount] = useState({
     exchange: "",
     apiKey: "",
@@ -38,7 +34,7 @@ export default function AccountsPage() {
     const token = getToken();
     if (token) {
       setIsAuthenticated(true);
-      fetchAccounts(); // 🔹 Cargar cuentas al montar el componente
+      fetchAccounts(); // ✅ Cargar cuentas al montar el componente
     } else {
       setIsAuthenticated(false);
     }
@@ -63,7 +59,7 @@ export default function AccountsPage() {
         return;
       }
 
-      const data = await res.json();
+      const data: SubAccount[] = await res.json(); // ✅ Define el tipo de respuesta
       console.log("Cuentas obtenidas:", data);
       setAccounts(data);
     } catch (error) {
@@ -105,7 +101,7 @@ export default function AccountsPage() {
       alert("✅ Cuenta guardada correctamente.");
       setShowAddAccount(false);
       setNewAccount({ exchange: "", apiKey: "", apiSecret: "", name: "" });
-      fetchAccounts(); // 🔹 Recargar cuentas después de agregar
+      fetchAccounts(); // ✅ Recargar cuentas después de agregar
     } catch (error) {
       console.error("Error de red:", error);
       alert("❌ No se pudo conectar con el servidor.");
@@ -139,18 +135,16 @@ export default function AccountsPage() {
           <h2 className="text-lg font-bold mb-4">Tus Cuentas</h2>
           {accounts.length > 0 ? (
             <ul>
-              {accounts.map((account, index) =>
-                account ? ( // ✅ Verifica que account no sea undefined
-                  <li key={index} className="py-3 flex justify-between border-b border-gray-300 dark:border-gray-700">
-                    <span className="font-medium text-gray-800 dark:text-gray-200">
-                      {account.name ? account.name : "Sin nombre"} ({account.exchange ? account.exchange : "Sin exchange"})
-                    </span>
-                    <span className="text-gray-500 dark:text-gray-400">
-                      {account.apiKey ? account.apiKey.slice(0, 4) : "****"}****
-                    </span>
-                  </li>
-                ) : null
-              )}
+              {accounts.map((account, index) => (
+                <li key={account.id} className="py-3 flex justify-between border-b border-gray-300 dark:border-gray-700">
+                  <span className="font-medium text-gray-800 dark:text-gray-200">
+                    {account.name} ({account.exchange})
+                  </span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    {account.apiKey?.slice(0, 4)}****
+                  </span>
+                </li>
+              ))}
             </ul>
           ) : (
             <p className="text-gray-600 dark:text-gray-400">No tienes cuentas creadas.</p>
