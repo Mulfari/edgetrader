@@ -37,7 +37,7 @@ export default function AccountsPage() {
     const token = localStorage.getItem("token");
   
     try {
-      const res = await fetch("https://edgetrader.vercel.app/subaccounts", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/subaccounts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
