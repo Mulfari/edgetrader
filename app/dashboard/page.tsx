@@ -6,21 +6,6 @@ import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts"
-import {
   Bell,
   User,
   DollarSign,
@@ -40,35 +25,7 @@ import {
 } from "lucide-react"
 import { format } from "date-fns"
 
-// Dummy data for charts
-const salesData = [
-  { name: "Jan", sales: 4000 },
-  { name: "Feb", sales: 3000 },
-  { name: "Mar", sales: 5000 },
-  { name: "Apr", sales: 4500 },
-  { name: "May", sales: 6000 },
-  { name: "Jun", sales: 5500 },
-]
-
-const userActivityData = [
-  { name: "Mon", active: 3000 },
-  { name: "Tue", active: 3500 },
-  { name: "Wed", active: 4000 },
-  { name: "Thu", active: 3800 },
-  { name: "Fri", active: 4200 },
-  { name: "Sat", active: 3700 },
-  { name: "Sun", active: 3500 },
-]
-
-const productData = [
-  { name: "Product A", value: 400 },
-  { name: "Product B", value: 300 },
-  { name: "Product C", value: 300 },
-  { name: "Product D", value: 200 },
-]
-
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"]
-
+// Dummy data for recent orders
 const recentOrders = [
   { id: 1, customer: "John Doe", total: 125.99, status: "Completed" },
   { id: 2, customer: "Jane Smith", total: 89.99, status: "Processing" },
@@ -95,11 +52,6 @@ export default function DashboardPage() {
       setIsLoading(false)
     }
   }, [router])
-
-  const handleChartClick = (data: any, index: number) => {
-    console.log("Chart item clicked:", data, index)
-    // Implement your logic here, e.g., open a modal with detailed information
-  }
 
   if (isLoading) {
     return <LoadingSkeleton />
@@ -269,7 +221,9 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-2">
+              {" "}
+              {/* Updated grid layout */}
               {/* Card for Total Revenue */}
               <motion.div
                 initial={{ opacity: 0, y: 50 }}
@@ -300,7 +254,6 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </motion.div>
-
               {/* Card for Total Users */}
               <motion.div
                 initial={{ opacity: 0, y: 50 }}
@@ -331,7 +284,6 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </motion.div>
-
               {/* Card for Total Orders */}
               <motion.div
                 initial={{ opacity: 0, y: 50 }}
@@ -363,89 +315,6 @@ export default function DashboardPage() {
                 </div>
               </motion.div>
             </div>
-
-            <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2">
-              {/* Sales Chart */}
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg"
-              >
-                <div className="p-5">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">Sales Overview</h3>
-                  <div className="mt-2 h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={salesData} onClick={handleChartClick}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="sales" fill="#8884d8" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* User Activity Chart */}
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg"
-              >
-                <div className="p-5">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">User Activity</h3>
-                  <div className="mt-2 h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={userActivityData} onClick={handleChartClick}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Line type="monotone" dataKey="active" stroke="#8884d8" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Product Distribution Chart */}
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-              className="mt-8 bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg"
-            >
-              <div className="p-5">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">Product Distribution</h3>
-                <div className="mt-2 h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart onClick={handleChartClick}>
-                      <Pie
-                        data={productData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {productData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </motion.div>
 
             {/* Recent Orders Table */}
             <motion.div
@@ -647,4 +516,3 @@ function LoadingSkeleton() {
     </div>
   )
 }
-
