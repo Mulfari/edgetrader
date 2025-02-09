@@ -1,3 +1,4 @@
+"use client"
 import { useState } from "react";
 import { useRouter } from "next/router"; // Corregido para importar correctamente desde 'next/router'
 import { Plus, Users } from "lucide-react";
