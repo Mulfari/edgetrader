@@ -1,38 +1,38 @@
-"use client"; // Esta línea marca el archivo para ser ejecutado en el cliente
-
-import { useState } from 'react';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setMessage("");
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (response.ok) {
-        setMessage('Login successful! Redirecting...');
-        sessionStorage.setItem('token', data.access_token); // Guardar token en sessionStorage
-        setTimeout(() => router.push('/'), 2000); // Redirigir a la página principal
+      if (res.ok) {
+        localStorage.setItem("token", data.access_token); // Guardar token en localStorage
+        setMessage("Login exitoso! Redirigiendo...");
+        setTimeout(() => router.push("/dashboard"), 2000); // Redirigir al dashboard
       } else {
-        setMessage(data.message || 'Error logging in.');
+        setMessage(data.message || "Credenciales incorrectas.");
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setMessage('Failed to connect to the server.');
+      console.error("Error en login:", error);
+      setMessage("Error de conexión con el servidor.");
     }
   };
 
@@ -49,41 +49,31 @@ export default function LoginPage() {
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address
               </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              />
             </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
+              <input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              />
             </div>
-
-            {message && (
-              <p className="mt-2 text-center text-sm text-gray-600">{message}</p>
-            )}
 
             <div>
               <button
@@ -93,11 +83,13 @@ export default function LoginPage() {
                 Log in
               </button>
             </div>
+
+            {message && <p className="mt-2 text-center text-sm text-gray-600">{message}</p>}
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don&apos;t have an account?&nbsp;
+              Don't have an account?&nbsp;
               <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
                 Sign up
               </Link>
@@ -107,10 +99,7 @@ export default function LoginPage() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <Link
-          href="/"
-          className="flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-900"
-        >
+        <Link href="/" className="flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-900">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to home
         </Link>
