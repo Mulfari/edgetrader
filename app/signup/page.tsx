@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Eye, EyeOff, AlertCircle, Loader2, Github, Twitter } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function SignUpPage() {
