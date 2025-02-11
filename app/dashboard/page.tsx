@@ -4,14 +4,52 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/ThemeToggle"
-import { Bell, User, Search, ChevronLeft, ChevronRight, LogOut, Wallet, CreditCard, Briefcase } from "lucide-react"
+import {
+  Bell,
+  User,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  Wallet,
+  CreditCard,
+  Briefcase,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react"
 import { Sidebar } from "@/components/Sidebar"
 
 // Ejemplo de datos de cuentas
 const accounts = [
-  { id: 1, name: "Cuenta Principal", balance: 5750.0, icon: Wallet, color: "text-blue-500" },
-  { id: 2, name: "Cuenta de Ahorros", balance: 12000.5, icon: Briefcase, color: "text-green-500" },
-  { id: 3, name: "Tarjeta de Crédito", balance: -1500.75, icon: CreditCard, color: "text-red-500" },
+  { id: 1, name: "Cuenta Principal", balance: 5750.0, icon: Wallet, color: "text-blue-500", trend: "up", change: 2.5 },
+  {
+    id: 2,
+    name: "Cuenta de Ahorros",
+    balance: 12000.5,
+    icon: Briefcase,
+    color: "text-green-500",
+    trend: "up",
+    change: 1.8,
+  },
+  {
+    id: 3,
+    name: "Tarjeta de Crédito",
+    balance: -1500.75,
+    icon: CreditCard,
+    color: "text-red-500",
+    trend: "down",
+    change: 0.5,
+  },
+  {
+    id: 4,
+    name: "Inversiones",
+    balance: 8500.25,
+    icon: DollarSign,
+    color: "text-purple-500",
+    trend: "up",
+    change: 3.2,
+  },
 ]
 
 export default function DashboardPage() {
@@ -20,6 +58,7 @@ export default function DashboardPage() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [selectedAccount, setSelectedAccount] = useState<number | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -33,11 +72,11 @@ export default function DashboardPage() {
   }, [router])
 
   const handleLogout = () => {
-    // Remove the token from localStorage
     localStorage.removeItem("token")
-    // Redirect to login page
     router.push("/login")
   }
+
+  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0)
 
   if (isLoading) {
     return <LoadingSkeleton />
@@ -115,12 +154,27 @@ export default function DashboardPage() {
           <div className="container mx-auto px-6 py-8">
             <h3 className="text-gray-700 dark:text-gray-200 text-3xl font-medium mb-6">Dashboard</h3>
 
+            {/* Total Balance Section */}
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
+              <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Balance Total</h4>
+              <div className="flex items-center justify-between">
+                <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">${totalBalance.toFixed(2)}</p>
+                <button className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                  Ver Detalles
+                </button>
+              </div>
+            </div>
+
             {/* Balances Section */}
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
-              <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Balances</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Balances por Cuenta</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {accounts.map((account) => (
-                  <div key={account.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  <div
+                    key={account.id}
+                    className={`bg-gray-50 dark:bg-gray-700 rounded-lg p-4 cursor-pointer transition duration-300 ease-in-out transform hover:scale-105 ${selectedAccount === account.id ? "ring-2 ring-indigo-500" : ""}`}
+                    onClick={() => setSelectedAccount(account.id)}
+                  >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center">
                         <account.icon className={`h-8 w-8 ${account.color} mr-3`} />
@@ -133,16 +187,35 @@ export default function DashboardPage() {
                           </p>
                         </div>
                       </div>
+                      {account.trend === "up" ? (
+                        <TrendingUp className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <TrendingDown className="h-5 w-5 text-red-500" />
+                      )}
                     </div>
-                    <button className="w-full px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
-                      View Details
-                    </button>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {account.trend === "up" ? "+" : "-"}
+                      {account.change}% desde el mes pasado
+                    </p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <h3 className="text-gray-700 dark:text-gray-200 text-3xl font-medium mb-6">Accounts</h3>
+            {/* Account Details Section */}
+            {selectedAccount !== null && (
+              <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
+                <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                  Detalles de {accounts.find((a) => a.id === selectedAccount)?.name}
+                </h4>
+                {/* Aquí puedes agregar más detalles sobre la cuenta seleccionada */}
+                <p className="text-gray-600 dark:text-gray-300">
+                  Más información y gráficos sobre la cuenta seleccionada irían aquí.
+                </p>
+              </div>
+            )}
+
+            <h3 className="text-gray-700 dark:text-gray-200 text-3xl font-medium mb-6">Cuentas</h3>
             {/* Add your Accounts content here */}
           </div>
         </main>
@@ -155,7 +228,7 @@ function LoadingSkeleton() {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col justify-center items-center">
       <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin dark:border-violet-400"></div>
-      <p className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-300">Loading...</p>
+      <p className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-300">Cargando...</p>
     </div>
   )
 }
