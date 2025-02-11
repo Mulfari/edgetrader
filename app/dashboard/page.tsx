@@ -4,8 +4,15 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/ThemeToggle"
-import { Bell, User, Search, ChevronLeft, ChevronRight, LogOut, Wallet } from "lucide-react"
+import { Bell, User, Search, ChevronLeft, ChevronRight, LogOut, Wallet, CreditCard, Briefcase } from "lucide-react"
 import { Sidebar } from "@/components/Sidebar"
+
+// Ejemplo de datos de cuentas
+const accounts = [
+  { id: 1, name: "Cuenta Principal", balance: 5750.0, icon: Wallet, color: "text-blue-500" },
+  { id: 2, name: "Cuenta de Ahorros", balance: 12000.5, icon: Briefcase, color: "text-green-500" },
+  { id: 3, name: "Tarjeta de Crédito", balance: -1500.75, icon: CreditCard, color: "text-red-500" },
+]
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -111,17 +118,27 @@ export default function DashboardPage() {
             {/* Balances Section */}
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
               <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Balances</h4>
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex items-center">
-                  <Wallet className="h-8 w-8 text-indigo-500 mr-3" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Main Account</p>
-                    <p className="text-lg font-semibold text-gray-800 dark:text-gray-100">$5,750.00</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {accounts.map((account) => (
+                  <div key={account.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center">
+                        <account.icon className={`h-8 w-8 ${account.color} mr-3`} />
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{account.name}</p>
+                          <p
+                            className={`text-lg font-semibold ${account.balance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+                          >
+                            ${Math.abs(account.balance).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <button className="w-full px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                      View Details
+                    </button>
                   </div>
-                </div>
-                <button className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                  View Details
-                </button>
+                ))}
               </div>
             </div>
 
