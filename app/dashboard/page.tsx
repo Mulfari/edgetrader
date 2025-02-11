@@ -1,55 +1,47 @@
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import Link from "next/link";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { Bell, User, Search, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
-import { Sidebar } from "@/components/Sidebar";
+"use client"
+
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { ThemeToggle } from "@/components/ThemeToggle"
+import { Bell, User, Search, ChevronLeft, ChevronRight, LogOut, DollarSign } from "lucide-react"
+import { Sidebar } from "@/components/Sidebar"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function DashboardPage() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [subaccounts, setSubaccounts] = useState([]);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
+  const router = useRouter()
+  const { toast } = useToast()
 
   useEffect(() => {
     // Check if user is authenticated
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token")
     if (!token) {
-      router.push("/login");
+      router.push("/login")
     } else {
-      fetchSubaccounts();
+      setIsLoading(false)
     }
-  }, [router]);
-
-  const fetchSubaccounts = async () => {
-    const token = localStorage.getItem("token");
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    try {
-      const response = await fetch(`${API_URL}/subaccounts`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch subaccounts');
-      const data = await response.json();
-      setSubaccounts(data);
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error fetching subaccounts:", error);
-      setIsLoading(false);
-    }
-  };
+  }, [router])
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/login");
-  };
+    // Remove the token from localStorage
+    localStorage.removeItem("token")
+    // Redirect to login page
+    router.push("/login")
+  }
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Implement search functionality here
+    console.log("Searching for:", searchTerm)
+  }
 
   if (isLoading) {
-    return <div>Loading...</div>; // Implement a proper loading component
+    return <LoadingSkeleton />
   }
 
   return (
@@ -72,12 +64,27 @@ export default function DashboardPage() {
                 </Link>
               </div>
               <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      className="w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-full py-2 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <div className="absolute left-3 top-2.5">
+                      <Search className="h-5 w-5 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
                 <ThemeToggle />
                 <button
                   className="ml-4 p-2 text-gray-400 hover:text-gray-500 relative"
                   onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                 >
                   <Bell className="h-6 w-6" />
+                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white" />
                 </button>
                 <div className="ml-4 relative flex-shrink-0">
                   <button
@@ -107,16 +114,48 @@ export default function DashboardPage() {
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900">
           <div className="container mx-auto px-6 py-8">
-            <h3 className="text-gray-700 dark:text-gray-200 text-3xl font-medium">Accounts</h3>
-            <ul>
-              {subaccounts.map((account) => (
-                <li key={account.id}>{account.name}</li>
-              ))}
-            </ul>
-            {/* Add more content here */}
+            <h3 className="text-gray-700 dark:text-gray-200 text-3xl font-medium mb-6">Dashboard</h3>
+            <Balances />
+            <h3 className="text-gray-700 dark:text-gray-200 text-2xl font-medium mt-8 mb-4">Accounts</h3>
+            {/* Add your Accounts content here */}
           </div>
         </main>
       </div>
     </div>
-  );
+  )
 }
+
+function Balances() {
+  const balances = [
+    { name: "Total Balance", amount: "$10,250.00", icon: DollarSign },
+    { name: "Savings", amount: "$5,000.00", icon: DollarSign },
+    { name: "Checking", amount: "$3,250.00", icon: DollarSign },
+    { name: "Investments", amount: "$2,000.00", icon: DollarSign },
+  ]
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {balances.map((balance) => (
+        <div key={balance.name} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <div className="flex items-center">
+            <balance.icon className="h-8 w-8 text-indigo-500 mr-3" />
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{balance.name}</p>
+              <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">{balance.amount}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col justify-center items-center">
+      <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin dark:border-violet-400"></div>
+      <p className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-300">Loading...</p>
+    </div>
+  )
+}
+
