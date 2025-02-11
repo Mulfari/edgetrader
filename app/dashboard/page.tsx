@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/ThemeToggle"
-import { Bell, User, Search, ChevronLeft, ChevronRight } from "lucide-react"
+import { Bell, User, Search, ChevronLeft, ChevronRight, LogOut } from "lucide-react"
 import { Sidebar } from "@/components/Sidebar"
 
 export default function DashboardPage() {
@@ -24,6 +24,13 @@ export default function DashboardPage() {
       setIsLoading(false)
     }
   }, [router])
+
+  const handleLogout = () => {
+    // Remove the token from localStorage
+    localStorage.removeItem("token")
+    // Redirect to login page
+    router.push("/login")
+  }
 
   if (isLoading) {
     return <LoadingSkeleton />
@@ -79,8 +86,18 @@ export default function DashboardPage() {
                     <span className="sr-only">Open user menu</span>
                     <User className="h-8 w-8 rounded-full" />
                   </button>
-                  {/* User menu dropdown */}
-                  {/* ... (keep the existing user menu code) ... */}
+                  {isUserMenuOpen && (
+                    <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <LogOut className="inline-block h-5 w-5 mr-2" />
+                        Logout
+                      </button>
+                      {/* Add other user menu items here */}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
