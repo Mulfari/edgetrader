@@ -1,39 +1,55 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { ThemeToggle } from "@/components/ThemeToggle"
-import { Bell, User, Search, ChevronLeft, ChevronRight, LogOut } from "lucide-react"
-import { Sidebar } from "@/components/Sidebar"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import Link from "next/link";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Bell, User, Search, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { Sidebar } from "@/components/Sidebar";
 
 export default function DashboardPage() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true);
+  const [subaccounts, setSubaccounts] = useState([]);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     // Check if user is authenticated
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("token");
     if (!token) {
-      router.push("/login")
+      router.push("/login");
     } else {
-      setIsLoading(false)
+      fetchSubaccounts();
     }
-  }, [router])
+  }, [router]);
+
+  const fetchSubaccounts = async () => {
+    const token = localStorage.getItem("token");
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+    try {
+      const response = await fetch(`${API_URL}/subaccounts`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch subaccounts');
+      const data = await response.json();
+      setSubaccounts(data);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching subaccounts:", error);
+      setIsLoading(false);
+    }
+  };
 
   const handleLogout = () => {
-    // Remove the token from localStorage
-    localStorage.removeItem("token")
-    // Redirect to login page
-    router.push("/login")
-  }
+    localStorage.removeItem("token");
+    router.push("/login");
+  };
 
   if (isLoading) {
-    return <LoadingSkeleton />
+    return <div>Loading...</div>; // Implement a proper loading component
   }
 
   return (
@@ -56,27 +72,12 @@ export default function DashboardPage() {
                 </Link>
               </div>
               <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      className="w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-full py-2 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <div className="absolute left-3 top-2.5">
-                      <Search className="h-5 w-5 text-gray-400" />
-                    </div>
-                  </div>
-                </div>
                 <ThemeToggle />
                 <button
                   className="ml-4 p-2 text-gray-400 hover:text-gray-500 relative"
                   onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                 >
                   <Bell className="h-6 w-6" />
-                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white" />
                 </button>
                 <div className="ml-4 relative flex-shrink-0">
                   <button
@@ -107,20 +108,15 @@ export default function DashboardPage() {
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900">
           <div className="container mx-auto px-6 py-8">
             <h3 className="text-gray-700 dark:text-gray-200 text-3xl font-medium">Accounts</h3>
-            {/* Add your Accounts content here */}
+            <ul>
+              {subaccounts.map((account) => (
+                <li key={account.id}>{account.name}</li>
+              ))}
+            </ul>
+            {/* Add more content here */}
           </div>
         </main>
       </div>
     </div>
-  )
+  );
 }
-
-function LoadingSkeleton() {
-  return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col justify-center items-center">
-      <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin dark:border-violet-400"></div>
-      <p className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-300">Loading...</p>
-    </div>
-  )
-}
-
