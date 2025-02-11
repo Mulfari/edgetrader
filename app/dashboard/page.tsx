@@ -4,9 +4,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/ThemeToggle"
-import { Bell, User, Search, ChevronLeft, ChevronRight, LogOut, DollarSign } from "lucide-react"
+import { Bell, User, Search, ChevronLeft, ChevronRight, LogOut, Wallet } from "lucide-react"
 import { Sidebar } from "@/components/Sidebar"
-import { useToast } from "@/components/ui/use-toast"
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -15,7 +14,6 @@ export default function DashboardPage() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const router = useRouter()
-  const { toast } = useToast()
 
   useEffect(() => {
     // Check if user is authenticated
@@ -32,12 +30,6 @@ export default function DashboardPage() {
     localStorage.removeItem("token")
     // Redirect to login page
     router.push("/login")
-  }
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Implement search functionality here
-    console.log("Searching for:", searchTerm)
   }
 
   if (isLoading) {
@@ -115,37 +107,29 @@ export default function DashboardPage() {
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900">
           <div className="container mx-auto px-6 py-8">
             <h3 className="text-gray-700 dark:text-gray-200 text-3xl font-medium mb-6">Dashboard</h3>
-            <Balances />
-            <h3 className="text-gray-700 dark:text-gray-200 text-2xl font-medium mt-8 mb-4">Accounts</h3>
+
+            {/* Balances Section */}
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
+              <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Balances</h4>
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex items-center">
+                  <Wallet className="h-8 w-8 text-indigo-500 mr-3" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Main Account</p>
+                    <p className="text-lg font-semibold text-gray-800 dark:text-gray-100">$5,750.00</p>
+                  </div>
+                </div>
+                <button className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                  View Details
+                </button>
+              </div>
+            </div>
+
+            <h3 className="text-gray-700 dark:text-gray-200 text-3xl font-medium mb-6">Accounts</h3>
             {/* Add your Accounts content here */}
           </div>
         </main>
       </div>
-    </div>
-  )
-}
-
-function Balances() {
-  const balances = [
-    { name: "Total Balance", amount: "$10,250.00", icon: DollarSign },
-    { name: "Savings", amount: "$5,000.00", icon: DollarSign },
-    { name: "Checking", amount: "$3,250.00", icon: DollarSign },
-    { name: "Investments", amount: "$2,000.00", icon: DollarSign },
-  ]
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {balances.map((balance) => (
-        <div key={balance.name} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <balance.icon className="h-8 w-8 text-indigo-500 mr-3" />
-            <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{balance.name}</p>
-              <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">{balance.amount}</p>
-            </div>
-          </div>
-        </div>
-      ))}
     </div>
   )
 }
