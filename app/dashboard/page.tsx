@@ -1,32 +1,34 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { ThemeToggle } from "@/components/ThemeToggle"
-import { Bell, User, Search, ChevronLeft, ChevronRight } from "lucide-react"
-import { Sidebar } from "@/components/Sidebar"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import Link from "next/link";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Bell, User, Search, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { Sidebar } from "@/components/Sidebar";
 
 export default function DashboardPage() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
-    // Check if user is authenticated
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("token");
     if (!token) {
-      router.push("/login")
+      router.push("/login");
     } else {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [router])
+  }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    router.push("/login");
+  };
 
   if (isLoading) {
-    return <LoadingSkeleton />
+    return <LoadingSkeleton />;
   }
 
   return (
@@ -71,17 +73,13 @@ export default function DashboardPage() {
                   <Bell className="h-6 w-6" />
                   <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white" />
                 </button>
-                <div className="ml-4 relative flex-shrink-0">
-                  <button
-                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="bg-white dark:bg-gray-800 rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    <span className="sr-only">Open user menu</span>
-                    <User className="h-8 w-8 rounded-full" />
-                  </button>
-                  {/* User menu dropdown */}
-                  {/* ... (keep the existing user menu code) ... */}
-                </div>
+                <button
+                  onClick={() => handleLogout()}
+                  className="ml-4 bg-gray-100 dark:bg-gray-800 p-2 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <LogOut className="h-6 w-6" />
+                  <span className="sr-only">Logout</span>
+                </button>
               </div>
             </div>
           </div>
@@ -95,7 +93,7 @@ export default function DashboardPage() {
         </main>
       </div>
     </div>
-  )
+  );
 }
 
 function LoadingSkeleton() {
@@ -104,6 +102,5 @@ function LoadingSkeleton() {
       <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin dark:border-violet-400"></div>
       <p className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-300">Loading...</p>
     </div>
-  )
+  );
 }
-
