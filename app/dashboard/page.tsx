@@ -28,28 +28,21 @@ export default function DashboardPage() {
       router.push("/login")
       return
     }
-
-    setIsLoading(true)
-    setError(null)
-
+  
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
       const res = await fetch(`${API_URL}/subaccounts`, {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       })
-
-      if (!res.ok) throw new Error("Error al obtener las subcuentas")
-
-      const data: SubAccount[] = await res.json()
-      setSubAccounts(data)
+  
+      const data = await res.json()
+      console.log("🔍 Respuesta de /subaccounts:", data) // 👈 Esto mostrará los datos en la consola del navegador
     } catch (error) {
-      console.error("Error al cargar subcuentas:", error)
-      setError("No se pudieron cargar las subcuentas.")
-    } finally {
-      setIsLoading(false)
+      console.error("Error obteniendo subcuentas:", error)
     }
   }, [router])
+  
 
   useEffect(() => {
     fetchSubAccounts()
