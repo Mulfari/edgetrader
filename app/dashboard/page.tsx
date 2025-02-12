@@ -114,13 +114,10 @@ export default function DashboardPage() {
                         <TrendingDown className="h-5 w-5 text-red-500" />
                       )}
                     </div>
-                    <p
-                      className={`text-xl font-bold ${
-                        sub.balance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-                      }`}
-                    >
-                      ${sub.balance.toFixed(2)}
-                    </p>
+                    <p className="text-xl font-bold">
+  ${sub.balance ? sub.balance.toFixed(2) : "0.00"}
+</p>
+
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {sub.trend === "up" ? "+" : "-"}
                       {sub.change}% desde el mes pasado
