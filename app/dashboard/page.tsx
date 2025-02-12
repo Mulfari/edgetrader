@@ -2,8 +2,14 @@
 
 import { useEffect, useState } from "react";
 
+interface Balance {
+  id: string;
+  name: string;
+  balance: string;
+}
+
 export default function DashboardPage() {
-  const [balances, setBalances] = useState<any[]>([]);
+  const [balances, setBalances] = useState<Balance[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -27,10 +33,10 @@ export default function DashboardPage() {
           throw new Error(`Error en la API: ${response.status} ${response.statusText}`);
         }
 
-        const data = await response.json();
+        const data: Balance[] = await response.json();
         setBalances(data);
-      } catch (err: any) {
-        setError(err.message || "Error desconocido");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error desconocido");
       }
     };
 
