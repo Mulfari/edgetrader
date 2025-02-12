@@ -2,23 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { Sidebar } from "@/components/Sidebar"
-import { Bell, User, ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from "lucide-react"
+import { Bell, User, ChevronLeft, ChevronRight } from "lucide-react"
 import { ThemeToggle } from "@/components/ThemeToggle"
-
-interface SubAccount {
-  id: string
-  name: string
-  balance: number
-  trend: "up" | "down"
-  change: number
-}
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
+  const [subAccounts, setSubAccounts] = useState<any[]>([]) // Temporalmente `any[]` hasta ver la estructura de la API
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
@@ -28,22 +19,30 @@ export default function DashboardPage() {
       router.push("/login")
       return
     }
-  
+
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
       const res = await fetch(`${API_URL}/subaccounts`, {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       })
-  
+
+      if (!res.ok) throw new Error("Error al obtener las subcuentas")
+
       const data = await res.json()
-      console.log("🔍 Respuesta de /subaccounts:", data) // 👈 Esto mostrará los datos en la consola del navegador
+      console.log("🔍 Respuesta de /subaccounts:", data) // 👀 Aquí vemos la estructura
+      setSubAccounts(data) // Guardamos las subcuentas en el estado
     } catch (error) {
       console.error("Error obteniendo subcuentas:", error)
+      setError("No se pudieron cargar las subcuentas.")
+    } finally {
+      setIsLoading(false)
     }
   }, [router])
-  
-  const totalBalance = subAccounts.reduce((sum, sub) => sum + sub.balance, 0)
+
+  useEffect(() => {
+    fetchSubAccounts()
+  }, [fetchSubAccounts])
 
   if (isLoading) return <LoadingSkeleton />
 
@@ -58,9 +57,7 @@ export default function DashboardPage() {
                 <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="p-2">
                   {isSidebarCollapsed ? <ChevronRight className="h-6 w-6" /> : <ChevronLeft className="h-6 w-6" />}
                 </button>
-                <Link href="/" className="ml-4 text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                  YourBrand
-                </Link>
+                <span className="ml-4 text-2xl font-bold text-indigo-600 dark:text-indigo-400">YourBrand</span>
               </div>
               <div className="flex items-center">
                 <ThemeToggle />
@@ -79,40 +76,12 @@ export default function DashboardPage() {
           <div className="container mx-auto px-6 py-8">
             <h3 className="text-gray-700 dark:text-gray-200 text-3xl font-medium mb-6">Dashboard</h3>
 
-            {/* 🔹 Total Balance */}
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
-              <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Balance Total</h4>
-              <div className="flex items-center justify-between">
-                <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">${totalBalance.toFixed(2)}</p>
-              </div>
-            </div>
+            {error && <p className="text-red-500">{error}</p>}
 
-            {/* 🔹 Subaccounts Section */}
+            {/* 🔍 Mostramos la respuesta de la API para analizarla */}
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
-              <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Subcuentas</h4>
-              {error && <p className="text-red-500">{error}</p>}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {subAccounts.map((sub) => (
-                  <div key={sub.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 shadow-md">
-                    <div className="flex justify-between items-center mb-2">
-                      <p className="text-lg font-medium text-gray-800 dark:text-gray-200">{sub.name}</p>
-                      {sub.trend === "up" ? (
-                        <TrendingUp className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <TrendingDown className="h-5 w-5 text-red-500" />
-                      )}
-                    </div>
-                    <p className="text-xl font-bold">
-  ${sub.balance ? sub.balance.toFixed(2) : "0.00"}
-</p>
-
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {sub.trend === "up" ? "+" : "-"}
-                      {sub.change}% desde el mes pasado
-                    </p>
-                  </div>
-                ))}
-              </div>
+              <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Datos de la API</h4>
+              <pre className="text-sm text-gray-600 dark:text-gray-300">{JSON.stringify(subAccounts, null, 2)}</pre>
             </div>
           </div>
         </main>
