@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Sidebar } from "@/components/Sidebar"
-import { Bell, User, Search, ChevronLeft, ChevronRight, LogOut, TrendingUp, TrendingDown } from "lucide-react"
+import { Bell, User, ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from "lucide-react"
 import { ThemeToggle } from "@/components/ThemeToggle"
 
 interface SubAccount {
