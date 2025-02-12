@@ -3,25 +3,17 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/Sidebar"
-import { Bell, User, ChevronLeft, ChevronRight } from "lucide-react"
+import { Bell, User, ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from "lucide-react"
 import { ThemeToggle } from "@/components/ThemeToggle"
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  interface SubAccount {
-    id: string
-    apiKey: string
-    apiSecret: string
-    name: string
-  }
-  
-  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
-   // Temporalmente `any[]` hasta ver la estructura de la API
+  const [subAccounts, setSubAccounts] = useState<any[]>([]) // Recibiremos los balances aquí
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  const fetchSubAccounts = useCallback(async () => {
+  const fetchSubAccountBalances = useCallback(async () => {
     const token = localStorage.getItem("token")
     if (!token) {
       router.push("/login")
@@ -30,27 +22,29 @@ export default function DashboardPage() {
 
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
-      const res = await fetch(`${API_URL}/subaccounts`, {
+      const res = await fetch(`${API_URL}/subaccounts/balances`, {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       })
 
-      if (!res.ok) throw new Error("Error al obtener las subcuentas")
+      if (!res.ok) throw new Error("Error al obtener los balances de subcuentas")
 
       const data = await res.json()
-      console.log("🔍 Respuesta de /subaccounts:", data) // 👀 Aquí vemos la estructura
-      setSubAccounts(data) // Guardamos las subcuentas en el estado
+      console.log("🔍 Balances obtenidos:", data)
+      setSubAccounts(data)
     } catch (error) {
-      console.error("Error obteniendo subcuentas:", error)
-      setError("No se pudieron cargar las subcuentas.")
+      console.error("Error obteniendo balances:", error)
+      setError("No se pudieron cargar los balances.")
     } finally {
       setIsLoading(false)
     }
   }, [router])
 
   useEffect(() => {
-    fetchSubAccounts()
-  }, [fetchSubAccounts])
+    fetchSubAccountBalances()
+  }, [fetchSubAccountBalances])
+
+  const totalBalance = subAccounts.reduce((sum, sub) => sum + (sub.balance || 0), 0)
 
   if (isLoading) return <LoadingSkeleton />
 
@@ -86,10 +80,36 @@ export default function DashboardPage() {
 
             {error && <p className="text-red-500">{error}</p>}
 
-            {/* 🔍 Mostramos la respuesta de la API para analizarla */}
+            {/* 🔹 Total Balance */}
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
-              <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Datos de la API</h4>
-              <pre className="text-sm text-gray-600 dark:text-gray-300">{JSON.stringify(subAccounts, null, 2)}</pre>
+              <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Balance Total</h4>
+              <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">${totalBalance.toFixed(2)}</p>
+            </div>
+
+            {/* 🔹 Subaccounts Section */}
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
+              <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Subcuentas</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {subAccounts.map((sub) => (
+                  <div key={sub.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 shadow-md">
+                    <div className="flex justify-between items-center mb-2">
+                      <p className="text-lg font-medium text-gray-800 dark:text-gray-200">{sub.name}</p>
+                      {sub.balance > 0 ? (
+                        <TrendingUp className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <TrendingDown className="h-5 w-5 text-red-500" />
+                      )}
+                    </div>
+                    <p
+                      className={`text-xl font-bold ${
+                        sub.balance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                      }`}
+                    >
+                      ${sub.balance.toFixed(2)}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </main>
