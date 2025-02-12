@@ -43,11 +43,6 @@ export default function DashboardPage() {
     }
   }, [router])
   
-
-  useEffect(() => {
-    fetchSubAccounts()
-  }, [fetchSubAccounts])
-
   const totalBalance = subAccounts.reduce((sum, sub) => sum + sub.balance, 0)
 
   if (isLoading) return <LoadingSkeleton />
