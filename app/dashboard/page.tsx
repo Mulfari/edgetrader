@@ -6,17 +6,16 @@ import { Sidebar } from "@/components/Sidebar"
 import { Bell, User, ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from "lucide-react"
 import { ThemeToggle } from "@/components/ThemeToggle"
 
+interface SubAccount {
+  id: string
+  name: string
+  balance: number | null
+}
+
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  interface SubAccount {
-    id: string
-    name: string
-    balance: number
-  }
-  
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
-  
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
@@ -37,7 +36,7 @@ export default function DashboardPage() {
       if (!res.ok) throw new Error("Error al obtener los balances de subcuentas")
 
       const data = await res.json()
-      console.log("🔍 Balances obtenidos:", data)
+      console.log("🔍 Balances obtenidos:", data) // 👀 Verificamos qué devuelve el backend
       setSubAccounts(data)
     } catch (error) {
       console.error("Error obteniendo balances:", error)
@@ -51,7 +50,7 @@ export default function DashboardPage() {
     fetchSubAccountBalances()
   }, [fetchSubAccountBalances])
 
-  const totalBalance = subAccounts.reduce((sum, sub) => sum + (sub.balance || 0), 0)
+  const totalBalance = subAccounts.reduce((sum, sub) => sum + Number(sub.balance || 0), 0)
 
   if (isLoading) return <LoadingSkeleton />
 
@@ -101,7 +100,7 @@ export default function DashboardPage() {
                   <div key={sub.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 shadow-md">
                     <div className="flex justify-between items-center mb-2">
                       <p className="text-lg font-medium text-gray-800 dark:text-gray-200">{sub.name}</p>
-                      {sub.balance > 0 ? (
+                      {sub.balance && sub.balance > 0 ? (
                         <TrendingUp className="h-5 w-5 text-green-500" />
                       ) : (
                         <TrendingDown className="h-5 w-5 text-red-500" />
@@ -109,10 +108,10 @@ export default function DashboardPage() {
                     </div>
                     <p
                       className={`text-xl font-bold ${
-                        sub.balance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                        sub.balance && sub.balance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
                       }`}
                     >
-                      ${sub.balance.toFixed(2)}
+                      ${Number(sub.balance || 0).toFixed(2)}
                     </p>
                   </div>
                 ))}
