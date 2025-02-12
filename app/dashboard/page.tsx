@@ -9,7 +9,15 @@ import { ThemeToggle } from "@/components/ThemeToggle"
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [subAccounts, setSubAccounts] = useState<any[]>([]) // Temporalmente `any[]` hasta ver la estructura de la API
+  interface SubAccount {
+    id: string
+    apiKey: string
+    apiSecret: string
+    name: string
+  }
+  
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
+   // Temporalmente `any[]` hasta ver la estructura de la API
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
