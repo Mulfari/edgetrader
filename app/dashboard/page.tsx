@@ -1,96 +1,133 @@
 "use client";
 
-import { useState } from "react";
-import crypto from "crypto";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { Sidebar } from "@/components/Sidebar";
+import { Bell, User, ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+
+interface SubAccount {
+  id: string;
+  name: string;
+  balance: number | null;
+}
 
 export default function DashboardPage() {
-  const [apiKey, setApiKey] = useState("");
-  const [apiSecret, setApiSecret] = useState("");
-  const [balance, setBalance] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  const generateSignature = (params: string, timestamp: string) => {
-    const recvWindow = "5000"; // Ventana de recepción
-    const queryString = `${timestamp}${apiKey}${recvWindow}${params}`;
-    return crypto.createHmac("sha256", apiSecret).update(queryString).digest("hex");
-  };
-
-  const fetchBalance = async () => {
-    if (!apiKey || !apiSecret) {
+  const fetchSubAccounts = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
-    const TIMESTAMP = Date.now().toString();
-    const PARAMS = "accountType=UNIFIED";
-    const SIGNATURE = generateSignature(PARAMS, TIMESTAMP);
-
-    const url = `https://api-testnet.bybit.com/v5/account/wallet-balance?${PARAMS}`;
-
     try {
-      const response = await fetch(url, {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+      const res = await fetch(`${API_URL}/subaccounts`, {
         method: "GET",
-        headers: {
-          "X-BAPI-API-KEY": apiKey,
-          "X-BAPI-TIMESTAMP": TIMESTAMP,
-          "X-BAPI-RECV-WINDOW": "5000",
-          "X-BAPI-SIGN": SIGNATURE,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      const data = await response.json();
-      console.log("📌 Respuesta de Bybit:", data);
+      if (!res.ok) throw new Error("Error al obtener las subcuentas");
 
-      if (data.retCode === 0) {
-        setBalance(data.result.list[0]?.totalWalletBalance || "0.00");
-      } else {
-      }
-    } catch (err) {
-      console.error("❌ Error al obtener balance:", err);
+      const data = await res.json();
+      console.log("🔍 Subcuentas obtenidas:", data); // 👀 Verificamos qué devuelve el backend
+      setSubAccounts(data);
+    } catch (error) {
+      console.error("Error obteniendo subcuentas:", error);
+      setError("No se pudieron cargar las subcuentas.");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    fetchSubAccounts();
+  }, [fetchSubAccounts]);
+
+  if (isLoading) return <LoadingSkeleton />;
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">Consultar Balance en Bybit</h1>
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
+      <Sidebar isCollapsed={isSidebarCollapsed} />
+      <div className="flex-1 flex flex-col">
+        <nav className="bg-white dark:bg-gray-800 shadow-sm w-full z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16">
+              <div className="flex items-center">
+                <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="p-2">
+                  {isSidebarCollapsed ? <ChevronRight className="h-6 w-6" /> : <ChevronLeft className="h-6 w-6" />}
+                </button>
+                <span className="ml-4 text-2xl font-bold text-indigo-600 dark:text-indigo-400">YourBrand</span>
+              </div>
+              <div className="flex items-center">
+                <ThemeToggle />
+                <button className="ml-4 p-2 text-gray-400 hover:text-gray-500">
+                  <Bell className="h-6 w-6" />
+                </button>
+                <button className="ml-4 p-2 text-gray-400 hover:text-gray-500">
+                  <User className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </nav>
 
-      <div className="mt-4">
-        <label className="block text-sm font-medium">API Key:</label>
-        <input
-          type="text"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          className="w-full px-4 py-2 border rounded mt-1"
-          placeholder="Ingresa tu API Key"
-        />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900">
+          <div className="container mx-auto px-6 py-8">
+            <h3 className="text-gray-700 dark:text-gray-200 text-3xl font-medium mb-6">Dashboard</h3>
+
+            {error && <p className="text-red-500">{error}</p>}
+
+            {/* 🔹 Subaccounts Section */}
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
+              <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Tus Subcuentas</h4>
+              
+              {subAccounts.length === 0 ? (
+                <p className="text-gray-600 dark:text-gray-300">No tienes subcuentas registradas.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {subAccounts.map((sub) => (
+                    <div key={sub.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 shadow-md hover:scale-105 transition-transform">
+                      <div className="flex justify-between items-center mb-3">
+                        <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">{sub.name}</p>
+                        {sub.balance !== null && sub.balance > 0 ? (
+                          <TrendingUp className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <TrendingDown className="h-5 w-5 text-red-500" />
+                        )}
+                      </div>
+                      <p
+                        className={`text-2xl font-bold ${
+                          sub.balance !== null && sub.balance >= 0
+                            ? "text-green-600 dark:text-green-400"
+                            : "text-red-600 dark:text-red-400"
+                        }`}
+                      >
+                        {sub.balance !== null ? `$${Number(sub.balance).toFixed(2)}` : "Balance no disponible"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
       </div>
+    </div>
+  );
+}
 
-      <div className="mt-4">
-        <label className="block text-sm font-medium">API Secret:</label>
-        <input
-          type="password"
-          value={apiSecret}
-          onChange={(e) => setApiSecret(e.target.value)}
-          className="w-full px-4 py-2 border rounded mt-1"
-          placeholder="Ingresa tu API Secret"
-        />
-      </div>
-
-      <button
-        onClick={fetchBalance}
-        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-        disabled={loading}
-      >
-        {loading ? "Consultando..." : "Obtener Balance"}
-      </button>
-
-      {balance !== null && <p className="mt-4">Balance: ${balance}</p>}
-      {error && <p className="mt-4 text-red-500">{error}</p>}
+function LoadingSkeleton() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+      <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin dark:border-indigo-400"></div>
+      <p className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-300">Cargando...</p>
     </div>
   );
 }
