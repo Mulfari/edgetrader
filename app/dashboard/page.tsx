@@ -93,11 +93,13 @@ export default function DashboardPage() {
       if (!bybitRes.ok) throw new Error("Error obteniendo balance de Bybit")
 
       const bybitData = await bybitRes.json()
-      const totalBalance = bybitData.result.list[0]?.totalWalletBalance || "0.00"
+
+      // 🔹 Verificación de datos antes de acceder a `list[0]`
+      const balance = bybitData?.result?.list?.[0]?.totalWalletBalance || "0.00"
 
       // 🔹 Actualizar el balance en la UI
       setSubAccounts((prev) =>
-        prev.map((sub) => (sub.id === subAccountId ? { ...sub, balance: totalBalance } : sub))
+        prev.map((sub) => (sub.id === subAccountId ? { ...sub, balance } : sub))
       )
     } catch (error) {
       console.error("Error obteniendo balance:", error)
