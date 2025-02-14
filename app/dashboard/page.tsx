@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import crypto from 'crypto'
 import { Sidebar } from '@/components/Sidebar'
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
 interface SubAccount {
