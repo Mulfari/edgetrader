@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/Sidebar"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, LogOut, Eye, EyeOff } from "lucide-react"
 import { ThemeToggle } from "@/components/ThemeToggle"
 
 interface SubAccount {
@@ -22,7 +22,7 @@ export default function DashboardPage() {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
-  // ✅ Obtener subcuentas del backend
+  // ✅ Obtener subcuentas
   const fetchSubAccounts = useCallback(async () => {
     const token = localStorage.getItem("token")
     if (!token) {
@@ -109,31 +109,72 @@ export default function DashboardPage() {
     }
   }
 
-  if (isLoading) return <p>Cargando...</p>
+  const handleLogout = () => {
+    localStorage.removeItem("token")
+    router.push("/login")
+  }
+
+  if (isLoading) return <LoadingSkeleton />
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
       <Sidebar isCollapsed={isSidebarCollapsed} />
       <div className="flex-1 flex flex-col">
-        <header className="flex justify-between p-4 bg-white dark:bg-gray-800 shadow">
-          <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}>
-            {isSidebarCollapsed ? <ChevronRight /> : <ChevronLeft />}
+        {/* 🔹 Navbar */}
+        <header className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow">
+          <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="text-gray-600 dark:text-gray-400">
+            {isSidebarCollapsed ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
           </button>
-          <ThemeToggle />
+          <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">Dashboard</h1>
+          <div className="flex items-center space-x-4">
+            <ThemeToggle />
+            <button onClick={handleLogout} className="text-gray-600 dark:text-gray-400 hover:text-red-500">
+              <LogOut size={24} />
+            </button>
+          </div>
         </header>
+
+        {/* 🔹 Contenido principal */}
         <main className="p-6">
-          <h2 className="text-2xl font-bold">Subcuentas</h2>
-          {subAccounts.map((sub) => (
-            <div key={sub.id} className="p-4 bg-white dark:bg-gray-800 rounded shadow my-2">
-              <p>{sub.name}</p>
-              <p>
-                Balance: {loadingBalances[sub.id] ? "Cargando..." : sub.balance ?? "Oculto"}
-              </p>
-              <button onClick={() => fetchBalance(sub.id)}>Mostrar balance</button>
-            </div>
-          ))}
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Subcuentas</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+            {subAccounts.map((sub) => (
+              <div key={sub.id} className="p-5 bg-white dark:bg-gray-800 rounded-lg shadow-md flex flex-col items-center">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{sub.name}</h3>
+                <p className="text-gray-500 dark:text-gray-400">{sub.exchange.toUpperCase()}</p>
+
+                <div className="mt-4">
+                  {loadingBalances[sub.id] ? (
+                    <p className="text-blue-500">Cargando...</p>
+                  ) : (
+                    <p className="text-xl font-semibold text-indigo-600 dark:text-indigo-400">
+                      {sub.balance !== undefined ? `$${sub.balance}` : "Balance oculto"}
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => fetchBalance(sub.id)}
+                  className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center"
+                >
+                  {sub.balance !== undefined ? <EyeOff size={18} className="mr-2" /> : <Eye size={18} className="mr-2" />}
+                  {sub.balance !== undefined ? "Ocultar Balance" : "Mostrar Balance"}
+                </button>
+              </div>
+            ))}
+          </div>
         </main>
       </div>
+    </div>
+  )
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+      <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin dark:border-indigo-400"></div>
+      <p className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-300">Cargando...</p>
     </div>
   )
 }
