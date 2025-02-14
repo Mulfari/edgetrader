@@ -18,7 +18,6 @@ export default function DashboardPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
   const [loadingBalances, setLoadingBalances] = useState<{ [key: string]: boolean }>({})
-  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
@@ -43,11 +42,10 @@ export default function DashboardPage() {
       setSubAccounts(data)
     } catch (error) {
       console.error("Error obteniendo subcuentas:", error)
-      setError("No se pudieron cargar las subcuentas.")
     } finally {
       setIsLoading(false)
     }
-  }, [router])
+  }, [router, API_URL])
 
   useEffect(() => {
     fetchSubAccounts()
