@@ -1,133 +1,137 @@
-"use client";
+'use client'
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { Sidebar } from "@/components/Sidebar";
-import { Bell, User, ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { useState, useEffect } from 'react'
+import crypto from 'crypto'
 
 interface SubAccount {
-  id: string;
-  name: string;
-  balance: number | null;
+  id: string
+  name: string
+  exchange: string
 }
 
 export default function DashboardPage() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-
-  const fetchSubAccounts = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-      const res = await fetch(`${API_URL}/subaccounts`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error("Error al obtener las subcuentas");
-
-      const data = await res.json();
-      console.log("🔍 Subcuentas obtenidas:", data); // 👀 Verificamos qué devuelve el backend
-      setSubAccounts(data);
-    } catch (error) {
-      console.error("Error obteniendo subcuentas:", error);
-      setError("No se pudieron cargar las subcuentas.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [router]);
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
+  const [apiKey, setApiKey] = useState('')
+  const [apiSecret, setApiSecret] = useState('')
+  const [balance, setBalance] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    fetchSubAccounts();
-  }, [fetchSubAccounts]);
+    const fetchSubAccounts = async () => {
+      const token = localStorage.getItem('token')
+      if (!token) return
 
-  if (isLoading) return <LoadingSkeleton />;
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subaccounts`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const data = await res.json()
+        setSubAccounts(data)
+      } catch (error) {
+        console.error('Error obteniendo subcuentas:', error)
+      }
+    }
+
+    fetchSubAccounts()
+  }, [])
+
+  const fetchBalance = async () => {
+    if (!apiKey || !apiSecret) {
+      alert('Por favor ingresa la API Key y Secret Key')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const baseUrl = 'https://api-testnet.bybit.com'
+      const endpoint = '/v5/account/wallet-balance'
+      const params = 'accountType=UNIFIED'
+      const timestamp = Date.now().toString()
+      const recvWindow = '5000'
+
+      // 🔹 Generar firma HMAC SHA256
+      const signature = crypto
+        .createHmac('sha256', apiSecret)
+        .update(timestamp + apiKey + recvWindow + params)
+        .digest('hex')
+
+      const res = await fetch(`${baseUrl}${endpoint}?${params}`, {
+        method: 'GET',
+        headers: {
+          'X-BAPI-API-KEY': apiKey,
+          'X-BAPI-TIMESTAMP': timestamp,
+          'X-BAPI-RECV-WINDOW': recvWindow,
+          'X-BAPI-SIGN': signature,
+        },
+      })
+
+      const data = await res.json()
+      if (data.retCode !== 0) throw new Error(`Error en la API: ${data.retMsg}`)
+
+      const totalBalance = data.result.list[0]?.totalWalletBalance || '0.00'
+      setBalance(totalBalance)
+    } catch (error) {
+      console.error('❌ Error obteniendo balance:', error)
+      setBalance(null)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
-      <Sidebar isCollapsed={isSidebarCollapsed} />
-      <div className="flex-1 flex flex-col">
-        <nav className="bg-white dark:bg-gray-800 shadow-sm w-full z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
-              <div className="flex items-center">
-                <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="p-2">
-                  {isSidebarCollapsed ? <ChevronRight className="h-6 w-6" /> : <ChevronLeft className="h-6 w-6" />}
-                </button>
-                <span className="ml-4 text-2xl font-bold text-indigo-600 dark:text-indigo-400">YourBrand</span>
-              </div>
-              <div className="flex items-center">
-                <ThemeToggle />
-                <button className="ml-4 p-2 text-gray-400 hover:text-gray-500">
-                  <Bell className="h-6 w-6" />
-                </button>
-                <button className="ml-4 p-2 text-gray-400 hover:text-gray-500">
-                  <User className="h-6 w-6" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </nav>
+    <div className="p-6">
+      <h1 className="text-3xl font-bold">Dashboard</h1>
 
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900">
-          <div className="container mx-auto px-6 py-8">
-            <h3 className="text-gray-700 dark:text-gray-200 text-3xl font-medium mb-6">Dashboard</h3>
+      {/* 🔹 Formulario para ingresar las API Keys */}
+      <div className="mt-6 p-4 bg-white shadow rounded">
+        <h2 className="text-xl font-semibold">Obtener Balance</h2>
 
-            {error && <p className="text-red-500">{error}</p>}
+        <input
+          type="text"
+          placeholder="API Key"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          className="w-full p-2 border rounded mb-3"
+        />
+        <input
+          type="password"
+          placeholder="Secret Key"
+          value={apiSecret}
+          onChange={(e) => setApiSecret(e.target.value)}
+          className="w-full p-2 border rounded mb-3"
+        />
 
-            {/* 🔹 Subaccounts Section */}
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
-              <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Tus Subcuentas</h4>
-              
-              {subAccounts.length === 0 ? (
-                <p className="text-gray-600 dark:text-gray-300">No tienes subcuentas registradas.</p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {subAccounts.map((sub) => (
-                    <div key={sub.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 shadow-md hover:scale-105 transition-transform">
-                      <div className="flex justify-between items-center mb-3">
-                        <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">{sub.name}</p>
-                        {sub.balance !== null && sub.balance > 0 ? (
-                          <TrendingUp className="h-5 w-5 text-green-500" />
-                        ) : (
-                          <TrendingDown className="h-5 w-5 text-red-500" />
-                        )}
-                      </div>
-                      <p
-                        className={`text-2xl font-bold ${
-                          sub.balance !== null && sub.balance >= 0
-                            ? "text-green-600 dark:text-green-400"
-                            : "text-red-600 dark:text-red-400"
-                        }`}
-                      >
-                        {sub.balance !== null ? `$${Number(sub.balance).toFixed(2)}` : "Balance no disponible"}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </main>
+        <button
+          onClick={fetchBalance}
+          disabled={loading}
+          className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
+        >
+          {loading ? 'Cargando...' : 'Consultar Balance'}
+        </button>
+
+        {balance !== null && (
+          <p className="mt-4 text-xl font-bold text-green-500">
+            Balance: ${Number(balance).toFixed(2)}
+          </p>
+        )}
+      </div>
+
+      {/* 🔹 Lista de Subcuentas */}
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold">Subcuentas</h2>
+        {subAccounts.length === 0 ? (
+          <p>No tienes subcuentas registradas.</p>
+        ) : (
+          <ul className="mt-4 space-y-2">
+            {subAccounts.map((sub) => (
+              <li key={sub.id} className="p-3 bg-gray-100 rounded">
+                {sub.name} ({sub.exchange})
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-      <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin dark:border-indigo-400"></div>
-      <p className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-300">Cargando...</p>
-    </div>
-  );
+  )
 }
