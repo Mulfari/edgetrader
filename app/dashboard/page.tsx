@@ -99,6 +99,12 @@ export default function DashboardPage() {
         },
       })
   
+      if (!bybitRes.ok) {
+        const errorText = await bybitRes.text()
+        console.error(`❌ Error HTTP de Bybit (${accountType}):`, errorText)
+        throw new Error("Bybit rechazó la solicitud")
+      }
+  
       const bybitData = await bybitRes.json()
       console.log(`🔍 Respuesta de Bybit (${accountType}):`, bybitData)
   
