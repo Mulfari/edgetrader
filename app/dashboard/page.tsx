@@ -1,11 +1,10 @@
-"use client"
+"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import axios from "axios";
 
 interface SubAccount {
   id: string;
@@ -18,12 +17,12 @@ export default function DashboardPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [selectedSubAccount, setSelectedSubAccount] = useState<SubAccount | null>(null);
-  const [accountInfo, setAccountInfo] = useState<any | null>(null);
-  const [loadingInfo, setLoadingInfo] = useState(false);
+  const [balance, setBalance] = useState<any>(null);
   const router = useRouter();
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
+  // ✅ Función para obtener las subcuentas del usuario
   const fetchSubAccounts = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -32,9 +31,14 @@ export default function DashboardPage() {
     }
 
     try {
-      const { data } = await axios.get(`${API_URL}/subaccounts`, {
+      const res = await fetch(`${API_URL}/subaccounts`, {
+        method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      if (!res.ok) throw new Error("Error al obtener subcuentas");
+
+      const data = await res.json();
       setSubAccounts(data);
     } catch (error) {
       console.error("Error obteniendo subcuentas:", error);
@@ -43,41 +47,34 @@ export default function DashboardPage() {
     }
   };
 
-  useEffect(() => {
-    fetchSubAccounts();
-  }, []);
+  // ✅ Función para obtener el balance de una subcuenta en Bybit
+  const fetchBalance = async (subAccountId: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
 
-  const fetchAccountInfo = async (subAccountId: string) => {
-    setLoadingInfo(true);
-    setAccountInfo(null);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
+      setBalance(null); // Reset balance antes de cargar nuevo
 
-      const { data } = await axios.post(`${API_URL}/subaccounts/${subAccountId}/assets`, {}, {
+      const res = await fetch(`${API_URL}/subaccounts/${subAccountId}/balance`, {
+        method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setAccountInfo(data);
+      if (!res.ok) throw new Error("Error al obtener balance");
+
+      const data = await res.json();
+      setBalance(data);
     } catch (error) {
-      console.error("Error obteniendo información de la cuenta:", error);
-    } finally {
-      setLoadingInfo(false);
+      console.error("Error obteniendo balance:", error);
     }
   };
 
-  const handleSelectSubAccount = (sub: SubAccount) => {
-    if (selectedSubAccount?.id === sub.id) {
-      setSelectedSubAccount(null);
-      setAccountInfo(null);
-    } else {
-      setSelectedSubAccount(sub);
-      fetchAccountInfo(sub.id);
-    }
-  };
+  useEffect(() => {
+    fetchSubAccounts();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -112,8 +109,14 @@ export default function DashboardPage() {
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Subcuentas</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {subAccounts.map((sub) => (
-              <div key={sub.id} className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg flex flex-col items-center justify-center h-40 cursor-pointer hover:shadow-xl transition-all hover:bg-gray-100 dark:hover:bg-gray-700"
-                onClick={() => handleSelectSubAccount(sub)}>
+              <div
+                key={sub.id}
+                className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg flex flex-col items-center justify-center h-40 cursor-pointer hover:shadow-xl transition-all hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => {
+                  setSelectedSubAccount(sub.id === selectedSubAccount?.id ? null : sub);
+                  fetchBalance(sub.id);
+                }}
+              >
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{sub.name}</h3>
                 <p className="text-gray-500 dark:text-gray-400">{sub.exchange.toUpperCase()}</p>
               </div>
@@ -122,14 +125,14 @@ export default function DashboardPage() {
 
           {selectedSubAccount && (
             <div className="mt-8 p-6 bg-gray-200 dark:bg-gray-700 rounded-2xl shadow-md">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Información de la cuenta</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Información</h2>
               <div className="mt-4 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
-                {loadingInfo ? (
-                  <p className="text-gray-600 dark:text-gray-300">Cargando información...</p>
-                ) : accountInfo ? (
-                  <pre className="text-sm text-gray-900 dark:text-gray-100">{JSON.stringify(accountInfo, null, 2)}</pre>
+                <p><strong>Nombre:</strong> {selectedSubAccount.name}</p>
+                <p><strong>Exchange:</strong> {selectedSubAccount.exchange}</p>
+                {balance ? (
+                  <p><strong>Balance:</strong> {balance?.result?.USDT?.available_balance ?? "No disponible"} USDT</p>
                 ) : (
-                  <p className="text-gray-600 dark:text-gray-300">No hay información disponible.</p>
+                  <p>Cargando balance...</p>
                 )}
                 <button 
                   className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
