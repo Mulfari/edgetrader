@@ -75,8 +75,10 @@ export default function DashboardPage() {
       </header>
 
       <div className="flex mt-16">
-        <Sidebar isCollapsed={isSidebarCollapsed} />
-        <main className="flex-1 p-8">
+        <div className="fixed top-16 left-0 h-full transition-all duration-300" style={{ width: isSidebarCollapsed ? '4rem' : '16rem' }}>
+          <Sidebar isCollapsed={isSidebarCollapsed} />
+        </div>
+        <main className="flex-1 p-8 ml-[16rem] transition-all duration-300" style={{ marginLeft: isSidebarCollapsed ? '4rem' : '16rem' }}>
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Subcuentas</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {subAccounts.map((sub) => (
