@@ -51,8 +51,8 @@ export default function DashboardPage() {
     fetchSubAccounts()
   }, [fetchSubAccounts])
 
-  // ✅ Obtener API keys y consultar balance en Bybit
-  const fetchBalance = async (subAccountId: string, exchange: string) => {
+  // ✅ Obtener API keys y consultar balances en Bybit
+  const fetchBalance = async (subAccountId: string) => {
     setLoadingBalances((prev) => ({ ...prev, [subAccountId]: true }))
 
     try {
@@ -171,7 +171,7 @@ export default function DashboardPage() {
                 </div>
 
                 <button
-                  onClick={() => fetchBalance(sub.id, sub.exchange)}
+                  onClick={() => fetchBalance(sub.id)}
                   className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center"
                 >
                   <Eye size={18} className="mr-2" />
