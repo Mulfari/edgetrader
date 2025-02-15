@@ -89,25 +89,21 @@ export default function DashboardPage() {
   
       const { apiKey, apiSecret } = await keysRes.json()
   
-      // 🔹 Definir la URL correcta
+      // 🔹 Definir URL de Bybit según sea producción o testnet
       const bybitBaseUrl =
         exchange === "bybit" ? "https://api.bybit.com" : "https://api-testnet.bybit.com"
   
-      // 🔹 Consultar balance en Bybit
+      // 🔹 Parámetros que se deben firmar correctamente
       const timestamp = Date.now().toString()
       const recvWindow = "5000"
+      const params = `accountType=UNIFIED&recvWindow=${recvWindow}&timestamp=${timestamp}`
   
-      const params = {
-        accountType: "UNIFIED",
-        apiKey,
-        timestamp,
-        recvWindow,
-      }
+      // 🔹 Generar firma correctamente
+      const crypto = await import("crypto")
+      const signature = crypto.createHmac("sha256", apiSecret).update(params).digest("hex")
   
-      const signature = generateSignature(apiSecret, params)
-      const urlParams = new URLSearchParams(params).toString()
-      
-      const bybitRes = await fetch(`${bybitBaseUrl}/v5/account/wallet-balance?${urlParams}&sign=${signature}`, {
+      // 🔹 Hacer la solicitud a Bybit con la firma correcta
+      const bybitRes = await fetch(`${bybitBaseUrl}/v5/account/wallet-balance?${params}&sign=${signature}`, {
         method: "GET",
         headers: {
           "X-BAPI-API-KEY": apiKey,
@@ -124,7 +120,7 @@ export default function DashboardPage() {
       // 🔍 **Debugging: Imprimir en consola la respuesta**
       console.log("🔍 Respuesta completa de Bybit:", bybitData)
   
-      // ✅ Verificar si `list[0].coin` tiene datos
+      // ✅ Extraer balances correctamente
       const balances = bybitData?.result?.list?.[0]?.coin?.map((coin: { coin: string; walletBalance: string }) => ({
         coin: coin.coin,
         balance: coin.walletBalance || "0.00",
