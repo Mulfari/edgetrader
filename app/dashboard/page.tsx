@@ -7,11 +7,17 @@ import { ChevronLeft, ChevronRight, LogOut, Eye } from "lucide-react"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { createHmac } from "crypto"
 
+// ✅ Interfaz para representar los balances de cada moneda
+interface CoinBalance {
+  coin: string
+  balance: string
+}
+
 interface SubAccount {
   id: string
   name: string
   exchange: string
-  balances?: { coin: string; balance: string }[] | null
+  balances?: CoinBalance[] | null
 }
 
 export default function DashboardPage() {
@@ -115,10 +121,12 @@ export default function DashboardPage() {
 
       const bybitData = await bybitRes.json()
 
-      const balances = bybitData?.result?.list?.[0]?.coin?.map((coin: any) => ({
-        coin: coin.coin,
-        balance: coin.walletBalance || "0.00",
-      })) || []
+      // ✅ Definir la estructura correcta para los balances de cada moneda
+      const balances: CoinBalance[] =
+        bybitData?.result?.list?.[0]?.coin?.map((coin: { coin: string; walletBalance: string }) => ({
+          coin: coin.coin,
+          balance: coin.walletBalance || "0.00",
+        })) || []
 
       setSubAccounts((prev) =>
         prev.map((sub) => (sub.id === subAccountId ? { ...sub, balances } : sub))
