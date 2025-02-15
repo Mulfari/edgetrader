@@ -8,13 +8,13 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface SubAccount {
   id: string;
-  userId: string;  // 🔹 Se añadió userId
+  userId: string; // 🔹 Se añadió userId
   name: string;
   exchange: string;
 }
 
 interface AccountDetails {
-  balance: number;
+  balance?: number; // 🔹 Se hace opcional para evitar errores
 }
 
 export default function DashboardPage() {
@@ -46,6 +46,11 @@ export default function DashboardPage() {
       if (!res.ok) throw new Error("Error al obtener subcuentas");
 
       const data = await res.json();
+
+      if (!Array.isArray(data)) {
+        throw new Error("Respuesta inesperada del servidor");
+      }
+
       setSubAccounts(data);
     } catch (error) {
       console.error("❌ Error obteniendo subcuentas:", error);
@@ -57,6 +62,11 @@ export default function DashboardPage() {
 
   // ✅ Obtener los detalles de la cuenta
   const fetchAccountDetails = async (userId: string) => {
+    if (!userId) {
+      console.error("❌ Error: userId es inválido.");
+      return;
+    }
+
     console.log(`📡 Solicitando detalles de cuenta para userId: ${userId}`);
 
     const token = localStorage.getItem("token");
@@ -122,9 +132,9 @@ export default function DashboardPage() {
         </div>
         <main className="flex-1 p-8 transition-all duration-300" style={{ marginLeft: isSidebarCollapsed ? '4rem' : '16rem' }}>
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Subcuentas</h2>
-          
+
           {error && <p className="text-red-500">{error}</p>}
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {subAccounts.map((sub) => (
               <div
@@ -133,7 +143,7 @@ export default function DashboardPage() {
                 onClick={() => {
                   if (sub.id !== selectedSubAccount?.id) {
                     setSelectedSubAccount(sub);
-                    fetchAccountDetails(sub.userId); // 🔹 Se usa `sub.userId` en lugar de `sub.id`
+                    fetchAccountDetails(sub.userId);
                   } else {
                     setSelectedSubAccount(null);
                   }
@@ -153,10 +163,10 @@ export default function DashboardPage() {
                 <p><strong>Exchange:</strong> {selectedSubAccount.exchange}</p>
                 {isBalanceLoading ? (
                   <p>Cargando balance...</p>
-                ) : accountDetails ? (
+                ) : accountDetails?.balance !== undefined ? (
                   <p><strong>Balance:</strong> {accountDetails.balance.toFixed(2)} USDT</p>
                 ) : (
-                  <p className="text-red-500">{error ?? "Error al obtener balance."}</p>
+                  <p className="text-red-500">{error ?? "Balance no disponible."}</p>
                 )}
                 <button 
                   className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
