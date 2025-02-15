@@ -10,7 +10,7 @@ interface SubAccount {
   id: string
   name: string
   exchange: string
-  balance?: string | null
+  balance?: { spot: string; contract: string; unified: string } | null
 }
 
 export default function DashboardPage() {
@@ -22,7 +22,7 @@ export default function DashboardPage() {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
-  // ✅ Obtener subcuentas
+  // ✅ Obtener subcuentas desde el backend
   const fetchSubAccounts = useCallback(async () => {
     const token = localStorage.getItem("token")
     if (!token) {
@@ -51,7 +51,7 @@ export default function DashboardPage() {
     fetchSubAccounts()
   }, [fetchSubAccounts])
 
-  // ✅ Obtener API keys y consultar balance en Bybit
+  // ✅ Obtener API keys del backend y consultar balance en Bybit
   const fetchBalance = async (subAccountId: string, exchange: string) => {
     setLoadingBalances((prev) => ({ ...prev, [subAccountId]: true }))
 
@@ -72,11 +72,13 @@ export default function DashboardPage() {
 
       const { apiKey, apiSecret } = await keysRes.json()
 
-      // 🔹 2️⃣ Determinar si se usa testnet o producción
+      // 🔹 2️⃣ Determinar si es testnet o producción
       const bybitBaseUrl = exchange === "bybit" ? "https://api.bybit.com" : "https://api-testnet.bybit.com"
-      const url = `${bybitBaseUrl}/v5/account/wallet-balance?accountType=UNIFIED`
 
-      // 🔹 3️⃣ Generar firma para la solicitud a Bybit
+      // 🔹 3️⃣ Definir tipos de cuenta a consultar
+      const accountTypes = ["SPOT", "CONTRACT", "UNIFIED"]
+
+      // 🔹 4️⃣ Generar firma para cada petición
       const timestamp = Date.now().toString()
       const recvWindow = "5000"
 
@@ -84,31 +86,44 @@ export default function DashboardPage() {
       const crypto = await import("crypto")
       const signature = crypto.createHmac("sha256", apiSecret).update(message).digest("hex")
 
-      // 🔹 4️⃣ Consultar balance en Bybit
-      const bybitRes = await fetch(url, {
-        method: "GET",
-        headers: {
-          "X-BAPI-API-KEY": apiKey,
-          "X-BAPI-TIMESTAMP": timestamp,
-          "X-BAPI-RECV-WINDOW": recvWindow,
-          "X-BAPI-SIGN": signature,
-        },
-      })
+      // 🔹 5️⃣ Hacer solicitudes a cada tipo de cuenta en paralelo
+      const balanceRequests = accountTypes.map((accountType) =>
+        fetch(`${bybitBaseUrl}/v5/account/wallet-balance?accountType=${accountType}`, {
+          method: "GET",
+          headers: {
+            "X-BAPI-API-KEY": apiKey,
+            "X-BAPI-TIMESTAMP": timestamp,
+            "X-BAPI-RECV-WINDOW": recvWindow,
+            "X-BAPI-SIGN": signature,
+          },
+        }).then((res) => res.json().catch(() => null)) // Si hay error, retorna null
+      )
 
-      if (!bybitRes.ok) throw new Error("Error obteniendo balance de Bybit")
+      // 🔹 6️⃣ Esperar respuestas
+      const balances = await Promise.all(balanceRequests)
 
-      const bybitData = await bybitRes.json()
+      console.log("🔍 Respuesta de Bybit:", balances) // 👀 Verifica en la consola los valores devueltos
 
-      // 🔹 Verificación de datos antes de acceder a `list[0]`
-      const balance = bybitData?.result?.list?.[0]?.totalWalletBalance || "0.00"
+      // 🔹 7️⃣ Extraer balances de cada cuenta
+      const spotBalance = balances[0]?.result?.list?.[0]?.totalWalletBalance || "0.00"
+      const contractBalance = balances[1]?.result?.list?.[0]?.totalWalletBalance || "0.00"
+      const unifiedBalance = balances[2]?.result?.list?.[0]?.totalWalletBalance || "0.00"
 
-      // 🔹 Actualizar el balance en la UI
+      // 🔹 8️⃣ Mostrar balances en la UI
       setSubAccounts((prev) =>
-        prev.map((sub) => (sub.id === subAccountId ? { ...sub, balance } : sub))
+        prev.map((sub) =>
+          sub.id === subAccountId
+            ? { ...sub, balance: { spot: spotBalance, contract: contractBalance, unified: unifiedBalance } }
+            : sub
+        )
       )
     } catch (error) {
       console.error("Error obteniendo balance:", error)
-      setSubAccounts((prev) => prev.map((sub) => (sub.id === subAccountId ? { ...sub, balance: "Error" } : sub)))
+      setSubAccounts((prev) =>
+        prev.map((sub) =>
+          sub.id === subAccountId ? { ...sub, balance: { spot: "Error", contract: "Error", unified: "Error" } } : sub
+        )
+      )
     } finally {
       setLoadingBalances((prev) => ({ ...prev, [subAccountId]: false }))
     }
@@ -152,19 +167,20 @@ export default function DashboardPage() {
                 <div className="mt-4">
                   {loadingBalances[sub.id] ? (
                     <p className="text-blue-500">Cargando...</p>
+                  ) : sub.balance ? (
+                    <>
+                      <p className="text-sm text-gray-500">SPOT: <span className="font-bold text-indigo-600">${sub.balance.spot}</span></p>
+                      <p className="text-sm text-gray-500">FUTUROS: <span className="font-bold text-indigo-600">${sub.balance.contract}</span></p>
+                      <p className="text-sm text-gray-500">UNIFICADA: <span className="font-bold text-indigo-600">${sub.balance.unified}</span></p>
+                    </>
                   ) : (
-                    <p className="text-xl font-semibold text-indigo-600 dark:text-indigo-400">
-                      {sub.balance !== undefined ? `$${sub.balance}` : "Balance oculto"}
-                    </p>
+                    <p className="text-gray-400">Balance oculto</p>
                   )}
                 </div>
 
-                <button
-                  onClick={() => fetchBalance(sub.id, sub.exchange)}
-                  className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center"
-                >
-                  {sub.balance !== undefined ? <EyeOff size={18} className="mr-2" /> : <Eye size={18} className="mr-2" />}
-                  {sub.balance !== undefined ? "Ocultar Balance" : "Mostrar Balance"}
+                <button onClick={() => fetchBalance(sub.id, sub.exchange)} className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center">
+                  {sub.balance ? <EyeOff size={18} className="mr-2" /> : <Eye size={18} className="mr-2" />}
+                  {sub.balance ? "Ocultar Balance" : "Mostrar Balance"}
                 </button>
               </div>
             ))}
