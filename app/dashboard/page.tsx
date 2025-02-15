@@ -76,9 +76,20 @@ export default function DashboardPage() {
       const { apiKey, apiSecret, exchange } = await keysRes.json()
   
       // 🔹 2️⃣ Elegir la URL de Bybit (Producción o Testnet)
-      const bybitBaseURL = exchange === "bybit" ? "https://api.bybit.com" : "https://api-testnet.bybit.com"
+      const isTestnet = exchange !== "bybit"
+      const bybitBaseURL = isTestnet ? "https://api-testnet.bybit.com" : "https://api.bybit.com"
   
-      // 🔹 3️⃣ Generar Firma Correctamente
+      // 🔹 3️⃣ Validar el tipo de cuenta en Testnet
+      if (isTestnet && accountType !== "UNIFIED") {
+        console.warn(`⚠️ Testnet solo soporta UNIFIED. Omitiendo ${accountType}.`)
+        setLoadingBalances((prev) => ({
+          ...prev,
+          [subAccountId]: { ...prev[subAccountId], [accountType]: false },
+        }))
+        return
+      }
+  
+      // 🔹 4️⃣ Generar Firma Correctamente
       const timestamp = Date.now().toString()
       const recvWindow = "5000"
       const queryString = `accountType=${accountType}&recvWindow=${recvWindow}&timestamp=${timestamp}`
@@ -88,7 +99,7 @@ export default function DashboardPage() {
       const crypto = await import("crypto")
       const signature = crypto.createHmac("sha256", apiSecret).update(message).digest("hex")
   
-      // 🔹 4️⃣ Hacer la solicitud con la firma correcta
+      // 🔹 5️⃣ Hacer la solicitud con la firma correcta
       const bybitRes = await fetch(`${bybitBaseURL}/v5/account/wallet-balance?${queryString}`, {
         method: "GET",
         headers: {
