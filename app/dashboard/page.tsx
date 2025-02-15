@@ -57,26 +57,26 @@ export default function DashboardPage() {
   if (isLoading) return <LoadingSkeleton />;
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
-      <Sidebar isCollapsed={isSidebarCollapsed} />
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-        <header className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow fixed w-full z-10 top-0 left-0 transition-all duration-300">
-          <button
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="text-gray-600 dark:text-gray-400"
-          >
-            {isSidebarCollapsed ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col">
+      <header className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow fixed w-full z-10 top-0 left-0 transition-all duration-300">
+        <button
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          className="text-gray-600 dark:text-gray-400"
+        >
+          {isSidebarCollapsed ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
+        </button>
+        <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">Dashboard</h1>
+        <div className="flex items-center space-x-4">
+          <ThemeToggle />
+          <button onClick={handleLogout} className="text-gray-600 dark:text-gray-400 hover:text-red-500">
+            <LogOut size={24} />
           </button>
-          <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">Dashboard</h1>
-          <div className="flex items-center space-x-4">
-            <ThemeToggle />
-            <button onClick={handleLogout} className="text-gray-600 dark:text-gray-400 hover:text-red-500">
-              <LogOut size={24} />
-            </button>
-          </div>
-        </header>
+        </div>
+      </header>
 
-        <main className="p-6 mt-16">
+      <div className="flex mt-16">
+        <Sidebar isCollapsed={isSidebarCollapsed} />
+        <main className="flex-1 p-6">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Subcuentas</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
             {subAccounts.map((sub) => (
