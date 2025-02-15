@@ -17,7 +17,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
-  const [loadingBalances, setLoadingBalances] = useState<{ [key: string]: boolean }>({})
+  const [loadingBalances, setLoadingBalances] = useState<{ [key: string]: { [type: string]: boolean } }>({})
   const router = useRouter()
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
@@ -53,7 +53,10 @@ export default function DashboardPage() {
 
   // ✅ Generar firma y consultar balance
   const fetchBalance = async (subAccountId: string, accountType: string) => {
-    setLoadingBalances((prev) => ({ ...prev, [subAccountId]: true }))
+    setLoadingBalances((prev) => ({
+      ...prev,
+      [subAccountId]: { ...prev[subAccountId], [accountType]: true },
+    }))
 
     try {
       const token = localStorage.getItem("token")
@@ -118,7 +121,10 @@ export default function DashboardPage() {
         )
       )
     } finally {
-      setLoadingBalances((prev) => ({ ...prev, [subAccountId]: false }))
+      setLoadingBalances((prev) => ({
+        ...prev,
+        [subAccountId]: { ...prev[subAccountId], [accountType]: false },
+      }))
     }
   }
 
@@ -175,8 +181,9 @@ export default function DashboardPage() {
                       key={type}
                       onClick={() => fetchBalance(sub.id, type)}
                       className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                      disabled={loadingBalances[sub.id]?.[type]}
                     >
-                      Obtener {type}
+                      {loadingBalances[sub.id]?.[type] ? "Cargando..." : `Obtener ${type}`}
                     </button>
                   ))}
                 </div>
