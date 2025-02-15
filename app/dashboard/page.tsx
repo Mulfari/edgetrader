@@ -10,7 +10,7 @@ interface SubAccount {
   id: string
   name: string
   exchange: string
-  balance?: { spot: string; contract: string; unified: string } | null
+  balance?: Record<string, string | null> // Para almacenar balances de SPOT, CONTRACT y UNIFIED
 }
 
 export default function DashboardPage() {
@@ -22,7 +22,7 @@ export default function DashboardPage() {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
-  // ✅ Obtener subcuentas desde el backend
+  // ✅ Obtener subcuentas
   const fetchSubAccounts = useCallback(async () => {
     const token = localStorage.getItem("token")
     if (!token) {
@@ -51,8 +51,19 @@ export default function DashboardPage() {
     fetchSubAccounts()
   }, [fetchSubAccounts])
 
-  // ✅ Obtener API keys del backend y consultar balance en Bybit
-  const fetchBalance = async (subAccountId: string, exchange: string) => {
+  // ✅ Generar firma HMAC SHA256
+  const generateSignature = async (apiSecret: string, params: Record<string, string>) => {
+    const queryString = Object.keys(params)
+      .sort() // 🔹 Aseguramos que los parámetros estén ordenados alfabéticamente
+      .map((key) => `${key}=${params[key]}`)
+      .join("&")
+
+    const crypto = await import("crypto")
+    return crypto.createHmac("sha256", apiSecret).update(queryString).digest("hex")
+  }
+
+  // ✅ Obtener API keys y consultar balances en Bybit
+  const fetchBalance = async (subAccountId: string) => {
     setLoadingBalances((prev) => ({ ...prev, [subAccountId]: true }))
 
     try {
@@ -72,23 +83,24 @@ export default function DashboardPage() {
 
       const { apiKey, apiSecret } = await keysRes.json()
 
-      // 🔹 2️⃣ Determinar si es testnet o producción
-      const bybitBaseUrl = exchange === "bybit" ? "https://api.bybit.com" : "https://api-testnet.bybit.com"
-
-      // 🔹 3️⃣ Definir tipos de cuenta a consultar
-      const accountTypes = ["SPOT", "CONTRACT", "UNIFIED"]
-
-      // 🔹 4️⃣ Generar firma para cada petición
+      // 🔹 2️⃣ Consultar balance en Bybit para SPOT, CONTRACT y UNIFIED
       const timestamp = Date.now().toString()
       const recvWindow = "5000"
+      const bybitBaseUrl = "https://api.bybit.com"
 
-      const message = timestamp + apiKey + recvWindow
-      const crypto = await import("crypto")
-      const signature = crypto.createHmac("sha256", apiSecret).update(message).digest("hex")
+      const accountTypes = ["SPOT", "CONTRACT", "UNIFIED"]
 
-      // 🔹 5️⃣ Hacer solicitudes a cada tipo de cuenta en paralelo
-      const balanceRequests = accountTypes.map((accountType) =>
-        fetch(`${bybitBaseUrl}/v5/account/wallet-balance?accountType=${accountType}`, {
+      const balanceRequests = accountTypes.map(async (accountType) => {
+        const params = {
+          accountType,
+          apiKey,
+          recvWindow,
+          timestamp,
+        }
+
+        const signature = await generateSignature(apiSecret, params)
+
+        const response = await fetch(`${bybitBaseUrl}/v5/account/wallet-balance?${new URLSearchParams(params)}`, {
           method: "GET",
           headers: {
             "X-BAPI-API-KEY": apiKey,
@@ -96,33 +108,29 @@ export default function DashboardPage() {
             "X-BAPI-RECV-WINDOW": recvWindow,
             "X-BAPI-SIGN": signature,
           },
-        }).then((res) => res.json().catch(() => null)) // Si hay error, retorna null
-      )
+        })
 
-      // 🔹 6️⃣ Esperar respuestas
-      const balances = await Promise.all(balanceRequests)
+        return response.json().catch(() => null)
+      })
 
-      console.log("🔍 Respuesta de Bybit:", balances) // 👀 Verifica en la consola los valores devueltos
+      const results = await Promise.all(balanceRequests)
 
-      // 🔹 7️⃣ Extraer balances de cada cuenta
-      const spotBalance = balances[0]?.result?.list?.[0]?.totalWalletBalance || "0.00"
-      const contractBalance = balances[1]?.result?.list?.[0]?.totalWalletBalance || "0.00"
-      const unifiedBalance = balances[2]?.result?.list?.[0]?.totalWalletBalance || "0.00"
+      console.log("🔍 Respuesta de Bybit:", results)
 
-      // 🔹 8️⃣ Mostrar balances en la UI
+      // 🔹 Extraer balances
+      const balances = {
+        SPOT: results[0]?.result?.list?.[0]?.totalWalletBalance || "0.00",
+        CONTRACT: results[1]?.result?.list?.[0]?.totalWalletBalance || "0.00",
+        UNIFIED: results[2]?.result?.list?.[0]?.totalWalletBalance || "0.00",
+      }
+
       setSubAccounts((prev) =>
-        prev.map((sub) =>
-          sub.id === subAccountId
-            ? { ...sub, balance: { spot: spotBalance, contract: contractBalance, unified: unifiedBalance } }
-            : sub
-        )
+        prev.map((sub) => (sub.id === subAccountId ? { ...sub, balance: balances } : sub))
       )
     } catch (error) {
       console.error("Error obteniendo balance:", error)
       setSubAccounts((prev) =>
-        prev.map((sub) =>
-          sub.id === subAccountId ? { ...sub, balance: { spot: "Error", contract: "Error", unified: "Error" } } : sub
-        )
+        prev.map((sub) => (sub.id === subAccountId ? { ...sub, balance: { SPOT: "Error", CONTRACT: "Error", UNIFIED: "Error" } } : sub))
       )
     } finally {
       setLoadingBalances((prev) => ({ ...prev, [subAccountId]: false }))
@@ -167,20 +175,21 @@ export default function DashboardPage() {
                 <div className="mt-4">
                   {loadingBalances[sub.id] ? (
                     <p className="text-blue-500">Cargando...</p>
-                  ) : sub.balance ? (
-                    <>
-                      <p className="text-sm text-gray-500">SPOT: <span className="font-bold text-indigo-600">${sub.balance.spot}</span></p>
-                      <p className="text-sm text-gray-500">FUTUROS: <span className="font-bold text-indigo-600">${sub.balance.contract}</span></p>
-                      <p className="text-sm text-gray-500">UNIFICADA: <span className="font-bold text-indigo-600">${sub.balance.unified}</span></p>
-                    </>
                   ) : (
-                    <p className="text-gray-400">Balance oculto</p>
+                    <p className="text-xl font-semibold text-indigo-600 dark:text-indigo-400">
+                      SPOT: ${sub.balance?.SPOT} <br />
+                      CONTRACT: ${sub.balance?.CONTRACT} <br />
+                      UNIFIED: ${sub.balance?.UNIFIED}
+                    </p>
                   )}
                 </div>
 
-                <button onClick={() => fetchBalance(sub.id, sub.exchange)} className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center">
-                  {sub.balance ? <EyeOff size={18} className="mr-2" /> : <Eye size={18} className="mr-2" />}
-                  {sub.balance ? "Ocultar Balance" : "Mostrar Balance"}
+                <button
+                  onClick={() => fetchBalance(sub.id)}
+                  className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center"
+                >
+                  <Eye size={18} className="mr-2" />
+                  Obtener Balance
                 </button>
               </div>
             ))}
