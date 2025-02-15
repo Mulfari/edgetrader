@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/Sidebar"
-import { ChevronLeft, ChevronRight, LogOut, Eye, EyeOff } from "lucide-react"
+import { ChevronLeft, ChevronRight, LogOut, Eye } from "lucide-react"
 import { ThemeToggle } from "@/components/ThemeToggle"
 
 interface SubAccount {
