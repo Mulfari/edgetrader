@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface SubAccount {
   id: string;
+  userId: string;  // 🔹 Se añadió userId
   name: string;
   exchange: string;
 }
@@ -28,7 +29,7 @@ export default function DashboardPage() {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
-  // ✅ Función para obtener las subcuentas del usuario
+  // ✅ Obtener subcuentas del usuario
   const fetchSubAccounts = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -54,8 +55,10 @@ export default function DashboardPage() {
     }
   }, [router, API_URL]);
 
-  // ✅ Función para obtener los detalles de la cuenta desde el nuevo endpoint
+  // ✅ Obtener los detalles de la cuenta
   const fetchAccountDetails = async (userId: string) => {
+    console.log(`📡 Solicitando detalles de cuenta para userId: ${userId}`);
+
     const token = localStorage.getItem("token");
     if (!token) {
       router.push("/login");
@@ -65,7 +68,7 @@ export default function DashboardPage() {
     try {
       setIsBalanceLoading(true);
       setError(null);
-      setAccountDetails(null); // Reset antes de cargar nuevos datos
+      setAccountDetails(null);
 
       const res = await fetch(`${API_URL}/account-details/${userId}`, {
         method: "GET",
@@ -128,8 +131,12 @@ export default function DashboardPage() {
                 key={sub.id}
                 className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg flex flex-col items-center justify-center h-40 cursor-pointer hover:shadow-xl transition-all hover:bg-gray-100 dark:hover:bg-gray-700"
                 onClick={() => {
-                  setSelectedSubAccount(sub.id === selectedSubAccount?.id ? null : sub);
-                  fetchAccountDetails(sub.id);
+                  if (sub.id !== selectedSubAccount?.id) {
+                    setSelectedSubAccount(sub);
+                    fetchAccountDetails(sub.userId); // 🔹 Se usa `sub.userId` en lugar de `sub.id`
+                  } else {
+                    setSelectedSubAccount(null);
+                  }
                 }}
               >
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{sub.name}</h3>
