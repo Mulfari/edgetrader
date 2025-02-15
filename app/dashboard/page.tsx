@@ -57,7 +57,7 @@ export default function DashboardPage() {
   if (isLoading) return <LoadingSkeleton />;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       <header className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow-md fixed w-full z-10 top-0 left-0 transition-all duration-300">
         <button
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -75,10 +75,10 @@ export default function DashboardPage() {
       </header>
 
       <div className="flex mt-16">
-        <div className="fixed top-0 left-0 h-full transition-all duration-300" style={{ width: isSidebarCollapsed ? '4rem' : '16rem' }}>
+        <div className="relative w-[16rem] transition-all duration-300" style={{ width: isSidebarCollapsed ? '4rem' : '16rem' }}>
           <Sidebar isCollapsed={isSidebarCollapsed} />
         </div>
-        <main className="flex-1 p-8 ml-[16rem] transition-all duration-300" style={{ marginLeft: isSidebarCollapsed ? '4rem' : '16rem' }}>
+        <main className="flex-1 p-8 transition-all duration-300" style={{ marginLeft: isSidebarCollapsed ? '4rem' : '16rem' }}>
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Subcuentas</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {subAccounts.map((sub) => (
