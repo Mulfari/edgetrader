@@ -11,7 +11,7 @@ interface SubAccount {
   id: string
   name: string
   exchange: string
-  balance?: string | null
+  balances?: { coin: string; balance: string }[] | null
 }
 
 export default function DashboardPage() {
@@ -115,14 +115,19 @@ export default function DashboardPage() {
 
       const bybitData = await bybitRes.json()
 
-      const balance = bybitData?.result?.list?.[0]?.totalWalletBalance || "0.00"
+      const balances = bybitData?.result?.list?.[0]?.coin?.map((coin: any) => ({
+        coin: coin.coin,
+        balance: coin.walletBalance || "0.00",
+      })) || []
 
       setSubAccounts((prev) =>
-        prev.map((sub) => (sub.id === subAccountId ? { ...sub, balance } : sub))
+        prev.map((sub) => (sub.id === subAccountId ? { ...sub, balances } : sub))
       )
     } catch (error) {
       console.error("Error obteniendo balance:", error)
-      setSubAccounts((prev) => prev.map((sub) => (sub.id === subAccountId ? { ...sub, balance: "Error" } : sub)))
+      setSubAccounts((prev) =>
+        prev.map((sub) => (sub.id === subAccountId ? { ...sub, balances: [] } : sub))
+      )
     } finally {
       setLoadingBalances((prev) => ({ ...prev, [subAccountId]: false }))
     }
@@ -167,9 +172,17 @@ export default function DashboardPage() {
                   {loadingBalances[sub.id] ? (
                     <p className="text-blue-500">Cargando...</p>
                   ) : (
-                    <p className="text-xl font-semibold text-indigo-600 dark:text-indigo-400">
-                      {sub.balance !== undefined ? `$${sub.balance}` : "Balance oculto"}
-                    </p>
+                    <ul>
+                      {sub.balances && sub.balances.length > 0 ? (
+                        sub.balances.map((bal) => (
+                          <li key={bal.coin} className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
+                            {bal.coin}: ${bal.balance}
+                          </li>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 dark:text-gray-400">No hay balances disponibles</p>
+                      )}
+                    </ul>
                   )}
                 </div>
 
@@ -178,7 +191,7 @@ export default function DashboardPage() {
                   className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center"
                 >
                   <Eye size={18} className="mr-2" />
-                  {sub.balance !== undefined ? "Actualizar Balance" : "Mostrar Balance"}
+                  {sub.balances ? "Actualizar Balance" : "Mostrar Balance"}
                 </button>
               </div>
             ))}
