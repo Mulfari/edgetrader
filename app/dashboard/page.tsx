@@ -16,7 +16,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
-  const [selectedSubAccount, setSelectedSubAccount] = useState<string | null>(null);
+  const [selectedSubAccount, setSelectedSubAccount] = useState<SubAccount | null>(null);
   const router = useRouter();
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
@@ -80,32 +80,30 @@ export default function DashboardPage() {
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Subcuentas</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {subAccounts.map((sub) => (
-              <div key={sub.id} className="w-full">
-                <div
-                  className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg flex flex-col items-center cursor-pointer hover:shadow-xl transition-all hover:bg-gray-100 dark:hover:bg-gray-700"
-                  onClick={() => setSelectedSubAccount(sub.id === selectedSubAccount ? null : sub.id)}
-                >
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{sub.name}</h3>
-                  <p className="text-gray-500 dark:text-gray-400">{sub.exchange.toUpperCase()}</p>
-                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">(Haz clic para más información)</p>
-                </div>
-                {selectedSubAccount === sub.id && (
-                  <div className="mt-4 p-6 bg-gray-200 dark:bg-gray-700 rounded-2xl shadow-md">
-                    <h2 className="text-xl font-bold">Detalles de Subcuenta</h2>
-                    <p><strong>Nombre:</strong> {sub.name}</p>
-                    <p><strong>Exchange:</strong> {sub.exchange}</p>
-                    <p><strong>Más información próximamente...</strong></p>
-                    <button 
-                      className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
-                      onClick={() => setSelectedSubAccount(null)}
-                    >
-                      Cerrar
-                    </button>
-                  </div>
-                )}
+              <div key={sub.id} className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg flex flex-col items-center justify-center h-40 cursor-pointer hover:shadow-xl transition-all hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => setSelectedSubAccount(sub.id === selectedSubAccount?.id ? null : sub)}>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{sub.name}</h3>
+                <p className="text-gray-500 dark:text-gray-400">{sub.exchange.toUpperCase()}</p>
               </div>
             ))}
           </div>
+
+          {selectedSubAccount && (
+            <div className="mt-8 p-6 bg-gray-200 dark:bg-gray-700 rounded-2xl shadow-md">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Información</h2>
+              <div className="mt-4 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
+                <p><strong>Nombre:</strong> {selectedSubAccount.name}</p>
+                <p><strong>Exchange:</strong> {selectedSubAccount.exchange}</p>
+                <p><strong>Más información próximamente...</strong></p>
+                <button 
+                  className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+                  onClick={() => setSelectedSubAccount(null)}
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>
