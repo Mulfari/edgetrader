@@ -52,7 +52,7 @@ export default function DashboardPage() {
   }, [fetchSubAccounts])
 
   // ✅ Obtener API keys y consultar balance en Bybit
-  const fetchBalance = async (subAccountId: string) => {
+  const fetchBalance = async (subAccountId: string, exchange: string) => {
     setLoadingBalances((prev) => ({ ...prev, [subAccountId]: true }))
 
     try {
@@ -72,7 +72,11 @@ export default function DashboardPage() {
 
       const { apiKey, apiSecret } = await keysRes.json()
 
-      // 🔹 2️⃣ Consultar balance en Bybit
+      // 🔹 2️⃣ Determinar si se usa testnet o producción
+      const bybitBaseUrl = exchange === "bybit" ? "https://api.bybit.com" : "https://api-testnet.bybit.com"
+      const url = `${bybitBaseUrl}/v5/account/wallet-balance?accountType=UNIFIED`
+
+      // 🔹 3️⃣ Generar firma para la solicitud a Bybit
       const timestamp = Date.now().toString()
       const recvWindow = "5000"
 
@@ -80,7 +84,8 @@ export default function DashboardPage() {
       const crypto = await import("crypto")
       const signature = crypto.createHmac("sha256", apiSecret).update(message).digest("hex")
 
-      const bybitRes = await fetch(`https://api-testnet.bybit.com/v5/account/wallet-balance?accountType=UNIFIED`, {
+      // 🔹 4️⃣ Consultar balance en Bybit
+      const bybitRes = await fetch(url, {
         method: "GET",
         headers: {
           "X-BAPI-API-KEY": apiKey,
@@ -155,7 +160,7 @@ export default function DashboardPage() {
                 </div>
 
                 <button
-                  onClick={() => fetchBalance(sub.id)}
+                  onClick={() => fetchBalance(sub.id, sub.exchange)}
                   className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center"
                 >
                   {sub.balance !== undefined ? <EyeOff size={18} className="mr-2" /> : <Eye size={18} className="mr-2" />}
