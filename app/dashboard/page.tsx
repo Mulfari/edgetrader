@@ -12,12 +12,8 @@ interface SubAccount {
   exchange: string;
 }
 
-interface Balance {
-  result?: {
-    USDT?: {
-      available_balance?: number;
-    };
-  };
+interface AccountDetails {
+  balance: number;
 }
 
 export default function DashboardPage() {
@@ -25,7 +21,7 @@ export default function DashboardPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [selectedSubAccount, setSelectedSubAccount] = useState<SubAccount | null>(null);
-  const [balance, setBalance] = useState<Balance | null>(null);
+  const [accountDetails, setAccountDetails] = useState<AccountDetails | null>(null);
   const [isBalanceLoading, setIsBalanceLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -51,15 +47,15 @@ export default function DashboardPage() {
       const data = await res.json();
       setSubAccounts(data);
     } catch (error) {
-      console.error("Error obteniendo subcuentas:", error);
+      console.error("❌ Error obteniendo subcuentas:", error);
       setError("No se pudieron cargar las subcuentas");
     } finally {
       setIsLoading(false);
     }
   }, [router, API_URL]);
 
-  // ✅ Función para obtener el balance de una subcuenta en Bybit
-  const fetchBalance = async (subAccountId: string) => {
+  // ✅ Función para obtener los detalles de la cuenta desde el nuevo endpoint
+  const fetchAccountDetails = async (userId: string) => {
     const token = localStorage.getItem("token");
     if (!token) {
       router.push("/login");
@@ -69,20 +65,20 @@ export default function DashboardPage() {
     try {
       setIsBalanceLoading(true);
       setError(null);
-      setBalance(null); // Reset balance antes de cargar nuevo
+      setAccountDetails(null); // Reset antes de cargar nuevos datos
 
-      const res = await fetch(`${API_URL}/subaccounts/${subAccountId}/balance`, {
+      const res = await fetch(`${API_URL}/account-details/${userId}`, {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!res.ok) throw new Error("Error al obtener balance");
+      if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
 
       const data = await res.json();
-      setBalance(data);
+      setAccountDetails(data);
     } catch (error) {
-      console.error("Error obteniendo balance:", error);
-      setError("No se pudo obtener el balance.");
+      console.error("❌ Error obteniendo detalles de la cuenta:", error);
+      setError("No se pudo obtener la información de la cuenta.");
     } finally {
       setIsBalanceLoading(false);
     }
@@ -133,7 +129,7 @@ export default function DashboardPage() {
                 className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg flex flex-col items-center justify-center h-40 cursor-pointer hover:shadow-xl transition-all hover:bg-gray-100 dark:hover:bg-gray-700"
                 onClick={() => {
                   setSelectedSubAccount(sub.id === selectedSubAccount?.id ? null : sub);
-                  fetchBalance(sub.id);
+                  fetchAccountDetails(sub.id);
                 }}
               >
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{sub.name}</h3>
@@ -150,8 +146,8 @@ export default function DashboardPage() {
                 <p><strong>Exchange:</strong> {selectedSubAccount.exchange}</p>
                 {isBalanceLoading ? (
                   <p>Cargando balance...</p>
-                ) : balance ? (
-                  <p><strong>Balance:</strong> {balance.result?.USDT?.available_balance?.toFixed(2) ?? "No disponible"} USDT</p>
+                ) : accountDetails ? (
+                  <p><strong>Balance:</strong> {accountDetails.balance.toFixed(2)} USDT</p>
                 ) : (
                   <p className="text-red-500">{error ?? "Error al obtener balance."}</p>
                 )}
