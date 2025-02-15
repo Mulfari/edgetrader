@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/Sidebar"
-import { ChevronLeft, ChevronRight, LogOut, Eye } from "lucide-react"
+import { ChevronLeft, ChevronRight, LogOut } from "lucide-react"
 import { ThemeToggle } from "@/components/ThemeToggle"
 
 interface SubAccount {
@@ -51,8 +51,8 @@ export default function DashboardPage() {
     fetchSubAccounts()
   }, [fetchSubAccounts])
 
-  // ✅ Obtener API keys y consultar balances en Bybit
-  const fetchBalance = async (subAccountId: string) => {
+  // ✅ Generar firma y consultar balance
+  const fetchBalance = async (subAccountId: string, accountType: string) => {
     setLoadingBalances((prev) => ({ ...prev, [subAccountId]: true }))
 
     try {
@@ -72,46 +72,51 @@ export default function DashboardPage() {
 
       const { apiKey, apiSecret } = await keysRes.json()
 
-      // 🔹 2️⃣ Consultar balances en Bybit para diferentes tipos de cuenta
+      // 🔹 2️⃣ Generar firma
       const timestamp = Date.now().toString()
       const recvWindow = "5000"
+      const queryString = `accountType=${accountType}&recvWindow=${recvWindow}&timestamp=${timestamp}`
+      const message = timestamp + apiKey + recvWindow + `accountType=${accountType}`
 
-      const accountTypes = ["SPOT", "CONTRACT", "UNIFIED"]
-      const balances: { [key: string]: string } = {}
+      const crypto = await import("crypto")
+      const signature = crypto.createHmac("sha256", apiSecret).update(message).digest("hex")
 
-      for (const accountType of accountTypes) {
-        const queryString = `accountType=${accountType}&recvWindow=${recvWindow}&timestamp=${timestamp}`
-        const message = timestamp + apiKey + recvWindow + `accountType=${accountType}`
-        const crypto = await import("crypto")
-        const signature = crypto.createHmac("sha256", apiSecret).update(message).digest("hex")
+      // 🔹 3️⃣ Hacer la solicitud a Bybit
+      const bybitRes = await fetch(`https://api.bybit.com/v5/account/wallet-balance?${queryString}`, {
+        method: "GET",
+        headers: {
+          "X-BAPI-API-KEY": apiKey,
+          "X-BAPI-TIMESTAMP": timestamp,
+          "X-BAPI-RECV-WINDOW": recvWindow,
+          "X-BAPI-SIGN": signature,
+        },
+      })
 
-        const bybitRes = await fetch(`https://api.bybit.com/v5/account/wallet-balance?${queryString}`, {
-          method: "GET",
-          headers: {
-            "X-BAPI-API-KEY": apiKey,
-            "X-BAPI-TIMESTAMP": timestamp,
-            "X-BAPI-RECV-WINDOW": recvWindow,
-            "X-BAPI-SIGN": signature,
-          },
-        })
+      const bybitData = await bybitRes.json()
+      console.log(`🔍 Respuesta de Bybit (${accountType}):`, bybitData)
 
-        const bybitData = await bybitRes.json()
-        console.log(`🔍 Respuesta de Bybit (${accountType}):`, bybitData)
-
-        if (bybitData?.retCode === 0) {
-          balances[accountType] = bybitData?.result?.list?.[0]?.totalWalletBalance || "0.00"
-        } else {
-          balances[accountType] = "Error"
-        }
+      let balance = "Error"
+      if (bybitData?.retCode === 0) {
+        balance = bybitData?.result?.list?.[0]?.totalWalletBalance || "0.00"
       }
 
-      // 🔹 Actualizar el balance en la UI
+      // 🔹 Actualizar balance solo para este tipo de cuenta
       setSubAccounts((prev) =>
-        prev.map((sub) => (sub.id === subAccountId ? { ...sub, balances } : sub))
+        prev.map((sub) =>
+          sub.id === subAccountId
+            ? { ...sub, balances: { ...sub.balances, [accountType]: balance } }
+            : sub
+        )
       )
     } catch (error) {
       console.error("Error obteniendo balance:", error)
-      setSubAccounts((prev) => prev.map((sub) => (sub.id === subAccountId ? { ...sub, balances: { ERROR: "Error" } } : sub)))
+      setSubAccounts((prev) =>
+        prev.map((sub) =>
+          sub.id === subAccountId
+            ? { ...sub, balances: { ...sub.balances, [accountType]: "Error" } }
+            : sub
+        )
+      )
     } finally {
       setLoadingBalances((prev) => ({ ...prev, [subAccountId]: false }))
     }
@@ -153,30 +158,28 @@ export default function DashboardPage() {
                 <p className="text-gray-500 dark:text-gray-400">{sub.exchange.toUpperCase()}</p>
 
                 <div className="mt-4">
-                  {loadingBalances[sub.id] ? (
-                    <p className="text-blue-500">Cargando...</p>
+                  {sub.balances ? (
+                    Object.entries(sub.balances).map(([type, balance]) => (
+                      <p key={type} className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
+                        {type}: ${balance}
+                      </p>
+                    ))
                   ) : (
-                    <div>
-                      {sub.balances ? (
-                        Object.entries(sub.balances).map(([type, balance]) => (
-                          <p key={type} className="text-xl font-semibold text-indigo-600 dark:text-indigo-400">
-                            {type}: ${balance}
-                          </p>
-                        ))
-                      ) : (
-                        <p className="text-gray-500">No hay balances disponibles</p>
-                      )}
-                    </div>
+                    <p className="text-gray-500">No hay balances disponibles</p>
                   )}
                 </div>
 
-                <button
-                  onClick={() => fetchBalance(sub.id)}
-                  className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center"
-                >
-                  <Eye size={18} className="mr-2" />
-                  Mostrar Balances
-                </button>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {["SPOT", "CONTRACT", "UNIFIED"].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => fetchBalance(sub.id, type)}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                    >
+                      Obtener {type}
+                    </button>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
