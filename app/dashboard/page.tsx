@@ -57,38 +57,38 @@ export default function DashboardPage() {
       ...prev,
       [subAccountId]: { ...prev[subAccountId], [accountType]: true },
     }))
-
+  
     try {
       const token = localStorage.getItem("token")
       if (!token) {
         router.push("/login")
         return
       }
-
+  
       // 🔹 1️⃣ Obtener API keys del backend
       const keysRes = await fetch(`${API_URL}/subaccounts/${subAccountId}/keys`, {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       })
-
+  
       if (!keysRes.ok) throw new Error("Error al obtener API keys")
-
+  
       const { apiKey, apiSecret, exchange } = await keysRes.json()
-
-      // 🔹 2️⃣ Elegir URL de Bybit (Producción o Testnet)
+  
+      // 🔹 2️⃣ Elegir la URL de Bybit (Producción o Testnet)
       const bybitBaseURL = exchange === "bybit" ? "https://api.bybit.com" : "https://api-testnet.bybit.com"
-
+  
       // 🔹 3️⃣ Generar Firma Correctamente
       const timestamp = Date.now().toString()
       const recvWindow = "5000"
       const queryString = `accountType=${accountType}&recvWindow=${recvWindow}&timestamp=${timestamp}`
-
+  
       const message = `${timestamp}${apiKey}${recvWindow}${queryString}`
-
+  
       const crypto = await import("crypto")
       const signature = crypto.createHmac("sha256", apiSecret).update(message).digest("hex")
-
-      // 🔹 4️⃣ Hacer la solicitud a Bybit con la firma correcta
+  
+      // 🔹 4️⃣ Hacer la solicitud con la firma correcta
       const bybitRes = await fetch(`${bybitBaseURL}/v5/account/wallet-balance?${queryString}`, {
         method: "GET",
         headers: {
@@ -98,23 +98,23 @@ export default function DashboardPage() {
           "X-BAPI-SIGN": signature,
         },
       })
-
+  
       const bybitData = await bybitRes.json()
       console.log(`🔍 Respuesta de Bybit (${accountType}):`, bybitData)
-
-      let balance = "Error"
+  
       if (bybitData?.retCode === 0) {
-        balance = bybitData?.result?.list?.[0]?.totalWalletBalance || "0.00"
-      }
-
-      // 🔹 Actualizar balance solo para este tipo de cuenta
-      setSubAccounts((prev) =>
-        prev.map((sub) =>
-          sub.id === subAccountId
-            ? { ...sub, balances: { ...sub.balances, [accountType]: balance } }
-            : sub
+        const balance = bybitData?.result?.list?.[0]?.totalWalletBalance || "0.00"
+        setSubAccounts((prev) =>
+          prev.map((sub) =>
+            sub.id === subAccountId
+              ? { ...sub, balances: { ...sub.balances, [accountType]: balance } }
+              : sub
+          )
         )
-      )
+      } else {
+        console.error("❌ Error de Bybit:", bybitData?.retMsg)
+        throw new Error(bybitData?.retMsg)
+      }
     } catch (error) {
       console.error("Error obteniendo balance:", error)
       setSubAccounts((prev) =>
@@ -130,7 +130,7 @@ export default function DashboardPage() {
         [subAccountId]: { ...prev[subAccountId], [accountType]: false },
       }))
     }
-  }
+  }  
 
   const handleLogout = () => {
     localStorage.removeItem("token")
