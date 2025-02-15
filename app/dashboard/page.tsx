@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
@@ -12,18 +12,28 @@ interface SubAccount {
   exchange: string;
 }
 
+interface Balance {
+  result?: {
+    USDT?: {
+      available_balance?: number;
+    };
+  };
+}
+
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [selectedSubAccount, setSelectedSubAccount] = useState<SubAccount | null>(null);
-  const [balance, setBalance] = useState<any>(null);
+  const [balance, setBalance] = useState<Balance | null>(null);
+  const [isBalanceLoading, setIsBalanceLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   // ✅ Función para obtener las subcuentas del usuario
-  const fetchSubAccounts = async () => {
+  const fetchSubAccounts = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) {
       router.push("/login");
@@ -42,10 +52,11 @@ export default function DashboardPage() {
       setSubAccounts(data);
     } catch (error) {
       console.error("Error obteniendo subcuentas:", error);
+      setError("No se pudieron cargar las subcuentas");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [router, API_URL]);
 
   // ✅ Función para obtener el balance de una subcuenta en Bybit
   const fetchBalance = async (subAccountId: string) => {
@@ -56,6 +67,8 @@ export default function DashboardPage() {
     }
 
     try {
+      setIsBalanceLoading(true);
+      setError(null);
       setBalance(null); // Reset balance antes de cargar nuevo
 
       const res = await fetch(`${API_URL}/subaccounts/${subAccountId}/balance`, {
@@ -69,19 +82,22 @@ export default function DashboardPage() {
       setBalance(data);
     } catch (error) {
       console.error("Error obteniendo balance:", error);
+      setError("No se pudo obtener el balance.");
+    } finally {
+      setIsBalanceLoading(false);
     }
   };
 
   useEffect(() => {
     fetchSubAccounts();
-  }, []);
+  }, [fetchSubAccounts]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     router.push("/login");
   };
 
-  if (isLoading) return <LoadingSkeleton />;
+  if (isLoading) return <p className="text-center text-gray-500">Cargando subcuentas...</p>;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
@@ -107,6 +123,9 @@ export default function DashboardPage() {
         </div>
         <main className="flex-1 p-8 transition-all duration-300" style={{ marginLeft: isSidebarCollapsed ? '4rem' : '16rem' }}>
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Subcuentas</h2>
+          
+          {error && <p className="text-red-500">{error}</p>}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {subAccounts.map((sub) => (
               <div
@@ -129,10 +148,12 @@ export default function DashboardPage() {
               <div className="mt-4 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
                 <p><strong>Nombre:</strong> {selectedSubAccount.name}</p>
                 <p><strong>Exchange:</strong> {selectedSubAccount.exchange}</p>
-                {balance ? (
-                  <p><strong>Balance:</strong> {balance?.result?.USDT?.available_balance ?? "No disponible"} USDT</p>
-                ) : (
+                {isBalanceLoading ? (
                   <p>Cargando balance...</p>
+                ) : balance ? (
+                  <p><strong>Balance:</strong> {balance.result?.USDT?.available_balance?.toFixed(2) ?? "No disponible"} USDT</p>
+                ) : (
+                  <p className="text-red-500">{error ?? "Error al obtener balance."}</p>
                 )}
                 <button 
                   className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
