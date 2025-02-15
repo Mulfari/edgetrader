@@ -57,10 +57,10 @@ export default function DashboardPage() {
   if (isLoading) return <LoadingSkeleton />;
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
       <Sidebar isCollapsed={isSidebarCollapsed} />
       <div className="flex-1 flex flex-col">
-        <header className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow">
+        <header className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow fixed w-full z-10 top-0 left-0">
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             className="text-gray-600 dark:text-gray-400"
@@ -76,7 +76,7 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        <main className="p-6">
+        <main className="p-6 mt-16">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Subcuentas</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
             {subAccounts.map((sub) => (
