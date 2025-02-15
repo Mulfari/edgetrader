@@ -73,19 +73,23 @@ export default function DashboardPage() {
 
       if (!keysRes.ok) throw new Error("Error al obtener API keys")
 
-      const { apiKey, apiSecret } = await keysRes.json()
+      const { apiKey, apiSecret, exchange } = await keysRes.json()
 
-      // 🔹 2️⃣ Generar firma
+      // 🔹 2️⃣ Elegir URL de Bybit (Producción o Testnet)
+      const bybitBaseURL = exchange === "bybit" ? "https://api.bybit.com" : "https://api-testnet.bybit.com"
+
+      // 🔹 3️⃣ Generar Firma Correctamente
       const timestamp = Date.now().toString()
       const recvWindow = "5000"
       const queryString = `accountType=${accountType}&recvWindow=${recvWindow}&timestamp=${timestamp}`
-      const message = timestamp + apiKey + recvWindow + `accountType=${accountType}`
+
+      const message = `${timestamp}${apiKey}${recvWindow}${queryString}`
 
       const crypto = await import("crypto")
       const signature = crypto.createHmac("sha256", apiSecret).update(message).digest("hex")
 
-      // 🔹 3️⃣ Hacer la solicitud a Bybit
-      const bybitRes = await fetch(`https://api.bybit.com/v5/account/wallet-balance?${queryString}`, {
+      // 🔹 4️⃣ Hacer la solicitud a Bybit con la firma correcta
+      const bybitRes = await fetch(`${bybitBaseURL}/v5/account/wallet-balance?${queryString}`, {
         method: "GET",
         headers: {
           "X-BAPI-API-KEY": apiKey,
@@ -139,7 +143,6 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
       <Sidebar isCollapsed={isSidebarCollapsed} />
       <div className="flex-1 flex flex-col">
-        {/* 🔹 Navbar */}
         <header className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow">
           <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="text-gray-600 dark:text-gray-400">
             {isSidebarCollapsed ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
@@ -153,7 +156,6 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        {/* 🔹 Contenido principal */}
         <main className="p-6">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Subcuentas</h2>
 
@@ -162,18 +164,6 @@ export default function DashboardPage() {
               <div key={sub.id} className="p-5 bg-white dark:bg-gray-800 rounded-lg shadow-md flex flex-col items-center">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{sub.name}</h3>
                 <p className="text-gray-500 dark:text-gray-400">{sub.exchange.toUpperCase()}</p>
-
-                <div className="mt-4">
-                  {sub.balances ? (
-                    Object.entries(sub.balances).map(([type, balance]) => (
-                      <p key={type} className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
-                        {type}: ${balance}
-                      </p>
-                    ))
-                  ) : (
-                    <p className="text-gray-500">No hay balances disponibles</p>
-                  )}
-                </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   {["SPOT", "CONTRACT", "UNIFIED"].map((type) => (
