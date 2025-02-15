@@ -5,19 +5,12 @@ import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/Sidebar"
 import { ChevronLeft, ChevronRight, LogOut, Eye } from "lucide-react"
 import { ThemeToggle } from "@/components/ThemeToggle"
-import { createHmac } from "crypto"
-
-// ✅ Interfaz para representar los balances de cada moneda
-interface CoinBalance {
-  coin: string
-  balance: string
-}
 
 interface SubAccount {
   id: string
   name: string
   exchange: string
-  balances?: CoinBalance[] | null
+  balances?: { [key: string]: string }
 }
 
 export default function DashboardPage() {
@@ -58,87 +51,70 @@ export default function DashboardPage() {
     fetchSubAccounts()
   }, [fetchSubAccounts])
 
-  // ✅ Generar firma HMAC-SHA256
-  const generateSignature = (apiSecret: string, params: Record<string, string>) => {
-    const orderedParams = Object.keys(params)
-      .sort()
-      .map((key) => `${key}=${params[key]}`)
-      .join("&")
-
-    return createHmac("sha256", apiSecret).update(orderedParams).digest("hex")
-  }
-
   // ✅ Obtener API keys y consultar balance en Bybit
   const fetchBalance = async (subAccountId: string, exchange: string) => {
     setLoadingBalances((prev) => ({ ...prev, [subAccountId]: true }))
-  
+
     try {
       const token = localStorage.getItem("token")
       if (!token) {
         router.push("/login")
         return
       }
-  
-      // 🔹 Obtener API keys del backend
+
+      // 🔹 1️⃣ Obtener API keys del backend
       const keysRes = await fetch(`${API_URL}/subaccounts/${subAccountId}/keys`, {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       })
-  
+
       if (!keysRes.ok) throw new Error("Error al obtener API keys")
-  
+
       const { apiKey, apiSecret } = await keysRes.json()
-  
-      // 🔹 Definir URL de Bybit según sea producción o testnet
-      const bybitBaseUrl =
-        exchange === "bybit" ? "https://api.bybit.com" : "https://api-testnet.bybit.com"
-  
-      // 🔹 Parámetros que se deben firmar correctamente
+
+      // 🔹 2️⃣ Consultar balances en Bybit para diferentes tipos de cuenta
       const timestamp = Date.now().toString()
       const recvWindow = "5000"
-      const params = `accountType=UNIFIED&recvWindow=${recvWindow}&timestamp=${timestamp}`
-  
-      // 🔹 Generar firma correctamente
-      const crypto = await import("crypto")
-      const signature = crypto.createHmac("sha256", apiSecret).update(params).digest("hex")
-  
-      // 🔹 Hacer la solicitud a Bybit con la firma correcta
-      const bybitRes = await fetch(`${bybitBaseUrl}/v5/account/wallet-balance?${params}&sign=${signature}`, {
-        method: "GET",
-        headers: {
-          "X-BAPI-API-KEY": apiKey,
-          "X-BAPI-TIMESTAMP": timestamp,
-          "X-BAPI-RECV-WINDOW": recvWindow,
-          "X-BAPI-SIGN": signature,
-        },
-      })
-  
-      if (!bybitRes.ok) throw new Error("Error obteniendo balance de Bybit")
-  
-      const bybitData = await bybitRes.json()
-  
-      // 🔍 **Debugging: Imprimir en consola la respuesta**
-      console.log("🔍 Respuesta completa de Bybit:", bybitData)
-  
-      // ✅ Extraer balances correctamente
-      const balances = bybitData?.result?.list?.[0]?.coin?.map((coin: { coin: string; walletBalance: string }) => ({
-        coin: coin.coin,
-        balance: coin.walletBalance || "0.00",
-      })) || []
-  
-      console.log("✅ Balances procesados:", balances)
-  
+
+      const accountTypes = ["SPOT", "CONTRACT", "UNIFIED"]
+      const balances: { [key: string]: string } = {}
+
+      for (const accountType of accountTypes) {
+        const queryString = `accountType=${accountType}&recvWindow=${recvWindow}&timestamp=${timestamp}`
+        const message = timestamp + apiKey + recvWindow + `accountType=${accountType}`
+        const crypto = await import("crypto")
+        const signature = crypto.createHmac("sha256", apiSecret).update(message).digest("hex")
+
+        const bybitRes = await fetch(`https://api.bybit.com/v5/account/wallet-balance?${queryString}`, {
+          method: "GET",
+          headers: {
+            "X-BAPI-API-KEY": apiKey,
+            "X-BAPI-TIMESTAMP": timestamp,
+            "X-BAPI-RECV-WINDOW": recvWindow,
+            "X-BAPI-SIGN": signature,
+          },
+        })
+
+        const bybitData = await bybitRes.json()
+        console.log(`🔍 Respuesta de Bybit (${accountType}):`, bybitData)
+
+        if (bybitData?.retCode === 0) {
+          balances[accountType] = bybitData?.result?.list?.[0]?.totalWalletBalance || "0.00"
+        } else {
+          balances[accountType] = "Error"
+        }
+      }
+
+      // 🔹 Actualizar el balance en la UI
       setSubAccounts((prev) =>
         prev.map((sub) => (sub.id === subAccountId ? { ...sub, balances } : sub))
       )
     } catch (error) {
-      console.error("❌ Error obteniendo balance:", error)
-      setSubAccounts((prev) =>
-        prev.map((sub) => (sub.id === subAccountId ? { ...sub, balances: [] } : sub))
-      )
+      console.error("Error obteniendo balance:", error)
+      setSubAccounts((prev) => prev.map((sub) => (sub.id === subAccountId ? { ...sub, balances: { ERROR: "Error" } } : sub)))
     } finally {
       setLoadingBalances((prev) => ({ ...prev, [subAccountId]: false }))
-    }  
+    }
   }
 
   const handleLogout = () => {
@@ -180,17 +156,17 @@ export default function DashboardPage() {
                   {loadingBalances[sub.id] ? (
                     <p className="text-blue-500">Cargando...</p>
                   ) : (
-                    <ul>
-                      {sub.balances && sub.balances.length > 0 ? (
-                        sub.balances.map((bal) => (
-                          <li key={bal.coin} className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
-                            {bal.coin}: ${bal.balance}
-                          </li>
+                    <div>
+                      {sub.balances ? (
+                        Object.entries(sub.balances).map(([type, balance]) => (
+                          <p key={type} className="text-xl font-semibold text-indigo-600 dark:text-indigo-400">
+                            {type}: ${balance}
+                          </p>
                         ))
                       ) : (
-                        <p className="text-gray-500 dark:text-gray-400">No hay balances disponibles</p>
+                        <p className="text-gray-500">No hay balances disponibles</p>
                       )}
-                    </ul>
+                    </div>
                   )}
                 </div>
 
@@ -199,7 +175,7 @@ export default function DashboardPage() {
                   className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center"
                 >
                   <Eye size={18} className="mr-2" />
-                  {sub.balances ? "Actualizar Balance" : "Mostrar Balance"}
+                  Mostrar Balances
                 </button>
               </div>
             ))}
