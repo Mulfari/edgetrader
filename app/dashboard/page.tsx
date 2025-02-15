@@ -71,42 +71,42 @@ export default function DashboardPage() {
   // ✅ Obtener API keys y consultar balance en Bybit
   const fetchBalance = async (subAccountId: string, exchange: string) => {
     setLoadingBalances((prev) => ({ ...prev, [subAccountId]: true }))
-
+  
     try {
       const token = localStorage.getItem("token")
       if (!token) {
         router.push("/login")
         return
       }
-
-      // 🔹 1️⃣ Obtener API keys del backend
+  
+      // 🔹 Obtener API keys del backend
       const keysRes = await fetch(`${API_URL}/subaccounts/${subAccountId}/keys`, {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       })
-
+  
       if (!keysRes.ok) throw new Error("Error al obtener API keys")
-
+  
       const { apiKey, apiSecret } = await keysRes.json()
-
-      // 🔹 2️⃣ Definir la URL según el entorno
+  
+      // 🔹 Definir la URL correcta
       const bybitBaseUrl =
         exchange === "bybit" ? "https://api.bybit.com" : "https://api-testnet.bybit.com"
-
-      // 🔹 3️⃣ Consultar balance en Bybit
+  
+      // 🔹 Consultar balance en Bybit
       const timestamp = Date.now().toString()
       const recvWindow = "5000"
-
+  
       const params = {
         accountType: "UNIFIED",
         apiKey,
         timestamp,
         recvWindow,
       }
-
+  
       const signature = generateSignature(apiSecret, params)
-
       const urlParams = new URLSearchParams(params).toString()
+      
       const bybitRes = await fetch(`${bybitBaseUrl}/v5/account/wallet-balance?${urlParams}&sign=${signature}`, {
         method: "GET",
         headers: {
@@ -116,29 +116,33 @@ export default function DashboardPage() {
           "X-BAPI-SIGN": signature,
         },
       })
-
+  
       if (!bybitRes.ok) throw new Error("Error obteniendo balance de Bybit")
-
+  
       const bybitData = await bybitRes.json()
-
-      // ✅ Definir la estructura correcta para los balances de cada moneda
-      const balances: CoinBalance[] =
-        bybitData?.result?.list?.[0]?.coin?.map((coin: { coin: string; walletBalance: string }) => ({
-          coin: coin.coin,
-          balance: coin.walletBalance || "0.00",
-        })) || []
-
+  
+      // 🔍 **Debugging: Imprimir en consola la respuesta**
+      console.log("🔍 Respuesta completa de Bybit:", bybitData)
+  
+      // ✅ Verificar si `list[0].coin` tiene datos
+      const balances = bybitData?.result?.list?.[0]?.coin?.map((coin: { coin: string; walletBalance: string }) => ({
+        coin: coin.coin,
+        balance: coin.walletBalance || "0.00",
+      })) || []
+  
+      console.log("✅ Balances procesados:", balances)
+  
       setSubAccounts((prev) =>
         prev.map((sub) => (sub.id === subAccountId ? { ...sub, balances } : sub))
       )
     } catch (error) {
-      console.error("Error obteniendo balance:", error)
+      console.error("❌ Error obteniendo balance:", error)
       setSubAccounts((prev) =>
         prev.map((sub) => (sub.id === subAccountId ? { ...sub, balances: [] } : sub))
       )
     } finally {
       setLoadingBalances((prev) => ({ ...prev, [subAccountId]: false }))
-    }
+    }  
   }
 
   const handleLogout = () => {
