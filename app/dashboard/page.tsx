@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/Sidebar"
 import { ChevronLeft, ChevronRight, LogOut, Eye } from "lucide-react"
 import { ThemeToggle } from "@/components/ThemeToggle"
+import { createHmac } from "crypto"
 
 interface SubAccount {
   id: string
   name: string
   exchange: string
-  balance?: Record<string, string | null> // Para almacenar balances de SPOT, CONTRACT y UNIFIED
+  balance?: string | null
 }
 
 export default function DashboardPage() {
@@ -51,19 +52,18 @@ export default function DashboardPage() {
     fetchSubAccounts()
   }, [fetchSubAccounts])
 
-  // ✅ Generar firma HMAC SHA256
-  const generateSignature = async (apiSecret: string, params: Record<string, string>) => {
-    const queryString = Object.keys(params)
-      .sort() // 🔹 Aseguramos que los parámetros estén ordenados alfabéticamente
+  // ✅ Generar firma HMAC-SHA256
+  const generateSignature = (apiSecret: string, params: Record<string, string>) => {
+    const orderedParams = Object.keys(params)
+      .sort()
       .map((key) => `${key}=${params[key]}`)
       .join("&")
 
-    const crypto = await import("crypto")
-    return crypto.createHmac("sha256", apiSecret).update(queryString).digest("hex")
+    return createHmac("sha256", apiSecret).update(orderedParams).digest("hex")
   }
 
-  // ✅ Obtener API keys y consultar balances en Bybit
-  const fetchBalance = async (subAccountId: string) => {
+  // ✅ Obtener API keys y consultar balance en Bybit
+  const fetchBalance = async (subAccountId: string, exchange: string) => {
     setLoadingBalances((prev) => ({ ...prev, [subAccountId]: true }))
 
     try {
@@ -83,55 +83,46 @@ export default function DashboardPage() {
 
       const { apiKey, apiSecret } = await keysRes.json()
 
-      // 🔹 2️⃣ Consultar balance en Bybit para SPOT, CONTRACT y UNIFIED
+      // 🔹 2️⃣ Definir la URL según el entorno
+      const bybitBaseUrl =
+        exchange === "bybit" ? "https://api.bybit.com" : "https://api-testnet.bybit.com"
+
+      // 🔹 3️⃣ Consultar balance en Bybit
       const timestamp = Date.now().toString()
       const recvWindow = "5000"
-      const bybitBaseUrl = "https://api.bybit.com"
 
-      const accountTypes = ["SPOT", "CONTRACT", "UNIFIED"]
-
-      const balanceRequests = accountTypes.map(async (accountType) => {
-        const params = {
-          accountType,
-          apiKey,
-          recvWindow,
-          timestamp,
-        }
-
-        const signature = await generateSignature(apiSecret, params)
-
-        const response = await fetch(`${bybitBaseUrl}/v5/account/wallet-balance?${new URLSearchParams(params)}`, {
-          method: "GET",
-          headers: {
-            "X-BAPI-API-KEY": apiKey,
-            "X-BAPI-TIMESTAMP": timestamp,
-            "X-BAPI-RECV-WINDOW": recvWindow,
-            "X-BAPI-SIGN": signature,
-          },
-        })
-
-        return response.json().catch(() => null)
-      })
-
-      const results = await Promise.all(balanceRequests)
-
-      console.log("🔍 Respuesta de Bybit:", results)
-
-      // 🔹 Extraer balances
-      const balances = {
-        SPOT: results[0]?.result?.list?.[0]?.totalWalletBalance || "0.00",
-        CONTRACT: results[1]?.result?.list?.[0]?.totalWalletBalance || "0.00",
-        UNIFIED: results[2]?.result?.list?.[0]?.totalWalletBalance || "0.00",
+      const params = {
+        accountType: "UNIFIED",
+        apiKey,
+        timestamp,
+        recvWindow,
       }
 
+      const signature = generateSignature(apiSecret, params)
+
+      const urlParams = new URLSearchParams(params).toString()
+      const bybitRes = await fetch(`${bybitBaseUrl}/v5/account/wallet-balance?${urlParams}&sign=${signature}`, {
+        method: "GET",
+        headers: {
+          "X-BAPI-API-KEY": apiKey,
+          "X-BAPI-TIMESTAMP": timestamp,
+          "X-BAPI-RECV-WINDOW": recvWindow,
+          "X-BAPI-SIGN": signature,
+        },
+      })
+
+      if (!bybitRes.ok) throw new Error("Error obteniendo balance de Bybit")
+
+      const bybitData = await bybitRes.json()
+
+      const balance = bybitData?.result?.list?.[0]?.totalWalletBalance || "0.00"
+
       setSubAccounts((prev) =>
-        prev.map((sub) => (sub.id === subAccountId ? { ...sub, balance: balances } : sub))
+        prev.map((sub) => (sub.id === subAccountId ? { ...sub, balance } : sub))
       )
     } catch (error) {
       console.error("Error obteniendo balance:", error)
-      setSubAccounts((prev) =>
-        prev.map((sub) => (sub.id === subAccountId ? { ...sub, balance: { SPOT: "Error", CONTRACT: "Error", UNIFIED: "Error" } } : sub))
-      )
+      setSubAccounts((prev) => prev.map((sub) => (sub.id === subAccountId ? { ...sub, balance: "Error" } : sub)))
     } finally {
       setLoadingBalances((prev) => ({ ...prev, [subAccountId]: false }))
     }
@@ -177,19 +168,17 @@ export default function DashboardPage() {
                     <p className="text-blue-500">Cargando...</p>
                   ) : (
                     <p className="text-xl font-semibold text-indigo-600 dark:text-indigo-400">
-                      SPOT: ${sub.balance?.SPOT} <br />
-                      CONTRACT: ${sub.balance?.CONTRACT} <br />
-                      UNIFIED: ${sub.balance?.UNIFIED}
+                      {sub.balance !== undefined ? `$${sub.balance}` : "Balance oculto"}
                     </p>
                   )}
                 </div>
 
                 <button
-                  onClick={() => fetchBalance(sub.id)}
+                  onClick={() => fetchBalance(sub.id, sub.exchange)}
                   className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center"
                 >
                   <Eye size={18} className="mr-2" />
-                  Obtener Balance
+                  {sub.balance !== undefined ? "Actualizar Balance" : "Mostrar Balance"}
                 </button>
               </div>
             ))}
