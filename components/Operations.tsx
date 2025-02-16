@@ -6,9 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ChevronUp, ChevronDown, Plus, ChevronRight } from "lucide-react"
+import { ChevronUp, ChevronDown, Plus, ChevronRight } from 'lucide-react'
 import { Input } from "@/components/ui/input"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import {
   Dialog,
   DialogContent,
@@ -42,16 +46,15 @@ export default function Operations({ trades }: OperationsProps) {
   const [tradeMarketFilter, setTradeMarketFilter] = useState<"all" | "spot" | "futures">("all")
   const [activeTab, setActiveTab] = useState<"open" | "closed">("open")
   const [searchTerm, setSearchTerm] = useState("")
-  const [expandedTrades, setExpandedTrades] = useState<string[]>([])
+  const [expandedTradeId, setExpandedTradeId] = useState<string | null>(null)
 
   const filteredTrades = useMemo(() => {
     return trades
       .filter((trade) => tradeMarketFilter === "all" || trade.market === tradeMarketFilter)
       .filter((trade) => trade.status === activeTab)
-      .filter(
-        (trade) =>
-          trade.pair.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          trade.market.toLowerCase().includes(searchTerm.toLowerCase()),
+      .filter((trade) => 
+        trade.pair.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trade.market.toLowerCase().includes(searchTerm.toLowerCase())
       )
   }, [trades, tradeMarketFilter, activeTab, searchTerm])
 
@@ -60,7 +63,7 @@ export default function Operations({ trades }: OperationsProps) {
   }, [filteredTrades])
 
   const toggleTradeExpansion = (tradeId: string) => {
-    setExpandedTrades((prev) => (prev.includes(tradeId) ? prev.filter((id) => id !== tradeId) : [...prev, tradeId]))
+    setExpandedTradeId(expandedTradeId === tradeId ? null : tradeId)
   }
 
   return (
@@ -116,7 +119,7 @@ export default function Operations({ trades }: OperationsProps) {
             <div className="mb-6 p-4 bg-secondary rounded-lg">
               <div className="flex items-center justify-between">
                 <span className="text-lg font-medium">PnL Total</span>
-                <span className={`text-2xl font-bold ${totalPnL >= 0 ? "text-green-500" : "text-red-500"}`}>
+                <span className={`text-2xl font-bold ${totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                   {totalPnL.toFixed(2)} USDT
                 </span>
               </div>
@@ -152,33 +155,27 @@ export default function Operations({ trades }: OperationsProps) {
               </TableHeader>
               <TableBody>
                 {filteredTrades.map((trade) => (
-                  <Accordion
+                  <Collapsible
                     key={trade.id}
-                    type="single"
-                    collapsible
-                    value={expandedTrades.includes(trade.id) ? trade.id : ""}
+                    open={expandedTradeId === trade.id}
+                    onOpenChange={() => toggleTradeExpansion(trade.id)}
                   >
-                    <AccordionItem value={trade.id}>
-                      <TableRow>
-                        <TableCell className="font-medium">
-                          <AccordionTrigger
-                            onClick={() => toggleTradeExpansion(trade.id)}
-                            className="hover:no-underline"
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </AccordionTrigger>
+                    <CollapsibleTrigger asChild>
+                      <TableRow className="cursor-pointer hover:bg-muted">
+                        <TableCell>
+                          <ChevronRight
+                            className={`h-4 w-4 transition-transform ${
+                              expandedTradeId === trade.id ? "transform rotate-90" : ""
+                            }`}
+                          />
                         </TableCell>
                         <TableCell className="font-medium">{trade.pair}</TableCell>
                         <TableCell>
-                          <Badge
+                          <Badge 
                             variant={trade.type === "buy" ? "default" : "destructive"}
                             className="flex items-center gap-1"
                           >
-                            {trade.type === "buy" ? (
-                              <ChevronUp className="w-3 h-3" />
-                            ) : (
-                              <ChevronDown className="w-3 h-3" />
-                            )}
+                            {trade.type === "buy" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                             {trade.type.toUpperCase()}
                           </Badge>
                         </TableCell>
@@ -203,9 +200,7 @@ export default function Operations({ trades }: OperationsProps) {
                         ) : (
                           <>
                             <TableCell>
-                              <span
-                                className={`font-medium ${trade.pnl && trade.pnl >= 0 ? "text-green-500" : "text-red-500"}`}
-                              >
+                              <span className={`font-medium ${trade.pnl && trade.pnl >= 0 ? "text-green-500" : "text-red-500"}`}>
                                 {trade.pnl?.toFixed(2)} USDT
                               </span>
                             </TableCell>
@@ -213,44 +208,52 @@ export default function Operations({ trades }: OperationsProps) {
                           </>
                         )}
                       </TableRow>
-                      <AccordionContent>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent asChild>
+                      <TableRow>
                         <TableCell colSpan={7}>
-                          <div className="p-4 bg-muted rounded-lg mt-2">
-                            <div className="grid grid-cols-2 gap-4">
-                              {trade.market === "futures" && (
-                                <div>
-                                  <p className="text-sm font-medium text-muted-foreground">Apalancamiento</p>
-                                  <p>{trade.leverage}x</p>
-                                </div>
-                              )}
-                              {trade.status === "closed" && (
-                                <>
-                                  <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Precio de Salida</p>
-                                    <p>{trade.exitPrice?.toFixed(2)}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-medium text-muted-foreground">PnL</p>
-                                    <p className={trade.pnl && trade.pnl >= 0 ? "text-green-500" : "text-red-500"}>
-                                      {trade.pnl?.toFixed(2)} USDT
-                                    </p>
-                                  </div>
-                                </>
-                              )}
-                              <div>
-                                <p className="text-sm font-medium text-muted-foreground">ID de la Operación</p>
-                                <p>{trade.id}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-muted-foreground">ID del Usuario</p>
-                                <p>{trade.userId}</p>
-                              </div>
+                          <div className="p-4 bg-muted rounded-lg mt-2 grid gap-4 md:grid-cols-2">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Precio de Entrada</p>
+                              <p>{trade.entryPrice.toFixed(2)}</p>
                             </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Cantidad</p>
+                              <p>{trade.amount}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Fecha de Apertura</p>
+                              <p>{new Date(trade.openDate).toLocaleString()}</p>
+                            </div>
+                            {trade.market === "futures" && (
+                              <div>
+                                <p className="text-sm font-medium text-muted-foreground">Apalancamiento</p>
+                                <p>{trade.leverage}x</p>
+                              </div>
+                            )}
+                            {trade.status === "closed" && (
+                              <>
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground">Precio de Salida</p>
+                                  <p>{trade.exitPrice?.toFixed(2)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground">PnL</p>
+                                  <p className={trade.pnl && trade.pnl >= 0 ? "text-green-500" : "text-red-500"}>
+                                    {trade.pnl?.toFixed(2)} USDT
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground">Fecha de Cierre</p>
+                                  <p>{trade.closeDate && new Date(trade.closeDate).toLocaleString()}</p>
+                                </div>
+                              </>
+                            )}
                           </div>
                         </TableCell>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
+                      </TableRow>
+                    </CollapsibleContent>
+                  </Collapsible>
                 ))}
               </TableBody>
             </Table>
@@ -260,4 +263,3 @@ export default function Operations({ trades }: OperationsProps) {
     </div>
   )
 }
-
