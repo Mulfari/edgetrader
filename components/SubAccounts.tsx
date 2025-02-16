@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface SubAccount {
   id: string
@@ -24,6 +25,11 @@ interface SubAccount {
   balance: number
   lastUpdated: string
   performance: number
+  assets: { [key: string]: number }
+  equity: number
+  availableBalance: number
+  marginBalance: number
+  unrealizedPnL: number
 }
 
 interface SubAccountsProps {
@@ -35,6 +41,7 @@ interface SubAccountsProps {
 export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("all")
+  const [selectedAccount, setSelectedAccount] = useState<SubAccount | null>(null)
 
   const filteredSubAccounts = subAccounts.filter(
     (account) =>
@@ -44,8 +51,8 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
   )
 
   return (
-    <div>
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4">
         <div className="relative w-full md:w-64">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <Input
@@ -72,13 +79,14 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
                 <DialogTitle>Agregar Nueva Subcuenta</DialogTitle>
                 <DialogDescription>Ingrese los detalles de la nueva subcuenta aquí.</DialogDescription>
               </DialogHeader>
+              {/* Add form fields for new subaccount here */}
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="all">Todas</TabsTrigger>
           <TabsTrigger value="binance">Binance</TabsTrigger>
           <TabsTrigger value="bybit">Bybit</TabsTrigger>
@@ -101,14 +109,14 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
+                <TableCell colSpan={5} className="text-center">
                   <RefreshCw className="animate-spin mx-auto h-6 w-6" />
                   <span className="mt-2 block">Cargando subcuentas...</span>
                 </TableCell>
               </TableRow>
             ) : filteredSubAccounts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
+                <TableCell colSpan={5} className="text-center">
                   <AlertCircle className="mx-auto mb-2 h-6 w-6" />
                   No se encontraron subcuentas
                 </TableCell>
@@ -121,7 +129,82 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
                     <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
                   </TableCell>
                   <TableCell>
-                    <span className="font-semibold">{sub.balance.toFixed(2)} USDT</span>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="link" className="p-0 h-auto font-semibold text-blue-600 hover:underline">
+                          {sub.balance.toFixed(2)} USDT
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>Detalles de la Cuenta: {sub.name}</DialogTitle>
+                          <DialogDescription>Información detallada de la subcuenta</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold">{sub.balance.toFixed(2)} USDT</div>
+                            </CardContent>
+                          </Card>
+                          <div className="grid grid-cols-2 gap-4">
+                            <Card>
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium">Equity</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="text-lg font-semibold">{sub.equity.toFixed(2)} USDT</div>
+                              </CardContent>
+                            </Card>
+                            <Card>
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium">Balance Disponible</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="text-lg font-semibold">{sub.availableBalance.toFixed(2)} USDT</div>
+                              </CardContent>
+                            </Card>
+                            <Card>
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium">Balance de Margen</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="text-lg font-semibold">{sub.marginBalance.toFixed(2)} USDT</div>
+                              </CardContent>
+                            </Card>
+                            <Card>
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium">PnL No Realizado</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div
+                                  className={`text-lg font-semibold ${sub.unrealizedPnL >= 0 ? "text-green-600" : "text-red-600"}`}
+                                >
+                                  {sub.unrealizedPnL.toFixed(2)} USDT
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="text-sm font-medium">Distribución de Activos</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <ul className="space-y-2">
+                                {Object.entries(sub.assets).map(([asset, amount]) => (
+                                  <li key={asset} className="flex justify-between items-center">
+                                    <span className="font-medium">{asset}</span>
+                                    <span>{amount.toFixed(4)}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </TableCell>
                   <TableCell>
                     <span className={`font-semibold ${sub.performance >= 0 ? "text-green-500" : "text-red-500"}`}>
