@@ -3,16 +3,23 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
-import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, Briefcase, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SubAccount {
   id: string;
   userId: string;
   name: string;
   exchange: string;
-  balance?: number; // 🔹 Se añade balance a la interfaz
+  balance: number;
 }
+
+const exchangeIcons: { [key: string]: React.ElementType } = {
+  binance: TrendingUp,
+  coinbase: Briefcase,
+  kraken: DollarSign,
+};
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -24,56 +31,18 @@ export default function DashboardPage() {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
-  // ✅ Obtener subcuentas y balances del usuario
   const fetchSubAccounts = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API_URL}/subaccounts`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error("Error al obtener subcuentas");
-
-      const data = await res.json();
-
-      if (!Array.isArray(data)) {
-        throw new Error("Respuesta inesperada del servidor");
-      }
-
-      // 🔹 Obtener balances de cada subcuenta
-      const subAccountsWithBalance = await Promise.all(
-        data.map(async (sub) => {
-          try {
-            const balanceRes = await fetch(`${API_URL}/account-details/${sub.userId}`, {
-              method: "GET",
-              headers: { Authorization: `Bearer ${token}` },
-            });
-
-            if (!balanceRes.ok) throw new Error("Error al obtener balance");
-
-            const balanceData = await balanceRes.json();
-            return { ...sub, balance: balanceData.balance ?? 0 };
-          } catch (error) {
-            console.error(`❌ Error obteniendo balance de ${sub.name}:`, error);
-            return { ...sub, balance: 0 };
-          }
-        })
-      );
-
-      setSubAccounts(subAccountsWithBalance);
-    } catch (error) {
-      console.error("❌ Error obteniendo subcuentas:", error);
-      setError("No se pudieron cargar las subcuentas");
-    } finally {
+    // Simulating API call with example data
+    setTimeout(() => {
+      const exampleData: SubAccount[] = [
+        { id: "1", userId: "user1", name: "Main Account", exchange: "binance", balance: 5000.75 },
+        { id: "2", userId: "user1", name: "Trading Account", exchange: "coinbase", balance: 2500.50 },
+        { id: "3", userId: "user1", name: "Savings Account", exchange: "kraken", balance: 10000.25 },
+      ];
+      setSubAccounts(exampleData);
       setIsLoading(false);
-    }
-  }, [router, API_URL]);
+    }, 1500);
+  }, []);
 
   useEffect(() => {
     fetchSubAccounts();
@@ -84,69 +53,120 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
-  if (isLoading) return <p className="text-center text-gray-500">Cargando subcuentas...</p>;
+  const totalBalance = subAccounts.reduce((sum, account) => sum + account.balance, 0);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-pulse space-y-4">
+          <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-md w-48"></div>
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-md w-32"></div>
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-md w-40"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-      <header className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow-md fixed w-full z-10 top-0 left-0 transition-all duration-300">
-        <button
-          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          className="text-gray-600 dark:text-gray-400 hover:text-indigo-500"
-        >
-          {isSidebarCollapsed ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
-        </button>
-        <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">Dashboard</h1>
-        <div className="flex items-center space-x-4">
-          <ThemeToggle />
-          <button onClick={handleLogout} className="text-gray-600 dark:text-gray-400 hover:text-red-500 transition-all">
-            <LogOut size={24} />
+    <TooltipProvider>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+        <header className="flex justify-between items-center p-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg fixed w-full z-10 top-0 left-0 transition-all duration-300">
+          <button
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="text-white hover:bg-white/20 rounded-full p-2 transition-all"
+          >
+            {isSidebarCollapsed ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
           </button>
-        </div>
-      </header>
-
-      <div className="flex mt-16">
-        <div className="relative w-[16rem] transition-all duration-300" style={{ width: isSidebarCollapsed ? '4rem' : '16rem' }}>
-          <Sidebar isCollapsed={isSidebarCollapsed} />
-        </div>
-        <main className="flex-1 p-8 transition-all duration-300" style={{ marginLeft: isSidebarCollapsed ? '4rem' : '16rem' }}>
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Subcuentas</h2>
-
-          {error && <p className="text-red-500">{error}</p>}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {subAccounts.map((sub) => (
-              <div
-                key={sub.id}
-                className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg flex flex-col items-center justify-center h-40 cursor-pointer hover:shadow-xl transition-all hover:bg-gray-100 dark:hover:bg-gray-700"
-                onClick={() => setSelectedSubAccount(sub.id !== selectedSubAccount?.id ? sub : null)}
-              >
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{sub.name}</h3>
-                <p className="text-gray-500 dark:text-gray-400">{sub.exchange.toUpperCase()}</p>
-                <p className="text-indigo-600 dark:text-indigo-400 font-semibold mt-2">
-                  Balance: {sub.balance !== undefined ? sub.balance.toFixed(2) : "0.00"} USDT
-                </p>
-              </div>
-            ))}
+          <h1 className="text-2xl font-bold">Crypto Dashboard</h1>
+          <div className="flex items-center space-x-4">
+            <ThemeToggle />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button onClick={handleLogout} className="text-white hover:bg-white/20 rounded-full p-2 transition-all">
+                  <LogOut size={24} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Logout</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
+        </header>
 
-          {selectedSubAccount && (
-            <div className="mt-8 p-6 bg-gray-200 dark:bg-gray-700 rounded-2xl shadow-md">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Información</h2>
-              <div className="mt-4 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
-                <p><strong>Nombre:</strong> {selectedSubAccount.name}</p>
-                <p><strong>Exchange:</strong> {selectedSubAccount.exchange}</p>
-                <p><strong>Balance:</strong> {selectedSubAccount.balance?.toFixed(2) ?? "0.00"} USDT</p>
+        <div className="flex mt-16">
+          <div className="relative transition-all duration-300" style={{ width: isSidebarCollapsed ? '4rem' : '16rem' }}>
+            <Sidebar isCollapsed={isSidebarCollapsed} />
+          </div>
+          <main className="flex-1 p-8 transition-all duration-300" style={{ marginLeft: isSidebarCollapsed ? '4rem' : '16rem' }}>
+            <div className="mb-8 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">Portfolio Summary</h2>
+              <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">${totalBalance.toFixed(2)} USD</p>
+              <p className="text-gray-500 dark:text-gray-400">Total Balance Across All Accounts</p>
+            </div>
+
+            <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Your Accounts</h2>
+
+            {error && (
+              <div className="p-4 mb-4 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-lg flex items-center">
+                <AlertCircle className="mr-2" />
+                <p>{error}</p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {subAccounts.map((sub) => {
+                const ExchangeIcon = exchangeIcons[sub.exchange.toLowerCase()] || Briefcase;
+                return (
+                  <Tooltip key={sub.id}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg flex flex-col items-center justify-center h-48 cursor-pointer hover:shadow-xl transition-all hover:bg-indigo-50 dark:hover:bg-gray-700"
+                        onClick={() => setSelectedSubAccount(sub.id !== selectedSubAccount?.id ? sub : null)}
+                      >
+                        <ExchangeIcon size={48} className="text-indigo-500 dark:text-indigo-400 mb-4" />
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{sub.name}</h3>
+                        <p className="text-gray-500 dark:text-gray-400">{sub.exchange.toUpperCase()}</p>
+                        <p className="text-2xl text-indigo-600 dark:text-indigo-400 font-bold mt-2">
+                          ${sub.balance.toFixed(2)}
+                        </p>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Click to view details</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+
+            {selectedSubAccount && (
+              <div className="mt-8 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Account Details</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-gray-500 dark:text-gray-400">Name</p>
+                    <p className="text-xl font-semibold">{selectedSubAccount.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 dark:text-gray-400">Exchange</p>
+                    <p className="text-xl font-semibold">{selectedSubAccount.exchange}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 dark:text-gray-400">Balance</p>
+                    <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">${selectedSubAccount.balance.toFixed(2)}</p>
+                  </div>
+                </div>
                 <button 
-                  className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+                  className="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all"
                   onClick={() => setSelectedSubAccount(null)}
                 >
-                  Cerrar
+                  Close Details
                 </button>
               </div>
-            </div>
-          )}
-        </main>
+            )}
+          </main>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
