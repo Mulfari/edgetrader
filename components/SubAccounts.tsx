@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Search, RefreshCw, Plus, AlertCircle, ExternalLink } from "lucide-react"
+import { Search, RefreshCw, Plus, AlertCircle, ChevronRight, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -15,7 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 
 interface SubAccount {
   id: string
@@ -25,11 +25,8 @@ interface SubAccount {
   balance: number
   lastUpdated: string
   performance: number
-  assets: { [key: string]: number }
-  equityBalance: number
-  availableBalance: number
-  marginBalance: number
-  unrealizedPnL: number
+  apiKey: string
+  secretKey: string
 }
 
 interface SubAccountsProps {
@@ -50,9 +47,13 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
       (activeTab === "all" || account.exchange === activeTab),
   )
 
+  const handleRowClick = (account: SubAccount) => {
+    setSelectedAccount(account)
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4">
+    <div>
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
         <div className="relative w-full md:w-64">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <Input
@@ -85,8 +86,8 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+        <TabsList>
           <TabsTrigger value="all">Todas</TabsTrigger>
           <TabsTrigger value="binance">Binance</TabsTrigger>
           <TabsTrigger value="bybit">Bybit</TabsTrigger>
@@ -104,7 +105,7 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
               <TableHead>Balance</TableHead>
               <TableHead>Rendimiento</TableHead>
               <TableHead>Última Actualización</TableHead>
-              <TableHead>Acciones</TableHead>
+              <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -124,78 +125,17 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
               </TableRow>
             ) : (
               filteredSubAccounts.map((sub) => (
-                <TableRow key={sub.id}>
+                <TableRow
+                  key={sub.id}
+                  className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                  onClick={() => handleRowClick(sub)}
+                >
                   <TableCell className="font-medium">{sub.name}</TableCell>
                   <TableCell>
                     <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="link" className="p-0 h-auto font-semibold">
-                          {sub.balance.toFixed(2)} USDT
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                          <DialogTitle>Detalles de la Cuenta: {sub.name}</DialogTitle>
-                          <DialogDescription>Información detallada de la subcuenta</DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                          <Card>
-                            <CardHeader>
-                              <CardTitle>Balance General</CardTitle>
-                            </CardHeader>
-                            <CardContent className="grid grid-cols-2 gap-4">
-                              <div>
-                                <p className="text-sm font-medium">Balance Total</p>
-                                <p className="text-2xl font-bold">{sub.balance.toFixed(2)} USDT</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium">Balance de Equidad</p>
-                                <p className="text-2xl font-bold">{sub.equityBalance.toFixed(2)} USDT</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium">Balance Disponible</p>
-                                <p className="text-2xl font-bold">{sub.availableBalance.toFixed(2)} USDT</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium">Balance de Margen</p>
-                                <p className="text-2xl font-bold">{sub.marginBalance.toFixed(2)} USDT</p>
-                              </div>
-                            </CardContent>
-                          </Card>
-                          <Card>
-                            <CardHeader>
-                              <CardTitle>PnL No Realizado</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <p
-                                className={`text-2xl font-bold ${sub.unrealizedPnL >= 0 ? "text-green-500" : "text-red-500"}`}
-                              >
-                                {sub.unrealizedPnL >= 0 ? "+" : ""}
-                                {sub.unrealizedPnL.toFixed(2)} USDT
-                              </p>
-                            </CardContent>
-                          </Card>
-                          <Card>
-                            <CardHeader>
-                              <CardTitle>Activos</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <ul className="space-y-2">
-                                {Object.entries(sub.assets).map(([asset, amount]) => (
-                                  <li key={asset} className="flex justify-between">
-                                    <span className="font-medium">{asset}</span>
-                                    <span>{amount.toFixed(8)}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    <span className="font-semibold">{sub.balance.toFixed(2)} USDT</span>
                   </TableCell>
                   <TableCell>
                     <span className={`font-semibold ${sub.performance >= 0 ? "text-green-500" : "text-red-500"}`}>
@@ -205,10 +145,7 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
                   </TableCell>
                   <TableCell>{new Date(sub.lastUpdated).toLocaleString()}</TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="sm">
-                      <ExternalLink className="h-4 w-4" />
-                      <span className="sr-only">Ver detalles</span>
-                    </Button>
+                    <ChevronRight className="h-4 w-4" />
                   </TableCell>
                 </TableRow>
               ))
@@ -216,6 +153,66 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
           </TableBody>
         </Table>
       </div>
+
+      <Sheet open={!!selectedAccount} onOpenChange={() => setSelectedAccount(null)}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Detalles de la Subcuenta</SheetTitle>
+            <SheetDescription>Información detallada de la subcuenta seleccionada</SheetDescription>
+          </SheetHeader>
+          {selectedAccount && (
+            <div className="mt-6 space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Nombre</h3>
+                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100">{selectedAccount.name}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Exchange</h3>
+                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                  {selectedAccount.exchange.toUpperCase()}
+                </p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Balance</h3>
+                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                  {selectedAccount.balance.toFixed(2)} USDT
+                </p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Rendimiento</h3>
+                <p
+                  className={`mt-1 text-sm font-semibold ${selectedAccount.performance >= 0 ? "text-green-500" : "text-red-500"}`}
+                >
+                  {selectedAccount.performance >= 0 ? "+" : ""}
+                  {selectedAccount.performance.toFixed(2)}%
+                </p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Última Actualización</h3>
+                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                  {new Date(selectedAccount.lastUpdated).toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">API Key</h3>
+                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                  {selectedAccount.apiKey.slice(0, 4)}...{selectedAccount.apiKey.slice(-4)}
+                </p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Secret Key</h3>
+                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                  {selectedAccount.secretKey.slice(0, 4)}...{selectedAccount.secretKey.slice(-4)}
+                </p>
+              </div>
+            </div>
+          )}
+          <Button className="mt-6" onClick={() => setSelectedAccount(null)}>
+            <X className="mr-2 h-4 w-4" />
+            Cerrar
+          </Button>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
