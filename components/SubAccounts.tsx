@@ -16,7 +16,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { useRouter } from "next/navigation";
 
 interface SubAccount {
   id: string;
@@ -24,8 +23,8 @@ interface SubAccount {
   name: string;
   exchange: string;
   balance?: number;
-  lastUpdated?: string;
-  performance?: number;
+  lastUpdated: string;
+  performance: number;
 }
 
 export default function SubAccounts() {
@@ -34,30 +33,22 @@ export default function SubAccounts() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   const fetchSubAccounts = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
     const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
+    if (!token) return;
 
     try {
       const res = await fetch(`${API_URL}/subaccounts`, {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
+
       if (!res.ok) throw new Error("Error al obtener subcuentas");
+
       const data = await res.json();
-      
-      if (!Array.isArray(data)) {
-        throw new Error("Respuesta inesperada del servidor");
-      }
+      if (!Array.isArray(data)) throw new Error("Respuesta inesperada del servidor");
 
       const subAccountsWithBalance = await Promise.all(
         data.map(async (sub) => {
@@ -68,23 +59,22 @@ export default function SubAccounts() {
             });
 
             if (!balanceRes.ok) throw new Error("Error al obtener balance");
+
             const balanceData = await balanceRes.json();
             return { ...sub, balance: balanceData.balance ?? 0 };
-          } catch (error) {
-            console.error(`❌ Error obteniendo balance de ${sub.name}:`, error);
+          } catch {
             return { ...sub, balance: 0 };
           }
         })
       );
-      
+
       setSubAccounts(subAccountsWithBalance);
     } catch (error) {
-      console.error("❌ Error obteniendo subcuentas:", error);
       setError("No se pudieron cargar las subcuentas");
     } finally {
       setIsLoading(false);
     }
-  }, [router, API_URL]);
+  }, [API_URL]);
 
   useEffect(() => {
     fetchSubAccounts();
@@ -101,45 +91,38 @@ export default function SubAccounts() {
     <div className="space-y-6 p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-primary">Subcuentas</h2>
-        <Button onClick={fetchSubAccounts} variant="outline" size="sm">
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Actualizar Todo
+        <Button onClick={fetchSubAccounts} variant="outline">
+          <RefreshCw className="mr-2 h-4 w-4" /> Actualizar Todo
         </Button>
       </div>
-
       {error && <p className="text-red-500">{error}</p>}
-      
-      {isLoading ? (
-        <p className="text-center text-gray-500">Cargando subcuentas...</p>
-      ) : (
-        <Card className="shadow-lg">
-          <CardHeader className="bg-secondary">
-            <CardTitle className="flex items-center justify-between text-2xl">
-              <span>Subcuentas</span>
-              <Badge variant="outline" className="text-lg px-3 py-1">
-                {filteredSubAccounts.length}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <Accordion type="single" collapsible className="w-full">
+      <Card>
+        <CardHeader>
+          <CardTitle>Subcuentas ({filteredSubAccounts.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-center">Cargando...</p>
+          ) : (
+            <Accordion type="single" collapsible>
               {filteredSubAccounts.length === 0 ? (
-                <p className="text-center text-gray-500">No se encontraron subcuentas</p>
+                <p className="text-center">No se encontraron subcuentas</p>
               ) : (
                 filteredSubAccounts.map((sub) => (
-                  <AccordionItem value={sub.id} key={sub.id} className="border-b">
+                  <AccordionItem key={sub.id} value={sub.id}>
                     <AccordionTrigger>
-                      <span className="font-medium text-primary">{sub.name}</span>
-                      <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
-                      <span className="font-semibold">{sub.balance?.toFixed(2) ?? "0.00"} USDT</span>
+                      {sub.name} - {sub.exchange.toUpperCase()} - {sub.balance?.toFixed(2) ?? "0.00"} USDT
                     </AccordionTrigger>
+                    <AccordionContent>
+                      <p>Última actualización: {new Date(sub.lastUpdated).toLocaleString()}</p>
+                    </AccordionContent>
                   </AccordionItem>
                 ))
               )}
             </Accordion>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
