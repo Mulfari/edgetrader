@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,19 +10,24 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import SubAccounts from "@/components/SubAccounts";
 
+interface SubAccount {
+  balance: number;
+  performance: number;
+}
+
 export default function Dashboard() {
-  const [totalBalance, setTotalBalance] = useState(0);
-  const [totalPerformance, setTotalPerformance] = useState(0);
+  const [totalBalance, setTotalBalance] = useState<number>(0);
+  const [totalPerformance, setTotalPerformance] = useState<number>(0);
   const router = useRouter();
 
   const fetchGlobalData = async () => {
     try {
       const response = await fetch("/api/subaccounts");
-      const data = (await response.json()) || [];
+      const data: SubAccount[] = (await response.json()) || [];
 
-      const balance = data.reduce((sum, account) => sum + (account.balance || 0), 0);
+      const balance = data.reduce((sum: number, account: SubAccount) => sum + (account.balance || 0), 0);
       const performance =
-        data.length > 0 ? data.reduce((sum, account) => sum + (account.performance || 0), 0) / data.length : 0;
+        data.length > 0 ? data.reduce((sum: number, account: SubAccount) => sum + (account.performance || 0), 0) / data.length : 0;
 
       setTotalBalance(balance);
       setTotalPerformance(performance);
@@ -31,7 +36,7 @@ export default function Dashboard() {
     }
   };
 
-  useState(() => {
+  useEffect(() => {
     fetchGlobalData();
   }, []);
 
