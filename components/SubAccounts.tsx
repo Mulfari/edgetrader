@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
-import { Search, RefreshCw, Plus, AlertCircle } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useState, useEffect } from "react";
+import { Search, RefreshCw, Plus, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -14,138 +14,117 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
 interface SubAccount {
-  id: string
-  userId: string
-  name: string
-  exchange: string
-  balance: number
-  lastUpdated: string
-  performance: number
+  id: string;
+  userId: string;
+  name: string;
+  exchange: string;
+  balance: number;
+  lastUpdated: string;
+  performance: number;
 }
 
-interface SubAccountsProps {
-  subAccounts: SubAccount[]
-  isLoading: boolean
-  fetchData: () => void
-}
+export default function SubAccounts() {
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedSubAccount, setSelectedSubAccount] = useState<SubAccount | null>(null);
+  const [balance, setBalance] = useState<number | null>(null);
 
-export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsProps) {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [activeTab, setActiveTab] = useState("all")
+  // Obtener subcuentas del backend
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/subaccounts");
+      const data = await response.json();
+      setSubAccounts(data);
+    } catch (error) {
+      console.error("Error obteniendo subcuentas:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // Filtrar subcuentas por búsqueda y exchange seleccionado
-  const filteredSubAccounts = subAccounts.filter(
-    (account) =>
-      (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        account.exchange.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (activeTab === "all" || account.exchange.toLowerCase() === activeTab),
-  )
+  // Obtener balance de una subcuenta desde Bybit
+  const fetchBalance = async (subAccountId: string) => {
+    try {
+      const response = await fetch(`/api/subaccounts/${subAccountId}/balance`);
+      const data = await response.json();
+      setBalance(data.balance);
+    } catch (error) {
+      console.error("Error obteniendo balance de Bybit:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   return (
     <div>
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
-        <div className="relative w-full md:w-64">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="Buscar subcuentas..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-4 py-2 w-full"
-          />
-        </div>
-        <div className="flex space-x-4">
-          <Button onClick={fetchData} variant="outline" size="sm">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Actualizar Todo
-          </Button>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                <Plus className="mr-2 h-4 w-4" /> Agregar Subcuenta
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Agregar Nueva Subcuenta</DialogTitle>
-                <DialogDescription>Ingrese los detalles de la nueva subcuenta aquí.</DialogDescription>
-              </DialogHeader>
-              {/* Aquí puedes agregar un formulario para crear una nueva subcuenta */}
-            </DialogContent>
-          </Dialog>
-        </div>
+      <div className="flex justify-between items-center mb-6">
+        <Button onClick={fetchData} variant="outline" size="sm">
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Actualizar Todo
+        </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList>
-          <TabsTrigger value="all">Todas</TabsTrigger>
-          <TabsTrigger value="binance">Binance</TabsTrigger>
-          <TabsTrigger value="bybit">Bybit</TabsTrigger>
-          <TabsTrigger value="kraken">Kraken</TabsTrigger>
-          <TabsTrigger value="ftx">FTX</TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
-        <Table>
-          <TableHeader>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nombre</TableHead>
+            <TableHead>Exchange</TableHead>
+            <TableHead>Balance</TableHead>
+            <TableHead>Rendimiento</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {isLoading ? (
             <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Exchange</TableHead>
-              <TableHead>Balance</TableHead>
-              <TableHead>Rendimiento</TableHead>
-              <TableHead>Última Actualización</TableHead>
+              <TableCell colSpan={4} className="text-center">
+                Cargando subcuentas...
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-4">
-                  <RefreshCw className="animate-spin mx-auto h-6 w-6 text-gray-500" />
-                  <span className="mt-2 block">Cargando subcuentas...</span>
+          ) : (
+            subAccounts.map((sub) => (
+              <TableRow
+                key={sub.id}
+                onClick={() => {
+                  setSelectedSubAccount(sub);
+                  fetchBalance(sub.id);
+                }}
+                className="cursor-pointer hover:bg-gray-100"
+              >
+                <TableCell>{sub.name}</TableCell>
+                <TableCell>
+                  <Badge>{sub.exchange.toUpperCase()}</Badge>
+                </TableCell>
+                <TableCell>{sub.balance.toFixed(2)} USDT</TableCell>
+                <TableCell className={sub.performance >= 0 ? "text-green-500" : "text-red-500"}>
+                  {sub.performance.toFixed(2)}%
                 </TableCell>
               </TableRow>
-            ) : filteredSubAccounts.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-4">
-                  <AlertCircle className="mx-auto mb-2 h-6 w-6 text-gray-500" />
-                  No se encontraron subcuentas
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredSubAccounts.map((sub) => (
-                <TableRow key={sub.id}>
-                  <TableCell className="font-medium">{sub.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-semibold">{sub.balance.toFixed(2)} USDT</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className={`font-semibold ${sub.performance >= 0 ? "text-green-500" : "text-red-500"}`}>
-                      {sub.performance >= 0 ? "+" : ""}
-                      {sub.performance.toFixed(2)}%
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {sub.lastUpdated
-                      ? new Intl.DateTimeFormat("es-ES", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        }).format(new Date(sub.lastUpdated))
-                      : "No disponible"}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
-  )
-}
+            ))
+          )}
+        </TableBody>
+      </Table>
 
+      {/* Modal para mostrar balance de Bybit */}
+      {selectedSubAccount && (
+        <Dialog open={Boolean(selectedSubAccount)} onOpenChange={() => setSelectedSubAccount(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Detalles de {selectedSubAccount.name}</DialogTitle>
+              <DialogDescription>
+                <p><strong>Exchange:</strong> {selectedSubAccount.exchange}</p>
+                <p><strong>Balance Local:</strong> {selectedSubAccount.balance.toFixed(2)} USDT</p>
+                <p><strong>Balance Bybit:</strong> {balance !== null ? `${balance} USDT` : "Cargando..."}</p>
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+}
