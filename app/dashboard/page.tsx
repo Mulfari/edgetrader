@@ -45,7 +45,6 @@ export default function Dashboard() {
   const fetchData = useCallback(async () => {
     setIsLoading(true)
     try {
-      // TODO: Replace with actual API calls
       const subAccountsResponse = await fetch("/api/subaccounts")
       const subAccountsData = await subAccountsResponse.json()
       setSubAccounts(subAccountsData)
@@ -124,7 +123,7 @@ export default function Dashboard() {
             <TabsTrigger value="trades">Operaciones</TabsTrigger>
           </TabsList>
           <TabsContent value="accounts">
-            <SubAccounts subAccounts={subAccounts} isLoading={isLoading} fetchData={fetchData} />
+            <SubAccounts isLoading={isLoading} fetchData={fetchData} />
           </TabsContent>
           <TabsContent value="trades">
             <Operations trades={trades} />

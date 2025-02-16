@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, RefreshCw, Plus, AlertCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -27,14 +27,36 @@ interface SubAccount {
 }
 
 interface SubAccountsProps {
-  subAccounts: SubAccount[]
   isLoading: boolean
   fetchData: () => void
 }
 
-export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsProps) {
+export default function SubAccounts({ isLoading: initialLoading, fetchData }: SubAccountsProps) {
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
+  const [isLoading, setIsLoading] = useState(initialLoading)
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("all")
+
+  useEffect(() => {
+    fetchSubAccounts()
+  }, [])
+
+  const fetchSubAccounts = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/subaccounts")
+      if (!response.ok) {
+        throw new Error("Failed to fetch subaccounts")
+      }
+      const data = await response.json()
+      setSubAccounts(data)
+    } catch (error) {
+      console.error("Error fetching subaccounts:", error)
+      // Aquí podrías mostrar un mensaje de error al usuario
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const filteredSubAccounts = subAccounts.filter(
     (account) =>
@@ -42,6 +64,11 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
         account.exchange.toLowerCase().includes(searchTerm.toLowerCase())) &&
       (activeTab === "all" || account.exchange === activeTab),
   )
+
+  const handleRefresh = () => {
+    fetchSubAccounts()
+    fetchData() // This will update the dashboard data as well
+  }
 
   return (
     <div>
@@ -57,7 +84,7 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
           />
         </div>
         <div className="flex space-x-4">
-          <Button onClick={fetchData} variant="outline" size="sm">
+          <Button onClick={handleRefresh} variant="outline" size="sm">
             <RefreshCw className="mr-2 h-4 w-4" />
             Actualizar Todo
           </Button>
@@ -72,6 +99,7 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
                 <DialogTitle>Agregar Nueva Subcuenta</DialogTitle>
                 <DialogDescription>Ingrese los detalles de la nueva subcuenta aquí.</DialogDescription>
               </DialogHeader>
+              {/* Aquí irá el formulario para agregar una nueva subcuenta */}
             </DialogContent>
           </Dialog>
         </div>
