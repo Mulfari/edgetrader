@@ -2,11 +2,24 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
-import { LogOut, CreditCard, Building2, Plus } from 'lucide-react'
+import { LogOut, CreditCard, Building2, Plus, Search, ChevronDown } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/ThemeToggle"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface SubAccount {
   id: string
@@ -112,93 +125,128 @@ export default function DashboardPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
-      <header className="flex justify-between items-center p-6 bg-gray-800 shadow-lg">
-        <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
-          Dashboard
-        </h1>
-        <div className="flex items-center space-x-4">
-          <ThemeToggle />
-          <Button variant="ghost" size="icon" onClick={handleLogout} className="text-gray-300 hover:text-white">
-            <LogOut size={24} />
-          </Button>
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+      <header className="bg-white dark:bg-gray-800 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6 md:justify-start md:space-x-10">
+            <div className="flex justify-start lg:w-0 lg:flex-1">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard Financiero</h1>
+            </div>
+            <div className="flex items-center justify-end md:flex-1 lg:w-0">
+              <ThemeToggle />
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="ml-8">
+                <LogOut size={20} className="mr-2" />
+                Cerrar sesión
+              </Button>
+            </div>
+          </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <Input
-            type="text"
-            placeholder="Buscar subcuentas..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-64 bg-gray-700 text-white placeholder-gray-400 border-gray-600"
-          />
-          <Button className="bg-purple-600 hover:bg-purple-700">
-            <Plus size={20} className="mr-2" /> Agregar Subcuenta
-          </Button>
-        </div>
-
-        {error && (
-          <div className="bg-red-600 text-white p-4 rounded-md mb-6">
-            {error}
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 py-6 sm:px-0">
+          <div className="flex justify-between items-center mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <Input
+                type="text"
+                placeholder="Buscar subcuentas..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 w-64 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md"
+              />
+            </div>
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Plus size={20} className="mr-2" /> Agregar Subcuenta
+            </Button>
           </div>
-        )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {isLoading
-            ? Array.from({ length: 6 }).map((_, index) => (
-                <div key={index} className="bg-gray-800 rounded-lg p-6 shadow-lg animate-pulse">
-                  <div className="h-6 bg-gray-700 rounded w-3/4 mb-4"></div>
-                  <div className="h-4 bg-gray-700 rounded w-1/2"></div>
-                </div>
-              ))
-            : filteredSubAccounts.map((sub) => (
-                <motion.div
-                  key={sub.id}
-                  className={`bg-gray-800 rounded-lg p-6 shadow-lg cursor-pointer transition-all hover:shadow-xl ${
-                    selectedSubAccount?.id === sub.id ? 'ring-2 ring-purple-500' : ''
-                  }`}
-                  onClick={() => {
-                    if (sub.id !== selectedSubAccount?.id) {
-                      setSelectedSubAccount(sub)
-                      fetchAccountDetails(sub.userId)
-                    } else {
-                      setSelectedSubAccount(null)
-                    }
-                  }}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-semibold">{sub.name}</h3>
-                    {sub.exchange === 'binance' ? (
-                      <CreditCard size={24} className="text-yellow-500" />
-                    ) : (
-                      <Building2 size={24} className="text-blue-500" />
-                    )}
-                  </div>
-                  <p className="text-gray-400">{sub.exchange.toUpperCase()}</p>
-                  {selectedSubAccount?.id === sub.id && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="mt-4 pt-4 border-t border-gray-700"
-                    >
-                      {isBalanceLoading ? (
-                        <div className="h-4 bg-gray-700 rounded w-1/2 animate-pulse"></div>
-                      ) : (
-                        <p className="text-lg">
-                          <span className="font-semibold">Balance:</span>{' '}
-                          {accountDetails?.balance?.toFixed(2) ?? "0.00"} USDT
-                        </p>
-                      )}
-                    </motion.div>
-                  )}
-                </motion.div>
-              ))}
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+              <strong className="font-bold">Error:</strong>
+              <span className="block sm:inline"> {error}</span>
+            </div>
+          )}
+
+          <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Exchange</TableHead>
+                  <TableHead>Balance</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">
+                      Cargando subcuentas...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredSubAccounts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">
+                      No se encontraron subcuentas
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredSubAccounts.map((sub) => (
+                    <TableRow key={sub.id}>
+                      <TableCell className="font-medium">{sub.name}</TableCell>
+                      <TableCell>
+                        {sub.exchange === 'binance' ? (
+                          <span className="flex items-center">
+                            <CreditCard size={16} className="mr-2 text-yellow-500" />
+                            {sub.exchange.toUpperCase()}
+                          </span>
+                        ) : (
+                          <span className="flex items-center">
+                            <Building2 size={16} className="mr-2 text-blue-500" />
+                            {sub.exchange.toUpperCase()}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {selectedSubAccount?.id === sub.id ? (
+                          isBalanceLoading ? (
+                            <span className="text-gray-500">Cargando...</span>
+                          ) : (
+                            <span className="font-semibold">{accountDetails?.balance?.toFixed(2) ?? "0.00"} USDT</span>
+                          )
+                        ) : (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedSubAccount(sub)
+                              fetchAccountDetails(sub.userId)
+                            }}
+                          >
+                            Ver balance
+                          </Button>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              Acciones <ChevronDown size={16} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem>Editar</DropdownMenuItem>
+                            <DropdownMenuItem>Eliminar</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </main>
     </div>
