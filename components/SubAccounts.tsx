@@ -2,12 +2,22 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw, LogOut } from "lucide-react";
+import { Search, RefreshCw, Plus, AlertCircle, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { Sidebar } from "@/components/Sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface SubAccount {
@@ -20,9 +30,11 @@ interface SubAccount {
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
@@ -45,6 +57,7 @@ export default function DashboardPage() {
       setSubAccounts(data);
     } catch (error) {
       console.error("Error obteniendo subcuentas:", error);
+      setError("No se pudieron cargar las subcuentas");
     } finally {
       setIsLoading(false);
     }
@@ -70,6 +83,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+      <Sidebar isCollapsed={isSidebarCollapsed} />
       <main className="flex-1 p-8">
         <header className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Dashboard</h1>
