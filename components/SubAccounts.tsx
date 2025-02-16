@@ -46,10 +46,6 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
     )
   }, [subAccounts, activeTab, searchTerm])
 
-  const totalBalance = useMemo(() => {
-    return filteredSubAccounts.reduce((sum, account) => sum + account.balance, 0)
-  }, [filteredSubAccounts])
-
   return (
     <div className="space-y-6 p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center">
@@ -96,12 +92,6 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
-          <div className="mb-6 p-6 bg-secondary rounded-lg shadow-inner">
-            <div className="flex items-center justify-between">
-              <span className="text-xl font-medium">Balance Total</span>
-              <span className="text-3xl font-bold text-primary">{totalBalance.toFixed(2)} USDT</span>
-            </div>
-          </div>
           <div className="mb-6 relative">
             <Input
               placeholder="Buscar por nombre o exchange..."
@@ -172,14 +162,6 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
                               <p>{new Date(sub.lastUpdated).toLocaleString()}</p>
                             </div>
                           </div>
-                        </div>
-                        <div className="bg-primary/5 p-4 flex justify-end space-x-2">
-                          <Button variant="outline" className="w-32">
-                            Editar
-                          </Button>
-                          <Button variant="destructive" className="w-32">
-                            Eliminar
-                          </Button>
                         </div>
                       </div>
                     </AccordionContent>
