@@ -10,11 +10,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import SubAccounts from "@/components/SubAccounts";
 
-interface SubAccount {
-  balance: number;
-  performance: number;
-}
-
 export default function Dashboard() {
   const [totalBalance, setTotalBalance] = useState<number>(0);
   const [totalPerformance, setTotalPerformance] = useState<number>(0);
@@ -26,36 +21,30 @@ export default function Dashboard() {
       if (!token) {
         throw new Error("Token no encontrado, inicia sesión nuevamente");
       }
-  
-      const response = await fetch("https://edgetrader.vercel.app/api/subaccounts", { 
+
+      const response = await fetch("/api/subaccounts", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-  
+
       if (!response.ok) {
-        console.error(`Error HTTP: ${response.status}`);
-        const errorText = await response.text();
-        throw new Error(`Error al obtener subcuentas: ${errorText}`);
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
-  
       const data = await response.json();
-      
-      if (!Array.isArray(data)) {
-        throw new Error("Respuesta inesperada de la API");
-      }
-  
-      const balance = data.reduce((sum, account) => sum + (account.balance || 0), 0);
-      const performance = data.length > 0 ? data.reduce((sum, account) => sum + (account.performance || 0), 0) / data.length : 0;
-  
+
+      const balance = data.reduce((sum: number, account: { balance: number }) => sum + (account.balance || 0), 0);
+      const performance =
+        data.length > 0 ? data.reduce((sum: number, account: { performance: number }) => sum + (account.performance || 0), 0) / data.length : 0;
+
       setTotalBalance(balance);
       setTotalPerformance(performance);
     } catch (error) {
-      console.error("❌ Error al obtener datos:", error);
+      console.error("Error al obtener datos:", error);
     }
-  };  
+  };
 
   useEffect(() => {
     fetchGlobalData();
