@@ -10,29 +10,35 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import SubAccounts from "@/components/SubAccounts"
 
+interface SubAccount {
+  id: string
+  userId: string
+  name: string
+  exchange: string
+  balance: number
+  lastUpdated: string
+  performance: number
+}
+
 export default function Dashboard() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [totalBalance, setTotalBalance] = useState(0)
-  const [totalPerformance, setTotalPerformance] = useState(0)
+  const [totalBalance, setTotalBalance] = useState<number>(0)
+  const [totalPerformance, setTotalPerformance] = useState<number>(0)
   const router = useRouter()
 
-  // Obtener datos globales como el balance total y rendimiento total
+  // Obtener datos globales como el balance total y rendimiento promedio
   const fetchGlobalData = useCallback(async () => {
-    setIsLoading(true)
     try {
       const response = await fetch("/api/subaccounts")
-      const data = await response.json()
+      const data: SubAccount[] = await response.json()
 
-      const balance = data.reduce((sum: number, account: any) => sum + account.balance, 0)
+      const balance = data.reduce((sum, account) => sum + account.balance, 0)
       const performance =
-        data.length > 0 ? data.reduce((sum: number, account: any) => sum + account.performance, 0) / data.length : 0
+        data.length > 0 ? data.reduce((sum, account) => sum + account.performance, 0) / data.length : 0
 
       setTotalBalance(balance)
       setTotalPerformance(performance)
     } catch (error) {
       console.error("Error al obtener datos:", error)
-    } finally {
-      setIsLoading(false)
     }
   }, [])
 
