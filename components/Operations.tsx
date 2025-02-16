@@ -83,16 +83,18 @@ export default function Operations({ trades }: OperationsProps) {
         </Tabs>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span>{activeTab === "open" ? "Operaciones Abiertas" : "Operaciones Cerradas"}</span>
-            <Badge variant="outline">{filteredTrades.length}</Badge>
+      <Card className="bg-background">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span>{activeTab === "open" ? "Operaciones Abiertas" : "Operaciones Cerradas"}</span>
+              <Badge variant="outline">{filteredTrades.length}</Badge>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
           {activeTab === "closed" && (
-            <div className="mb-6 p-4 bg-secondary rounded-lg">
+            <div className="mb-6 p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center justify-between">
                 <span className="text-lg font-medium">PnL Total</span>
                 <span className={`text-2xl font-bold ${totalPnL >= 0 ? "text-green-500" : "text-red-500"}`}>
@@ -131,23 +133,21 @@ export default function Operations({ trades }: OperationsProps) {
               </TableHeader>
               <TableBody>
                 {filteredTrades.map((trade) => (
-                  <Collapsible
-                    key={trade.id}
-                    open={expandedTradeId === trade.id}
-                    onOpenChange={() => handleTradeClick(trade.id)}
-                  >
+                  <Collapsible key={trade.id} open={expandedTradeId === trade.id}>
                     <CollapsibleTrigger asChild>
-                      <TableRow className="cursor-pointer hover:bg-muted">
-                        <TableCell>
+                      <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => handleTradeClick(trade.id)}>
+                        <TableCell className="p-0 pl-4 w-[30px]">
                           <ChevronRight
-                            className={`h-4 w-4 transition-transform ${expandedTradeId === trade.id ? "rotate-90" : ""}`}
+                            className={`h-4 w-4 transition-transform duration-200 ${
+                              expandedTradeId === trade.id ? "rotate-90" : ""
+                            }`}
                           />
                         </TableCell>
                         <TableCell className="font-medium">{trade.pair}</TableCell>
                         <TableCell>
                           <Badge
                             variant={trade.type === "buy" ? "default" : "destructive"}
-                            className="flex items-center gap-1"
+                            className="flex items-center gap-1 w-fit"
                           >
                             {trade.type === "buy" ? (
                               <ChevronUp className="w-3 h-3" />
@@ -162,8 +162,8 @@ export default function Operations({ trades }: OperationsProps) {
                             trade.entryPrice.toFixed(2)
                           ) : (
                             <div className="flex flex-col">
-                              <span className="text-xs">E: {trade.entryPrice.toFixed(2)}</span>
-                              <span className="text-xs">S: {trade.exitPrice?.toFixed(2)}</span>
+                              <span className="text-xs text-muted-foreground">E: {trade.entryPrice.toFixed(2)}</span>
+                              <span className="text-xs text-muted-foreground">S: {trade.exitPrice?.toFixed(2)}</span>
                             </div>
                           )}
                         </TableCell>
@@ -189,36 +189,44 @@ export default function Operations({ trades }: OperationsProps) {
                         )}
                       </TableRow>
                     </CollapsibleTrigger>
-                    <CollapsibleContent asChild>
-                      <TableRow>
-                        <TableCell colSpan={7}>
-                          <div className="p-4 bg-muted rounded-lg mt-2">
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <CollapsibleContent>
+                      <TableRow className="hover:bg-transparent">
+                        <TableCell colSpan={8} className="p-0">
+                          <div className="p-4 bg-muted/30 rounded-lg mx-4 mb-2">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                               <div>
-                                <p className="text-sm font-medium text-muted-foreground">Fecha de Apertura</p>
-                                <p>{new Date(trade.openDate).toLocaleString()}</p>
+                                <p className="text-sm font-medium text-muted-foreground mb-1">Fecha de Apertura</p>
+                                <p className="text-sm">{new Date(trade.openDate).toLocaleString()}</p>
                               </div>
                               {trade.market === "futures" && (
                                 <div>
-                                  <p className="text-sm font-medium text-muted-foreground">Apalancamiento</p>
-                                  <p>{trade.leverage}x</p>
+                                  <p className="text-sm font-medium text-muted-foreground mb-1">Apalancamiento</p>
+                                  <p className="text-sm">{trade.leverage}x</p>
                                 </div>
                               )}
+                              <div>
+                                <p className="text-sm font-medium text-muted-foreground mb-1">Precio de Entrada</p>
+                                <p className="text-sm">{trade.entryPrice.toFixed(2)}</p>
+                              </div>
                               {trade.status === "closed" && (
                                 <>
                                   <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Precio de Salida</p>
-                                    <p>{trade.exitPrice?.toFixed(2)}</p>
+                                    <p className="text-sm font-medium text-muted-foreground mb-1">Precio de Salida</p>
+                                    <p className="text-sm">{trade.exitPrice?.toFixed(2)}</p>
                                   </div>
                                   <div>
-                                    <p className="text-sm font-medium text-muted-foreground">PnL</p>
-                                    <p className={trade.pnl && trade.pnl >= 0 ? "text-green-500" : "text-red-500"}>
+                                    <p className="text-sm font-medium text-muted-foreground mb-1">PnL</p>
+                                    <p
+                                      className={`text-sm ${trade.pnl && trade.pnl >= 0 ? "text-green-500" : "text-red-500"}`}
+                                    >
                                       {trade.pnl?.toFixed(2)} USDT
                                     </p>
                                   </div>
                                   <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Fecha de Cierre</p>
-                                    <p>{trade.closeDate && new Date(trade.closeDate).toLocaleString()}</p>
+                                    <p className="text-sm font-medium text-muted-foreground mb-1">Fecha de Cierre</p>
+                                    <p className="text-sm">
+                                      {trade.closeDate && new Date(trade.closeDate).toLocaleString()}
+                                    </p>
                                   </div>
                                 </>
                               )}
@@ -237,4 +245,3 @@ export default function Operations({ trades }: OperationsProps) {
     </div>
   )
 }
-
