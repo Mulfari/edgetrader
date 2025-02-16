@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { LogOut, CreditCard, Building2, Plus, Search, ChevronDown, RefreshCw, AlertCircle, TrendingUp, TrendingDown, DollarSign } from 'lucide-react'
+import { LogOut, CreditCard, Plus, Search, ChevronDown, RefreshCw, AlertCircle, TrendingUp, TrendingDown, DollarSign } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/ThemeToggle"
@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 
 interface SubAccount {
@@ -55,14 +55,9 @@ const sampleSubAccounts: SubAccount[] = [
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
-  const [selectedSubAccount, setSelectedSubAccount] = useState<SubAccount | null>(null)
-  const [isBalanceLoading, setIsBalanceLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("all")
   const router = useRouter()
-
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
   const fetchSubAccounts = useCallback(async () => {
     // Simulando una llamada a la API
@@ -75,17 +70,13 @@ export default function DashboardPage() {
 
   const fetchAccountDetails = async (userId: string) => {
     // Simulando una actualización de balance
-    setIsBalanceLoading(true)
-    setTimeout(() => {
-      setSubAccounts(prevAccounts => 
-        prevAccounts.map(account => 
-          account.userId === userId 
-            ? {...account, balance: account.balance * (1 + (Math.random() * 0.1 - 0.05)), lastUpdated: new Date().toISOString()}
-            : account
-        )
+    setSubAccounts(prevAccounts => 
+      prevAccounts.map(account => 
+        account.userId === userId 
+          ? {...account, balance: account.balance * (1 + (Math.random() * 0.1 - 0.05)), lastUpdated: new Date().toISOString()}
+          : account
       )
-      setIsBalanceLoading(false)
-    }, 1000)
+    )
   }
 
   useEffect(() => {
@@ -226,13 +217,6 @@ export default function DashboardPage() {
               <TabsTrigger value="ftx">FTX</TabsTrigger>
             </TabsList>
           </Tabs>
-
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
-              <strong className="font-bold">Error:</strong>
-              <span className="block sm:inline"> {error}</span>
-            </div>
-          )}
 
           <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
             <Table>
