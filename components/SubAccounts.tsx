@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Search, RefreshCw, Plus, AlertCircle } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useState, useEffect } from "react";
+import { Search, RefreshCw, Plus, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -14,34 +14,37 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
 interface SubAccount {
-  id: string
-  userId: string
-  name: string
-  exchange: string
-  balance: number
-  lastUpdated: string
-  performance: number
+  id: string;
+  userId: string;
+  name: string;
+  exchange: string;
+  balance: number;
+  lastUpdated: string;
+  performance: number;
 }
 
 interface SubAccountsProps {
-  subAccounts: SubAccount[]
-  isLoading: boolean
-  fetchData: () => void
+  subAccounts: SubAccount[];
+  isLoading: boolean;
+  fetchData: () => void;
 }
 
 export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsProps) {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [activeTab, setActiveTab] = useState("all")
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
 
-  const filteredSubAccounts = subAccounts.filter(
-    (account) =>
-      (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        account.exchange.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (activeTab === "all" || account.exchange === activeTab),
-  )
+  // Filtrar subcuentas por búsqueda y exchange seleccionado
+  const filteredSubAccounts = Array.isArray(subAccounts)
+    ? subAccounts.filter(
+        (account) =>
+          (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            account.exchange.toLowerCase().includes(searchTerm.toLowerCase())) &&
+          (activeTab === "all" || account.exchange === activeTab)
+      )
+    : [];
 
   return (
     <div>
@@ -101,15 +104,15 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
-                  <RefreshCw className="animate-spin mx-auto h-6 w-6" />
+                <TableCell colSpan={5} className="text-center py-4">
+                  <RefreshCw className="animate-spin mx-auto h-6 w-6 text-gray-500" />
                   <span className="mt-2 block">Cargando subcuentas...</span>
                 </TableCell>
               </TableRow>
             ) : filteredSubAccounts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
-                  <AlertCircle className="mx-auto mb-2 h-6 w-6" />
+                <TableCell colSpan={5} className="text-center py-4">
+                  <AlertCircle className="mx-auto mb-2 h-6 w-6 text-gray-500" />
                   No se encontraron subcuentas
                 </TableCell>
               </TableRow>
@@ -129,7 +132,14 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
                       {sub.performance.toFixed(2)}%
                     </span>
                   </TableCell>
-                  <TableCell>{new Date(sub.lastUpdated).toLocaleString()}</TableCell>
+                  <TableCell>
+                    {sub.lastUpdated
+                      ? new Intl.DateTimeFormat("es-ES", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        }).format(new Date(sub.lastUpdated))
+                      : "No disponible"}
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -137,6 +147,5 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
         </Table>
       </div>
     </div>
-  )
+  );
 }
-
