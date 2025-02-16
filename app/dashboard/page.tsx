@@ -59,7 +59,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("all")
   const router = useRouter()
 
-  const fetchSubAccounts = useCallback(async () => {
+  const fetchSubAccounts = useCallback(() => {
     // Simulando una llamada a la API
     setIsLoading(true)
     setTimeout(() => {
@@ -68,7 +68,7 @@ export default function DashboardPage() {
     }, 1000)
   }, [])
 
-  const fetchAccountDetails = async (userId: string) => {
+  const fetchAccountDetails = (userId: string) => {
     // Simulando una actualización de balance
     setSubAccounts(prevAccounts => 
       prevAccounts.map(account => 
@@ -95,7 +95,9 @@ export default function DashboardPage() {
   )
 
   const totalBalance = subAccounts.reduce((sum, account) => sum + account.balance, 0)
-  const totalPerformance = subAccounts.reduce((sum, account) => sum + account.performance, 0) / subAccounts.length
+  const totalPerformance = subAccounts.length > 0
+    ? subAccounts.reduce((sum, account) => sum + account.performance, 0) / subAccounts.length
+    : 0
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -108,7 +110,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-end md:flex-1 lg:w-0">
               <ThemeToggle />
               <Button variant="ghost" size="sm" onClick={handleLogout} className="ml-8">
-                <LogOut size={20} className="mr-2" />
+                <LogOut className="mr-2 h-4 w-4" />
                 Cerrar sesión
               </Button>
             </div>
@@ -150,10 +152,10 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {Math.max(...subAccounts.map(a => a.balance)).toFixed(2)} USDT
+                  {subAccounts.length > 0 ? Math.max(...subAccounts.map(a => a.balance)).toFixed(2) : "0.00"} USDT
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {subAccounts.reduce((a, b) => a.balance > b.balance ? a : b).name}
+                  {subAccounts.length > 0 ? subAccounts.reduce((a, b) => a.balance > b.balance ? a : b).name : "N/A"}
                 </p>
               </CardContent>
             </Card>
@@ -164,10 +166,10 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-500">
-                  {Math.max(...subAccounts.map(a => a.performance)).toFixed(2)}%
+                  {subAccounts.length > 0 ? Math.max(...subAccounts.map(a => a.performance)).toFixed(2) : "0.00"}%
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {subAccounts.reduce((a, b) => a.performance > b.performance ? a : b).name}
+                  {subAccounts.length > 0 ? subAccounts.reduce((a, b) => a.performance > b.performance ? a : b).name : "N/A"}
                 </p>
               </CardContent>
             </Card>
@@ -175,24 +177,24 @@ export default function DashboardPage() {
 
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
             <div className="relative w-full md:w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <Input
                 type="text"
                 placeholder="Buscar subcuentas..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md"
+                className="pl-10 pr-4 py-2 w-full"
               />
             </div>
             <div className="flex space-x-4">
               <Button onClick={fetchSubAccounts} variant="outline" size="sm">
-                <RefreshCw size={16} className="mr-2" />
+                <RefreshCw className="mr-2 h-4 w-4" />
                 Actualizar Todo
               </Button>
               <Dialog>
                 <DialogTrigger asChild>
                   <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    <Plus size={20} className="mr-2" /> Agregar Subcuenta
+                    <Plus className="mr-2 h-4 w-4" /> Agregar Subcuenta
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -234,14 +236,14 @@ export default function DashboardPage() {
                 {isLoading ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center">
-                      <RefreshCw size={24} className="animate-spin mx-auto" />
+                      <RefreshCw className="animate-spin mx-auto h-6 w-6" />
                       <span className="mt-2 block">Cargando subcuentas...</span>
                     </TableCell>
                   </TableRow>
                 ) : filteredSubAccounts.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center">
-                      <AlertCircle size={24} className="mx-auto mb-2" />
+                      <AlertCircle className="mx-auto mb-2 h-6 w-6" />
                       No se encontraron subcuentas
                     </TableCell>
                   </TableRow>
@@ -274,7 +276,7 @@ export default function DashboardPage() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">
-                              Acciones <ChevronDown size={16} />
+                              Acciones <ChevronDown className="ml-2 h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
