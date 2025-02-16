@@ -22,7 +22,19 @@ export default function Dashboard() {
 
   const fetchGlobalData = async () => {
     try {
-      const response = await fetch("/api/subaccounts");
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Token no encontrado, inicia sesión nuevamente");
+      }
+
+      const response = await fetch("/api/subaccounts", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
