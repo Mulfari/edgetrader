@@ -41,7 +41,7 @@ interface SubAccountsProps {
 export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("all")
-  const [selectedAccount, setSelectedAccount] = useState<SubAccount | null>(null)
+  //const [selectedAccount, setSelectedAccount] = useState<SubAccount | null>(null) //Removed as it's not used
 
   const filteredSubAccounts = subAccounts.filter(
     (account) =>
