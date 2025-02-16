@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface SubAccount {
   id: string
@@ -40,8 +40,8 @@ interface SubAccount {
 }
 
 interface AccountDetails {
-  balance?: number
-  lastUpdated?: string
+  balance: number
+  lastUpdated: string
 }
 
 export default function DashboardPage() {
@@ -49,6 +49,7 @@ export default function DashboardPage() {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
   const [selectedSubAccount, setSelectedSubAccount] = useState<SubAccount | null>(null)
   const [accountDetails, setAccountDetails] = useState<AccountDetails | null>(null)
+  const [allBalances, setAllBalances] = useState<{[key: string]: number}>({})
   const [isBalanceLoading, setIsBalanceLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -115,7 +116,9 @@ export default function DashboardPage() {
       const data = await res.json()
 
       const balance = typeof data.balance === "number" ? data.balance : 0
-      setAccountDetails({ balance, lastUpdated: new Date().toISOString() })
+      const newAccountDetails = { balance, lastUpdated: new Date().toISOString() }
+      setAccountDetails(newAccountDetails)
+      setAllBalances(prev => ({...prev, [userId]: balance}))
     } catch (error) {
       console.error("❌ Error obteniendo detalles de la cuenta:", error)
       setError("No se pudo obtener la información de la cuenta.")
@@ -139,9 +142,7 @@ export default function DashboardPage() {
     (activeTab === "all" || account.exchange === activeTab)
   )
 
-  const totalBalance = subAccounts.reduce((sum, account) => {
-    return sum + (accountDetails?.balance ?? 0);
-  }, 0);  
+  const totalBalance = Object.values(allBalances).reduce((sum, balance) => sum + balance, 0)
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -173,7 +174,7 @@ export default function DashboardPage() {
               <CardContent>
                 <div className="text-2xl font-bold">{totalBalance.toFixed(2)} USDT</div>
                 <p className="text-xs text-muted-foreground">
-                  Actualizado: {new Date().toLocaleString()}
+                  Total de {Object.keys(allBalances).length} subcuentas
                 </p>
               </CardContent>
             </Card>
@@ -286,7 +287,7 @@ export default function DashboardPage() {
                           isBalanceLoading ? (
                             <span className="text-gray-500">Cargando...</span>
                           ) : (
-                            <span className="font-semibold">{accountDetails?.balance?.toFixed(2) ?? "0.00"} USDT</span>
+                            <span className="font-semibold">{allBalances[sub.userId]?.toFixed(2) ?? "0.00"} USDT</span>
                           )
                         ) : (
                           <Button 
