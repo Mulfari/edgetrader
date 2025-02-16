@@ -38,16 +38,21 @@ interface Trade {
 
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
-  const [subAccounts, setSubAccounts] = useState<SubAccount[] | null>(null)
-  const [trades, setTrades] = useState<Trade[] | null>(null)
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
+  const [trades, setTrades] = useState<Trade[]>([])
   const router = useRouter()
 
-  const fetchData = useCallback(() => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true)
     try {
       // TODO: Replace with actual API calls
-      setSubAccounts([])
-      setTrades([])
+      const subAccountsResponse = await fetch("/api/subaccounts")
+      const subAccountsData = await subAccountsResponse.json()
+      setSubAccounts(subAccountsData)
+
+      const tradesResponse = await fetch("/api/trades")
+      const tradesData = await tradesResponse.json()
+      setTrades(tradesData)
     } catch (error) {
       console.error("Error fetching data:", error)
     } finally {
@@ -63,11 +68,9 @@ export default function Dashboard() {
     router.push("/login")
   }
 
-  const totalBalance = subAccounts ? subAccounts.reduce((sum, account) => sum + account.balance, 0) : 0
+  const totalBalance = subAccounts.reduce((sum, account) => sum + account.balance, 0)
   const totalPerformance =
-    subAccounts && subAccounts.length > 0
-      ? subAccounts.reduce((sum, account) => sum + account.performance, 0) / subAccounts.length
-      : 0
+    subAccounts.length > 0 ? subAccounts.reduce((sum, account) => sum + account.performance, 0) / subAccounts.length : 0
 
   return (
     <div className="min-h-screen bg-background">
@@ -121,10 +124,10 @@ export default function Dashboard() {
             <TabsTrigger value="trades">Operaciones</TabsTrigger>
           </TabsList>
           <TabsContent value="accounts">
-            <SubAccounts subAccounts={subAccounts || []} isLoading={isLoading} fetchData={fetchData} />
+            <SubAccounts subAccounts={subAccounts} isLoading={isLoading} fetchData={fetchData} />
           </TabsContent>
           <TabsContent value="trades">
-            <Operations trades={trades || []} />
+            <Operations trades={trades} />
           </TabsContent>
         </Tabs>
       </main>
