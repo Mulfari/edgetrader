@@ -8,13 +8,13 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface SubAccount {
   id: string;
-  userId: string; // 🔹 Se añadió userId
+  userId: string;
   name: string;
   exchange: string;
 }
 
 interface AccountDetails {
-  balance?: number; // 🔹 Se hace opcional para evitar errores
+  balance?: number;
 }
 
 export default function DashboardPage() {
@@ -88,7 +88,10 @@ export default function DashboardPage() {
       if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
 
       const data = await res.json();
-      setAccountDetails(data);
+
+      // 🔹 Validar que balance es un número
+      const balance = typeof data.balance === "number" ? data.balance : 0;
+      setAccountDetails({ balance });
     } catch (error) {
       console.error("❌ Error obteniendo detalles de la cuenta:", error);
       setError("No se pudo obtener la información de la cuenta.");
@@ -163,10 +166,8 @@ export default function DashboardPage() {
                 <p><strong>Exchange:</strong> {selectedSubAccount.exchange}</p>
                 {isBalanceLoading ? (
                   <p>Cargando balance...</p>
-                ) : accountDetails?.balance !== undefined ? (
-                  <p><strong>Balance:</strong> {accountDetails.balance.toFixed(2)} USDT</p>
                 ) : (
-                  <p className="text-red-500">{error ?? "Balance no disponible."}</p>
+                  <p><strong>Balance:</strong> {accountDetails?.balance?.toFixed(2) ?? "0.00"} USDT</p>
                 )}
                 <button 
                   className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
