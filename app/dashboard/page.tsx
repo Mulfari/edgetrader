@@ -11,10 +11,7 @@ interface SubAccount {
   userId: string;
   name: string;
   exchange: string;
-}
-
-interface AccountDetails {
-  balance?: number;
+  balance?: number; // 🔹 Se añade balance a la interfaz
 }
 
 export default function DashboardPage() {
@@ -22,14 +19,12 @@ export default function DashboardPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [selectedSubAccount, setSelectedSubAccount] = useState<SubAccount | null>(null);
-  const [accountDetails, setAccountDetails] = useState<AccountDetails | null>(null);
-  const [isBalanceLoading, setIsBalanceLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
-  // ✅ Obtener subcuentas del usuario
+  // ✅ Obtener subcuentas y balances del usuario
   const fetchSubAccounts = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -51,7 +46,27 @@ export default function DashboardPage() {
         throw new Error("Respuesta inesperada del servidor");
       }
 
-      setSubAccounts(data);
+      // 🔹 Obtener balances de cada subcuenta
+      const subAccountsWithBalance = await Promise.all(
+        data.map(async (sub) => {
+          try {
+            const balanceRes = await fetch(`${API_URL}/account-details/${sub.userId}`, {
+              method: "GET",
+              headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (!balanceRes.ok) throw new Error("Error al obtener balance");
+
+            const balanceData = await balanceRes.json();
+            return { ...sub, balance: balanceData.balance ?? 0 };
+          } catch (error) {
+            console.error(`❌ Error obteniendo balance de ${sub.name}:`, error);
+            return { ...sub, balance: 0 };
+          }
+        })
+      );
+
+      setSubAccounts(subAccountsWithBalance);
     } catch (error) {
       console.error("❌ Error obteniendo subcuentas:", error);
       setError("No se pudieron cargar las subcuentas");
@@ -59,46 +74,6 @@ export default function DashboardPage() {
       setIsLoading(false);
     }
   }, [router, API_URL]);
-
-  // ✅ Obtener los detalles de la cuenta
-  const fetchAccountDetails = async (userId: string) => {
-    if (!userId) {
-      console.error("❌ Error: userId es inválido.");
-      return;
-    }
-
-    console.log(`📡 Solicitando detalles de cuenta para userId: ${userId}`);
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    try {
-      setIsBalanceLoading(true);
-      setError(null);
-      setAccountDetails(null);
-
-      const res = await fetch(`${API_URL}/account-details/${userId}`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
-
-      const data = await res.json();
-
-      // 🔹 Validar que balance es un número
-      const balance = typeof data.balance === "number" ? data.balance : 0;
-      setAccountDetails({ balance });
-    } catch (error) {
-      console.error("❌ Error obteniendo detalles de la cuenta:", error);
-      setError("No se pudo obtener la información de la cuenta.");
-    } finally {
-      setIsBalanceLoading(false);
-    }
-  };
 
   useEffect(() => {
     fetchSubAccounts();
@@ -143,17 +118,13 @@ export default function DashboardPage() {
               <div
                 key={sub.id}
                 className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg flex flex-col items-center justify-center h-40 cursor-pointer hover:shadow-xl transition-all hover:bg-gray-100 dark:hover:bg-gray-700"
-                onClick={() => {
-                  if (sub.id !== selectedSubAccount?.id) {
-                    setSelectedSubAccount(sub);
-                    fetchAccountDetails(sub.userId);
-                  } else {
-                    setSelectedSubAccount(null);
-                  }
-                }}
+                onClick={() => setSelectedSubAccount(sub.id !== selectedSubAccount?.id ? sub : null)}
               >
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{sub.name}</h3>
                 <p className="text-gray-500 dark:text-gray-400">{sub.exchange.toUpperCase()}</p>
+                <p className="text-indigo-600 dark:text-indigo-400 font-semibold mt-2">
+                  Balance: {sub.balance !== undefined ? sub.balance.toFixed(2) : "0.00"} USDT
+                </p>
               </div>
             ))}
           </div>
@@ -164,11 +135,7 @@ export default function DashboardPage() {
               <div className="mt-4 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
                 <p><strong>Nombre:</strong> {selectedSubAccount.name}</p>
                 <p><strong>Exchange:</strong> {selectedSubAccount.exchange}</p>
-                {isBalanceLoading ? (
-                  <p>Cargando balance...</p>
-                ) : (
-                  <p><strong>Balance:</strong> {accountDetails?.balance?.toFixed(2) ?? "0.00"} USDT</p>
-                )}
+                <p><strong>Balance:</strong> {selectedSubAccount.balance?.toFixed(2) ?? "0.00"} USDT</p>
                 <button 
                   className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
                   onClick={() => setSelectedSubAccount(null)}
