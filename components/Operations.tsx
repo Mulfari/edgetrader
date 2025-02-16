@@ -144,75 +144,81 @@ export default function Operations({ trades }: OperationsProps) {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="grid md:grid-cols-2 gap-6 p-6 bg-secondary rounded-lg mt-4">
-                      <div>
-                        <h4 className="font-semibold text-lg mb-4">Detalles de la Operación</h4>
-                        <div className="space-y-2">
-                          <p>
-                            <span className="font-medium">ID:</span> {trade.id}
-                          </p>
-                          <p>
-                            <span className="font-medium">Usuario ID:</span> {trade.userId}
-                          </p>
-                          <p>
-                            <span className="font-medium">Estado:</span>{" "}
-                            {trade.status === "open" ? "Abierta" : "Cerrada"}
-                          </p>
-                          <p>
-                            <span className="font-medium">Fecha de Apertura:</span>{" "}
-                            {new Date(trade.openDate).toLocaleString()}
-                          </p>
-                          {trade.closeDate && (
+                    <div className="bg-secondary rounded-lg mt-4 overflow-hidden">
+                      <div className="grid md:grid-cols-2 gap-6 p-6">
+                        <div className="space-y-4">
+                          <h4 className="font-semibold text-lg text-primary">Detalles de la Operación</h4>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <p className="font-medium">ID:</p>
+                            <p className="text-muted-foreground">{trade.id}</p>
+                            <p className="font-medium">Usuario ID:</p>
+                            <p className="text-muted-foreground">{trade.userId}</p>
+                            <p className="font-medium">Estado:</p>
                             <p>
-                              <span className="font-medium">Fecha de Cierre:</span>{" "}
-                              {new Date(trade.closeDate).toLocaleString()}
+                              <Badge variant={trade.status === "open" ? "default" : "secondary"}>
+                                {trade.status === "open" ? "Abierta" : "Cerrada"}
+                              </Badge>
                             </p>
-                          )}
+                            <p className="font-medium">Fecha de Apertura:</p>
+                            <p className="text-muted-foreground">{new Date(trade.openDate).toLocaleString()}</p>
+                            {trade.closeDate && (
+                              <>
+                                <p className="font-medium">Fecha de Cierre:</p>
+                                <p className="text-muted-foreground">{new Date(trade.closeDate).toLocaleString()}</p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="space-y-4">
+                          <h4 className="font-semibold text-lg text-primary">Información Financiera</h4>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <p className="font-medium">Precio de Entrada:</p>
+                            <p className="text-muted-foreground">{trade.entryPrice.toFixed(2)}</p>
+                            {trade.exitPrice && (
+                              <>
+                                <p className="font-medium">Precio de Salida:</p>
+                                <p className="text-muted-foreground">{trade.exitPrice.toFixed(2)}</p>
+                              </>
+                            )}
+                            <p className="font-medium">Cantidad:</p>
+                            <p className="text-muted-foreground">{trade.amount}</p>
+                            {trade.pnl !== undefined && (
+                              <>
+                                <p className="font-medium">PnL:</p>
+                                <p className={`font-medium ${trade.pnl >= 0 ? "text-green-500" : "text-red-500"}`}>
+                                  {trade.pnl.toFixed(2)} USDT
+                                </p>
+                              </>
+                            )}
+                            {trade.market === "futures" && (
+                              <>
+                                {trade.leverage && (
+                                  <>
+                                    <p className="font-medium">Apalancamiento:</p>
+                                    <p className="text-muted-foreground">{trade.leverage}x</p>
+                                  </>
+                                )}
+                                {trade.stopLoss && (
+                                  <>
+                                    <p className="font-medium">Stop Loss:</p>
+                                    <p className="text-muted-foreground">{trade.stopLoss}</p>
+                                  </>
+                                )}
+                                {trade.takeProfit && (
+                                  <>
+                                    <p className="font-medium">Take Profit:</p>
+                                    <p className="text-muted-foreground">{trade.takeProfit}</p>
+                                  </>
+                                )}
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-lg mb-4">Información Financiera</h4>
-                        <div className="space-y-2">
-                          <p>
-                            <span className="font-medium">Precio de Entrada:</span> {trade.entryPrice.toFixed(2)}
-                          </p>
-                          {trade.exitPrice && (
-                            <p>
-                              <span className="font-medium">Precio de Salida:</span> {trade.exitPrice.toFixed(2)}
-                            </p>
-                          )}
-                          <p>
-                            <span className="font-medium">Cantidad:</span> {trade.amount}
-                          </p>
-                          {trade.pnl !== undefined && (
-                            <p>
-                              <span className="font-medium">PnL:</span>
-                              <span className={trade.pnl >= 0 ? "text-green-500" : "text-red-500"}>
-                                {" "}
-                                {trade.pnl.toFixed(2)} USDT
-                              </span>
-                            </p>
-                          )}
-                          {trade.market === "futures" && (
-                            <>
-                              {trade.leverage && (
-                                <p>
-                                  <span className="font-medium">Apalancamiento:</span> {trade.leverage}x
-                                </p>
-                              )}
-                              {trade.stopLoss && (
-                                <p>
-                                  <span className="font-medium">Stop Loss:</span> {trade.stopLoss}
-                                </p>
-                              )}
-                              {trade.takeProfit && (
-                                <p>
-                                  <span className="font-medium">Take Profit:</span> {trade.takeProfit}
-                                </p>
-                              )}
-                            </>
-                          )}
-                        </div>
+                      <div className="bg-background p-4 border-t border-border">
+                        <Button variant="outline" size="sm">
+                          Editar Operación
+                        </Button>
                       </div>
                     </div>
                   </AccordionContent>
