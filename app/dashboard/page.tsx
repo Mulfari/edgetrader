@@ -164,7 +164,7 @@ export default function Dashboard() {
             <TabsTrigger value="trades">Operaciones</TabsTrigger>
           </TabsList>
           <TabsContent value="accounts">
-          <SubAccounts subAccounts={subAccounts} isLoading={isLoading} fetchData={fetchData} />
+            <SubAccounts subAccounts={subAccounts} isLoading={isLoading} fetchData={fetchData} />
           </TabsContent>
           <TabsContent value="trades">
             <Operations trades={trades} />
