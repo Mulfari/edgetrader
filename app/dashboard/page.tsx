@@ -23,6 +23,9 @@ export default function Dashboard() {
   const fetchGlobalData = async () => {
     try {
       const response = await fetch("/api/subaccounts");
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
       const data: SubAccount[] = (await response.json()) || [];
 
       const balance = data.reduce((sum: number, account: SubAccount) => sum + (account.balance || 0), 0);
