@@ -26,13 +26,10 @@ export default function DashboardPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [selectedSubAccount, setSelectedSubAccount] = useState<SubAccount | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-
+  // ✅ Simulando API call con ejemplo de datos
   const fetchSubAccounts = useCallback(async () => {
-    // Simulating API call with example data
     setTimeout(() => {
       const exampleData: SubAccount[] = [
         { id: "1", userId: "user1", name: "Main Account", exchange: "binance", balance: 5000.75 },
@@ -53,7 +50,7 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
-  const totalBalance = subAccounts.reduce((sum, account) => sum + account.balance, 0);
+  const totalBalance = subAccounts.reduce((sum, account) => sum + (account.balance ?? 0), 0);
 
   if (isLoading) {
     return (
@@ -106,13 +103,6 @@ export default function DashboardPage() {
 
             <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Your Accounts</h2>
 
-            {error && (
-              <div className="p-4 mb-4 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-lg flex items-center">
-                <AlertCircle className="mr-2" />
-                <p>{error}</p>
-              </div>
-            )}
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {subAccounts.map((sub) => {
                 const ExchangeIcon = exchangeIcons[sub.exchange.toLowerCase()] || Briefcase;
@@ -127,7 +117,7 @@ export default function DashboardPage() {
                         <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{sub.name}</h3>
                         <p className="text-gray-500 dark:text-gray-400">{sub.exchange.toUpperCase()}</p>
                         <p className="text-2xl text-indigo-600 dark:text-indigo-400 font-bold mt-2">
-                          ${sub.balance.toFixed(2)}
+                          ${sub.balance?.toFixed(2) ?? "0.00"}
                         </p>
                       </div>
                     </TooltipTrigger>
@@ -142,20 +132,9 @@ export default function DashboardPage() {
             {selectedSubAccount && (
               <div className="mt-8 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Account Details</h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400">Name</p>
-                    <p className="text-xl font-semibold">{selectedSubAccount.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400">Exchange</p>
-                    <p className="text-xl font-semibold">{selectedSubAccount.exchange}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400">Balance</p>
-                    <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">${selectedSubAccount.balance.toFixed(2)}</p>
-                  </div>
-                </div>
+                <p><strong>Name:</strong> {selectedSubAccount.name}</p>
+                <p><strong>Exchange:</strong> {selectedSubAccount.exchange}</p>
+                <p><strong>Balance:</strong> ${selectedSubAccount.balance?.toFixed(2) ?? "0.00"}</p>
                 <button 
                   className="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all"
                   onClick={() => setSelectedSubAccount(null)}
