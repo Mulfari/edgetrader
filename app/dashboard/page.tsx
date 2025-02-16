@@ -1,113 +1,167 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
-import { LogOut, DollarSign, TrendingUp, TrendingDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/ThemeToggle"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
-import SubAccounts from "@/components/SubAccounts"
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { Sidebar } from "@/components/Sidebar";
+import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface SubAccount {
-  id: string
-  userId: string
-  name: string
-  exchange: string
-  balance: number
-  lastUpdated: string
-  performance: number
+  id: string;
+  userId: string;
+  name: string;
+  exchange: string;
+  balance?: number; // 🔹 Se añade balance a la interfaz
 }
 
-export default function Dashboard() {
-  const [totalBalance, setTotalBalance] = useState<number>(0)
-  const [totalPerformance, setTotalPerformance] = useState<number>(0)
-  const router = useRouter()
+export default function DashboardPage() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
+  const [selectedSubAccount, setSelectedSubAccount] = useState<SubAccount | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  // Obtener datos globales como el balance total y rendimiento promedio
-  const fetchGlobalData = useCallback(async () => {
-    try {
-      const response = await fetch("/api/subaccounts")
-      const data: SubAccount[] = await response.json()
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
-      const balance = data.reduce((sum, account) => sum + account.balance, 0)
-      const performance =
-        data.length > 0 ? data.reduce((sum, account) => sum + account.performance, 0) / data.length : 0
+  // ✅ Obtener subcuentas y balances del usuario
+  const fetchSubAccounts = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
 
-      setTotalBalance(balance)
-      setTotalPerformance(performance)
-    } catch (error) {
-      console.error("Error al obtener datos:", error)
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
     }
-  }, [])
+
+    try {
+      const res = await fetch(`${API_URL}/subaccounts`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 401) {
+        setError("Sesión expirada. Inicia sesión nuevamente.");
+        localStorage.removeItem("token");
+        router.push("/login");
+        return;
+      }
+
+      if (!res.ok) throw new Error("Error al obtener subcuentas");
+
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error("Respuesta inesperada del servidor");
+
+      // 🔹 Obtener balances de cada subcuenta en paralelo
+      const subAccountsWithBalance = await Promise.all(
+        data.map(async (sub) => {
+          try {
+            const balanceRes = await fetch(`${API_URL}/account-details/${sub.id}`, {
+              method: "GET",
+              headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (!balanceRes.ok) throw new Error("Error al obtener balance");
+
+            const balanceData = await balanceRes.json();
+            return { ...sub, balance: balanceData.balance ?? 0 };
+          } catch (error) {
+            console.error(`❌ Error obteniendo balance de ${sub.name}:`, error);
+            return { ...sub, balance: 0 };
+          }
+        })
+      );
+
+      setSubAccounts(subAccountsWithBalance);
+    } catch (error) {
+      console.error("❌ Error obteniendo subcuentas:", error);
+      setError("No se pudieron cargar las subcuentas.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [router, API_URL]);
 
   useEffect(() => {
-    fetchGlobalData()
-  }, [fetchGlobalData])
+    fetchSubAccounts();
+  }, [fetchSubAccounts]);
 
   const handleLogout = () => {
-    router.push("/login")
-  }
+    localStorage.removeItem("token");
+    router.push("/login");
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-card shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold">Dashboard Financiero</h1>
-            <div className="flex items-center gap-4">
-              <ThemeToggle />
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Cerrar sesión
-              </Button>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+      <header className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow-md fixed w-full z-10 top-0 left-0 transition-all duration-300">
+        <button
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          className="text-gray-600 dark:text-gray-400 hover:text-indigo-500"
+        >
+          {isSidebarCollapsed ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
+        </button>
+        <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">Dashboard</h1>
+        <div className="flex items-center space-x-4">
+          <ThemeToggle />
+          <button onClick={handleLogout} className="text-gray-600 dark:text-gray-400 hover:text-red-500 transition-all">
+            <LogOut size={24} />
+          </button>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto py-6 px-4">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalBalance.toFixed(2)} USDT</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Rendimiento Promedio</CardTitle>
-              {totalPerformance >= 0 ? (
-                <TrendingUp className="h-4 w-4 text-green-500" />
-              ) : (
-                <TrendingDown className="h-4 w-4 text-red-500" />
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${totalPerformance >= 0 ? "text-green-500" : "text-red-500"}`}>
-                {totalPerformance.toFixed(2)}%
-              </div>
-              <Progress value={Math.abs(totalPerformance) * 10} className="mt-2" />
-            </CardContent>
-          </Card>
+      <div className="flex mt-16">
+        <div className="relative w-[16rem] transition-all duration-300" style={{ width: isSidebarCollapsed ? "4rem" : "16rem" }}>
+          <Sidebar isCollapsed={isSidebarCollapsed} />
         </div>
+        <main className="flex-1 p-8 transition-all duration-300" style={{ marginLeft: isSidebarCollapsed ? "4rem" : "16rem" }}>
+          <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Subcuentas</h2>
 
-        <Tabs defaultValue="accounts" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="accounts">Subcuentas</TabsTrigger>
-            <TabsTrigger value="trades">Operaciones</TabsTrigger>
-          </TabsList>
-          <TabsContent value="accounts">
-            <SubAccounts />
-          </TabsContent>
-          <TabsContent value="trades">
-          </TabsContent>
-        </Tabs>
-      </main>
+          {error && <p className="text-red-500">{error}</p>}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {isLoading ? (
+              <p className="text-center text-gray-500">Cargando subcuentas...</p>
+            ) : (
+              subAccounts.map((sub) => (
+                <div
+                  key={sub.id}
+                  className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg flex flex-col items-center justify-center h-40 cursor-pointer hover:shadow-xl transition-all hover:bg-gray-100 dark:hover:bg-gray-700"
+                  onClick={() => setSelectedSubAccount(sub.id !== selectedSubAccount?.id ? sub : null)}
+                >
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{sub.name}</h3>
+                  <p className="text-gray-500 dark:text-gray-400">{sub.exchange.toUpperCase()}</p>
+                  <p className="text-indigo-600 dark:text-indigo-400 font-semibold mt-2">
+                    Balance: {sub.balance !== undefined ? sub.balance.toFixed(2) : "0.00"} USDT
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+
+          {selectedSubAccount && (
+            <div className="mt-8 p-6 bg-gray-200 dark:bg-gray-700 rounded-2xl shadow-md">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Información</h2>
+              <div className="mt-4 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
+                <p>
+                  <strong>Nombre:</strong> {selectedSubAccount.name}
+                </p>
+                <p>
+                  <strong>Exchange:</strong> {selectedSubAccount.exchange}
+                </p>
+                <p>
+                  <strong>Balance:</strong> {selectedSubAccount.balance?.toFixed(2) ?? "0.00"} USDT
+                </p>
+                <button
+                  className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+                  onClick={() => setSelectedSubAccount(null)}
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
     </div>
-  )
+  );
 }
