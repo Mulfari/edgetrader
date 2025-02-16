@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, RefreshCw, Plus, AlertCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -26,16 +26,32 @@ interface SubAccount {
   performance: number
 }
 
-interface SubAccountsProps {
-  subAccounts: SubAccount[]
-  isLoading: boolean
-  fetchData: () => void
-}
-
-export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsProps) {
+export default function SubAccounts() {
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("all")
 
+  // Función para obtener los datos de las subcuentas
+  const fetchData = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/subaccounts")
+      const data = await response.json()
+      setSubAccounts(data)
+    } catch (error) {
+      console.error("Error al obtener las subcuentas:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Cargar datos al montar el componente
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  // Filtrar subcuentas por búsqueda y pestaña activa
   const filteredSubAccounts = subAccounts.filter(
     (account) =>
       (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -139,4 +155,3 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
     </div>
   )
 }
-

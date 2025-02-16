@@ -9,68 +9,40 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import SubAccounts from "@/components/SubAccounts"
-import Operations from "@/components/Operations"
-
-interface SubAccount {
-  id: string
-  userId: string
-  name: string
-  exchange: string
-  balance: number
-  lastUpdated: string
-  performance: number
-}
-
-interface Trade {
-  id: string
-  userId: string
-  pair: string
-  type: "buy" | "sell"
-  entryPrice: number
-  exitPrice?: number
-  amount: number
-  status: "open" | "closed"
-  openDate: string
-  closeDate?: string
-  pnl?: number
-  market: "spot" | "futures"
-}
 
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
-  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
-  const [trades, setTrades] = useState<Trade[]>([])
+  const [totalBalance, setTotalBalance] = useState(0)
+  const [totalPerformance, setTotalPerformance] = useState(0)
   const router = useRouter()
 
-  const fetchData = useCallback(async () => {
+  // Obtener datos globales como el balance total y rendimiento total
+  const fetchGlobalData = useCallback(async () => {
     setIsLoading(true)
     try {
-      // TODO: Replace with actual API calls
-      const subAccountsResponse = await fetch("/api/subaccounts")
-      const subAccountsData = await subAccountsResponse.json()
-      setSubAccounts(subAccountsData)
+      const response = await fetch("/api/subaccounts")
+      const data = await response.json()
 
-      const tradesResponse = await fetch("/api/trades")
-      const tradesData = await tradesResponse.json()
-      setTrades(tradesData)
+      const balance = data.reduce((sum: number, account: any) => sum + account.balance, 0)
+      const performance =
+        data.length > 0 ? data.reduce((sum: number, account: any) => sum + account.performance, 0) / data.length : 0
+
+      setTotalBalance(balance)
+      setTotalPerformance(performance)
     } catch (error) {
-      console.error("Error fetching data:", error)
+      console.error("Error al obtener datos:", error)
     } finally {
       setIsLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    fetchGlobalData()
+  }, [fetchGlobalData])
 
   const handleLogout = () => {
     router.push("/login")
   }
-
-  const totalBalance = subAccounts.reduce((sum, account) => sum + account.balance, 0)
-  const totalPerformance =
-    subAccounts.length > 0 ? subAccounts.reduce((sum, account) => sum + account.performance, 0) / subAccounts.length : 0
 
   return (
     <div className="min-h-screen bg-background">
@@ -124,14 +96,12 @@ export default function Dashboard() {
             <TabsTrigger value="trades">Operaciones</TabsTrigger>
           </TabsList>
           <TabsContent value="accounts">
-            <SubAccounts subAccounts={subAccounts} isLoading={isLoading} fetchData={fetchData} />
+            <SubAccounts />
           </TabsContent>
           <TabsContent value="trades">
-            <Operations trades={trades} />
           </TabsContent>
         </Tabs>
       </main>
     </div>
   )
 }
-
