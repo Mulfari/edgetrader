@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { LogOut, CreditCard, Plus, Search, ChevronDown, RefreshCw, AlertCircle, TrendingUp, TrendingDown, DollarSign } from 'lucide-react'
+import { LogOut, CreditCard, Plus, Search, ChevronDown, RefreshCw, AlertCircle, TrendingUp, TrendingDown, DollarSign, Wallet, Briefcase } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/ThemeToggle"
@@ -55,9 +55,10 @@ interface Trade {
   openDate: string
   closeDate?: string
   pnl?: number
+  market: 'spot' | 'futures'
 }
 
-// Datos de ejemplo
+// Datos de ejemplo actualizados
 const sampleSubAccounts: SubAccount[] = [
   { id: "1", userId: "user1", name: "Binance Main", exchange: "binance", balance: 5000, lastUpdated: "2023-04-15T10:30:00Z", performance: 2.5 },
   { id: "2", userId: "user1", name: "Bybit Futures", exchange: "bybit", balance: 3000, lastUpdated: "2023-04-15T11:00:00Z", performance: -1.2 },
@@ -67,10 +68,12 @@ const sampleSubAccounts: SubAccount[] = [
 ]
 
 const sampleTrades: Trade[] = [
-  { id: "1", userId: "user1", pair: "BTC/USDT", type: "buy", entryPrice: 30000, amount: 0.5, status: "open", openDate: "2023-04-15T10:00:00Z" },
-  { id: "2", userId: "user1", pair: "ETH/USDT", type: "sell", entryPrice: 2000, exitPrice: 2100, amount: 5, status: "closed", openDate: "2023-04-14T14:30:00Z", closeDate: "2023-04-15T09:15:00Z", pnl: 500 },
-  { id: "3", userId: "user1", pair: "ADA/USDT", type: "buy", entryPrice: 0.5, amount: 1000, status: "open", openDate: "2023-04-15T11:45:00Z" },
-  { id: "4", userId: "user1", pair: "XRP/USDT", type: "sell", entryPrice: 0.6, exitPrice: 0.55, amount: 2000, status: "closed", openDate: "2023-04-13T16:20:00Z", closeDate: "2023-04-15T08:45:00Z", pnl: -100 },
+  { id: "1", userId: "user1", pair: "BTC/USDT", type: "buy", entryPrice: 30000, amount: 0.5, status: "open", openDate: "2023-04-15T10:00:00Z", market: "spot" },
+  { id: "2", userId: "user1", pair: "ETH/USDT", type: "sell", entryPrice: 2000, exitPrice: 2100, amount: 5, status: "closed", openDate: "2023-04-14T14:30:00Z", closeDate: "2023-04-15T09:15:00Z", pnl: 500, market: "futures" },
+  { id: "3", userId: "user1", pair: "ADA/USDT", type: "buy", entryPrice: 0.5, amount: 1000, status: "open", openDate: "2023-04-15T11:45:00Z", market: "spot" },
+  { id: "4", userId: "user1", pair: "XRP/USDT", type: "sell", entryPrice: 0.6, exitPrice: 0.55, amount: 2000, status: "closed", openDate: "2023-04-13T16:20:00Z", closeDate: "2023-04-15T08:45:00Z", pnl: -100, market: "futures" },
+  { id: "5", userId: "user1", pair: "BNB/USDT", type: "buy", entryPrice: 300, amount: 10, status: "open", openDate: "2023-04-16T09:30:00Z", market: "futures" },
+  { id: "6", userId: "user1", pair: "DOT/USDT", type: "sell", entryPrice: 15, exitPrice: 16, amount: 100, status: "closed", openDate: "2023-04-14T13:00:00Z", closeDate: "2023-04-16T10:15:00Z", pnl: 100, market: "spot" },
 ]
 
 export default function DashboardPage() {
@@ -79,10 +82,10 @@ export default function DashboardPage() {
   const [trades, setTrades] = useState<Trade[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("all")
+  const [tradeMarketFilter, setTradeMarketFilter] = useState<'all' | 'spot' | 'futures'>('all')
   const router = useRouter()
 
   const fetchData = useCallback(() => {
-    // Simulando una llamada a la API
     setIsLoading(true)
     setTimeout(() => {
       setSubAccounts(sampleSubAccounts)
@@ -92,7 +95,6 @@ export default function DashboardPage() {
   }, [])
 
   const fetchAccountDetails = (userId: string) => {
-    // Simulando una actualización de balance
     setSubAccounts(prevAccounts => 
       prevAccounts.map(account => 
         account.userId === userId 
@@ -107,7 +109,6 @@ export default function DashboardPage() {
   }, [fetchData])
 
   const handleLogout = () => {
-    // Simulando logout
     router.push("/login")
   }
 
@@ -122,8 +123,12 @@ export default function DashboardPage() {
     ? subAccounts.reduce((sum, account) => sum + account.performance, 0) / subAccounts.length
     : 0
 
-  const openTrades = trades.filter(trade => trade.status === "open")
-  const closedTrades = trades.filter(trade => trade.status === "closed")
+  const filteredTrades = trades.filter(trade => 
+    tradeMarketFilter === 'all' || trade.market === tradeMarketFilter
+  )
+
+  const openTrades = filteredTrades.filter(trade => trade.status === "open")
+  const closedTrades = filteredTrades.filter(trade => trade.status === "closed")
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -325,69 +330,104 @@ export default function DashboardPage() {
             </TabsContent>
             <TabsContent value="trades">
               <div className="space-y-4">
-                <h2 className="text-2xl font-bold">Operaciones Abiertas</h2>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Par</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Precio de Entrada</TableHead>
-                      <TableHead>Cantidad</TableHead>
-                      <TableHead>Fecha de Apertura</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {openTrades.map((trade) => (
-                      <TableRow key={trade.id}>
-                        <TableCell>{trade.pair}</TableCell>
-                        <TableCell>
-                          <Badge variant={trade.type === 'buy' ? 'default' : 'destructive'}>
-                            {trade.type.toUpperCase()}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{trade.entryPrice.toFixed(2)}</TableCell>
-                        <TableCell>{trade.amount}</TableCell>
-                        <TableCell>{new Date(trade.openDate).toLocaleString()}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Operaciones</h2>
+                  <Tabs value={tradeMarketFilter} onValueChange={(value) => setTradeMarketFilter(value as 'all' | 'spot' | 'futures')}>
+                    <TabsList>
+                      <TabsTrigger value="all">Todas</TabsTrigger>
+                      <TabsTrigger value="spot">Spot</TabsTrigger>
+                      <TabsTrigger value="futures">Futuros</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Operaciones Abiertas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Par</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Precio de Entrada</TableHead>
+                          <TableHead>Cantidad</TableHead>
+                          <TableHead>Mercado</TableHead>
+                          <TableHead>Fecha de Apertura</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {openTrades.map((trade) => (
+                          <TableRow key={trade.id}>
+                            <TableCell>{trade.pair}</TableCell>
+                            <TableCell>
+                              <Badge variant={trade.type === 'buy' ? 'default' : 'destructive'}>
+                                {trade.type.toUpperCase()}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{trade.entryPrice.toFixed(2)}</TableCell>
+                            <TableCell>{trade.amount}</TableCell>
+                            <TableCell>
+                              <Badge variant={trade.market === 'spot' ? 'secondary' : 'outline'}>
+                                {trade.market.toUpperCase()}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{new Date(trade.openDate).toLocaleString()}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
 
-                <h2 className="text-2xl font-bold mt-8">Operaciones Cerradas</h2>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Par</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Precio de Entrada</TableHead>
-                      <TableHead>Precio de Salida</TableHead>
-                      <TableHead>Cantidad</TableHead>
-                      <TableHead>PnL</TableHead>
-                      <TableHead>Fecha de Cierre</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {closedTrades.map((trade) => (
-                      <TableRow key={trade.id}>
-                        <TableCell>{trade.pair}</TableCell>
-                        <TableCell>
-                          <Badge variant={trade.type === 'buy' ? 'default' : 'destructive'}>
-                            {trade.type.toUpperCase()}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{trade.entryPrice.toFixed(2)}</TableCell>
-                        <TableCell>{trade.exitPrice?.toFixed(2)}</TableCell>
-                        <TableCell>{trade.amount}</TableCell>
-                        <TableCell>
-                          <span className={trade.pnl && trade.pnl >= 0 ? 'text-green-500' : 'text-red-500'}>
-                            {trade.pnl?.toFixed(2)} USDT
-                          </span>
-                        </TableCell>
-                        <TableCell>{trade.closeDate && new Date(trade.closeDate).toLocaleString()}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Operaciones Cerradas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Par</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Precio de Entrada</TableHead>
+                          <TableHead>Precio de Salida</TableHead>
+                          <TableHead>Cantidad</TableHead>
+                          <TableHead>Mercado</TableHead>
+                          <TableHead>PnL</TableHead>
+                          <TableHead>Fecha de Cierre</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {closedTrades.map((trade) => (
+                          <TableRow key={trade.id}>
+                            <TableCell>{trade.pair}</TableCell>
+                            <TableCell>
+                              <Badge variant={trade.type === 'buy' ? 'default' : 'destructive'}>
+                                {trade.type.toUpperCase()}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{trade.entryPrice.toFixed(2)}</TableCell>
+                            <TableCell>{trade.exitPrice?.toFixed(2)}</TableCell>
+                            <TableCell>{trade.amount}</TableCell>
+                            <TableCell>
+                              <Badge variant={trade.market === 'spot' ? 'secondary' : 'outline'}>
+                                {trade.market.toUpperCase()}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <span className={trade.pnl && trade.pnl >= 0 ? 'text-green-500' : 'text-red-500'}>
+                                {trade.pnl?.toFixed(2)} USDT
+                              </span>
+                            </TableCell>
+                            <TableCell>{trade.closeDate && new Date(trade.closeDate).toLocaleString()}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
               </div>
             </TabsContent>
           </Tabs>
