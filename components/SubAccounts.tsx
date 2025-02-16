@@ -57,7 +57,7 @@ export default function SubAccounts() {
 
       setSubAccounts(subAccountsWithBalance);
       setError(null);
-    } catch (err) {
+    } catch {
       setError("No se pudieron cargar las subcuentas");
     } finally {
       setIsLoading(false);
