@@ -39,16 +39,10 @@ interface SubAccount {
   exchange: string
 }
 
-interface AccountDetails {
-  balance: number
-  lastUpdated: string
-}
-
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
   const [selectedSubAccount, setSelectedSubAccount] = useState<SubAccount | null>(null)
-  const [accountDetails, setAccountDetails] = useState<AccountDetails | null>(null)
   const [allBalances, setAllBalances] = useState<{[key: string]: number}>({})
   const [isBalanceLoading, setIsBalanceLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -104,7 +98,6 @@ export default function DashboardPage() {
     try {
       setIsBalanceLoading(true)
       setError(null)
-      setAccountDetails(null)
 
       const res = await fetch(`${API_URL}/account-details/${userId}`, {
         method: "GET",
@@ -116,8 +109,6 @@ export default function DashboardPage() {
       const data = await res.json()
 
       const balance = typeof data.balance === "number" ? data.balance : 0
-      const newAccountDetails = { balance, lastUpdated: new Date().toISOString() }
-      setAccountDetails(newAccountDetails)
       setAllBalances(prev => ({...prev, [userId]: balance}))
     } catch (error) {
       console.error("❌ Error obteniendo detalles de la cuenta:", error)
@@ -283,13 +274,14 @@ export default function DashboardPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {selectedSubAccount?.id === sub.id ? (
-                          isBalanceLoading ? (
-                            <span className="text-gray-500">Cargando...</span>
-                          ) : (
-                            <span className="font-semibold">{allBalances[sub.userId]?.toFixed(2) ?? "0.00"} USDT</span>
-                          )
+                        {selectedSubAccount?.id === sub.id && isBalanceLoading ? (
+                          <span className="text-gray-500">Cargando...</span>
                         ) : (
+                          <span className="font-semibold">
+                            {allBalances[sub.userId]?.toFixed(2) ?? "0.00"} USDT
+                          </span>
+                        )}
+                        {selectedSubAccount?.id !== sub.id && (
                           <Button 
                             variant="ghost" 
                             size="sm"
@@ -298,7 +290,7 @@ export default function DashboardPage() {
                               fetchAccountDetails(sub.userId)
                             }}
                           >
-                            Ver balance
+                            Actualizar
                           </Button>
                         )}
                       </TableCell>
