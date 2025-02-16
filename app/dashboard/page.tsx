@@ -1,16 +1,40 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, DollarSign, } from "lucide-react";
+import { LogOut, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import SubAccounts from "@/components/SubAccounts";
 
 export default function Dashboard() {
+  const [totalBalance, setTotalBalance] = useState(0);
+  const [totalPerformance, setTotalPerformance] = useState(0);
   const router = useRouter();
+
+  const fetchGlobalData = async () => {
+    try {
+      const response = await fetch("/api/subaccounts");
+      const data = (await response.json()) || [];
+
+      const balance = data.reduce((sum, account) => sum + (account.balance || 0), 0);
+      const performance =
+        data.length > 0 ? data.reduce((sum, account) => sum + (account.performance || 0), 0) / data.length : 0;
+
+      setTotalBalance(balance);
+      setTotalPerformance(performance);
+    } catch (error) {
+      console.error("Error al obtener datos:", error);
+    }
+  };
+
+  useState(() => {
+    fetchGlobalData();
+  }, []);
+
   const handleLogout = () => {
     router.push("/login");
   };
@@ -40,9 +64,24 @@ export default function Dashboard() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
+              <div className="text-2xl font-bold">{totalBalance.toFixed(2)} USDT</div>
             </CardContent>
           </Card>
           <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Rendimiento Promedio</CardTitle>
+              {totalPerformance >= 0 ? (
+                <TrendingUp className="h-4 w-4 text-green-500" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-red-500" />
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${totalPerformance >= 0 ? "text-green-500" : "text-red-500"}`}>
+                {totalPerformance.toFixed(2)}%
+              </div>
+              <Progress value={Math.abs(totalPerformance) * 10} className="mt-2" />
+            </CardContent>
           </Card>
         </div>
 
