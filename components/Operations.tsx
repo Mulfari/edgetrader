@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
@@ -25,7 +25,7 @@ interface OperationsProps {
   trades: Trade[]
 }
 
-export function Operations({ trades }: OperationsProps) {
+export default function Operations({ trades }: OperationsProps) {
   const [tradeMarketFilter, setTradeMarketFilter] = useState<"all" | "spot" | "futures">("all")
 
   const filteredTrades = trades.filter((trade) => tradeMarketFilter === "all" || trade.market === tradeMarketFilter)

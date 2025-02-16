@@ -1,13 +1,12 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { Search, RefreshCw, Plus, AlertCircle, ChevronDown } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useState } from "react"
+import { Search, RefreshCw, Plus, AlertCircle } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -15,38 +14,34 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog"
 
 interface SubAccount {
-  id: string;
-  userId: string;
-  name: string;
-  exchange: string;
-  balance: number;
-  lastUpdated: string;
-  performance: number;
+  id: string
+  userId: string
+  name: string
+  exchange: string
+  balance: number
+  lastUpdated: string
+  performance: number
 }
 
 interface SubAccountsProps {
-  subAccounts: SubAccount[];
-  isLoading: boolean;
-  fetchData: () => void;
+  subAccounts: SubAccount[]
+  isLoading: boolean
+  fetchData: () => void
 }
 
-export function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
+export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsProps) {
+  const [searchTerm, setSearchTerm] = useState("")
+  const [activeTab, setActiveTab] = useState("all")
 
   const filteredSubAccounts = subAccounts.filter(
     (account) =>
       (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         account.exchange.toLowerCase().includes(searchTerm.toLowerCase())) &&
       (activeTab === "all" || account.exchange === activeTab),
-  );
-
-  const fetchAccountDetails = () => {
-    // Implement the logic to fetch account details
-  };
+  )
 
   return (
     <div>
@@ -77,7 +72,6 @@ export function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsPr
                 <DialogTitle>Agregar Nueva Subcuenta</DialogTitle>
                 <DialogDescription>Ingrese los detalles de la nueva subcuenta aquí.</DialogDescription>
               </DialogHeader>
-              {/* Aquí iría el formulario para agregar una nueva subcuenta */}
             </DialogContent>
           </Dialog>
         </div>
@@ -102,7 +96,6 @@ export function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsPr
               <TableHead>Balance</TableHead>
               <TableHead>Rendimiento</TableHead>
               <TableHead>Última Actualización</TableHead>
-              <TableHead>Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -125,22 +118,7 @@ export function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsPr
                 <TableRow key={sub.id}>
                   <TableCell className="font-medium">{sub.name}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={`${
-                        sub.exchange === "binance"
-                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                          : sub.exchange === "bybit"
-                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                          : sub.exchange === "kraken"
-                          ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-                          : sub.exchange === "ftx"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                          : ""
-                      }`}
-                    >
-                      {sub.exchange.toUpperCase()}
-                    </Badge>
+                    <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
                   </TableCell>
                   <TableCell>
                     <span className="font-semibold">{sub.balance.toFixed(2)} USDT</span>
@@ -152,22 +130,6 @@ export function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsPr
                     </span>
                   </TableCell>
                   <TableCell>{new Date(sub.lastUpdated).toLocaleString()}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          Acciones <ChevronDown className="ml-2 h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={fetchAccountDetails}>
-                          Actualizar Balance
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>Editar</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">Eliminar</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -175,5 +137,6 @@ export function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsPr
         </Table>
       </div>
     </div>
-  );
+  )
 }
+
