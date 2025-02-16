@@ -5,8 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ChevronUp, ChevronDown, ArrowUpDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { ChevronUp, ChevronDown } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
 interface Trade {
@@ -31,7 +30,6 @@ interface OperationsProps {
 export default function Operations({ trades }: OperationsProps) {
   const [tradeMarketFilter, setTradeMarketFilter] = useState<"all" | "spot" | "futures">("all")
   const [activeTab, setActiveTab] = useState<"open" | "closed">("open")
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Trade; direction: "asc" | "desc" } | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
 
   const filteredTrades = useMemo(() => {
@@ -45,27 +43,9 @@ export default function Operations({ trades }: OperationsProps) {
       )
   }, [trades, tradeMarketFilter, activeTab, searchTerm])
 
-  const sortedTrades = useMemo(() => {
-    if (sortConfig !== null) {
-      return [...filteredTrades].sort(() => {
-        return 0
-      })
-    }
-    return filteredTrades
-  }, [filteredTrades, sortConfig])
-
   const totalPnL = useMemo(() => {
-    return sortedTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0)
-  }, [sortedTrades])
-
-  const requestSort = (key: keyof Trade) => {
-    setSortConfig((prevConfig) => {
-      if (prevConfig?.key === key) {
-        return { key, direction: prevConfig.direction === "asc" ? "desc" : "asc" }
-      }
-      return { key, direction: "asc" }
-    })
-  }
+    return filteredTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0)
+  }, [filteredTrades])
 
   return (
     <div className="space-y-6">
@@ -95,7 +75,7 @@ export default function Operations({ trades }: OperationsProps) {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>{activeTab === "open" ? "Operaciones Abiertas" : "Operaciones Cerradas"}</span>
-            <Badge variant="outline">{sortedTrades.length}</Badge>
+            <Badge variant="outline">{filteredTrades.length}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -121,47 +101,23 @@ export default function Operations({ trades }: OperationsProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort("pair")}>
-                      Par <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </TableHead>
+                  <TableHead>Par</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort("entryPrice")}>
-                      Precio <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort("amount")}>
-                      Cantidad <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </TableHead>
+                  <TableHead>Precio</TableHead>
+                  <TableHead>Cantidad</TableHead>
                   <TableHead>Mercado</TableHead>
                   {activeTab === "open" ? (
-                    <TableHead>
-                      <Button variant="ghost" onClick={() => requestSort("openDate")}>
-                        Fecha de Apertura <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </Button>
-                    </TableHead>
+                    <TableHead>Fecha de Apertura</TableHead>
                   ) : (
                     <>
-                      <TableHead>
-                        <Button variant="ghost" onClick={() => requestSort("pnl")}>
-                          PnL <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" onClick={() => requestSort("closeDate")}>
-                          Fecha de Cierre <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
-                      </TableHead>
+                      <TableHead>PnL</TableHead>
+                      <TableHead>Fecha de Cierre</TableHead>
                     </>
                   )}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedTrades.map((trade) => (
+                {filteredTrades.map((trade) => (
                   <TableRow key={trade.id}>
                     <TableCell className="font-medium">{trade.pair}</TableCell>
                     <TableCell>
