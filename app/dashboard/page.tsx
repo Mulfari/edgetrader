@@ -1,145 +1,176 @@
-"use client";
+"use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { Search, RefreshCw, Plus, AlertCircle, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
-import { Sidebar } from "@/components/Sidebar";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { LogOut, DollarSign, TrendingUp, TrendingDown } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/ThemeToggle"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Progress } from "@/components/ui/progress"
+import SubAccounts from "@/components/SubAccounts"
+import Operations from "@/components/Operations"
 
 interface SubAccount {
-  id: string;
-  userId: string;
-  name: string;
-  exchange: string;
-  balance?: number;
+  id: string
+  userId: string
+  name: string
+  exchange: string
+  balance: number
+  lastUpdated: string
+  performance: number
 }
 
-export default function DashboardPage() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-  
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+interface Trade {
+  id: string
+  userId: string
+  pair: string
+  type: "buy" | "sell"
+  entryPrice: number
+  exitPrice?: number
+  amount: number
+  status: "open" | "closed"
+  openDate: string
+  closeDate?: string
+  pnl?: number
+  market: "spot" | "futures"
+}
 
-  const fetchSubAccounts = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
+const sampleSubAccounts: SubAccount[] = [
+  {
+    id: "1",
+    userId: "101",
+    name: "Cuenta Binance",
+    exchange: "binance",
+    balance: 5000,
+    lastUpdated: "2024-02-16T10:00:00Z",
+    performance: 5.2,
+  },
+  {
+    id: "2",
+    userId: "102",
+    name: "Cuenta Kraken",
+    exchange: "kraken",
+    balance: 3200,
+    lastUpdated: "2024-02-16T12:30:00Z",
+    performance: -1.5,
+  },
+]
 
-    try {
-      const res = await fetch(`${API_URL}/subaccounts`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+const sampleTrades: Trade[] = [
+  {
+    id: "1",
+    userId: "101",
+    pair: "BTC/USDT",
+    type: "buy",
+    entryPrice: 42000,
+    amount: 0.1,
+    status: "open",
+    openDate: "2024-02-15T14:00:00Z",
+    market: "spot",
+  },
+  {
+    id: "2",
+    userId: "102",
+    pair: "ETH/USDT",
+    type: "sell",
+    entryPrice: 3100,
+    exitPrice: 2900,
+    amount: 2,
+    status: "closed",
+    openDate: "2024-02-14T12:00:00Z",
+    closeDate: "2024-02-15T15:00:00Z",
+    pnl: 400,
+    market: "futures",
+  },
+]
 
-      if (!res.ok) throw new Error("Error al obtener subcuentas");
-      const data = await res.json();
-      setSubAccounts(data);
-    } catch (error) {
-      console.error("Error obteniendo subcuentas:", error);
-      setError("No se pudieron cargar las subcuentas");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [router, API_URL]);
+export default function Dashboard() {
+  const [isLoading, setIsLoading] = useState(true)
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
+  const [trades, setTrades] = useState<Trade[]>([])
+  const router = useRouter()
+
+  const fetchData = useCallback(() => {
+    setIsLoading(true)
+    setTimeout(() => {
+      setSubAccounts(sampleSubAccounts)
+      setTrades(sampleTrades)
+      setIsLoading(false)
+    }, 1000)
+  }, [])
 
   useEffect(() => {
-    fetchSubAccounts();
-  }, [fetchSubAccounts]);
-
-  const filteredSubAccounts = useMemo(() => {
-    return subAccounts.filter(
-      (account) =>
-        (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          account.exchange.toLowerCase().includes(searchTerm.toLowerCase())) &&
-        (activeTab === "all" || account.exchange === activeTab)
-    );
-  }, [subAccounts, activeTab, searchTerm]);
+    fetchData()
+  }, [fetchData])
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/login");
-  };
+    router.push("/login")
+  }
+
+  const totalBalance = subAccounts.reduce((sum, account) => sum + account.balance, 0)
+  const totalPerformance =
+    subAccounts.length > 0 ? subAccounts.reduce((sum, account) => sum + account.performance, 0) / subAccounts.length : 0
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
-      <Sidebar isCollapsed={isSidebarCollapsed} />
-      <main className="flex-1 p-8">
-        <header className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <div className="flex items-center space-x-4">
-            <ThemeToggle />
-            <Button onClick={handleLogout} variant="outline">
-              <LogOut size={20} />
-            </Button>
+    <div className="min-h-screen bg-background">
+      <header className="bg-card shadow-sm sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <h1 className="text-2xl font-bold">Dashboard Financiero</h1>
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Cerrar sesión
+              </Button>
+            </div>
           </div>
-        </header>
-        
-        <div className="flex justify-between items-center mb-4">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-5">
-              <TabsTrigger value="all">Todas</TabsTrigger>
-              <TabsTrigger value="binance">Binance</TabsTrigger>
-              <TabsTrigger value="bybit">Bybit</TabsTrigger>
-              <TabsTrigger value="kraken">Kraken</TabsTrigger>
-              <TabsTrigger value="ftx">FTX</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <Button onClick={fetchSubAccounts} variant="outline">
-            <RefreshCw size={20} /> Actualizar
-          </Button>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto py-6 px-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalBalance.toFixed(2)} USDT</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Rendimiento Promedio</CardTitle>
+              {totalPerformance >= 0 ? (
+                <TrendingUp className="h-4 w-4 text-green-500" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-red-500" />
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${totalPerformance >= 0 ? "text-green-500" : "text-red-500"}`}>
+                {totalPerformance.toFixed(2)}%
+              </div>
+              <Progress value={Math.abs(totalPerformance) * 10} className="mt-2" />
+            </CardContent>
+          </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Subcuentas ({filteredSubAccounts.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-4">
-              <Input placeholder="Buscar..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-            </div>
-            
-            <Accordion type="single" collapsible>
-              {isLoading ? (
-                <p>Cargando...</p>
-              ) : filteredSubAccounts.length === 0 ? (
-                <p>No hay subcuentas disponibles.</p>
-              ) : (
-                filteredSubAccounts.map((sub) => (
-                  <AccordionItem value={sub.id} key={sub.id}>
-                    <AccordionTrigger>
-                      {sub.name} ({sub.exchange.toUpperCase()})
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <p>Balance: {sub.balance?.toFixed(2) ?? "0.00"} USDT</p>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))
-              )}
-            </Accordion>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="accounts" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="accounts">Subcuentas</TabsTrigger>
+            <TabsTrigger value="trades">Operaciones</TabsTrigger>
+          </TabsList>
+          <TabsContent value="accounts">
+            <SubAccounts subAccounts={subAccounts} isLoading={isLoading} fetchData={fetchData} />
+          </TabsContent>
+          <TabsContent value="trades">
+            <Operations trades={trades} />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
-  );
+  )
 }
