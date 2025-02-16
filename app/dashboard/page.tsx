@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,51 +10,80 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import SubAccounts from "@/components/SubAccounts";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
 export default function Dashboard() {
-  const [totalBalance, setTotalBalance] = useState<number>(0);
-  const [totalPerformance, setTotalPerformance] = useState<number>(0);
+  const [subAccounts, setSubAccounts] = useState([]);
+  const [totalBalance, setTotalBalance] = useState(0);
+  const [totalPerformance, setTotalPerformance] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (!apiUrl) {
-    throw new Error("❌ NEXT_PUBLIC_API_URL no está definida");
-  }
+  // ✅ Obtener subcuentas y balances
+  const fetchSubAccounts = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
 
-  const fetchGlobalData = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("Token no encontrado, inicia sesión nuevamente");
-      }
-
-      const response = await fetch(`${apiUrl}/subaccounts`, {
+      const res = await fetch(`${API_URL}/subaccounts`, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      if (!res.ok) throw new Error("Error al obtener subcuentas");
+
+      const data = await res.json();
+
+      if (!Array.isArray(data)) {
+        throw new Error("Respuesta inesperada del servidor");
       }
-      const data = await response.json();
 
-      const balance = data.reduce((sum: number, account: { balance: number }) => sum + (account.balance || 0), 0);
-      const performance =
-        data.length > 0 ? data.reduce((sum: number, account: { performance: number }) => sum + (account.performance || 0), 0) / data.length : 0;
+      // 🔹 Obtener balances de cada subcuenta
+      const subAccountsWithBalance = await Promise.all(
+        data.map(async (sub) => {
+          try {
+            const balanceRes = await fetch(`${API_URL}/account-details/${sub.userId}`, {
+              method: "GET",
+              headers: { Authorization: `Bearer ${token}` },
+            });
 
-      setTotalBalance(balance);
-      setTotalPerformance(performance);
+            if (!balanceRes.ok) throw new Error("Error al obtener balance");
+
+            const balanceData = await balanceRes.json();
+            return { ...sub, balance: balanceData.balance ?? 0 };
+          } catch (error) {
+            console.error(`❌ Error obteniendo balance de ${sub.name}:`, error);
+            return { ...sub, balance: 0 };
+          }
+        })
+      );
+
+      // 🔹 Calcular total balance y performance
+      const totalBalance = subAccountsWithBalance.reduce((sum, acc) => sum + acc.balance, 0);
+      const totalPerformance =
+        subAccountsWithBalance.length > 0
+          ? subAccountsWithBalance.reduce((sum, acc) => sum + (acc.performance || 0), 0) / subAccountsWithBalance.length
+          : 0;
+
+      setTotalBalance(totalBalance);
+      setTotalPerformance(totalPerformance);
     } catch (error) {
-      console.error("❌ Error al obtener datos:", error);
+      console.error("❌ Error obteniendo subcuentas:", error);
+      setError("No se pudieron cargar las subcuentas");
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [router]);
 
   useEffect(() => {
-    fetchGlobalData();
-  }, []);
+    fetchSubAccounts();
+  }, [fetchSubAccounts]);
 
+  // ✅ Manejo de Logout
   const handleLogout = () => {
     localStorage.removeItem("token");
     router.push("/login");
@@ -78,44 +107,52 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto py-6 px-4">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalBalance.toFixed(2)} USDT</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Rendimiento Promedio</CardTitle>
-              {totalPerformance >= 0 ? (
-                <TrendingUp className="h-4 w-4 text-green-500" />
-              ) : (
-                <TrendingDown className="h-4 w-4 text-red-500" />
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${totalPerformance >= 0 ? "text-green-500" : "text-red-500"}`}>
-                {totalPerformance.toFixed(2)}%
-              </div>
-              <Progress value={Math.abs(totalPerformance) * 10} className="mt-2" />
-            </CardContent>
-          </Card>
-        </div>
+        {isLoading ? (
+          <p className="text-center">Cargando datos...</p>
+        ) : error ? (
+          <p className="text-center text-red-500">{error}</p>
+        ) : (
+          <>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{totalBalance.toFixed(2)} USDT</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Rendimiento Promedio</CardTitle>
+                  {totalPerformance >= 0 ? (
+                    <TrendingUp className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 text-red-500" />
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${totalPerformance >= 0 ? "text-green-500" : "text-red-500"}`}>
+                    {totalPerformance.toFixed(2)}%
+                  </div>
+                  <Progress value={Math.abs(totalPerformance) * 10} className="mt-2" />
+                </CardContent>
+              </Card>
+            </div>
 
-        <Tabs defaultValue="accounts" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="accounts">Subcuentas</TabsTrigger>
-            <TabsTrigger value="trades">Operaciones</TabsTrigger>
-          </TabsList>
-          <TabsContent value="accounts">
-            <SubAccounts />
-          </TabsContent>
-          <TabsContent value="trades"></TabsContent>
-        </Tabs>
+            <Tabs defaultValue="accounts" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="accounts">Subcuentas</TabsTrigger>
+                <TabsTrigger value="trades">Operaciones</TabsTrigger>
+              </TabsList>
+              <TabsContent value="accounts">
+                <SubAccounts />
+              </TabsContent>
+              <TabsContent value="trades"></TabsContent>
+            </Tabs>
+          </>
+        )}
       </main>
     </div>
   );
