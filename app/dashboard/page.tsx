@@ -22,30 +22,31 @@ export default function Dashboard() {
       if (!token) {
         throw new Error("Token no encontrado, inicia sesión nuevamente");
       }
-
-      const response = await fetch(`${API_URL}/api/subaccounts`, {
+  
+      const response = await fetch("https://bedgetrader-production.up.railway.app/subaccounts", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
+  
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
+  
       const data = await response.json();
-
+  
       const balance = data.reduce((sum: number, account: { balance: number }) => sum + (account.balance || 0), 0);
       const performance =
         data.length > 0 ? data.reduce((sum: number, account: { performance: number }) => sum + (account.performance || 0), 0) / data.length : 0;
-
+  
       setTotalBalance(balance);
       setTotalPerformance(performance);
     } catch (error) {
       console.error("❌ Error al obtener datos:", error);
     }
-  };
+  };  
 
   useEffect(() => {
     fetchGlobalData();
