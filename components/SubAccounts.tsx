@@ -25,8 +25,6 @@ interface SubAccount {
   balance: number
   lastUpdated: string
   performance: number
-  apiKey: string
-  secretKey: string
 }
 
 interface SubAccountsProps {
@@ -194,16 +192,8 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
                 </p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">API Key</h3>
-                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100">
-                  {selectedAccount.apiKey.slice(0, 4)}...{selectedAccount.apiKey.slice(-4)}
-                </p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Secret Key</h3>
-                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100">
-                  {selectedAccount.secretKey.slice(0, 4)}...{selectedAccount.secretKey.slice(-4)}
-                </p>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">ID de Usuario</h3>
+                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100">{selectedAccount.userId}</p>
               </div>
             </div>
           )}
