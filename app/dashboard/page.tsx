@@ -1,75 +1,81 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
-import { LogOut, DollarSign, TrendingUp, TrendingDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/ThemeToggle"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
-import SubAccounts from "@/components/SubAccounts"
-import Operations from "@/components/Operations"
+import { useState, useEffect, useCallback } from "react";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import { LogOut, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import SubAccounts from "@/components/SubAccounts";
+import Operations from "@/components/Operations";
 
 interface SubAccount {
-  id: string
-  userId: string
-  name: string
-  exchange: string
-  balance: number
-  lastUpdated: string
-  performance: number
+  id: string;
+  userId: string;
+  name: string;
+  exchange: string;
+  balance: number;
+  lastUpdated: string;
+  performance: number;
 }
 
 interface Trade {
-  id: string
-  userId: string
-  pair: string
-  type: "buy" | "sell"
-  entryPrice: number
-  exitPrice?: number
-  amount: number
-  status: "open" | "closed"
-  openDate: string
-  closeDate?: string
-  pnl?: number
-  market: "spot" | "futures"
+  id: string;
+  userId: string;
+  pair: string;
+  type: "buy" | "sell";
+  entryPrice: number;
+  exitPrice?: number;
+  amount: number;
+  status: "open" | "closed";
+  openDate: string;
+  closeDate?: string;
+  pnl?: number;
+  market: "spot" | "futures";
 }
 
 export default function Dashboard() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
-  const [trades, setTrades] = useState<Trade[]>([])
-  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true);
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const fetchData = useCallback(async () => {
-    setIsLoading(true)
+    setIsLoading(true);
+    setError(null); // Reiniciar estado de error
     try {
-      const subAccountsResponse = await fetch("/api/subaccounts")
-      const subAccountsData = await subAccountsResponse.json()
-      setSubAccounts(subAccountsData)
+      const [subAccountsRes, tradesRes] = await Promise.all([
+        axios.get<SubAccount[]>("/api/subaccounts"),
+        axios.get<Trade[]>("/api/trades"),
+      ]);
 
-      const tradesResponse = await fetch("/api/trades")
-      const tradesData = await tradesResponse.json()
-      setTrades(tradesData)
-    } catch (error) {
-      console.error("Error fetching data:", error)
+      setSubAccounts(subAccountsRes.data);
+      setTrades(tradesRes.data);
+    } catch (err) {
+      console.error("Error obteniendo datos:", err);
+      setError("No se pudieron cargar los datos. Inténtalo nuevamente.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    fetchData();
+  }, [fetchData]);
 
   const handleLogout = () => {
-    router.push("/login")
-  }
+    router.push("/login");
+  };
 
-  const totalBalance = subAccounts.reduce((sum, account) => sum + account.balance, 0)
+  const totalBalance = subAccounts.reduce((sum, account) => sum + account.balance, 0);
   const totalPerformance =
-    subAccounts.length > 0 ? subAccounts.reduce((sum, account) => sum + account.performance, 0) / subAccounts.length : 0
+    subAccounts.length > 0
+      ? subAccounts.reduce((sum, account) => sum + account.performance, 0) / subAccounts.length
+      : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -117,13 +123,16 @@ export default function Dashboard() {
           </Card>
         </div>
 
+        {/* Mostrar mensaje de error si hay problemas */}
+        {error && <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4">{error}</div>}
+
         <Tabs defaultValue="accounts" className="space-y-4">
           <TabsList>
             <TabsTrigger value="accounts">Subcuentas</TabsTrigger>
             <TabsTrigger value="trades">Operaciones</TabsTrigger>
           </TabsList>
           <TabsContent value="accounts">
-            <SubAccounts isLoading={isLoading} fetchData={fetchData} />
+            <SubAccounts />
           </TabsContent>
           <TabsContent value="trades">
             <Operations trades={trades} />
@@ -131,6 +140,5 @@ export default function Dashboard() {
         </Tabs>
       </main>
     </div>
-  )
+  );
 }
-
