@@ -144,27 +144,23 @@ export default function Operations({ trades }: OperationsProps) {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="bg-secondary rounded-lg mt-4 overflow-hidden">
+                    <div className="bg-secondary/30 rounded-lg mt-4 overflow-hidden">
                       <div className="grid md:grid-cols-2 gap-6 p-6">
                         <div className="space-y-4">
                           <h4 className="font-semibold text-lg text-primary">Detalles de la Operación</h4>
                           <div className="grid grid-cols-2 gap-2 text-sm">
-                            <p className="font-medium">ID:</p>
-                            <p className="text-muted-foreground">{trade.id}</p>
-                            <p className="font-medium">Usuario ID:</p>
-                            <p className="text-muted-foreground">{trade.userId}</p>
-                            <p className="font-medium">Estado:</p>
-                            <p>
-                              <Badge variant={trade.status === "open" ? "default" : "secondary"}>
-                                {trade.status === "open" ? "Abierta" : "Cerrada"}
-                              </Badge>
-                            </p>
-                            <p className="font-medium">Fecha de Apertura:</p>
-                            <p className="text-muted-foreground">{new Date(trade.openDate).toLocaleString()}</p>
+                            <p className="font-medium text-muted-foreground">ID:</p>
+                            <p>{trade.id}</p>
+                            <p className="font-medium text-muted-foreground">Usuario ID:</p>
+                            <p>{trade.userId}</p>
+                            <p className="font-medium text-muted-foreground">Estado:</p>
+                            <p>{trade.status === "open" ? "Abierta" : "Cerrada"}</p>
+                            <p className="font-medium text-muted-foreground">Fecha de Apertura:</p>
+                            <p>{new Date(trade.openDate).toLocaleString()}</p>
                             {trade.closeDate && (
                               <>
-                                <p className="font-medium">Fecha de Cierre:</p>
-                                <p className="text-muted-foreground">{new Date(trade.closeDate).toLocaleString()}</p>
+                                <p className="font-medium text-muted-foreground">Fecha de Cierre:</p>
+                                <p>{new Date(trade.closeDate).toLocaleString()}</p>
                               </>
                             )}
                           </div>
@@ -172,20 +168,22 @@ export default function Operations({ trades }: OperationsProps) {
                         <div className="space-y-4">
                           <h4 className="font-semibold text-lg text-primary">Información Financiera</h4>
                           <div className="grid grid-cols-2 gap-2 text-sm">
-                            <p className="font-medium">Precio de Entrada:</p>
-                            <p className="text-muted-foreground">{trade.entryPrice.toFixed(2)}</p>
+                            <p className="font-medium text-muted-foreground">Precio de Entrada:</p>
+                            <p>{trade.entryPrice.toFixed(2)}</p>
                             {trade.exitPrice && (
                               <>
-                                <p className="font-medium">Precio de Salida:</p>
-                                <p className="text-muted-foreground">{trade.exitPrice.toFixed(2)}</p>
+                                <p className="font-medium text-muted-foreground">Precio de Salida:</p>
+                                <p>{trade.exitPrice.toFixed(2)}</p>
                               </>
                             )}
-                            <p className="font-medium">Cantidad:</p>
-                            <p className="text-muted-foreground">{trade.amount}</p>
+                            <p className="font-medium text-muted-foreground">Cantidad:</p>
+                            <p>{trade.amount}</p>
                             {trade.pnl !== undefined && (
                               <>
-                                <p className="font-medium">PnL:</p>
-                                <p className={`font-medium ${trade.pnl >= 0 ? "text-green-500" : "text-red-500"}`}>
+                                <p className="font-medium text-muted-foreground">PnL:</p>
+                                <p
+                                  className={trade.pnl >= 0 ? "text-green-500 font-medium" : "text-red-500 font-medium"}
+                                >
                                   {trade.pnl.toFixed(2)} USDT
                                 </p>
                               </>
@@ -194,20 +192,20 @@ export default function Operations({ trades }: OperationsProps) {
                               <>
                                 {trade.leverage && (
                                   <>
-                                    <p className="font-medium">Apalancamiento:</p>
-                                    <p className="text-muted-foreground">{trade.leverage}x</p>
+                                    <p className="font-medium text-muted-foreground">Apalancamiento:</p>
+                                    <p>{trade.leverage}x</p>
                                   </>
                                 )}
                                 {trade.stopLoss && (
                                   <>
-                                    <p className="font-medium">Stop Loss:</p>
-                                    <p className="text-muted-foreground">{trade.stopLoss}</p>
+                                    <p className="font-medium text-muted-foreground">Stop Loss:</p>
+                                    <p>{trade.stopLoss}</p>
                                   </>
                                 )}
                                 {trade.takeProfit && (
                                   <>
-                                    <p className="font-medium">Take Profit:</p>
-                                    <p className="text-muted-foreground">{trade.takeProfit}</p>
+                                    <p className="font-medium text-muted-foreground">Take Profit:</p>
+                                    <p>{trade.takeProfit}</p>
                                   </>
                                 )}
                               </>
@@ -215,10 +213,11 @@ export default function Operations({ trades }: OperationsProps) {
                           </div>
                         </div>
                       </div>
-                      <div className="bg-background p-4 border-t border-border">
-                        <Button variant="outline" size="sm">
-                          Editar Operación
+                      <div className="bg-secondary/50 p-4 flex justify-end">
+                        <Button variant="outline" className="mr-2">
+                          Editar
                         </Button>
+                        <Button variant="destructive">Cerrar Operación</Button>
                       </div>
                     </div>
                   </AccordionContent>
