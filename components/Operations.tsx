@@ -1,11 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ChevronUp, ChevronDown } from "lucide-react"
+import { ChevronUp, ChevronDown, ArrowUpDown } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 interface Trade {
   id: string
@@ -29,13 +31,41 @@ interface OperationsProps {
 export default function Operations({ trades }: OperationsProps) {
   const [tradeMarketFilter, setTradeMarketFilter] = useState<"all" | "spot" | "futures">("all")
   const [activeTab, setActiveTab] = useState<"open" | "closed">("open")
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Trade; direction: "asc" | "desc" } | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
 
-  const filteredTrades = trades.filter((trade) => tradeMarketFilter === "all" || trade.market === tradeMarketFilter)
+  const filteredTrades = useMemo(() => {
+    return trades
+      .filter((trade) => tradeMarketFilter === "all" || trade.market === tradeMarketFilter)
+      .filter((trade) => trade.status === activeTab)
+      .filter(
+        (trade) =>
+          trade.pair.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          trade.market.toLowerCase().includes(searchTerm.toLowerCase()),
+      )
+  }, [trades, tradeMarketFilter, activeTab, searchTerm])
 
-  const openTrades = filteredTrades.filter((trade) => trade.status === "open")
-  const closedTrades = filteredTrades.filter((trade) => trade.status === "closed")
+  const sortedTrades = useMemo(() => {
+    if (sortConfig !== null) {
+      return [...filteredTrades].sort(() => {
+        return 0
+      })
+    }
+    return filteredTrades
+  }, [filteredTrades, sortConfig])
 
-  const totalPnL = closedTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0)
+  const totalPnL = useMemo(() => {
+    return sortedTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0)
+  }, [sortedTrades])
+
+  const requestSort = (key: keyof Trade) => {
+    setSortConfig((prevConfig) => {
+      if (prevConfig?.key === key) {
+        return { key, direction: prevConfig.direction === "asc" ? "desc" : "asc" }
+      }
+      return { key, direction: "asc" }
+    })
+  }
 
   return (
     <div className="space-y-6">
@@ -65,7 +95,7 @@ export default function Operations({ trades }: OperationsProps) {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>{activeTab === "open" ? "Operaciones Abiertas" : "Operaciones Cerradas"}</span>
-            <Badge variant="outline">{activeTab === "open" ? openTrades.length : closedTrades.length}</Badge>
+            <Badge variant="outline">{sortedTrades.length}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -79,27 +109,59 @@ export default function Operations({ trades }: OperationsProps) {
               </div>
             </div>
           )}
+          <div className="mb-4">
+            <Input
+              placeholder="Buscar por par o mercado..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-sm"
+            />
+          </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Par</TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort("pair")}>
+                      Par <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>Precio</TableHead>
-                  <TableHead>Cantidad</TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort("entryPrice")}>
+                      Precio <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort("amount")}>
+                      Cantidad <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </TableHead>
                   <TableHead>Mercado</TableHead>
                   {activeTab === "open" ? (
-                    <TableHead>Fecha de Apertura</TableHead>
+                    <TableHead>
+                      <Button variant="ghost" onClick={() => requestSort("openDate")}>
+                        Fecha de Apertura <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </TableHead>
                   ) : (
                     <>
-                      <TableHead>PnL</TableHead>
-                      <TableHead>Fecha de Cierre</TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => requestSort("pnl")}>
+                          PnL <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => requestSort("closeDate")}>
+                          Fecha de Cierre <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </TableHead>
                     </>
                   )}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(activeTab === "open" ? openTrades : closedTrades).map((trade) => (
+                {sortedTrades.map((trade) => (
                   <TableRow key={trade.id}>
                     <TableCell className="font-medium">{trade.pair}</TableCell>
                     <TableCell>
