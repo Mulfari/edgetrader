@@ -26,30 +26,36 @@ export default function Dashboard() {
       if (!token) {
         throw new Error("Token no encontrado, inicia sesión nuevamente");
       }
-
-      const response = await fetch("/api/subaccounts", {
+  
+      const response = await fetch("https://edgetrader.vercel.app/api/subaccounts", { 
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
+  
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        console.error(`Error HTTP: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`Error al obtener subcuentas: ${errorText}`);
       }
-      const data: SubAccount[] = (await response.json()) || [];
-
-      const balance = data.reduce((sum: number, account: SubAccount) => sum + (account.balance || 0), 0);
-      const performance =
-        data.length > 0 ? data.reduce((sum: number, account: SubAccount) => sum + (account.performance || 0), 0) / data.length : 0;
-
+  
+      const data = await response.json();
+      
+      if (!Array.isArray(data)) {
+        throw new Error("Respuesta inesperada de la API");
+      }
+  
+      const balance = data.reduce((sum, account) => sum + (account.balance || 0), 0);
+      const performance = data.length > 0 ? data.reduce((sum, account) => sum + (account.performance || 0), 0) / data.length : 0;
+  
       setTotalBalance(balance);
       setTotalPerformance(performance);
     } catch (error) {
-      console.error("Error al obtener datos:", error);
+      console.error("❌ Error al obtener datos:", error);
     }
-  };
+  };  
 
   useEffect(() => {
     fetchGlobalData();
