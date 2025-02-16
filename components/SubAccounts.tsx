@@ -1,12 +1,12 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { Search, RefreshCw, Plus, AlertCircle } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useState } from "react"
+import { Search, RefreshCw, Plus, AlertCircle } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -14,37 +14,35 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog"
 
 interface SubAccount {
-  id: string;
-  userId: string;
-  name: string;
-  exchange: string;
-  balance: number;
-  lastUpdated: string;
-  performance: number;
+  id: string
+  userId: string
+  name: string
+  exchange: string
+  balance: number
+  lastUpdated: string
+  performance: number
 }
 
 interface SubAccountsProps {
-  subAccounts: SubAccount[];
-  isLoading: boolean;
-  fetchData: () => void;
+  subAccounts: SubAccount[]
+  isLoading: boolean
+  fetchData: () => void
 }
 
 export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("")
+  const [activeTab, setActiveTab] = useState("all")
 
   // Filtrar subcuentas por búsqueda y exchange seleccionado
-  const filteredSubAccounts = Array.isArray(subAccounts)
-    ? subAccounts.filter(
-        (account) =>
-          (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            account.exchange.toLowerCase().includes(searchTerm.toLowerCase())) &&
-          (activeTab === "all" || account.exchange === activeTab)
-      )
-    : [];
+  const filteredSubAccounts = subAccounts.filter(
+    (account) =>
+      (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        account.exchange.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (activeTab === "all" || account.exchange.toLowerCase() === activeTab),
+  )
 
   return (
     <div>
@@ -75,6 +73,7 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
                 <DialogTitle>Agregar Nueva Subcuenta</DialogTitle>
                 <DialogDescription>Ingrese los detalles de la nueva subcuenta aquí.</DialogDescription>
               </DialogHeader>
+              {/* Aquí puedes agregar un formulario para crear una nueva subcuenta */}
             </DialogContent>
           </Dialog>
         </div>
@@ -147,5 +146,6 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
         </Table>
       </div>
     </div>
-  );
+  )
 }
+
