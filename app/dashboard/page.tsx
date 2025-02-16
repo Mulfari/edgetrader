@@ -14,7 +14,11 @@ export default function Dashboard() {
   const [totalBalance, setTotalBalance] = useState<number>(0);
   const [totalPerformance, setTotalPerformance] = useState<number>(0);
   const router = useRouter();
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl) {
+    throw new Error("❌ NEXT_PUBLIC_API_URL no está definida");
+  }
 
   const fetchGlobalData = async () => {
     try {
@@ -22,12 +26,7 @@ export default function Dashboard() {
       if (!token) {
         throw new Error("Token no encontrado, inicia sesión nuevamente");
       }
-  
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL; // Usar la variable de entorno
-      if (!apiUrl) {
-        throw new Error("❌ Error: NEXT_PUBLIC_API_URL no está definida");
-      }
-  
+
       const response = await fetch(`${apiUrl}/subaccounts`, {
         method: "GET",
         headers: {
@@ -35,23 +34,22 @@ export default function Dashboard() {
           Authorization: `Bearer ${token}`,
         },
       });
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-  
       const data = await response.json();
-  
+
       const balance = data.reduce((sum: number, account: { balance: number }) => sum + (account.balance || 0), 0);
       const performance =
         data.length > 0 ? data.reduce((sum: number, account: { performance: number }) => sum + (account.performance || 0), 0) / data.length : 0;
-  
+
       setTotalBalance(balance);
       setTotalPerformance(performance);
     } catch (error) {
       console.error("❌ Error al obtener datos:", error);
     }
-  };  
+  };
 
   useEffect(() => {
     fetchGlobalData();
