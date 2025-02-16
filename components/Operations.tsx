@@ -2,11 +2,20 @@
 
 import { useState, useMemo } from "react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ChevronUp, ChevronDown } from "lucide-react"
+import { ChevronUp, ChevronDown, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
 interface Trade {
   id: string
@@ -21,6 +30,7 @@ interface Trade {
   closeDate?: string
   pnl?: number
   market: "spot" | "futures"
+  leverage?: number
 }
 
 interface OperationsProps {
@@ -31,6 +41,7 @@ export default function Operations({ trades }: OperationsProps) {
   const [tradeMarketFilter, setTradeMarketFilter] = useState<"all" | "spot" | "futures">("all")
   const [activeTab, setActiveTab] = useState<"open" | "closed">("open")
   const [searchTerm, setSearchTerm] = useState("")
+  const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null)
 
   const filteredTrades = useMemo(() => {
     return trades
@@ -46,6 +57,10 @@ export default function Operations({ trades }: OperationsProps) {
   const totalPnL = useMemo(() => {
     return filteredTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0)
   }, [filteredTrades])
+
+  const handleTradeClick = (trade: Trade) => {
+    setSelectedTrade(trade)
+  }
 
   return (
     <div className="space-y-6">
@@ -73,10 +88,28 @@ export default function Operations({ trades }: OperationsProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>{activeTab === "open" ? "Operaciones Abiertas" : "Operaciones Cerradas"}</span>
-            <Badge variant="outline">{filteredTrades.length}</Badge>
-          </CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle className="flex items-center gap-2">
+              <span>{activeTab === "open" ? "Operaciones Abiertas" : "Operaciones Cerradas"}</span>
+              <Badge variant="outline">{filteredTrades.length}</Badge>
+            </CardTitle>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" /> Nueva Operación
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nueva Operación</DialogTitle>
+                  <DialogDescription>
+                    Aquí puedes crear una nueva operación. (Implementa el formulario según tus necesidades)
+                  </DialogDescription>
+                </DialogHeader>
+                {/* Aquí iría el formulario para crear una nueva operación */}
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
         <CardContent>
           {activeTab === "closed" && (
@@ -118,7 +151,11 @@ export default function Operations({ trades }: OperationsProps) {
               </TableHeader>
               <TableBody>
                 {filteredTrades.map((trade) => (
-                  <TableRow key={trade.id}>
+                  <TableRow
+                    key={trade.id}
+                    onClick={() => handleTradeClick(trade)}
+                    className="cursor-pointer hover:bg-muted"
+                  >
                     <TableCell className="font-medium">{trade.pair}</TableCell>
                     <TableCell>
                       <Badge
@@ -166,6 +203,72 @@ export default function Operations({ trades }: OperationsProps) {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!selectedTrade} onOpenChange={(open) => !open && setSelectedTrade(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Detalles de la Operación</DialogTitle>
+          </DialogHeader>
+          {selectedTrade && (
+            <div className="grid gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Par</p>
+                  <p>{selectedTrade.pair}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Tipo</p>
+                  <Badge variant={selectedTrade.type === "buy" ? "default" : "destructive"}>
+                    {selectedTrade.type.toUpperCase()}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Precio de Entrada</p>
+                  <p>{selectedTrade.entryPrice.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Cantidad</p>
+                  <p>{selectedTrade.amount}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Mercado</p>
+                  <Badge variant={selectedTrade.market === "spot" ? "secondary" : "outline"}>
+                    {selectedTrade.market.toUpperCase()}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Fecha de Apertura</p>
+                  <p>{new Date(selectedTrade.openDate).toLocaleString()}</p>
+                </div>
+                {selectedTrade.market === "futures" && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Apalancamiento</p>
+                    <p>{selectedTrade.leverage}x</p>
+                  </div>
+                )}
+                {selectedTrade.status === "closed" && (
+                  <>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Precio de Salida</p>
+                      <p>{selectedTrade.exitPrice?.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">PnL</p>
+                      <p className={selectedTrade.pnl && selectedTrade.pnl >= 0 ? "text-green-500" : "text-red-500"}>
+                        {selectedTrade.pnl?.toFixed(2)} USDT
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Fecha de Cierre</p>
+                      <p>{selectedTrade.closeDate && new Date(selectedTrade.closeDate).toLocaleString()}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
