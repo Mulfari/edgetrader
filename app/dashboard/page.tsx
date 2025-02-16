@@ -14,6 +14,7 @@ export default function Dashboard() {
   const [totalBalance, setTotalBalance] = useState<number>(0);
   const [totalPerformance, setTotalPerformance] = useState<number>(0);
   const router = useRouter();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   const fetchGlobalData = async () => {
     try {
@@ -22,7 +23,7 @@ export default function Dashboard() {
         throw new Error("Token no encontrado, inicia sesión nuevamente");
       }
 
-      const response = await fetch("/api/subaccounts", {
+      const response = await fetch(`${API_URL}/api/subaccounts`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -42,7 +43,7 @@ export default function Dashboard() {
       setTotalBalance(balance);
       setTotalPerformance(performance);
     } catch (error) {
-      console.error("Error al obtener datos:", error);
+      console.error("❌ Error al obtener datos:", error);
     }
   };
 
@@ -51,6 +52,7 @@ export default function Dashboard() {
   }, []);
 
   const handleLogout = () => {
+    localStorage.removeItem("token");
     router.push("/login");
   };
 
