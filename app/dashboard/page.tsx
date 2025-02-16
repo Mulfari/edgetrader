@@ -44,8 +44,15 @@ export default function Dashboard() {
 
   const fetchData = useCallback(() => {
     setIsLoading(true)
-    // Implement your data fetching logic here
-    setIsLoading(false)
+    try {
+      // TODO: Replace with actual API calls
+      setSubAccounts([])
+      setTrades([])
+    } catch (error) {
+      console.error("Error fetching data:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   useEffect(() => {
