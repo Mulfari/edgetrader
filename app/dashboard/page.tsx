@@ -23,7 +23,12 @@ export default function Dashboard() {
         throw new Error("Token no encontrado, inicia sesión nuevamente");
       }
   
-      const response = await fetch("https://bedgetrader-production.up.railway.app/subaccounts", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL; // Usar la variable de entorno
+      if (!apiUrl) {
+        throw new Error("❌ Error: NEXT_PUBLIC_API_URL no está definida");
+      }
+  
+      const response = await fetch(`${apiUrl}/subaccounts`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
