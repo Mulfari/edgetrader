@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
-import { ChevronLeft, ChevronRight, LogOut, Briefcase, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LogOut, Briefcase, DollarSign, TrendingUp } from 'lucide-react';
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
