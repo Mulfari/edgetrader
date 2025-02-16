@@ -19,6 +19,7 @@ interface SubAccount {
 export default function SubAccounts() {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   const fetchSubAccounts = useCallback(async () => {
@@ -55,8 +56,9 @@ export default function SubAccounts() {
       );
 
       setSubAccounts(subAccountsWithBalance);
-    } catch (error) {
-      console.error("No se pudieron cargar las subcuentas");
+      setError(null);
+    } catch (err) {
+      setError("No se pudieron cargar las subcuentas");
     } finally {
       setIsLoading(false);
     }
@@ -74,6 +76,7 @@ export default function SubAccounts() {
           <RefreshCw className="mr-2 h-4 w-4" /> Actualizar Todo
         </Button>
       </div>
+      {error && <p className="text-red-500 text-center">{error}</p>}
       <Card>
         <CardHeader>
           <CardTitle>Subcuentas ({subAccounts.length})</CardTitle>
