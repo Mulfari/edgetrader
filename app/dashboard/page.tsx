@@ -36,68 +36,16 @@ interface Trade {
   market: "spot" | "futures"
 }
 
-const sampleSubAccounts: SubAccount[] = [
-  {
-    id: "1",
-    userId: "101",
-    name: "Cuenta Binance",
-    exchange: "binance",
-    balance: 5000,
-    lastUpdated: "2024-02-16T10:00:00Z",
-    performance: 5.2,
-  },
-  {
-    id: "2",
-    userId: "102",
-    name: "Cuenta Kraken",
-    exchange: "kraken",
-    balance: 3200,
-    lastUpdated: "2024-02-16T12:30:00Z",
-    performance: -1.5,
-  },
-]
-
-const sampleTrades: Trade[] = [
-  {
-    id: "1",
-    userId: "101",
-    pair: "BTC/USDT",
-    type: "buy",
-    entryPrice: 42000,
-    amount: 0.1,
-    status: "open",
-    openDate: "2024-02-15T14:00:00Z",
-    market: "spot",
-  },
-  {
-    id: "2",
-    userId: "102",
-    pair: "ETH/USDT",
-    type: "sell",
-    entryPrice: 3100,
-    exitPrice: 2900,
-    amount: 2,
-    status: "closed",
-    openDate: "2024-02-14T12:00:00Z",
-    closeDate: "2024-02-15T15:00:00Z",
-    pnl: 400,
-    market: "futures",
-  },
-]
-
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
-  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
-  const [trades, setTrades] = useState<Trade[]>([])
+  const [subAccounts, setSubAccounts] = useState<SubAccount[] | null>(null)
+  const [trades, setTrades] = useState<Trade[] | null>(null)
   const router = useRouter()
 
   const fetchData = useCallback(() => {
     setIsLoading(true)
-    setTimeout(() => {
-      setSubAccounts(sampleSubAccounts)
-      setTrades(sampleTrades)
-      setIsLoading(false)
-    }, 1000)
+    // Implement your data fetching logic here
+    setIsLoading(false)
   }, [])
 
   useEffect(() => {
@@ -108,9 +56,11 @@ export default function Dashboard() {
     router.push("/login")
   }
 
-  const totalBalance = subAccounts.reduce((sum, account) => sum + account.balance, 0)
+  const totalBalance = subAccounts ? subAccounts.reduce((sum, account) => sum + account.balance, 0) : 0
   const totalPerformance =
-    subAccounts.length > 0 ? subAccounts.reduce((sum, account) => sum + account.performance, 0) / subAccounts.length : 0
+    subAccounts && subAccounts.length > 0
+      ? subAccounts.reduce((sum, account) => sum + account.performance, 0) / subAccounts.length
+      : 0
 
   return (
     <div className="min-h-screen bg-background">
@@ -164,13 +114,14 @@ export default function Dashboard() {
             <TabsTrigger value="trades">Operaciones</TabsTrigger>
           </TabsList>
           <TabsContent value="accounts">
-            <SubAccounts subAccounts={subAccounts} isLoading={isLoading} fetchData={fetchData} />
+            <SubAccounts subAccounts={subAccounts || []} isLoading={isLoading} fetchData={fetchData} />
           </TabsContent>
           <TabsContent value="trades">
-            <Operations trades={trades} />
+            <Operations trades={trades || []} />
           </TabsContent>
         </Tabs>
       </main>
     </div>
   )
 }
+
