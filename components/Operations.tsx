@@ -4,12 +4,10 @@ import { useState, useMemo } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ChevronUp, ChevronDown, Search, Plus, SortAsc, SortDesc } from "lucide-react"
+import { ChevronUp, ChevronDown, Search, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface Trade {
   id: string
@@ -37,8 +35,6 @@ export default function Operations({ trades }: OperationsProps) {
   const [tradeMarketFilter, setTradeMarketFilter] = useState<"all" | "spot" | "futures">("all")
   const [activeTab, setActiveTab] = useState<"open" | "closed">("open")
   const [searchTerm, setSearchTerm] = useState("")
-  const [sortBy, setSortBy] = useState<"date" | "pnl" | "amount">("date")
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
 
   const filteredTrades = useMemo(() => {
     return trades
@@ -49,18 +45,7 @@ export default function Operations({ trades }: OperationsProps) {
           trade.pair.toLowerCase().includes(searchTerm.toLowerCase()) ||
           trade.market.toLowerCase().includes(searchTerm.toLowerCase()),
       )
-      .sort((a, b) => {
-        if (sortBy === "date") {
-          return sortOrder === "asc"
-            ? new Date(a.openDate).getTime() - new Date(b.openDate).getTime()
-            : new Date(b.openDate).getTime() - new Date(a.openDate).getTime()
-        } else if (sortBy === "pnl") {
-          return sortOrder === "asc" ? (a.pnl || 0) - (b.pnl || 0) : (b.pnl || 0) - (a.pnl || 0)
-        } else {
-          return sortOrder === "asc" ? a.amount - b.amount : b.amount - a.amount
-        }
-      })
-  }, [trades, tradeMarketFilter, activeTab, searchTerm, sortBy, sortOrder])
+  }, [trades, tradeMarketFilter, activeTab, searchTerm])
 
   const totalPnL = useMemo(() => {
     return filteredTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0)
@@ -70,7 +55,7 @@ export default function Operations({ trades }: OperationsProps) {
     <div className="space-y-6 p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-primary">Operaciones</h2>
-        <Button className="bg-primary hover:bg-primary/90 transition-colors duration-200">
+        <Button className="bg-primary hover:bg-primary/90">
           <Plus className="mr-2 h-4 w-4" /> Nueva Operación
         </Button>
       </div>
@@ -119,39 +104,14 @@ export default function Operations({ trades }: OperationsProps) {
               </div>
             </div>
           )}
-          <div className="mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <div className="relative w-full sm:w-auto">
-              <Input
-                placeholder="Buscar por par o mercado..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full max-w-md"
-              />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Select value={sortBy} onValueChange={(value) => setSortBy(value as "date" | "pnl" | "amount")}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Ordenar por" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="date">Fecha</SelectItem>
-                  <SelectItem value="pnl">PnL</SelectItem>
-                  <SelectItem value="amount">Cantidad</SelectItem>
-                </SelectContent>
-              </Select>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    {sortOrder === "asc" ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setSortOrder("asc")}>Ascendente</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortOrder("desc")}>Descendente</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+          <div className="mb-6 relative">
+            <Input
+              placeholder="Buscar por par o mercado..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 w-full max-w-md"
+            />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
           <div className="overflow-x-auto">
             <Accordion type="single" collapsible className="w-full">
