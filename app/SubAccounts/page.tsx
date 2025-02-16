@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Search, RefreshCw, Plus, AlertCircle, ChevronDown } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useState } from "react";
+import { Search, RefreshCw, Plus, AlertCircle, ChevronDown } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -15,38 +15,38 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
 interface SubAccount {
-  id: string
-  userId: string
-  name: string
-  exchange: string
-  balance: number
-  lastUpdated: string
-  performance: number
+  id: string;
+  userId: string;
+  name: string;
+  exchange: string;
+  balance: number;
+  lastUpdated: string;
+  performance: number;
 }
 
 interface SubAccountsProps {
-  subAccounts: SubAccount[]
-  isLoading: boolean
-  fetchData: () => void
+  subAccounts: SubAccount[];
+  isLoading: boolean;
+  fetchData: () => void;
 }
 
 export function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsProps) {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [activeTab, setActiveTab] = useState("all")
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
 
   const filteredSubAccounts = subAccounts.filter(
     (account) =>
       (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         account.exchange.toLowerCase().includes(searchTerm.toLowerCase())) &&
       (activeTab === "all" || account.exchange === activeTab),
-  )
+  );
 
-  const fetchAccountDetails = (userId: string) => {
+  const fetchAccountDetails = () => {
     // Implement the logic to fetch account details
-  }
+  };
 
   return (
     <div>
@@ -127,12 +127,17 @@ export function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsPr
                   <TableCell>
                     <Badge
                       variant="secondary"
-                      className={`
-                      ${sub.exchange === "binance" ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200" : ""}
-                      ${sub.exchange === "bybit" ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" : ""}
-                      ${sub.exchange === "kraken" ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200" : ""}
-                      ${sub.exchange === "ftx" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : ""}
-                    `}
+                      className={`${
+                        sub.exchange === "binance"
+                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                          : sub.exchange === "bybit"
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                          : sub.exchange === "kraken"
+                          ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                          : sub.exchange === "ftx"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                          : ""
+                      }`}
                     >
                       {sub.exchange.toUpperCase()}
                     </Badge>
@@ -155,7 +160,7 @@ export function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsPr
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => fetchAccountDetails(sub.userId)}>
+                        <DropdownMenuItem onClick={fetchAccountDetails}>
                           Actualizar Balance
                         </DropdownMenuItem>
                         <DropdownMenuItem>Editar</DropdownMenuItem>
@@ -170,6 +175,5 @@ export function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsPr
         </Table>
       </div>
     </div>
-  )
+  );
 }
-
