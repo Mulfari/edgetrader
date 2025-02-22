@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
+import { LogOut, DollarSign, TrendingUp } from "lucide-react"; // 🔹 Eliminé TrendingDown
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,38 +39,46 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto py-6 px-4">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">- USDT</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Rendimiento Promedio</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">- %</div>
-              <Progress value={0} className="mt-2" />
-            </CardContent>
-          </Card>
-        </div>
+        {isLoading ? ( // 🔹 Mostrar indicador de carga si es necesario
+          <p className="text-center text-muted-foreground">Cargando datos...</p>
+        ) : (
+          <>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">- USDT</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Rendimiento Promedio</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">- %</div>
+                  <Progress value={0} className="mt-2" />
+                </CardContent>
+              </Card>
+            </div>
 
-        <Tabs defaultValue="accounts" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="accounts">Subcuentas</TabsTrigger>
-            <TabsTrigger value="trades">Operaciones</TabsTrigger>
-          </TabsList>
-          <TabsContent value="accounts">
-          </TabsContent>
-          <TabsContent value="trades">
-          </TabsContent>
-        </Tabs>
+            <Tabs defaultValue="accounts" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="accounts">Subcuentas</TabsTrigger>
+                <TabsTrigger value="trades">Operaciones</TabsTrigger>
+              </TabsList>
+              <TabsContent value="accounts">
+                {/* Aquí puedes incluir la lista de subcuentas */}
+              </TabsContent>
+              <TabsContent value="trades">
+                {/* Aquí puedes incluir la lista de operaciones */}
+              </TabsContent>
+            </Tabs>
+          </>
+        )}
       </main>
     </div>
   );
