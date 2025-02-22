@@ -1,47 +1,65 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Search, RefreshCw, Plus, AlertCircle } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { useEffect, useState } from "react";
+import { Search, RefreshCw, Plus, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface SubAccount {
-  id: string
-  userId: string
-  name: string
-  exchange: string
-  balance: number
-  lastUpdated: string
-  performance: number
+  id: string;
+  userId: string;
+  name: string;
+  exchange: string;
+  balance?: number;
+  lastUpdated?: string;
+  performance?: number;
 }
 
-interface SubAccountsProps {
-  subAccounts: SubAccount[]
-  isLoading: boolean
-  fetchData: () => void
-}
+export default function SubAccounts() {
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
 
-export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAccountsProps) {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [activeTab, setActiveTab] = useState("all")
+  // Función para obtener las subcuentas desde el backend
+  const fetchSubAccounts = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("http://localhost:3000/subaccounts", {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error("Error al obtener subcuentas");
+      }
+
+      const data = await response.json();
+      setSubAccounts(data);
+    } catch (error) {
+      console.error("❌ Error al obtener subcuentas:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSubAccounts();
+  }, []);
 
   const filteredSubAccounts = subAccounts.filter(
     (account) =>
       (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         account.exchange.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (activeTab === "all" || account.exchange === activeTab),
-  )
+      (activeTab === "all" || account.exchange === activeTab)
+  );
 
   return (
     <div>
@@ -56,25 +74,10 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
             className="pl-10 pr-4 py-2 w-full"
           />
         </div>
-        <div className="flex space-x-4">
-          <Button onClick={fetchData} variant="outline" size="sm">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Actualizar Todo
-          </Button>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                <Plus className="mr-2 h-4 w-4" /> Agregar Subcuenta
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Agregar Nueva Subcuenta</DialogTitle>
-                <DialogDescription>Ingrese los detalles de la nueva subcuenta aquí.</DialogDescription>
-              </DialogHeader>
-            </DialogContent>
-          </Dialog>
-        </div>
+        <Button onClick={fetchSubAccounts} variant="outline" size="sm">
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Actualizar Todo
+        </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
@@ -93,22 +96,20 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
             <TableRow>
               <TableHead>Nombre</TableHead>
               <TableHead>Exchange</TableHead>
-              <TableHead>Balance</TableHead>
-              <TableHead>Rendimiento</TableHead>
-              <TableHead>Última Actualización</TableHead>
+              <TableHead>Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
+                <TableCell colSpan={3} className="text-center">
                   <RefreshCw className="animate-spin mx-auto h-6 w-6" />
                   <span className="mt-2 block">Cargando subcuentas...</span>
                 </TableCell>
               </TableRow>
             ) : filteredSubAccounts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
+                <TableCell colSpan={3} className="text-center">
                   <AlertCircle className="mx-auto mb-2 h-6 w-6" />
                   No se encontraron subcuentas
                 </TableCell>
@@ -121,15 +122,10 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
                     <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
                   </TableCell>
                   <TableCell>
-                    <span className="font-semibold">{sub.balance.toFixed(2)} USDT</span>
+                    <Button size="sm" variant="outline" onClick={() => console.log("Ver detalles", sub.id)}>
+                      Ver Detalles
+                    </Button>
                   </TableCell>
-                  <TableCell>
-                    <span className={`font-semibold ${sub.performance >= 0 ? "text-green-500" : "text-red-500"}`}>
-                      {sub.performance >= 0 ? "+" : ""}
-                      {sub.performance.toFixed(2)}%
-                    </span>
-                  </TableCell>
-                  <TableCell>{new Date(sub.lastUpdated).toLocaleString()}</TableCell>
                 </TableRow>
               ))
             )}
@@ -137,6 +133,5 @@ export default function SubAccounts({ subAccounts, isLoading, fetchData }: SubAc
         </Table>
       </div>
     </div>
-  )
+  );
 }
-
