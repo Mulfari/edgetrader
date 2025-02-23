@@ -162,64 +162,118 @@ export default function SubAccounts() {
               </TableRow>
             ) : (
               filteredAccounts.map((sub) => (
-                <TableRow key={sub.id}>
-                  <TableCell className="font-medium">{sub.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
-                  </TableCell>
-                  <TableCell>{sub.balance ? `${sub.balance.toFixed(2)} USDT` : "-"}</TableCell>
-                  <TableCell>{sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}</TableCell>
-                  <TableCell>
-                    <Accordion type="single" collapsible>
-                      <AccordionItem value={sub.id} key={sub.id} className="border-b-0">
-                        <AccordionTrigger className="py-0">
-                          <span className="sr-only">Toggle details</span>
-                          <ChevronDown className="h-4 w-4" />
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="p-4 bg-muted/50">
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <p className="text-sm font-medium text-muted-foreground">Nombre</p>
-                                  <p className="text-sm">{sub.name}</p>
+                <>
+                  <TableRow key={sub.id}>
+                    <TableCell className="font-medium">{sub.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
+                    </TableCell>
+                    <TableCell>{sub.balance ? `${sub.balance.toFixed(2)} USDT` : "-"}</TableCell>
+                    <TableCell>{sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}</TableCell>
+                    <TableCell>
+                      <Accordion type="single" collapsible>
+                        <AccordionItem value={sub.id} key={sub.id} className="border-b-0">
+                          <AccordionTrigger className="py-0">
+                            <span className="sr-only">Toggle details</span>
+                            <ChevronDown className="h-4 w-4" />
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="p-4 bg-muted/50">
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Nombre</p>
+                                    <p className="text-sm">{sub.name}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Exchange</p>
+                                    <p className="text-sm">{sub.exchange}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Balance Detallado</p>
+                                    {loadingBalances[sub.userId] ? (
+                                      <p className="text-sm">Cargando balance...</p>
+                                    ) : (
+                                      <p className="text-sm">
+                                        {accountBalances[sub.userId] !== undefined
+                                          ? `${accountBalances[sub.userId]?.toFixed(2)} USDT`
+                                          : "Click para cargar"}
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
-                                <div>
-                                  <p className="text-sm font-medium text-muted-foreground">Exchange</p>
-                                  <p className="text-sm">{sub.exchange}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-muted-foreground">Balance Detallado</p>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => fetchAccountDetails(sub.userId)}
+                                  disabled={loadingBalances[sub.userId]}
+                                >
                                   {loadingBalances[sub.userId] ? (
-                                    <p className="text-sm">Cargando balance...</p>
+                                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                                   ) : (
-                                    <p className="text-sm">
-                                      {accountBalances[sub.userId] !== undefined
-                                        ? `${accountBalances[sub.userId]?.toFixed(2)} USDT`
-                                        : "Click para cargar"}
-                                    </p>
+                                    "Actualizar Balance"
                                   )}
-                                </div>
+                                </Button>
                               </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => fetchAccountDetails(sub.userId)}
-                                disabled={loadingBalances[sub.userId]}
-                              >
-                                {loadingBalances[sub.userId] ? (
-                                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                  "Actualizar Balance"
-                                )}
-                              </Button>
                             </div>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  </TableCell>
-                </TableRow>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell colSpan={5}>
+                      <Accordion type="single" collapsible>
+                        <AccordionItem value={sub.id} key={sub.id} className="border-b-0">
+                          <AccordionTrigger className="py-0">
+                            <span className="sr-only">Toggle details</span>
+                            <ChevronDown className="h-4 w-4" />
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="p-4 bg-muted/50">
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Nombre</p>
+                                    <p className="text-sm">{sub.name}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Exchange</p>
+                                    <p className="text-sm">{sub.exchange}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Balance Detallado</p>
+                                    {loadingBalances[sub.userId] ? (
+                                      <p className="text-sm">Cargando balance...</p>
+                                    ) : (
+                                      <p className="text-sm">
+                                        {accountBalances[sub.userId] !== undefined
+                                          ? `${accountBalances[sub.userId]?.toFixed(2)} USDT`
+                                          : "Click para cargar"}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => fetchAccountDetails(sub.userId)}
+                                  disabled={loadingBalances[sub.userId]}
+                                >
+                                  {loadingBalances[sub.userId] ? (
+                                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : (
+                                    "Actualizar Balance"
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    </TableCell>
+                  </TableRow>
+                </>
               ))
             )}
           </TableBody>
