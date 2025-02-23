@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { useRouter } from "next/navigation"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
@@ -153,67 +153,69 @@ export default function SubAccounts() {
                 </TableCell>
               </TableRow>
             ) : (
-              subAccounts.map((sub) => (
-                <AccordionItem value={sub.id} key={sub.id} className="w-full">
-                  <TableRow className="hover:bg-muted/50">
-                    <TableCell style={{ width: "25%" }}>
-                      <AccordionTrigger className="hover:no-underline py-0">{sub.name}</AccordionTrigger>
-                    </TableCell>
-                    <TableCell style={{ width: "25%" }}>
-                      <Badge variant="secondary" className="font-normal">
-                        {sub.exchange.toUpperCase()}
-                      </Badge>
-                    </TableCell>
-                    <TableCell style={{ width: "25%" }}>
-                      {sub.balance ? `${sub.balance.toFixed(2)} USDT` : "-"}
-                    </TableCell>
-                    <TableCell style={{ width: "25%" }}>
-                      {sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell colSpan={4} className="p-0 border-0">
-                      <AccordionContent className="w-full">
-                        <div className="bg-muted/30 p-6 w-full">
-                          <h4 className="text-base font-medium mb-4">Detalles de la Cuenta</h4>
-                          <div className="space-y-2 w-full">
-                            <div className="flex items-center w-full">
-                              <span className="w-24 min-w-24">ID:</span>
-                              <span className="text-muted-foreground font-mono text-sm flex-1">{sub.id}</span>
-                            </div>
-                            <div className="flex items-center w-full">
-                              <span className="w-24 min-w-24">Usuario ID:</span>
-                              <span className="text-muted-foreground font-mono text-sm flex-1">{sub.userId}</span>
-                            </div>
-                            <div className="flex items-center w-full">
-                              <span className="w-24 min-w-24">Balance:</span>
-                              <span className="flex-1">
-                                {loadingBalances[sub.userId] ? (
-                                  <div className="flex items-center gap-2">
-                                    <RefreshCw className="h-4 w-4 animate-spin" />
-                                    <span>Cargando...</span>
-                                  </div>
-                                ) : accountBalances[sub.userId] !== undefined ? (
-                                  <span>{accountBalances[sub.userId]?.toFixed(2)} USDT</span>
-                                ) : (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => fetchAccountDetails(sub.userId)}
-                                    className="h-7 px-3"
-                                  >
-                                    Cargar Balance
-                                  </Button>
-                                )}
-                              </span>
+              <Accordion type="single" collapsible className="w-full">
+                {subAccounts.map((sub) => (
+                  <AccordionItem value={sub.id} key={sub.id} className="w-full">
+                    <TableRow className="hover:bg-muted/50">
+                      <TableCell style={{ width: "25%" }}>
+                        <AccordionTrigger className="hover:no-underline py-0">{sub.name}</AccordionTrigger>
+                      </TableCell>
+                      <TableCell style={{ width: "25%" }}>
+                        <Badge variant="secondary" className="font-normal">
+                          {sub.exchange.toUpperCase()}
+                        </Badge>
+                      </TableCell>
+                      <TableCell style={{ width: "25%" }}>
+                        {sub.balance ? `${sub.balance.toFixed(2)} USDT` : "-"}
+                      </TableCell>
+                      <TableCell style={{ width: "25%" }}>
+                        {sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell colSpan={4} className="p-0 border-0">
+                        <AccordionContent className="w-full">
+                          <div className="bg-muted/30 p-6 w-full">
+                            <h4 className="text-base font-medium mb-4">Detalles de la Cuenta</h4>
+                            <div className="space-y-2 w-full">
+                              <div className="flex items-center w-full">
+                                <span className="w-24 min-w-24">ID:</span>
+                                <span className="text-muted-foreground font-mono text-sm flex-1">{sub.id}</span>
+                              </div>
+                              <div className="flex items-center w-full">
+                                <span className="w-24 min-w-24">Usuario ID:</span>
+                                <span className="text-muted-foreground font-mono text-sm flex-1">{sub.userId}</span>
+                              </div>
+                              <div className="flex items-center w-full">
+                                <span className="w-24 min-w-24">Balance:</span>
+                                <span className="flex-1">
+                                  {loadingBalances[sub.userId] ? (
+                                    <div className="flex items-center gap-2">
+                                      <RefreshCw className="h-4 w-4 animate-spin" />
+                                      <span>Cargando...</span>
+                                    </div>
+                                  ) : accountBalances[sub.userId] !== undefined ? (
+                                    <span>{accountBalances[sub.userId]?.toFixed(2)} USDT</span>
+                                  ) : (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => fetchAccountDetails(sub.userId)}
+                                      className="h-7 px-3"
+                                    >
+                                      Cargar Balance
+                                    </Button>
+                                  )}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </AccordionContent>
-                    </TableCell>
-                  </TableRow>
-                </AccordionItem>
-              ))
+                        </AccordionContent>
+                      </TableCell>
+                    </TableRow>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             )}
           </TableBody>
         </Table>
@@ -221,4 +223,3 @@ export default function SubAccounts() {
     </div>
   )
 }
-
