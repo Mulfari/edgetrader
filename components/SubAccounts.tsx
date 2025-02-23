@@ -6,7 +6,6 @@ import { Search, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertCircle } from "lucide-react";
 
@@ -26,7 +25,6 @@ export default function SubAccounts() {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
@@ -47,7 +45,6 @@ export default function SubAccounts() {
       if (!res.ok) throw new Error("Error al obtener subcuentas");
 
       const data = await res.json();
-
       console.log("📡 Datos obtenidos del backend:", data);
 
       if (!Array.isArray(data)) {
