@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Search, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertCircle } from "lucide-react";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 interface SubAccount {
   id: string;
@@ -24,35 +27,43 @@ export default function SubAccounts() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  // Función para obtener las subcuentas desde el backend
-  const fetchSubAccounts = async () => {
-    setIsLoading(true);
+  // ✅ Obtener subcuentas del usuario
+  const fetchSubAccounts = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
     try {
-      const response = await fetch("http://localhost:3000/subaccounts", {
+      const res = await fetch(`${API_URL}/subaccounts`, {
         method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
-      if (!response.ok) {
-        throw new Error("Error al obtener subcuentas");
+
+      if (!res.ok) throw new Error("Error al obtener subcuentas");
+
+      const data = await res.json();
+
+      if (!Array.isArray(data)) {
+        throw new Error("Respuesta inesperada del servidor");
       }
 
-      const data = await response.json();
       setSubAccounts(data);
     } catch (error) {
-      console.error("❌ Error al obtener subcuentas:", error);
+      console.error("❌ Error obteniendo subcuentas:", error);
+      setError("No se pudieron cargar las subcuentas");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [router]);
 
   useEffect(() => {
     fetchSubAccounts();
-  }, []);
+  }, [fetchSubAccounts]);
 
   const filteredSubAccounts = subAccounts.filter(
     (account) =>
@@ -91,6 +102,9 @@ export default function SubAccounts() {
       </Tabs>
 
       <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+        {error && (
+          <p className="text-red-500 text-center p-4">{error}</p>
+        )}
         <Table>
           <TableHeader>
             <TableRow>
