@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useRouter } from "next/navigation";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -26,28 +27,36 @@ export default function SubAccounts() {
   const [isBalanceLoading, setIsBalanceLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   // ✅ Obtener subcuentas del usuario
   const fetchSubAccounts = useCallback(async () => {
-    if (!API_URL) {
-      console.error("❌ Error: NEXT_PUBLIC_API_URL no está definido.");
-      setError("Error de configuración del servidor");
-      setIsLoading(false);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("❌ No hay token, redirigiendo a login.");
+      router.push("/login");
       return;
     }
 
     try {
       const res = await fetch(`${API_URL}/subaccounts`, {
         method: "GET",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // 🔹 Envía el token en el header
+        },
       });
 
-      if (!res.ok) throw new Error("Error al obtener subcuentas");
+      if (!res.ok) {
+        if (res.status === 401) {
+          console.error("❌ Token inválido, redirigiendo a login.");
+          localStorage.removeItem("token"); // 🔹 Eliminar token inválido
+          router.push("/login");
+        }
+        throw new Error(`Error al obtener subcuentas - Código ${res.status}`);
+      }
 
       const data = await res.json();
-      if (!Array.isArray(data)) throw new Error("Respuesta inesperada del servidor");
-
       setSubAccounts(data);
     } catch (error) {
       console.error("❌ Error obteniendo subcuentas:", error);
@@ -55,11 +64,12 @@ export default function SubAccounts() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [router]);
 
   // ✅ Obtener balance de la cuenta seleccionada
   const fetchAccountDetails = async (userId: string) => {
-    if (!API_URL || !userId) return;
+    const token = localStorage.getItem("token");
+    if (!API_URL || !userId || !token) return;
 
     try {
       setIsBalanceLoading(true);
@@ -68,8 +78,10 @@ export default function SubAccounts() {
 
       const res = await fetch(`${API_URL}/account-details/${userId}`, {
         method: "GET",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
