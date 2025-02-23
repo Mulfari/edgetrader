@@ -103,8 +103,8 @@ export default function SubAccounts() {
   }, [fetchSubAccounts])
 
   return (
-    <div>
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8 space-y-4 md:space-y-0 md:space-x-4">
+    <div className="w-full">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0 md:space-x-4">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <Input
@@ -123,14 +123,14 @@ export default function SubAccounts() {
 
       {error && <p className="text-red-500 text-center p-4">{error}</p>}
 
-      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 w-full">
+      <div className="w-full bg-background rounded-lg border">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-[30%]">Nombre</TableHead>
-              <TableHead className="w-[20%]">Exchange</TableHead>
-              <TableHead className="w-[25%]">Balance</TableHead>
-              <TableHead className="w-[25%]">Última Actualización</TableHead>
+            <TableRow className="hover:bg-transparent">
+              <TableHead>Nombre</TableHead>
+              <TableHead>Exchange</TableHead>
+              <TableHead>Balance</TableHead>
+              <TableHead>Última Actualización</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -149,68 +149,58 @@ export default function SubAccounts() {
                 </TableCell>
               </TableRow>
             ) : (
-              <Accordion type="single" collapsible>
+              <Accordion type="single" collapsible className="w-full">
                 {subAccounts.map((sub) => (
-                  <AccordionItem value={sub.id} key={sub.id} className="border-b-0">
-                    <TableRow className="cursor-pointer hover:bg-muted/50 transition-colors">
-                      <TableCell className="font-medium">
-                        <AccordionTrigger className="hover:no-underline">{sub.name}</AccordionTrigger>
+                  <AccordionItem value={sub.id} key={sub.id} className="border-0">
+                    <TableRow className="hover:bg-muted/50">
+                      <TableCell className="py-2">
+                        <AccordionTrigger className="hover:no-underline py-0">{sub.name}</AccordionTrigger>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="px-3 py-1">
+                      <TableCell className="py-2">
+                        <Badge variant="secondary" className="font-normal">
                           {sub.exchange.toUpperCase()}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        {sub.balance ? (
-                          <span className="font-medium text-primary">{sub.balance.toFixed(2)} USDT</span>
-                        ) : (
-                          "-"
-                        )}
+                      <TableCell className="py-2">{sub.balance ? `${sub.balance.toFixed(2)} USDT` : "-"}</TableCell>
+                      <TableCell className="py-2">
+                        {sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}
                       </TableCell>
-                      <TableCell>{sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell colSpan={4} className="border-t-0 pt-0">
+                      <TableCell colSpan={4} className="p-0 border-0">
                         <AccordionContent>
-                          <div className="p-6 bg-muted/50 rounded-lg mt-2 space-y-4">
-                            <div className="grid gap-6">
-                              <div className="space-y-4">
-                                <h4 className="text-lg font-semibold">Detalles de la Cuenta</h4>
-                                <div className="grid gap-4">
-                                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/40">
-                                    <span className="font-medium">ID:</span>
-                                    <span className="text-muted-foreground">{sub.id}</span>
-                                  </div>
-                                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/40">
-                                    <span className="font-medium">Usuario ID:</span>
-                                    <span className="text-muted-foreground">{sub.userId}</span>
-                                  </div>
-                                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/40">
-                                    <span className="font-medium">Balance Detallado:</span>
-                                    <span>
-                                      {loadingBalances[sub.userId] ? (
-                                        <div className="flex items-center gap-2">
-                                          <RefreshCw className="h-4 w-4 animate-spin" />
-                                          <span>Cargando...</span>
-                                        </div>
-                                      ) : accountBalances[sub.userId] !== undefined ? (
-                                        <span className="font-semibold text-primary">
-                                          {accountBalances[sub.userId]?.toFixed(2)} USDT
-                                        </span>
-                                      ) : (
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => fetchAccountDetails(sub.userId)}
-                                          className="hover:bg-primary/10"
-                                        >
-                                          Cargar Balance
-                                        </Button>
-                                      )}
-                                    </span>
-                                  </div>
-                                </div>
+                          <div className="bg-muted/30 p-4">
+                            <h4 className="text-base font-medium mb-4">Detalles de la Cuenta</h4>
+                            <div className="space-y-2">
+                              <div className="flex items-center">
+                                <span className="w-24">ID:</span>
+                                <span className="text-muted-foreground font-mono text-sm">{sub.id}</span>
+                              </div>
+                              <div className="flex items-center">
+                                <span className="w-24">Usuario ID:</span>
+                                <span className="text-muted-foreground font-mono text-sm">{sub.userId}</span>
+                              </div>
+                              <div className="flex items-center">
+                                <span className="w-24">Balance:</span>
+                                <span>
+                                  {loadingBalances[sub.userId] ? (
+                                    <div className="flex items-center gap-2">
+                                      <RefreshCw className="h-4 w-4 animate-spin" />
+                                      <span>Cargando...</span>
+                                    </div>
+                                  ) : accountBalances[sub.userId] !== undefined ? (
+                                    <span>{accountBalances[sub.userId]?.toFixed(2)} USDT</span>
+                                  ) : (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => fetchAccountDetails(sub.userId)}
+                                      className="h-7 px-3"
+                                    >
+                                      Cargar Balance
+                                    </Button>
+                                  )}
+                                </span>
                               </div>
                             </div>
                           </div>
