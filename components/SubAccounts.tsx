@@ -1,41 +1,41 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useCallback } from "react"
-import { Search, RefreshCw, AlertCircle, ChevronDown } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useRouter } from "next/navigation"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { useEffect, useState, useCallback } from "react";
+import { Search, RefreshCw, AlertCircle, ChevronDown } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useRouter } from "next/navigation";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface SubAccount {
-  id: string
-  userId: string
-  name: string
-  exchange: string
-  balance?: number
-  lastUpdated?: string
+  id: string;
+  userId: string;
+  name: string;
+  exchange: string;
+  balance?: number;
+  lastUpdated?: string;
 }
 
 export default function SubAccounts() {
-  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
-  const [accountBalances, setAccountBalances] = useState<Record<string, number | null>>({})
-  const [loadingBalances, setLoadingBalances] = useState<Record<string, boolean>>({})
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
+  const [accountBalances, setAccountBalances] = useState<Record<string, number | null>>({});
+  const [loadingBalances, setLoadingBalances] = useState<Record<string, boolean>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   // ✅ Obtener subcuentas del usuario
   const fetchSubAccounts = useCallback(async () => {
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("token");
     if (!token) {
-      console.error("❌ No hay token, redirigiendo a login.")
-      router.push("/login")
-      return
+      console.error("❌ No hay token, redirigiendo a login.");
+      router.push("/login");
+      return;
     }
 
     try {
@@ -45,35 +45,35 @@ export default function SubAccounts() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-      })
+      });
 
       if (!res.ok) {
         if (res.status === 401) {
-          console.error("❌ Token inválido, redirigiendo a login.")
-          localStorage.removeItem("token")
-          router.push("/login")
+          console.error("❌ Token inválido, redirigiendo a login.");
+          localStorage.removeItem("token");
+          router.push("/login");
         }
-        throw new Error(`Error al obtener subcuentas - Código ${res.status}`)
+        throw new Error(`Error al obtener subcuentas - Código ${res.status}`);
       }
 
-      const data = await res.json()
-      setSubAccounts(data)
+      const data = await res.json();
+      setSubAccounts(data);
     } catch (error) {
-      console.error("❌ Error obteniendo subcuentas:", error)
-      setError("No se pudieron cargar las subcuentas")
+      console.error("❌ Error obteniendo subcuentas:", error);
+      setError("No se pudieron cargar las subcuentas");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [router])
+  }, [router]);
 
   // ✅ Obtener balance de la cuenta seleccionada
   const fetchAccountDetails = async (userId: string) => {
-    const token = localStorage.getItem("token")
-    if (!API_URL || !userId || !token) return
+    const token = localStorage.getItem("token");
+    if (!API_URL || !userId || !token) return;
 
     try {
-      setLoadingBalances((prev) => ({ ...prev, [userId]: true }))
-      setError(null)
+      setLoadingBalances((prev) => ({ ...prev, [userId]: true }));
+      setError(null);
 
       const res = await fetch(`${API_URL}/account-details/${userId}`, {
         method: "GET",
@@ -81,32 +81,32 @@ export default function SubAccounts() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-      })
+      });
 
-      if (!res.ok) throw new Error("Error al obtener detalles de la cuenta")
+      if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
 
-      const data = await res.json()
+      const data = await res.json();
       setAccountBalances((prev) => ({
         ...prev,
         [userId]: typeof data.balance === "number" ? data.balance : 0,
-      }))
+      }));
     } catch (error) {
-      console.error("❌ Error obteniendo detalles de la cuenta:", error)
-      setError("No se pudo obtener la información de la cuenta.")
+      console.error("❌ Error obteniendo detalles de la cuenta:", error);
+      setError("No se pudo obtener la información de la cuenta.");
     } finally {
-      setLoadingBalances((prev) => ({ ...prev, [userId]: false }))
+      setLoadingBalances((prev) => ({ ...prev, [userId]: false }));
     }
-  }
+  };
 
   useEffect(() => {
-    fetchSubAccounts()
-  }, [fetchSubAccounts])
+    fetchSubAccounts();
+  }, [fetchSubAccounts]);
 
   const filteredAccounts = subAccounts.filter(
     (account) =>
       account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      account.exchange.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+      account.exchange.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div>
@@ -161,25 +161,21 @@ export default function SubAccounts() {
                 </TableCell>
               </TableRow>
             ) : (
-              <Accordion type="single" collapsible>
-                {filteredAccounts.map((sub) => (
-                  <AccordionItem value={sub.id} key={sub.id} className="border-b-0">
-                    <TableRow>
-                      <TableCell className="font-medium">{sub.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
-                      </TableCell>
-                      <TableCell>{sub.balance ? `${sub.balance.toFixed(2)} USDT` : "-"}</TableCell>
-                      <TableCell>{sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}</TableCell>
-                      <TableCell>
+              filteredAccounts.map((sub) => (
+                <TableRow key={sub.id}>
+                  <TableCell className="font-medium">{sub.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
+                  </TableCell>
+                  <TableCell>{sub.balance ? `${sub.balance.toFixed(2)} USDT` : "-"}</TableCell>
+                  <TableCell>{sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}</TableCell>
+                  <TableCell>
+                    <Accordion type="single" collapsible>
+                      <AccordionItem value={sub.id} key={sub.id} className="border-b-0">
                         <AccordionTrigger className="py-0">
                           <span className="sr-only">Toggle details</span>
                           <ChevronDown className="h-4 w-4" />
                         </AccordionTrigger>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell colSpan={5} className="p-0 border-b">
                         <AccordionContent>
                           <div className="p-4 bg-muted/50">
                             <div className="space-y-4">
@@ -220,16 +216,15 @@ export default function SubAccounts() {
                             </div>
                           </div>
                         </AccordionContent>
-                      </TableCell>
-                    </TableRow>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+                      </AccordionItem>
+                    </Accordion>
+                  </TableCell>
+                </TableRow>
+              ))
             )}
           </TableBody>
         </Table>
       </div>
     </div>
-  )
+  );
 }
-
