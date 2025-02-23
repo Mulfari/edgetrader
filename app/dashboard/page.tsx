@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, DollarSign, TrendingUp } from "lucide-react"; // 🔹 Eliminé TrendingDown
+import { LogOut, DollarSign, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import SubAccounts from "@/components/SubAccounts"; // ✅ Importa el componente de subcuentas
 
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
@@ -39,7 +40,7 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto py-6 px-4">
-        {isLoading ? ( // 🔹 Mostrar indicador de carga si es necesario
+        {isLoading ? (
           <p className="text-center text-muted-foreground">Cargando datos...</p>
         ) : (
           <>
@@ -70,11 +71,14 @@ export default function Dashboard() {
                 <TabsTrigger value="accounts">Subcuentas</TabsTrigger>
                 <TabsTrigger value="trades">Operaciones</TabsTrigger>
               </TabsList>
+              
               <TabsContent value="accounts">
-                {/* Aquí puedes incluir la lista de subcuentas */}
+                {/* ✅ Aquí se muestra la lista de subcuentas */}
+                <SubAccounts />
               </TabsContent>
+              
               <TabsContent value="trades">
-                {/* Aquí puedes incluir la lista de operaciones */}
+                {/* Aquí puedes incluir la lista de operaciones en el futuro */}
               </TabsContent>
             </Tabs>
           </>
