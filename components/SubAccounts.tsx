@@ -38,16 +38,11 @@ type SortConfig = {
   direction: "asc" | "desc";
 } | null;
 
-interface SubAccountsProps {
-  onBalanceUpdate?: (totalBalance: number) => void;
-}
-
-export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
+export default function SubAccounts() {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null);
   const [accountBalances, setAccountBalances] = useState<Record<string, number | null>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [isBalanceLoading, setIsBalanceLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
@@ -329,15 +324,11 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                       <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                      {isBalanceLoading ? (
-                                        <Skeleton className="h-6 w-24" />
-                                      ) : (
-                                        <div className="text-2xl font-bold">
-                                          {accountBalances[sub.id] !== undefined
-                                            ? `${accountBalances[sub.id]?.toFixed(2)} USDT`
-                                            : "No disponible"}
-                                        </div>
-                                      )}
+                                      <div className="text-2xl font-bold">
+                                        {accountBalances[sub.id] !== undefined
+                                          ? `${accountBalances[sub.id]?.toFixed(2)} USDT`
+                                          : "No disponible"}
+                                      </div>
                                     </CardContent>
                                   </Card>
                                   <Card>

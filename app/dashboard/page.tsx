@@ -94,7 +94,7 @@ export default function Dashboard() {
               </TabsList>
 
               <TabsContent value="accounts">
-                <SubAccounts onBalanceUpdate={updateTotalBalance} />
+                <SubAccounts/>
               </TabsContent>
 
               <TabsContent value="trades">
