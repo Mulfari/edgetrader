@@ -1,50 +1,69 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { ArrowLeft, Eye, EyeOff, AlertCircle, Loader2, Github, Twitter } from "lucide-react"
-import { ThemeToggle } from "@/components/ThemeToggle"
-import { useState } from "react"
-import { motion } from "framer-motion"
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Eye, EyeOff, AlertCircle, Loader2, Github, Twitter } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState(false)
-  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Rellena los campos de correo electrónico y contraseña si hay datos almacenados en localStorage
+    const storedEmail = localStorage.getItem("email");
+    const storedPassword = localStorage.getItem("password");
+    if (storedEmail && storedPassword) {
+      setEmail(storedEmail);
+      setPassword(storedPassword);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
-    setSuccess(false)
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+    setSuccess(false);
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-      })
+      });
 
-      const data = await res.json()
+      const data = await res.json();
 
       if (res.ok) {
-        localStorage.setItem("token", data.access_token)
-        setSuccess(true)
-        setTimeout(() => router.push("/dashboard"), 2000)
+        localStorage.setItem("token", data.access_token);
+        if (rememberMe) {
+          localStorage.setItem("email", email);
+          localStorage.setItem("password", password);
+        } else {
+          localStorage.removeItem("email");
+          localStorage.removeItem("password");
+        }
+        setSuccess(true);
+        setTimeout(() => router.push("/dashboard"), 2000);
       } else {
-        setError(data.message || "Credenciales incorrectas.")
+        setError(data.message || "Credenciales incorrectas.");
       }
     } catch (error) {
-      console.error("Error en login:", error)
-      setError("Error de conexión con el servidor.")
+      console.error("Error en login:", error);
+      setError("Error de conexión con el servidor.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -134,6 +153,8 @@ export default function LoginPage() {
                     id="remember-me"
                     name="remember-me"
                     type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:border-gray-600"
                   />
                   <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
@@ -243,5 +264,5 @@ export default function LoginPage() {
         </Link>
       </motion.div>
     </div>
-  )
+  );
 }
