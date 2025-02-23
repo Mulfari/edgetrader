@@ -48,6 +48,8 @@ export default function SubAccounts() {
 
       const data = await res.json();
 
+      console.log("📡 Datos obtenidos del backend:", data);
+
       if (!Array.isArray(data)) {
         throw new Error("Respuesta inesperada del servidor");
       }
@@ -64,13 +66,6 @@ export default function SubAccounts() {
   useEffect(() => {
     fetchSubAccounts();
   }, [fetchSubAccounts]);
-
-  const filteredSubAccounts = subAccounts.filter(
-    (account) =>
-      (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        account.exchange.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (activeTab === "all" || account.exchange === activeTab)
-  );
 
   return (
     <div>
@@ -91,50 +86,43 @@ export default function SubAccounts() {
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList>
-          <TabsTrigger value="all">Todas</TabsTrigger>
-          <TabsTrigger value="binance">Binance</TabsTrigger>
-          <TabsTrigger value="bybit">Bybit</TabsTrigger>
-          <TabsTrigger value="kraken">Kraken</TabsTrigger>
-          <TabsTrigger value="ftx">FTX</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {error && <p className="text-red-500 text-center p-4">{error}</p>}
 
-      <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
-        {error && (
-          <p className="text-red-500 text-center p-4">{error}</p>
-        )}
+      <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-4">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Nombre</TableHead>
               <TableHead>Exchange</TableHead>
+              <TableHead>Balance</TableHead>
+              <TableHead>Última Actualización</TableHead>
               <TableHead>Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center">
+                <TableCell colSpan={5} className="text-center">
                   <RefreshCw className="animate-spin mx-auto h-6 w-6" />
                   <span className="mt-2 block">Cargando subcuentas...</span>
                 </TableCell>
               </TableRow>
-            ) : filteredSubAccounts.length === 0 ? (
+            ) : subAccounts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center">
+                <TableCell colSpan={5} className="text-center">
                   <AlertCircle className="mx-auto mb-2 h-6 w-6" />
                   No se encontraron subcuentas
                 </TableCell>
               </TableRow>
             ) : (
-              filteredSubAccounts.map((sub) => (
+              subAccounts.map((sub) => (
                 <TableRow key={sub.id}>
                   <TableCell className="font-medium">{sub.name}</TableCell>
                   <TableCell>
                     <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
                   </TableCell>
+                  <TableCell>{sub.balance ? `${sub.balance.toFixed(2)} USDT` : "-"}</TableCell>
+                  <TableCell>{sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}</TableCell>
                   <TableCell>
                     <Button size="sm" variant="outline" onClick={() => console.log("Ver detalles", sub.id)}>
                       Ver Detalles
