@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertCircle } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface SubAccount {
   id: string;
@@ -30,16 +30,18 @@ export default function SubAccounts() {
 
   // ✅ Obtener subcuentas del usuario
   const fetchSubAccounts = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
+    if (!API_URL) {
+      console.error("❌ Error: NEXT_PUBLIC_API_URL no está definido.");
+      setError("Error de configuración del servidor");
+      setIsLoading(false);
       return;
     }
 
     try {
       const res = await fetch(`${API_URL}/subaccounts`, {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
       });
 
       if (!res.ok) throw new Error("Error al obtener subcuentas");
@@ -58,7 +60,7 @@ export default function SubAccounts() {
     } finally {
       setIsLoading(false);
     }
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     fetchSubAccounts();
