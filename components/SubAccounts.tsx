@@ -39,7 +39,11 @@ type SortConfig = {
   direction: "asc" | "desc"
 } | null
 
-export default function SubAccounts() {
+interface SubAccountsProps {
+  onBalanceUpdate?: (totalBalance: number) => void
+}
+
+export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
   const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null)
   const [accountBalance, setAccountBalance] = useState<number | null>(null)
@@ -122,6 +126,12 @@ export default function SubAccounts() {
   useEffect(() => {
     fetchSubAccounts()
   }, [fetchSubAccounts])
+
+  // Actualizar el balance total cuando cambian las subcuentas
+  useEffect(() => {
+    const total = subAccounts.reduce((sum, account) => sum + (account.balance || 0), 0)
+    onBalanceUpdate?.(total)
+  }, [subAccounts, onBalanceUpdate])
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
