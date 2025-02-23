@@ -104,8 +104,8 @@ export default function SubAccounts() {
 
   return (
     <div>
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
-        <div className="relative w-full md:w-64">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8 space-y-4 md:space-y-0 md:space-x-4">
+        <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <Input
             type="text"
@@ -115,7 +115,7 @@ export default function SubAccounts() {
             className="pl-10 pr-4 py-2 w-full"
           />
         </div>
-        <Button onClick={fetchSubAccounts} variant="outline" size="sm">
+        <Button onClick={fetchSubAccounts} variant="outline" size="default" className="w-full md:w-auto">
           <RefreshCw className="mr-2 h-4 w-4" />
           Actualizar Todo
         </Button>
@@ -123,14 +123,14 @@ export default function SubAccounts() {
 
       {error && <p className="text-red-500 text-center p-4">{error}</p>}
 
-      <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-4">
+      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 w-full">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[30%]">Nombre</TableHead>
-              <TableHead>Exchange</TableHead>
-              <TableHead>Balance</TableHead>
-              <TableHead>Última Actualización</TableHead>
+              <TableHead className="w-[20%]">Exchange</TableHead>
+              <TableHead className="w-[25%]">Balance</TableHead>
+              <TableHead className="w-[25%]">Última Actualización</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -152,44 +152,58 @@ export default function SubAccounts() {
               <Accordion type="single" collapsible>
                 {subAccounts.map((sub) => (
                   <AccordionItem value={sub.id} key={sub.id} className="border-b-0">
-                    <TableRow className="cursor-pointer hover:bg-muted/50">
+                    <TableRow className="cursor-pointer hover:bg-muted/50 transition-colors">
                       <TableCell className="font-medium">
                         <AccordionTrigger className="hover:no-underline">{sub.name}</AccordionTrigger>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
+                        <Badge variant="secondary" className="px-3 py-1">
+                          {sub.exchange.toUpperCase()}
+                        </Badge>
                       </TableCell>
-                      <TableCell>{sub.balance ? `${sub.balance.toFixed(2)} USDT` : "-"}</TableCell>
+                      <TableCell>
+                        {sub.balance ? (
+                          <span className="font-medium text-primary">{sub.balance.toFixed(2)} USDT</span>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
                       <TableCell>{sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell colSpan={4} className="border-t-0 pt-0">
                         <AccordionContent>
-                          <div className="p-4 bg-muted/50 rounded-lg mt-2">
-                            <div className="grid gap-4">
-                              <div className="space-y-2">
-                                <h4 className="font-semibold">Detalles de la Cuenta</h4>
-                                <div className="grid gap-2">
-                                  <div className="flex justify-between">
-                                    <span className="text-muted-foreground">ID:</span>
-                                    <span>{sub.id}</span>
+                          <div className="p-6 bg-muted/50 rounded-lg mt-2 space-y-4">
+                            <div className="grid gap-6">
+                              <div className="space-y-4">
+                                <h4 className="text-lg font-semibold">Detalles de la Cuenta</h4>
+                                <div className="grid gap-4">
+                                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/40">
+                                    <span className="font-medium">ID:</span>
+                                    <span className="text-muted-foreground">{sub.id}</span>
                                   </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Usuario ID:</span>
-                                    <span>{sub.userId}</span>
+                                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/40">
+                                    <span className="font-medium">Usuario ID:</span>
+                                    <span className="text-muted-foreground">{sub.userId}</span>
                                   </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Balance Detallado:</span>
+                                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/40">
+                                    <span className="font-medium">Balance Detallado:</span>
                                     <span>
                                       {loadingBalances[sub.userId] ? (
-                                        "Cargando..."
+                                        <div className="flex items-center gap-2">
+                                          <RefreshCw className="h-4 w-4 animate-spin" />
+                                          <span>Cargando...</span>
+                                        </div>
                                       ) : accountBalances[sub.userId] !== undefined ? (
-                                        `${accountBalances[sub.userId]?.toFixed(2)} USDT`
+                                        <span className="font-semibold text-primary">
+                                          {accountBalances[sub.userId]?.toFixed(2)} USDT
+                                        </span>
                                       ) : (
                                         <Button
                                           variant="ghost"
                                           size="sm"
                                           onClick={() => fetchAccountDetails(sub.userId)}
+                                          className="hover:bg-primary/10"
                                         >
                                           Cargar Balance
                                         </Button>
