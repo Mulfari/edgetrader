@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Search, RefreshCw, AlertCircle, ChevronDown } from "lucide-react";
+import { Search, RefreshCw, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -22,9 +21,10 @@ interface SubAccount {
 
 export default function SubAccounts() {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
-  const [accountBalances, setAccountBalances] = useState<Record<string, number | null>>({});
-  const [loadingBalances, setLoadingBalances] = useState<Record<string, boolean>>({});
+  const [selectedSubAccount, setSelectedSubAccount] = useState<SubAccount | null>(null);
+  const [accountBalance, setAccountBalance] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBalanceLoading, setIsBalanceLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -43,14 +43,14 @@ export default function SubAccounts() {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`, // 🔹 Envía el token en el header
         },
       });
 
       if (!res.ok) {
         if (res.status === 401) {
           console.error("❌ Token inválido, redirigiendo a login.");
-          localStorage.removeItem("token");
+          localStorage.removeItem("token"); // 🔹 Eliminar token inválido
           router.push("/login");
         }
         throw new Error(`Error al obtener subcuentas - Código ${res.status}`);
@@ -72,8 +72,9 @@ export default function SubAccounts() {
     if (!API_URL || !userId || !token) return;
 
     try {
-      setLoadingBalances((prev) => ({ ...prev, [userId]: true }));
+      setIsBalanceLoading(true);
       setError(null);
+      setAccountBalance(null);
 
       const res = await fetch(`${API_URL}/account-details/${userId}`, {
         method: "GET",
@@ -86,27 +87,18 @@ export default function SubAccounts() {
       if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
 
       const data = await res.json();
-      setAccountBalances((prev) => ({
-        ...prev,
-        [userId]: typeof data.balance === "number" ? data.balance : 0,
-      }));
+      setAccountBalance(typeof data.balance === "number" ? data.balance : 0);
     } catch (error) {
       console.error("❌ Error obteniendo detalles de la cuenta:", error);
       setError("No se pudo obtener la información de la cuenta.");
     } finally {
-      setLoadingBalances((prev) => ({ ...prev, [userId]: false }));
+      setIsBalanceLoading(false);
     }
   };
 
   useEffect(() => {
     fetchSubAccounts();
   }, [fetchSubAccounts]);
-
-  const filteredAccounts = subAccounts.filter(
-    (account) =>
-      account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      account.exchange.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div>
@@ -127,14 +119,9 @@ export default function SubAccounts() {
         </Button>
       </div>
 
-      {error && (
-        <div className="flex items-center justify-center gap-2 text-red-500 text-center p-4 mb-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-          <AlertCircle className="h-5 w-5" />
-          <p>{error}</p>
-        </div>
-      )}
+      {error && <p className="text-red-500 text-center p-4">{error}</p>}
 
-      <div className="bg-background shadow-sm rounded-lg border">
+      <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-4">
         <Table>
           <TableHeader>
             <TableRow>
@@ -142,7 +129,7 @@ export default function SubAccounts() {
               <TableHead>Exchange</TableHead>
               <TableHead>Balance</TableHead>
               <TableHead>Última Actualización</TableHead>
-              <TableHead className="w-[100px]">Acciones</TableHead>
+              <TableHead>Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -153,7 +140,7 @@ export default function SubAccounts() {
                   <span className="mt-2 block">Cargando subcuentas...</span>
                 </TableCell>
               </TableRow>
-            ) : filteredAccounts.length === 0 ? (
+            ) : subAccounts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center">
                   <AlertCircle className="mx-auto mb-2 h-6 w-6" />
@@ -161,124 +148,53 @@ export default function SubAccounts() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredAccounts.map((sub) => (
-                <>
-                  <TableRow key={sub.id}>
-                    <TableCell className="font-medium">{sub.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
-                    </TableCell>
-                    <TableCell>{sub.balance ? `${sub.balance.toFixed(2)} USDT` : "-"}</TableCell>
-                    <TableCell>{sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}</TableCell>
-                    <TableCell>
-                      <Accordion type="single" collapsible>
-                        <AccordionItem value={sub.id} key={sub.id} className="border-b-0">
-                          <AccordionTrigger className="py-0">
-                            <span className="sr-only">Toggle details</span>
-                            <ChevronDown className="h-4 w-4" />
-                          </AccordionTrigger>
-                          <AccordionContent>
-                            <div className="p-4 bg-muted/50">
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Nombre</p>
-                                    <p className="text-sm">{sub.name}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Exchange</p>
-                                    <p className="text-sm">{sub.exchange}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Balance Detallado</p>
-                                    {loadingBalances[sub.userId] ? (
-                                      <p className="text-sm">Cargando balance...</p>
-                                    ) : (
-                                      <p className="text-sm">
-                                        {accountBalances[sub.userId] !== undefined
-                                          ? `${accountBalances[sub.userId]?.toFixed(2)} USDT`
-                                          : "Click para cargar"}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => fetchAccountDetails(sub.userId)}
-                                  disabled={loadingBalances[sub.userId]}
-                                >
-                                  {loadingBalances[sub.userId] ? (
-                                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                                  ) : (
-                                    "Actualizar Balance"
-                                  )}
-                                </Button>
-                              </div>
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell colSpan={5}>
-                      <Accordion type="single" collapsible>
-                        <AccordionItem value={sub.id} key={sub.id} className="border-b-0">
-                          <AccordionTrigger className="py-0">
-                            <span className="sr-only">Toggle details</span>
-                            <ChevronDown className="h-4 w-4" />
-                          </AccordionTrigger>
-                          <AccordionContent>
-                            <div className="p-4 bg-muted/50">
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Nombre</p>
-                                    <p className="text-sm">{sub.name}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Exchange</p>
-                                    <p className="text-sm">{sub.exchange}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Balance Detallado</p>
-                                    {loadingBalances[sub.userId] ? (
-                                      <p className="text-sm">Cargando balance...</p>
-                                    ) : (
-                                      <p className="text-sm">
-                                        {accountBalances[sub.userId] !== undefined
-                                          ? `${accountBalances[sub.userId]?.toFixed(2)} USDT`
-                                          : "Click para cargar"}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => fetchAccountDetails(sub.userId)}
-                                  disabled={loadingBalances[sub.userId]}
-                                >
-                                  {loadingBalances[sub.userId] ? (
-                                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                                  ) : (
-                                    "Actualizar Balance"
-                                  )}
-                                </Button>
-                              </div>
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
-                    </TableCell>
-                  </TableRow>
-                </>
+              subAccounts.map((sub) => (
+                <TableRow key={sub.id}>
+                  <TableCell className="font-medium">{sub.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
+                  </TableCell>
+                  <TableCell>{sub.balance ? `${sub.balance.toFixed(2)} USDT` : "-"}</TableCell>
+                  <TableCell>{sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}</TableCell>
+                  <TableCell>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedSubAccount(sub);
+                        fetchAccountDetails(sub.userId);
+                      }}
+                    >
+                      Ver Detalles
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
+
+      {selectedSubAccount && (
+        <div className="mt-6 p-6 bg-gray-200 dark:bg-gray-700 rounded-2xl shadow-md">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Detalles de la Cuenta</h2>
+          <div className="mt-4 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
+            <p><strong>Nombre:</strong> {selectedSubAccount.name}</p>
+            <p><strong>Exchange:</strong> {selectedSubAccount.exchange}</p>
+            {isBalanceLoading ? (
+              <p>Cargando balance...</p>
+            ) : (
+              <p><strong>Balance:</strong> {accountBalance !== null ? `${accountBalance.toFixed(2)} USDT` : "No disponible"}</p>
+            )}
+            <button 
+              className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+              onClick={() => setSelectedSubAccount(null)}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
