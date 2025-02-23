@@ -132,6 +132,12 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
   useEffect(() => {
     fetchSubAccounts();
+
+    const intervalId = setInterval(() => {
+      fetchSubAccounts();
+    }, 300000); // 300000 ms = 5 minutes
+
+    return () => clearInterval(intervalId);
   }, [fetchSubAccounts]);
 
   const handleRowClick = (sub: SubAccount) => {
