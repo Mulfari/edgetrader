@@ -126,7 +126,7 @@ export default function SubAccounts() {
       )}
 
       <div className="w-full bg-background rounded-lg border max-h-[70vh] min-h-[50vh] overflow-y-auto">
-        <div className="min-w-full">
+        <Accordion type="single" collapsible className="w-full">
           <Table>
             <TableHeader>
               <TableRow>
@@ -153,11 +153,11 @@ export default function SubAccounts() {
                 </TableRow>
               ) : (
                 subAccounts.map((sub) => (
-                  <Accordion type="single" collapsible className="w-full" key={sub.id}>
-                    <AccordionItem value={sub.id}>
-                      <TableRow>
+                  <AccordionItem value={sub.id} key={sub.id} className="border-b-0">
+                    <div className="flex flex-col w-full">
+                      <TableRow className="hover:bg-muted/50">
                         <TableCell className="w-[25%]">
-                          <AccordionTrigger className="hover:no-underline">{sub.name}</AccordionTrigger>
+                          <AccordionTrigger className="hover:no-underline py-0">{sub.name}</AccordionTrigger>
                         </TableCell>
                         <TableCell className="w-[25%]">
                           <Badge variant="secondary" className="font-normal">
@@ -171,54 +171,52 @@ export default function SubAccounts() {
                           {sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}
                         </TableCell>
                       </TableRow>
-                      <TableRow>
-                        <TableCell colSpan={4} className="p-0">
-                          <AccordionContent>
-                            <div className="bg-muted/30 p-6">
-                              <h4 className="text-base font-medium mb-4">Detalles de la Cuenta</h4>
-                              <div className="grid gap-4">
-                                <div className="flex items-center justify-between">
-                                  <span className="font-medium">ID:</span>
-                                  <span className="text-muted-foreground font-mono text-sm">{sub.id}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                  <span className="font-medium">Usuario ID:</span>
-                                  <span className="text-muted-foreground font-mono text-sm">{sub.userId}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                  <span className="font-medium">Balance:</span>
-                                  <span>
-                                    {loadingBalances[sub.userId] ? (
-                                      <div className="flex items-center gap-2">
-                                        <RefreshCw className="h-4 w-4 animate-spin" />
-                                        <span>Cargando...</span>
-                                      </div>
-                                    ) : accountBalances[sub.userId] !== undefined ? (
-                                      <span>{accountBalances[sub.userId]?.toFixed(2)} USDT</span>
-                                    ) : (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => fetchAccountDetails(sub.userId)}
-                                        className="h-7 px-3"
-                                      >
-                                        Cargar Balance
-                                      </Button>
-                                    )}
-                                  </span>
-                                </div>
+                      <AccordionContent>
+                        <div className="border-t">
+                          <div className="bg-muted/30 p-6">
+                            <h4 className="text-base font-medium mb-4">Detalles de la Cuenta</h4>
+                            <div className="grid gap-4">
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium">ID:</span>
+                                <span className="text-muted-foreground font-mono text-sm">{sub.id}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium">Usuario ID:</span>
+                                <span className="text-muted-foreground font-mono text-sm">{sub.userId}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium">Balance:</span>
+                                <span>
+                                  {loadingBalances[sub.userId] ? (
+                                    <div className="flex items-center gap-2">
+                                      <RefreshCw className="h-4 w-4 animate-spin" />
+                                      <span>Cargando...</span>
+                                    </div>
+                                  ) : accountBalances[sub.userId] !== undefined ? (
+                                    <span>{accountBalances[sub.userId]?.toFixed(2)} USDT</span>
+                                  ) : (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => fetchAccountDetails(sub.userId)}
+                                      className="h-7 px-3"
+                                    >
+                                      Cargar Balance
+                                    </Button>
+                                  )}
+                                </span>
                               </div>
                             </div>
-                          </AccordionContent>
-                        </TableCell>
-                      </TableRow>
-                    </AccordionItem>
-                  </Accordion>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </div>
+                  </AccordionItem>
                 ))
               )}
             </TableBody>
           </Table>
-        </div>
+        </Accordion>
       </div>
     </div>
   )
