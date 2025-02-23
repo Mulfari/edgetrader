@@ -38,7 +38,11 @@ type SortConfig = {
   direction: "asc" | "desc";
 } | null;
 
-export default function SubAccounts() {
+interface SubAccountsProps {
+  onBalanceUpdate?: (totalBalance: number) => void;
+}
+
+export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null);
   const [accountBalances, setAccountBalances] = useState<Record<string, number | null>>({});
@@ -82,20 +86,27 @@ export default function SubAccounts() {
 
       // Fetch account details for each subaccount
       const balances: Record<string, number | null> = {};
+      let totalBalance = 0;
       await Promise.all(
         data.map(async (sub: SubAccount) => {
           const balance = await fetchAccountDetails(sub.userId, token);
           balances[sub.id] = balance;
+          if (balance !== null) {
+            totalBalance += balance;
+          }
         })
       );
       setAccountBalances(balances);
+      if (onBalanceUpdate) {
+        onBalanceUpdate(totalBalance);
+      }
     } catch (error) {
       console.error("❌ Error obteniendo subcuentas:", error);
       setError("No se pudieron cargar las subcuentas");
     } finally {
       setIsLoading(false);
     }
-  }, [router]);
+  }, [router, onBalanceUpdate]);
 
   const fetchAccountDetails = async (userId: string, token: string) => {
     if (!API_URL || !userId || !token) return null;
