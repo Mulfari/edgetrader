@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Search, RefreshCw, AlertCircle } from "lucide-react";
+import { Search, RefreshCw, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { useRouter } from "next/navigation";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -21,10 +22,10 @@ interface SubAccount {
 
 export default function SubAccounts() {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
-  const [selectedSubAccount, setSelectedSubAccount] = useState<SubAccount | null>(null);
-  const [accountBalance, setAccountBalance] = useState<number | null>(null);
+  const [expandedSubAccount, setExpandedSubAccount] = useState<string | null>(null);
+  const [accountBalances, setAccountBalances] = useState<{ [key: string]: number }>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [isBalanceLoading, setIsBalanceLoading] = useState(false);
+  const [isBalanceLoading, setIsBalanceLoading] = useState<{ [key: string]: boolean }>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -43,14 +44,14 @@ export default function SubAccounts() {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // 🔹 Envía el token en el header
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (!res.ok) {
         if (res.status === 401) {
           console.error("❌ Token inválido, redirigiendo a login.");
-          localStorage.removeItem("token"); // 🔹 Eliminar token inválido
+          localStorage.removeItem("token");
           router.push("/login");
         }
         throw new Error(`Error al obtener subcuentas - Código ${res.status}`);
@@ -66,15 +67,13 @@ export default function SubAccounts() {
     }
   }, [router]);
 
-  // ✅ Obtener balance de la cuenta seleccionada
-  const fetchAccountDetails = async (userId: string) => {
+  // ✅ Obtener balance de una subcuenta
+  const fetchAccountDetails = async (subAccountId: string, userId: string) => {
+    if (!API_URL || !userId) return;
     const token = localStorage.getItem("token");
-    if (!API_URL || !userId || !token) return;
 
     try {
-      setIsBalanceLoading(true);
-      setError(null);
-      setAccountBalance(null);
+      setIsBalanceLoading((prev) => ({ ...prev, [subAccountId]: true }));
 
       const res = await fetch(`${API_URL}/account-details/${userId}`, {
         method: "GET",
@@ -87,12 +86,28 @@ export default function SubAccounts() {
       if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
 
       const data = await res.json();
-      setAccountBalance(typeof data.balance === "number" ? data.balance : 0);
+      setAccountBalances((prev) => ({
+        ...prev,
+        [subAccountId]: typeof data.balance === "number" ? data.balance : 0,
+      }));
     } catch (error) {
       console.error("❌ Error obteniendo detalles de la cuenta:", error);
-      setError("No se pudo obtener la información de la cuenta.");
+      setAccountBalances((prev) => ({
+        ...prev,
+        [subAccountId]: 0,
+      }));
     } finally {
-      setIsBalanceLoading(false);
+      setIsBalanceLoading((prev) => ({ ...prev, [subAccountId]: false }));
+    }
+  };
+
+  // ✅ Manejar la expansión del acordeón
+  const toggleAccordion = (subAccountId: string, userId: string) => {
+    if (expandedSubAccount === subAccountId) {
+      setExpandedSubAccount(null);
+    } else {
+      setExpandedSubAccount(subAccountId);
+      fetchAccountDetails(subAccountId, userId);
     }
   };
 
@@ -122,79 +137,61 @@ export default function SubAccounts() {
       {error && <p className="text-red-500 text-center p-4">{error}</p>}
 
       <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-4">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Exchange</TableHead>
-              <TableHead>Balance</TableHead>
-              <TableHead>Última Actualización</TableHead>
-              <TableHead>Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
+        <Accordion type="single" collapsible>
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
-                  <RefreshCw className="animate-spin mx-auto h-6 w-6" />
-                  <span className="mt-2 block">Cargando subcuentas...</span>
-                </TableCell>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Exchange</TableHead>
+                <TableHead>Balance</TableHead>
+                <TableHead>Última Actualización</TableHead>
+                <TableHead>Acciones</TableHead>
               </TableRow>
-            ) : subAccounts.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center">
-                  <AlertCircle className="mx-auto mb-2 h-6 w-6" />
-                  No se encontraron subcuentas
-                </TableCell>
-              </TableRow>
-            ) : (
-              subAccounts.map((sub) => (
-                <TableRow key={sub.id}>
-                  <TableCell className="font-medium">{sub.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
-                  </TableCell>
-                  <TableCell>{sub.balance ? `${sub.balance.toFixed(2)} USDT` : "-"}</TableCell>
-                  <TableCell>{sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}</TableCell>
-                  <TableCell>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedSubAccount(sub);
-                        fetchAccountDetails(sub.userId);
-                      }}
-                    >
-                      Ver Detalles
-                    </Button>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    <RefreshCw className="animate-spin mx-auto h-6 w-6" />
+                    <span className="mt-2 block">Cargando subcuentas...</span>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : subAccounts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    <AlertCircle className="mx-auto mb-2 h-6 w-6" />
+                    No se encontraron subcuentas
+                  </TableCell>
+                </TableRow>
+              ) : (
+                subAccounts.map((sub) => (
+                  <AccordionItem key={sub.id} value={sub.id}>
+                    <TableRow className="cursor-pointer" onClick={() => toggleAccordion(sub.id, sub.userId)}>
+                      <TableCell className="font-medium flex items-center">
+                        {sub.name}
+                        {expandedSubAccount === sub.id ? <ChevronUp className="ml-2" /> : <ChevronDown className="ml-2" />}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
+                      </TableCell>
+                      <TableCell>{sub.balance ? `${sub.balance.toFixed(2)} USDT` : "-"}</TableCell>
+                      <TableCell>{sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}</TableCell>
+                      <TableCell>-</TableCell>
+                    </TableRow>
+                    <AccordionContent>
+                      <TableRow>
+                        <TableCell colSpan={5}>
+                          {isBalanceLoading[sub.id] ? "Cargando balance..." : `Balance: ${accountBalances[sub.id]?.toFixed(2) ?? "0.00"} USDT`}
+                        </TableCell>
+                      </TableRow>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </Accordion>
       </div>
-
-      {selectedSubAccount && (
-        <div className="mt-6 p-6 bg-gray-200 dark:bg-gray-700 rounded-2xl shadow-md">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Detalles de la Cuenta</h2>
-          <div className="mt-4 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
-            <p><strong>Nombre:</strong> {selectedSubAccount.name}</p>
-            <p><strong>Exchange:</strong> {selectedSubAccount.exchange}</p>
-            {isBalanceLoading ? (
-              <p>Cargando balance...</p>
-            ) : (
-              <p><strong>Balance:</strong> {accountBalance !== null ? `${accountBalance.toFixed(2)} USDT` : "No disponible"}</p>
-            )}
-            <button 
-              className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
-              onClick={() => setSelectedSubAccount(null)}
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
