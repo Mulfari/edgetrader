@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Search, RefreshCw } from "lucide-react";
+import { Search, RefreshCw, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertCircle } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -17,12 +16,14 @@ interface SubAccount {
   exchange: string;
   balance?: number;
   lastUpdated?: string;
-  performance?: number;
 }
 
 export default function SubAccounts() {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
+  const [selectedSubAccount, setSelectedSubAccount] = useState<SubAccount | null>(null);
+  const [accountBalance, setAccountBalance] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBalanceLoading, setIsBalanceLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -45,11 +46,7 @@ export default function SubAccounts() {
       if (!res.ok) throw new Error("Error al obtener subcuentas");
 
       const data = await res.json();
-      console.log("📡 Datos obtenidos del backend:", data);
-
-      if (!Array.isArray(data)) {
-        throw new Error("Respuesta inesperada del servidor");
-      }
+      if (!Array.isArray(data)) throw new Error("Respuesta inesperada del servidor");
 
       setSubAccounts(data);
     } catch (error) {
@@ -59,6 +56,33 @@ export default function SubAccounts() {
       setIsLoading(false);
     }
   }, []);
+
+  // ✅ Obtener balance de la cuenta seleccionada
+  const fetchAccountDetails = async (userId: string) => {
+    if (!API_URL || !userId) return;
+
+    try {
+      setIsBalanceLoading(true);
+      setError(null);
+      setAccountBalance(null);
+
+      const res = await fetch(`${API_URL}/account-details/${userId}`, {
+        method: "GET",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
+
+      const data = await res.json();
+      setAccountBalance(typeof data.balance === "number" ? data.balance : 0);
+    } catch (error) {
+      console.error("❌ Error obteniendo detalles de la cuenta:", error);
+      setError("No se pudo obtener la información de la cuenta.");
+    } finally {
+      setIsBalanceLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchSubAccounts();
@@ -121,7 +145,14 @@ export default function SubAccounts() {
                   <TableCell>{sub.balance ? `${sub.balance.toFixed(2)} USDT` : "-"}</TableCell>
                   <TableCell>{sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}</TableCell>
                   <TableCell>
-                    <Button size="sm" variant="outline" onClick={() => console.log("Ver detalles", sub.id)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedSubAccount(sub);
+                        fetchAccountDetails(sub.userId);
+                      }}
+                    >
                       Ver Detalles
                     </Button>
                   </TableCell>
@@ -131,6 +162,27 @@ export default function SubAccounts() {
           </TableBody>
         </Table>
       </div>
+
+      {selectedSubAccount && (
+        <div className="mt-6 p-6 bg-gray-200 dark:bg-gray-700 rounded-2xl shadow-md">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Detalles de la Cuenta</h2>
+          <div className="mt-4 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
+            <p><strong>Nombre:</strong> {selectedSubAccount.name}</p>
+            <p><strong>Exchange:</strong> {selectedSubAccount.exchange}</p>
+            {isBalanceLoading ? (
+              <p>Cargando balance...</p>
+            ) : (
+              <p><strong>Balance:</strong> {accountBalance !== null ? `${accountBalance.toFixed(2)} USDT` : "No disponible"}</p>
+            )}
+            <button 
+              className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+              onClick={() => setSelectedSubAccount(null)}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
