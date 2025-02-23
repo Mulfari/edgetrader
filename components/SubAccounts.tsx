@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Search, RefreshCw, AlertCircle } from "lucide-react";
+import { Search, RefreshCw, AlertCircle, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +21,7 @@ interface SubAccount {
 
 export default function SubAccounts() {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
-  const [selectedSubAccount, setSelectedSubAccount] = useState<SubAccount | null>(null);
+  const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null);
   const [accountBalance, setAccountBalance] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isBalanceLoading, setIsBalanceLoading] = useState(false);
@@ -100,6 +100,21 @@ export default function SubAccounts() {
     fetchSubAccounts();
   }, [fetchSubAccounts]);
 
+  const handleRowClick = (sub: SubAccount) => {
+    if (selectedSubAccountId === sub.id) {
+      setSelectedSubAccountId(null);
+    } else {
+      setSelectedSubAccountId(sub.id);
+      fetchAccountDetails(sub.userId);
+    }
+  };
+
+  const filteredAccounts = subAccounts.filter(
+    (account) =>
+      account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      account.exchange.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div>
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
@@ -140,7 +155,7 @@ export default function SubAccounts() {
                   <span className="mt-2 block">Cargando subcuentas...</span>
                 </TableCell>
               </TableRow>
-            ) : subAccounts.length === 0 ? (
+            ) : filteredAccounts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center">
                   <AlertCircle className="mx-auto mb-2 h-6 w-6" />
@@ -148,53 +163,40 @@ export default function SubAccounts() {
                 </TableCell>
               </TableRow>
             ) : (
-              subAccounts.map((sub) => (
-                <TableRow key={sub.id}>
-                  <TableCell className="font-medium">{sub.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
-                  </TableCell>
-                  <TableCell>{sub.balance ? `${sub.balance.toFixed(2)} USDT` : "-"}</TableCell>
-                  <TableCell>{sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}</TableCell>
-                  <TableCell>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedSubAccount(sub);
-                        fetchAccountDetails(sub.userId);
-                      }}
-                    >
-                      Ver Detalles
-                    </Button>
-                  </TableCell>
-                </TableRow>
+              filteredAccounts.map((sub) => (
+                <>
+                  <TableRow key={sub.id} onClick={() => handleRowClick(sub)} className="cursor-pointer">
+                    <TableCell className="font-medium">{sub.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{sub.exchange.toUpperCase()}</Badge>
+                    </TableCell>
+                    <TableCell>{sub.balance ? `${sub.balance.toFixed(2)} USDT` : "-"}</TableCell>
+                    <TableCell>{sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}</TableCell>
+                    <TableCell>
+                      <ChevronDown className={`h-4 w-4 transition-transform ${selectedSubAccountId === sub.id ? 'rotate-180' : ''}`} />
+                    </TableCell>
+                  </TableRow>
+                  {selectedSubAccountId === sub.id && (
+                    <TableRow key={`${sub.id}-details`}>
+                      <TableCell colSpan={5}>
+                        <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                          <p><strong>Nombre:</strong> {sub.name}</p>
+                          <p><strong>Exchange:</strong> {sub.exchange}</p>
+                          {isBalanceLoading ? (
+                            <p>Cargando balance...</p>
+                          ) : (
+                            <p><strong>Balance:</strong> {accountBalance !== null ? `${accountBalance.toFixed(2)} USDT` : "No disponible"}</p>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
               ))
             )}
           </TableBody>
         </Table>
       </div>
-
-      {selectedSubAccount && (
-        <div className="mt-6 p-6 bg-gray-200 dark:bg-gray-700 rounded-2xl shadow-md">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Detalles de la Cuenta</h2>
-          <div className="mt-4 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
-            <p><strong>Nombre:</strong> {selectedSubAccount.name}</p>
-            <p><strong>Exchange:</strong> {selectedSubAccount.exchange}</p>
-            {isBalanceLoading ? (
-              <p>Cargando balance...</p>
-            ) : (
-              <p><strong>Balance:</strong> {accountBalance !== null ? `${accountBalance.toFixed(2)} USDT` : "No disponible"}</p>
-            )}
-            <button 
-              className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
-              onClick={() => setSelectedSubAccount(null)}
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
