@@ -103,7 +103,7 @@ export default function SubAccounts() {
   }, [fetchSubAccounts])
 
   return (
-    <div className="w-full">
+    <div className="w-full h-full">
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0 md:space-x-4">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -123,8 +123,8 @@ export default function SubAccounts() {
 
       {error && <p className="text-red-500 text-center p-4">{error}</p>}
 
-      <div className="w-full bg-background rounded-lg border">
-        <Table>
+      <div className="w-full bg-background rounded-lg border max-h-[70vh] min-h-[50vh] overflow-y-auto">
+        <Table className="relative">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead>Nombre</TableHead>
@@ -133,7 +133,7 @@ export default function SubAccounts() {
               <TableHead>Última Actualización</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody className="relative">
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center">
@@ -169,7 +169,7 @@ export default function SubAccounts() {
                     <TableRow>
                       <TableCell colSpan={4} className="p-0 border-0">
                         <AccordionContent>
-                          <div className="bg-muted/30 p-4">
+                          <div className="bg-muted/30 p-6">
                             <h4 className="text-base font-medium mb-4">Detalles de la Cuenta</h4>
                             <div className="space-y-2">
                               <div className="flex items-center">
