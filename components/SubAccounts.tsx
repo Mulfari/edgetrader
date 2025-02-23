@@ -64,6 +64,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
     }
 
     try {
+      setIsLoading(true);
       const res = await fetch(`${API_URL}/subaccounts`, {
         method: "GET",
         headers: {
@@ -132,7 +133,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
   useEffect(() => {
     fetchSubAccounts();
-  }, [fetchSubAccounts]);
+  }, []); // Solo se ejecuta una vez al montar el componente
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
