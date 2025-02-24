@@ -41,9 +41,25 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   const [error, setError] = useState<string | null>(null)
   const [sortConfig, setSortConfig] = useState<SortConfig>(null)
   const [selectedExchange, setSelectedExchange] = useState<string>("all")
+  const [visibleAssets, setVisibleAssets] = useState(6)
   const router = useRouter()
 
   const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))]
+
+  const mockAssets = [
+    { token: "BTC", balance: "0.5234 BTC", usdValue: "$23,456.78" },
+    { token: "ETH", balance: "4.2156 ETH", usdValue: "$8,765.43" },
+    { token: "USDT", balance: "15,234.56 USDT", usdValue: "$15,234.56" },
+    { token: "SOL", balance: "125.45 SOL", usdValue: "$9,876.54" },
+    { token: "ADA", balance: "10,234.67 ADA", usdValue: "$3,456.78" },
+    { token: "DOT", balance: "789.12 DOT", usdValue: "$4,567.89" },
+    { token: "AVAX", balance: "234.56 AVAX", usdValue: "$5,678.90" },
+    { token: "MATIC", balance: "4,567.89 MATIC", usdValue: "$2,345.67" },
+    { token: "LINK", balance: "345.67 LINK", usdValue: "$3,456.78" },
+    { token: "UNI", balance: "567.89 UNI", usdValue: "$4,567.89" },
+    { token: "DOGE", balance: "12,345.67 DOGE", usdValue: "$1,234.56" },
+    { token: "XRP", balance: "5,678.90 XRP", usdValue: "$3,456.78" },
+  ]
 
   const fetchSubAccounts = useCallback(async () => {
     const token = localStorage.getItem("token")
@@ -123,7 +139,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
   useEffect(() => {
     fetchSubAccounts()
-  }, []) // Solo se ejecuta una vez al montar el componente
+  }, [fetchSubAccounts]) // Solo se ejecuta una vez al montar el componente
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
@@ -355,35 +371,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                               </TabsContent>
                               <TabsContent value="assets">
                                 <div className="space-y-4">
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <Card>
-                                      <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm font-medium">BTC</CardTitle>
-                                      </CardHeader>
-                                      <CardContent>
-                                        <div className="text-2xl font-bold">0.5234 BTC</div>
-                                        <p className="text-sm text-muted-foreground">≈ $23,456.78 USD</p>
-                                      </CardContent>
-                                    </Card>
-                                    <Card>
-                                      <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm font-medium">ETH</CardTitle>
-                                      </CardHeader>
-                                      <CardContent>
-                                        <div className="text-2xl font-bold">4.2156 ETH</div>
-                                        <p className="text-sm text-muted-foreground">≈ $8,765.43 USD</p>
-                                      </CardContent>
-                                    </Card>
-                                    <Card>
-                                      <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm font-medium">USDT</CardTitle>
-                                      </CardHeader>
-                                      <CardContent>
-                                        <div className="text-2xl font-bold">15,234.56 USDT</div>
-                                        <p className="text-sm text-muted-foreground">≈ $15,234.56 USD</p>
-                                      </CardContent>
-                                    </Card>
-                                  </div>
                                   <div className="mt-6">
                                     <h4 className="font-medium mb-4">Todos los Assets</h4>
                                     <Table>
@@ -395,28 +382,30 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                         </TableRow>
                                       </TableHeader>
                                       <TableBody>
-                                        <TableRow>
-                                          <TableCell className="font-medium">BTC</TableCell>
-                                          <TableCell>0.5234 BTC</TableCell>
-                                          <TableCell>$23,456.78</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                          <TableCell className="font-medium">ETH</TableCell>
-                                          <TableCell>4.2156 ETH</TableCell>
-                                          <TableCell>$8,765.43</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                          <TableCell className="font-medium">USDT</TableCell>
-                                          <TableCell>15,234.56 USDT</TableCell>
-                                          <TableCell>$15,234.56</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                          <TableCell className="font-medium">SOL</TableCell>
-                                          <TableCell>125.45 SOL</TableCell>
-                                          <TableCell>$9,876.54</TableCell>
-                                        </TableRow>
+                                        {mockAssets.slice(0, visibleAssets).map((asset, index) => (
+                                          <TableRow key={index}>
+                                            <TableCell className="font-medium">{asset.token}</TableCell>
+                                            <TableCell>{asset.balance}</TableCell>
+                                            <TableCell>{asset.usdValue}</TableCell>
+                                          </TableRow>
+                                        ))}
                                       </TableBody>
                                     </Table>
+                                    {mockAssets.length > visibleAssets && visibleAssets < 10 && (
+                                      <div className="mt-4 text-center">
+                                        <Button
+                                          variant="outline"
+                                          onClick={() => setVisibleAssets(Math.min(mockAssets.length, 10))}
+                                        >
+                                          Mostrar más
+                                        </Button>
+                                      </div>
+                                    )}
+                                    {mockAssets.length > 10 && visibleAssets >= 10 && (
+                                      <div className="mt-4 text-center text-sm text-muted-foreground">
+                                        <p>Hay {mockAssets.length - 10} assets adicionales</p>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </TabsContent>
