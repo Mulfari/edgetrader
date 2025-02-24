@@ -123,7 +123,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
   useEffect(() => {
     fetchSubAccounts()
-  }, []) // Solo se ejecuta una vez al montar el componente
+  }, [fetchSubAccounts]) // Solo se ejecuta una vez al montar el componente
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
@@ -367,11 +367,11 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                     </Card>
                                     <Card>
                                       <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm font-medium">ETH</CardTitle>
+                                        <CardTitle className="text-sm font-medium">Rendimiento</CardTitle>
                                       </CardHeader>
                                       <CardContent>
-                                        <div className="text-2xl font-bold">4.2156 ETH</div>
-                                        <p className="text-sm text-muted-foreground">≈ $8,765.43 USD</p>
+                                        <div className="text-2xl font-bold text-green-500">+12.45%</div>
+                                        <p className="text-sm text-muted-foreground">Últimos 30 días</p>
                                       </CardContent>
                                     </Card>
                                     <Card>
@@ -401,9 +401,9 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                           <TableCell>$23,456.78</TableCell>
                                         </TableRow>
                                         <TableRow>
-                                          <TableCell className="font-medium">ETH</TableCell>
-                                          <TableCell>4.2156 ETH</TableCell>
-                                          <TableCell>$8,765.43</TableCell>
+                                          <TableCell className="font-medium">Rendimiento 30d</TableCell>
+                                          <TableCell className="text-green-500">+12.45%</TableCell>
+                                          <TableCell>+$2,876.32</TableCell>
                                         </TableRow>
                                         <TableRow>
                                           <TableCell className="font-medium">USDT</TableCell>
