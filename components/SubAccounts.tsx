@@ -57,8 +57,8 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
     { token: "MATIC", balance: "4,567.89 MATIC", usdValue: "$2,345.67" },
     { token: "LINK", balance: "345.67 LINK", usdValue: "$3,456.78" },
     { token: "UNI", balance: "567.89 UNI", usdValue: "$4,567.89" },
-    { token: "DOGE", balance: "12,345.67 DOGE", usdValue: "$1,234.56" },
-    { token: "XRP", balance: "5,678.90 XRP", usdValue: "$3,456.78" },
+    { token: "AAVE", balance: "45.67 AAVE", usdValue: "$5,678.90" },
+    { token: "SNX", balance: "1,234.56 SNX", usdValue: "$2,345.67" },
   ]
 
   const fetchSubAccounts = useCallback(async () => {
@@ -370,43 +370,41 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                 </div>
                               </TabsContent>
                               <TabsContent value="assets">
-                                <div className="space-y-4">
-                                  <div className="mt-6">
-                                    <h4 className="font-medium mb-4">Todos los Assets</h4>
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow>
-                                          <TableHead>Token</TableHead>
-                                          <TableHead>Balance</TableHead>
-                                          <TableHead>Valor USD</TableHead>
+                                <div className="mt-6">
+                                  <h4 className="font-medium mb-4">Todos los Assets</h4>
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Token</TableHead>
+                                        <TableHead>Balance</TableHead>
+                                        <TableHead>Valor USD</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {mockAssets.slice(0, visibleAssets).map((asset, index) => (
+                                        <TableRow key={index}>
+                                          <TableCell className="font-medium">{asset.token}</TableCell>
+                                          <TableCell>{asset.balance}</TableCell>
+                                          <TableCell>{asset.usdValue}</TableCell>
                                         </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {mockAssets.slice(0, visibleAssets).map((asset, index) => (
-                                          <TableRow key={index}>
-                                            <TableCell className="font-medium">{asset.token}</TableCell>
-                                            <TableCell>{asset.balance}</TableCell>
-                                            <TableCell>{asset.usdValue}</TableCell>
-                                          </TableRow>
-                                        ))}
-                                      </TableBody>
-                                    </Table>
-                                    {mockAssets.length > visibleAssets && visibleAssets < 10 && (
-                                      <div className="mt-4 text-center">
-                                        <Button
-                                          variant="outline"
-                                          onClick={() => setVisibleAssets(Math.min(mockAssets.length, 10))}
-                                        >
-                                          Mostrar más
-                                        </Button>
-                                      </div>
-                                    )}
-                                    {mockAssets.length > 10 && visibleAssets >= 10 && (
-                                      <div className="mt-4 text-center text-sm text-muted-foreground">
-                                        <p>Hay {mockAssets.length - 10} assets adicionales</p>
-                                      </div>
-                                    )}
-                                  </div>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                  {mockAssets.length > visibleAssets && visibleAssets < 10 && (
+                                    <div className="mt-4 text-center">
+                                      <Button
+                                        variant="outline"
+                                        onClick={() => setVisibleAssets(Math.min(mockAssets.length, 10))}
+                                      >
+                                        Mostrar más
+                                      </Button>
+                                    </div>
+                                  )}
+                                  {mockAssets.length > 10 && visibleAssets >= 10 && (
+                                    <div className="mt-4 text-center text-sm text-muted-foreground">
+                                      <p>Hay {mockAssets.length - 10} assets adicionales</p>
+                                    </div>
+                                  )}
                                 </div>
                               </TabsContent>
                             </Tabs>
