@@ -356,33 +356,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                               <TabsContent value="assets">
                                 <div className="space-y-4">
                                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <Card>
-                                      <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm font-medium">BTC</CardTitle>
-                                      </CardHeader>
-                                      <CardContent>
-                                        <div className="text-2xl font-bold">0.5234 BTC</div>
-                                        <p className="text-sm text-muted-foreground">≈ $23,456.78 USD</p>
-                                      </CardContent>
-                                    </Card>
-                                    <Card>
-                                      <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm font-medium">ETH</CardTitle>
-                                      </CardHeader>
-                                      <CardContent>
-                                        <div className="text-2xl font-bold">4.2156 ETH</div>
-                                        <p className="text-sm text-muted-foreground">≈ $8,765.43 USD</p>
-                                      </CardContent>
-                                    </Card>
-                                    <Card>
-                                      <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm font-medium">USDT</CardTitle>
-                                      </CardHeader>
-                                      <CardContent>
-                                        <div className="text-2xl font-bold">15,234.56 USDT</div>
-                                        <p className="text-sm text-muted-foreground">≈ $15,234.56 USD</p>
-                                      </CardContent>
-                                    </Card>
                                   </div>
                                   <div className="mt-6">
                                     <h4 className="font-medium mb-4">Todos los Assets</h4>
@@ -394,6 +367,28 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                           <TableHead>Valor USD</TableHead>
                                         </TableRow>
                                       </TableHeader>
+                                      <TableBody>
+                                        <TableRow>
+                                          <TableCell className="font-medium">BTC</TableCell>
+                                          <TableCell>0.5234 BTC</TableCell>
+                                          <TableCell>$23,456.78</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                          <TableCell className="font-medium">ETH</TableCell>
+                                          <TableCell>4.2156 ETH</TableCell>
+                                          <TableCell>$8,765.43</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                          <TableCell className="font-medium">USDT</TableCell>
+                                          <TableCell>15,234.56 USDT</TableCell>
+                                          <TableCell>$15,234.56</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                          <TableCell className="font-medium">SOL</TableCell>
+                                          <TableCell>125.45 SOL</TableCell>
+                                          <TableCell>$9,876.54</TableCell>
+                                        </TableRow>
+                                      </TableBody>
                                     </Table>
                                   </div>
                                 </div>
