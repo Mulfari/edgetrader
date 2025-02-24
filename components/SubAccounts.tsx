@@ -8,7 +8,6 @@ import {
   ChevronDown,
   Wallet,
   ArrowUpDown,
-  Settings2,
   ExternalLink,
   Filter,
 } from "lucide-react";
@@ -30,7 +29,7 @@ interface SubAccount {
   name: string;
   exchange: string;
   balance?: number;
-  lastUpdated?: string;
+  tokens?: { symbol: string; balance: number }[];
 }
 
 type SortConfig = {
@@ -245,10 +244,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                   Balance
                   <ArrowUpDown className="ml-2 h-4 w-4 inline" />
                 </TableHead>
-                <TableHead onClick={() => handleSort("lastUpdated")} className="cursor-pointer hover:bg-muted/50">
-                  Última Actualización
-                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
-                </TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -266,16 +261,13 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                       <Skeleton className="h-5 w-[120px]" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-5 w-[200px]" />
-                    </TableCell>
-                    <TableCell>
                       <Skeleton className="h-5 w-[20px]" />
                     </TableCell>
                   </TableRow>
                 ))
               ) : filteredAccounts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5}>
+                  <TableCell colSpan={4}>
                     <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
                       <AlertCircle className="h-12 w-12 mb-3" />
                       <p className="text-sm font-medium mb-2">No se encontraron subcuentas</p>
@@ -309,9 +301,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                           "-"
                         )}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}
-                      </TableCell>
                       <TableCell>
                         <ChevronDown
                           className={`h-4 w-4 transition-transform duration-200 ${
@@ -322,12 +311,12 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                     </TableRow>
                     {selectedSubAccountId === sub.id && (
                       <TableRow key={`${sub.id}-details`}>
-                        <TableCell colSpan={5}>
+                        <TableCell colSpan={4}>
                           <div className="p-6 bg-muted/50 rounded-lg space-y-6">
                             <Tabs defaultValue="overview" className="w-full">
                               <TabsList>
                                 <TabsTrigger value="overview">Vista General</TabsTrigger>
-                                <TabsTrigger value="settings">Configuración</TabsTrigger>
+                                <TabsTrigger value="assets">Assets</TabsTrigger>
                               </TabsList>
                               <TabsContent value="overview" className="mt-4">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -351,44 +340,24 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                       <div className="text-2xl font-bold uppercase">{sub.exchange}</div>
                                     </CardContent>
                                   </Card>
-                                  <Card>
-                                    <CardHeader className="pb-2">
-                                      <CardTitle className="text-sm font-medium">Última Actualización</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                      <div className="text-2xl font-bold">
-                                        {sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleTimeString() : "-"}
-                                      </div>
-                                    </CardContent>
-                                  </Card>
                                 </div>
                               </TabsContent>
-                              <TabsContent value="settings">
+                              <TabsContent value="assets">
                                 <div className="space-y-4">
-                                  <div className="flex justify-between items-center">
-                                    <div>
-                                      <h4 className="font-medium">Configuración de la Cuenta</h4>
-                                      <p className="text-sm text-muted-foreground">
-                                        Gestiona la configuración de tu cuenta de {sub.exchange}
-                                      </p>
-                                    </div>
-                                    <Button variant="outline">
-                                      <Settings2 className="mr-2 h-4 w-4" />
-                                      Configurar
-                                    </Button>
-                                  </div>
-                                  <div className="flex justify-between items-center">
-                                    <div>
-                                      <h4 className="font-medium">Exchange Dashboard</h4>
-                                      <p className="text-sm text-muted-foreground">
-                                        Accede al dashboard de {sub.exchange}
-                                      </p>
-                                    </div>
-                                    <Button variant="outline">
-                                      <ExternalLink className="mr-2 h-4 w-4" />
-                                      Abrir
-                                    </Button>
-                                  </div>
+                                  {sub.tokens && sub.tokens.length > 0 ? (
+                                    sub.tokens.map((token) => (
+                                      <div key={token.symbol} className="flex justify-between items-center">
+                                        <div>
+                                          <h4 className="font-medium">{token.symbol}</h4>
+                                          <p className="text-sm text-muted-foreground">
+                                            Balance: {token.balance.toFixed(2)}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <p className="text-sm text-muted-foreground">No hay tokens disponibles</p>
+                                  )}
                                 </div>
                               </TabsContent>
                             </Tabs>
