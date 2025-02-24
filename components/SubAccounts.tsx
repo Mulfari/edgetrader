@@ -8,7 +8,6 @@ import {
   ChevronDown,
   Wallet,
   ArrowUpDown,
-  ExternalLink,
   Filter,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -132,7 +131,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
   useEffect(() => {
     fetchSubAccounts();
-  }, []); // Solo se ejecuta una vez al montar el componente
+  }, [fetchSubAccounts]); // Solo se ejecuta una vez al montar el componente
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
