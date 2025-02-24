@@ -1,387 +1,268 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import {
-  Search,
-  RefreshCw,
-  AlertCircle,
-  ChevronDown,
-  Wallet,
-  ArrowUpDown,
-  Settings2,
-  ExternalLink,
-  Filter,
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Eye, EyeOff, AlertCircle, Loader2, Github, Twitter } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-interface SubAccount {
-  id: string;
-  userId: string;
-  name: string;
-  exchange: string;
-  balance?: number;
-}
-
-type SortConfig = {
-  key: keyof SubAccount;
-  direction: "asc" | "desc";
-} | null;
-
-interface SubAccountsProps {
-  onBalanceUpdate?: (totalBalance: number) => void;
-}
-
-export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
-  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
-  const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null);
-  const [accountBalances, setAccountBalances] = useState<Record<string, number | null>>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
-  const [selectedExchange, setSelectedExchange] = useState<string>("all");
+export default function LoginPage() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
 
-  const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))];
-
-  const fetchSubAccounts = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.error("❌ No hay token, redirigiendo a login.");
-      router.push("/login");
-      return;
+  useEffect(() => {
+    // Rellena los campos de correo electrónico y contraseña si hay datos almacenados en localStorage
+    const storedEmail = localStorage.getItem("email");
+    const storedPassword = localStorage.getItem("password");
+    if (storedEmail && storedPassword) {
+      setEmail(storedEmail);
+      setPassword(storedPassword);
+      setRememberMe(true);
     }
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+    setSuccess(false);
 
     try {
-      setIsLoading(true);
-      const res = await fetch(`${API_URL}/subaccounts`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (!res.ok) {
-        if (res.status === 401) {
-          console.error("❌ Token inválido, redirigiendo a login.");
-          localStorage.removeItem("token");
-          router.push("/login");
-        }
-        throw new Error(`Error al obtener subcuentas - Código ${res.status}`);
-      }
-
       const data = await res.json();
-      setSubAccounts(data);
 
-      // Fetch account details for each subaccount
-      const balances: Record<string, number | null> = {};
-      let totalBalance = 0;
-      await Promise.all(
-        data.map(async (sub: SubAccount) => {
-          const balance = await fetchAccountDetails(sub.userId, token);
-          balances[sub.id] = balance;
-          if (balance !== null) {
-            totalBalance += balance;
-          }
-        })
-      );
-      setAccountBalances(balances);
-      if (onBalanceUpdate) {
-        onBalanceUpdate(totalBalance);
+      if (res.ok) {
+        localStorage.setItem("token", data.access_token);
+        if (rememberMe) {
+          localStorage.setItem("email", email);
+          localStorage.setItem("password", password);
+        } else {
+          localStorage.removeItem("email");
+          localStorage.removeItem("password");
+        }
+        setSuccess(true);
+        setTimeout(() => router.push("/dashboard"), 2000);
+      } else {
+        setError(data.message || "Credenciales incorrectas.");
       }
     } catch (error) {
-      console.error("❌ Error obteniendo subcuentas:", error);
-      setError("No se pudieron cargar las subcuentas");
+      console.error("Error en login:", error);
+      setError("Error de conexión con el servidor.");
     } finally {
       setIsLoading(false);
     }
-  }, [router, onBalanceUpdate]);
-
-  const fetchAccountDetails = async (userId: string, token: string) => {
-    if (!API_URL || !userId || !token) return null;
-
-    try {
-      const res = await fetch(`${API_URL}/account-details/${userId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
-
-      const data = await res.json();
-      return typeof data.balance === "number" ? data.balance : 0;
-    } catch (error) {
-      console.error("❌ Error obteniendo detalles de la cuenta:", error);
-      return null;
-    }
   };
-
-  useEffect(() => {
-    fetchSubAccounts();
-  }, []); // Solo se ejecuta una vez al montar el componente
-
-  const handleRowClick = (sub: SubAccount) => {
-    if (selectedSubAccountId === sub.id) {
-      setSelectedSubAccountId(null);
-    } else {
-      setSelectedSubAccountId(sub.id);
-    }
-  };
-
-  const handleSort = (key: keyof SubAccount) => {
-    setSortConfig((current) => {
-      if (current?.key === key) {
-        if (current.direction === "asc") {
-          return { key, direction: "desc" };
-        }
-        return null;
-      }
-      return { key, direction: "asc" };
-    });
-  };
-
-  const sortedAccounts = [...subAccounts].sort((a, b) => {
-    if (!sortConfig) return 0;
-
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
-
-    if (aValue === undefined || bValue === undefined) return 0;
-
-    if (sortConfig.direction === "asc") {
-      return aValue < bValue ? -1 : 1;
-    } else {
-      return aValue > bValue ? -1 : 1;
-    }
-  });
-
-  const filteredAccounts = sortedAccounts.filter(
-    (account) =>
-      (selectedExchange === "all" || account.exchange === selectedExchange) &&
-      (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        account.exchange.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <CardTitle className="text-2xl font-bold">Subcuentas</CardTitle>
-            <CardDescription>Gestiona y monitorea todas tus cuentas de trading</CardDescription>
-          </div>
-          <Button onClick={fetchSubAccounts} variant="outline" size="sm" className="w-full md:w-auto">
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            Actualizar
-          </Button>
-        </div>
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="sm:mx-auto sm:w-full sm:max-w-md"
+      >
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+          Log in to your account
+        </h2>
+      </motion.div>
 
-        <div className="flex flex-col md:flex-row items-center gap-4 mt-4">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              type="text"
-              placeholder="Buscar subcuentas..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
+      >
+        <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          {success ? (
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+              <div className="text-green-500 text-5xl mb-4">🎉</div>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Login Successful!</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">Welcome back to YourBrand.</p>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+              >
+                Go to Dashboard
+              </Link>
+            </motion.div>
+          ) : (
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Email address
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
+                />
+              </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full md:w-auto">
-                <Filter className="mr-2 h-4 w-4" />
-                {selectedExchange === "all" ? "Todos los Exchanges" : selectedExchange}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px]">
-              {exchanges.map((exchange) => (
-                <DropdownMenuItem key={exchange} onClick={() => setSelectedExchange(exchange)}>
-                  {exchange === "all" ? "Todos los Exchanges" : exchange}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </CardHeader>
-
-      <CardContent>
-        {error && (
-          <div className="flex items-center gap-2 p-4 mb-4 text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg">
-            <AlertCircle className="h-5 w-5" />
-            <p className="text-sm font-medium">{error}</p>
-          </div>
-        )}
-
-        <div className="rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead onClick={() => handleSort("name")} className="cursor-pointer hover:bg-muted/50">
-                  Nombre
-                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
-                </TableHead>
-                <TableHead onClick={() => handleSort("exchange")} className="cursor-pointer hover:bg-muted/50">
-                  Exchange
-                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
-                </TableHead>
-                <TableHead onClick={() => handleSort("balance")} className="cursor-pointer hover:bg-muted/50">
-                  Balance
-                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
-                </TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 3 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <Skeleton className="h-5 w-[150px]" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-[100px]" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-[120px]" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-[20px]" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : filteredAccounts.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4}>
-                    <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-                      <AlertCircle className="h-12 w-12 mb-3" />
-                      <p className="text-sm font-medium mb-2">No se encontraron subcuentas</p>
-                      <p className="text-xs text-muted-foreground">
-                        Intenta ajustar los filtros o el término de búsqueda
-                      </p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredAccounts.map((sub) => (
-                  <>
-                    <TableRow
-                      key={sub.id}
-                      onClick={() => handleRowClick(sub)}
-                      className="cursor-pointer transition-colors hover:bg-muted/50"
-                    >
-                      <TableCell className="font-medium">{sub.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="uppercase">
-                          {sub.exchange}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {accountBalances[sub.id] !== undefined ? (
-                          <div className="flex items-center gap-2">
-                            <Wallet className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{accountBalances[sub.id]?.toFixed(2)} USDT</span>
-                          </div>
-                        ) : (
-                          "-"
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <ChevronDown
-                          className={`h-4 w-4 transition-transform duration-200 ${
-                            selectedSubAccountId === sub.id ? "rotate-180" : ""
-                          }`}
-                        />
-                      </TableCell>
-                    </TableRow>
-                    {selectedSubAccountId === sub.id && (
-                      <TableRow key={`${sub.id}-details`}>
-                        <TableCell colSpan={4}>
-                          <div className="p-6 bg-muted/50 rounded-lg space-y-6">
-                            <Tabs defaultValue="overview" className="w-full">
-                              <TabsList>
-                                <TabsTrigger value="overview">Vista General</TabsTrigger>
-                                <TabsTrigger value="settings">Configuración</TabsTrigger>
-                              </TabsList>
-                              <TabsContent value="overview" className="mt-4">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                  <Card>
-                                    <CardHeader className="pb-2">
-                                      <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                      <div className="text-2xl font-bold">
-                                        {accountBalances[sub.id] !== undefined
-                                          ? `${accountBalances[sub.id]?.toFixed(2)} USDT`
-                                          : "No disponible"}
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                  <Card>
-                                    <CardHeader className="pb-2">
-                                      <CardTitle className="text-sm font-medium">Exchange</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                      <div className="text-2xl font-bold uppercase">{sub.exchange}</div>
-                                    </CardContent>
-                                  </Card>
-                                </div>
-                              </TabsContent>
-                              <TabsContent value="settings">
-                                <div className="space-y-4">
-                                  <div className="flex justify-between items-center">
-                                    <div>
-                                      <h4 className="font-medium">Configuración de la Cuenta</h4>
-                                      <p className="text-sm text-muted-foreground">
-                                        Gestiona la configuración de tu cuenta de {sub.exchange}
-                                      </p>
-                                    </div>
-                                    <Button variant="outline">
-                                      <Settings2 className="mr-2 h-4 w-4" />
-                                      Configurar
-                                    </Button>
-                                  </div>
-                                  <div className="flex justify-between items-center">
-                                    <div>
-                                      <h4 className="font-medium">Exchange Dashboard</h4>
-                                      <p className="text-sm text-muted-foreground">
-                                        Accede al dashboard de {sub.exchange}
-                                      </p>
-                                    </div>
-                                    <Button variant="outline">
-                                      <ExternalLink className="mr-2 h-4 w-4" />
-                                      Abrir
-                                    </Button>
-                                  </div>
-                                </div>
-                              </TabsContent>
-                            </Tabs>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Password
+                </label>
+                <div className="mt-1 relative">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" aria-hidden="true" />
+                    ) : (
+                      <Eye className="h-5 w-5" aria-hidden="true" />
                     )}
-                  </>
-                ))
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    id="remember-me"
+                    name="remember-me"
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:border-gray-600"
+                  />
+                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                    Remember me
+                  </label>
+                </div>
+
+                <div className="text-sm">
+                  <Link
+                    href="#"
+                    className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                  >
+                    Forgot your password?
+                  </Link>
+                </div>
+              </div>
+
+              {error && (
+                <div className="text-red-500 text-sm flex items-center">
+                  <AlertCircle className="h-5 w-5 mr-2" />
+                  {error}
+                </div>
               )}
-            </TableBody>
-          </Table>
+
+              <div>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                      Logging in...
+                    </>
+                  ) : (
+                    "Log in"
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <div>
+                <a
+                  href="#"
+                  className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
+                >
+                  <span className="sr-only">Sign in with GitHub</span>
+                  <Github className="w-5 h-5" />
+                </a>
+              </div>
+
+              <div>
+                <a
+                  href="#"
+                  className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
+                >
+                  <span className="sr-only">Sign in with Twitter</span>
+                  <Twitter className="w-5 h-5" />
+                </a>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="text-center">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Don&apos;t have an account?{" "}
+                  <Link
+                    href="/signup"
+                    className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                  >
+                    Sign up
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
+      >
+        <Link
+          href="/"
+          className="flex items-center justify-center text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to home
+        </Link>
+      </motion.div>
+    </div>
   );
 }

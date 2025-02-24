@@ -1,34 +1,32 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { LogOut, TrendingUp, RefreshCw, Wallet } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/ThemeToggle"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
-import SubAccounts from "@/components/SubAccounts"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { LogOut, TrendingUp, Wallet } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import SubAccounts from "@/components/SubAccounts";
 
 export default function Dashboard() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [totalBalance, setTotalBalance] = useState<number>(0)
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
-  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true);
+  const [totalBalance, setTotalBalance] = useState<number>(0);
+  const router = useRouter();
 
   useEffect(() => {
-    setIsLoading(false)
-  }, [])
+    setIsLoading(false);
+  }, []);
 
   // Función para actualizar el balance total
   const updateTotalBalance = (balance: number) => {
-    setTotalBalance(balance)
-    setLastUpdate(new Date())
-  }
+    setTotalBalance(balance);
+  };
 
   const handleLogout = () => {
-    router.push("/login")
-  }
+    router.push("/login");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -74,17 +72,6 @@ export default function Dashboard() {
                   <Progress value={0} className="mt-2" />
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Última Actualización</CardTitle>
-                  <RefreshCw className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{lastUpdate.toLocaleTimeString()}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Auto-refresh cada 5 minutos</p>
-                </CardContent>
-              </Card>
             </div>
 
             <Tabs defaultValue="accounts" className="space-y-4">
@@ -113,6 +100,5 @@ export default function Dashboard() {
         )}
       </main>
     </div>
-  )
+  );
 }
-
