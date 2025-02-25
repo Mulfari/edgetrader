@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { Search, RefreshCw, AlertCircle, ChevronDown, Wallet, ArrowUpDown, Filter } from 'lucide-react'
+import { Search, RefreshCw, AlertCircle, ChevronDown, Wallet, ArrowUpDown, Filter } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -111,20 +111,10 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
         },
       })
 
-      if (!res.ok) {
-        console.error(`❌ Error al obtener detalles de la cuenta: ${res.status}`)
-        return null
-      }
+      if (!res.ok) throw new Error("Error al obtener detalles de la cuenta")
 
       const data = await res.json()
-      
-      // Verificar si la respuesta contiene el balance
-      if (data && typeof data.balance === "number") {
-        return data.balance
-      } else {
-        console.error("❌ Formato de respuesta inesperado:", data)
-        return 0
-      }
+      return typeof data.balance === "number" ? data.balance : 0
     } catch (error) {
       console.error("❌ Error obteniendo detalles de la cuenta:", error)
       return null
@@ -133,7 +123,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
   useEffect(() => {
     fetchSubAccounts()
-  }, [fetchSubAccounts])
+  }, []) // Solo se ejecuta una vez al montar el componente
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
@@ -349,9 +339,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                     </CardHeader>
                                     <CardContent>
                                       <div className="text-2xl font-bold uppercase">{sub.exchange}</div>
-                                      <div className="text-xs text-muted-foreground mt-1">
-                                        {sub.exchange === "FTX" ? "API Demo" : "API Producción"}
-                                      </div>
                                     </CardContent>
                                   </Card>
                                   <Card>
@@ -421,3 +408,4 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
     </Card>
   )
 }
+
