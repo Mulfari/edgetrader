@@ -22,6 +22,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+interface Asset {
+  coin: string;
+  balance: number;
+  usdValue: number;
+}
+
 interface SubAccount {
   id: string;
   userId: string;
@@ -29,6 +35,7 @@ interface SubAccount {
   exchange: string;
   balance?: number;
   lastUpdated?: string;
+  assets?: Asset[];
 }
 
 type SortConfig = {
@@ -91,6 +98,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
         data.map(async (sub: SubAccount) => {
           const details = await fetchAccountDetails(sub.userId, token);
           balances[sub.id] = details.balance;
+          sub.assets = details.assets;
           if (details.balance !== null) {
             totalBalance += details.balance;
           }
@@ -125,8 +133,8 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       const data = await res.json();
       console.log("Detalles de la cuenta:", data); // Mostrar toda la respuesta en la consola
       return {
-        balance: typeof data.balance === "number" ? data.balance : 0,
-        assets: data.assets || [],
+        balance: parseFloat(data.result.list?.[0]?.totalEquity ?? "0"),
+        assets: data.result.list?.[0]?.coin || [],
       };
     } catch (error) {
       console.error("❌ Error obteniendo detalles de la cuenta:", error);
@@ -381,26 +389,13 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                         </TableRow>
                                       </TableHeader>
                                       <TableBody>
-                                        <TableRow>
-                                          <TableCell className="font-medium">BTC</TableCell>
-                                          <TableCell>0.5234 BTC</TableCell>
-                                          <TableCell>$23,456.78</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                          <TableCell className="font-medium">ETH</TableCell>
-                                          <TableCell>4.2156 ETH</TableCell>
-                                          <TableCell>$8,765.43</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                          <TableCell className="font-medium">USDT</TableCell>
-                                          <TableCell>15,234.56 USDT</TableCell>
-                                          <TableCell>$15,234.56</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                          <TableCell className="font-medium">SOL</TableCell>
-                                          <TableCell>125.45 SOL</TableCell>
-                                          <TableCell>$9,876.54</TableCell>
-                                        </TableRow>
+                                        {sub.assets?.map((asset) => (
+                                          <TableRow key={asset.coin}>
+                                            <TableCell className="font-medium">{asset.coin}</TableCell>
+                                            <TableCell>{asset.balance} {asset.coin}</TableCell>
+                                            <TableCell>${asset.usdValue}</TableCell>
+                                          </TableRow>
+                                        ))}
                                       </TableBody>
                                     </Table>
                                   </div>
