@@ -129,7 +129,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
     }
   }, [router, onBalanceUpdate]);
 
-  const fetchAccountDetails = async (userId: string, token: string) => {
+  const fetchAccountDetails = useCallback(async (userId: string, token: string) => {
     if (!API_URL || !userId || !token) return { balance: null, assets: [] };
 
     try {
@@ -157,7 +157,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       console.error("❌ Error obteniendo detalles de la cuenta:", error);
       return { balance: null, assets: [] };
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchSubAccounts();
