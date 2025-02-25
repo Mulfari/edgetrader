@@ -1,129 +1,182 @@
-"use client";
+"use client"
 
-import { useEffect, useState, useCallback } from "react";
-import {
-  Search,
-  RefreshCw,
-  AlertCircle,
-  ChevronDown,
-  Wallet,
-  ArrowUpDown,
-  Filter,
-  Loader2,
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEffect, useState, useCallback } from "react"
+import { Search, RefreshCw, AlertCircle, ChevronDown, Wallet, ArrowUpDown, Filter, Loader2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useRouter } from "next/navigation"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-interface CoinData {
-  coin: string;
-  walletBalance: string;
-  usdValue: string;
-  equity: string;
-  unrealisedPnl: string;
-  availableToWithdraw: string;
-  locked: string;
-  collateralSwitch: boolean;
-  marginCollateral: boolean;
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 interface SubAccount {
-  id: string;
-  userId: string;
-  name: string;
-  exchange: string;
-  balance?: number;
-  lastUpdated?: string;
-  assets?: CoinData[];
+  id: string
+  userId: string
+  name: string
+  exchange: string
+  balance?: number
+  lastUpdated?: string
+}
+
+interface CoinData {
+  coin: string
+  walletBalance: string
+  usdValue: string
+  equity: string
+  unrealisedPnl: string
+  availableToWithdraw: string
+  locked: string
+  collateralSwitch: boolean
+  marginCollateral: boolean
+}
+
+// Modificar la interfaz para los detalles de la cuenta para incluir la estructura completa
+interface AccountDetailsResponse {
+  balance?: number
+  retCode: number
+  retMsg: string
+  result: {
+    list: [
+      {
+        totalEquity: string
+        accountIMRate: string
+        totalMarginBalance: string
+        totalInitialMargin: string
+        accountType: string
+        totalAvailableBalance: string
+        accountMMRate: string
+        totalPerpUPL: string
+        totalWalletBalance: string
+        accountLTV: string
+        totalMaintenanceMargin: string
+        coin: CoinData[]
+      },
+    ]
+  }
+}
+
+// Modificar la interfaz AssetResponse para que coincida con la estructura real de la respuesta
+interface AssetResponse {
+  retCode: number
+  retMsg: string
+  result: {
+    list: [
+      {
+        totalEquity: string
+        totalWalletBalance: string
+        totalAvailableBalance: string
+        totalMarginBalance: string
+        accountType: string
+        coin: CoinData[]
+      },
+    ]
+  }
 }
 
 type SortConfig = {
-  key: keyof SubAccount;
-  direction: "asc" | "desc";
-} | null;
+  key: keyof SubAccount
+  direction: "asc" | "desc"
+} | null
 
 interface SubAccountsProps {
-  onBalanceUpdate?: (totalBalance: number) => void;
+  onBalanceUpdate?: (totalBalance: number) => void
 }
 
 export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
-  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
-  const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null);
-  const [accountBalances, setAccountBalances] = useState<Record<string, number | null>>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
-  const [selectedExchange, setSelectedExchange] = useState<string>("all");
-  const router = useRouter();
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
+  const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null)
+  const [accountBalances, setAccountBalances] = useState<Record<string, number | null>>({})
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null)
+  const [selectedExchange, setSelectedExchange] = useState<string>("all")
+  const [assetData, setAssetData] = useState<AssetResponse | null>(null)
+  const [isLoadingAssets, setIsLoadingAssets] = useState(false)
+  const [assetError, setAssetError] = useState<string | null>(null)
+  const router = useRouter()
+  // Modificar el estado para almacenar la respuesta completa
+  const [accountDetails, setAccountDetails] = useState<Record<string, AccountDetailsResponse | null>>({})
 
-  const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))];
+  const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))]
 
   const fetchSubAccounts = useCallback(async () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token")
     if (!token) {
-      console.error("❌ No hay token, redirigiendo a login.");
-      router.push("/login");
-      return;
+      console.error("❌ No hay token, redirigiendo a login.")
+      router.push("/login")
+      return
     }
 
     try {
-      setIsLoading(true);
+      setIsLoading(true)
       const res = await fetch(`${API_URL}/subaccounts`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-      });
+      })
 
       if (!res.ok) {
         if (res.status === 401) {
-          console.error("❌ Token inválido, redirigiendo a login.");
-          localStorage.removeItem("token");
-          router.push("/login");
+          console.error("❌ Token inválido, redirigiendo a login.")
+          localStorage.removeItem("token")
+          router.push("/login")
         }
-        throw new Error(`Error al obtener subcuentas - Código ${res.status}`);
+        throw new Error(`Error al obtener subcuentas - Código ${res.status}`)
       }
 
-      const data = await res.json();
-      setSubAccounts(data);
+      const data = await res.json()
+      setSubAccounts(data)
 
-      // Fetch account details for each subaccount
-      const balances: Record<string, number | null> = {};
-      let totalBalance = 0;
+      // Modificar la parte del fetchSubAccounts que procesa los detalles de la cuenta
+      // Dentro de la función fetchSubAccounts, reemplazar la parte que obtiene los balances:
+      const accountDetailsData: Record<string, AccountDetailsResponse | null> = {}
+      const balances: Record<string, number | null> = {}
+      let totalBalance = 0
+
       await Promise.all(
         data.map(async (sub: SubAccount) => {
-          const details = await fetchAccountDetails(sub.userId, token);
-          balances[sub.id] = details.balance;
-          sub.assets = details.assets;
-          if (details.balance !== null) {
-            totalBalance += details.balance;
+          const details = await fetchAccountDetails(sub.userId, token)
+          accountDetailsData[sub.id] = details
+
+          // Extraer el balance para mantener la funcionalidad existente
+          let balance = null
+          if (details && details.balance) {
+            balance = details.balance
+          } else if (details && details.result && details.result.list && details.result.list[0]) {
+            balance = Number.parseFloat(details.result.list[0].totalWalletBalance)
           }
-        })
-      );
-      setAccountBalances(balances);
+
+          balances[sub.id] = balance
+          if (balance !== null) {
+            totalBalance += balance
+          }
+        }),
+      )
+
+      setAccountDetails(accountDetailsData)
+      setAccountBalances(balances)
       if (onBalanceUpdate) {
-        onBalanceUpdate(totalBalance);
+        onBalanceUpdate(totalBalance)
       }
     } catch (error) {
-      console.error("❌ Error obteniendo subcuentas:", error);
-      setError("No se pudieron cargar las subcuentas");
+      console.error("❌ Error obteniendo subcuentas:", error)
+      setError("No se pudieron cargar las subcuentas")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [router, onBalanceUpdate]);
+  }, [router, onBalanceUpdate])
 
+  // Modificar la función fetchAccountDetails para guardar la respuesta completa
   const fetchAccountDetails = async (userId: string, token: string) => {
-    if (!API_URL || !userId || !token) return { balance: null, assets: [] };
+    if (!API_URL || !userId || !token) return null
 
     try {
       const res = await fetch(`${API_URL}/account-details/${userId}`, {
@@ -132,72 +185,79 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-      });
+      })
 
-      if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
+      if (!res.ok) throw new Error("Error al obtener detalles de la cuenta")
 
-      const data = await res.json();
-      return {
-        balance: typeof data.balance === "number" ? data.balance : 0,
-        assets: data.assets || [],
-      };
+      const data = await res.json()
+      return data
     } catch (error) {
-      console.error("❌ Error obteniendo detalles de la cuenta:", error);
-      return { balance: null, assets: [] };
+      console.error("❌ Error obteniendo detalles de la cuenta:", error)
+      return null
     }
-  };
+  }
+
+  // Eliminar la función fetchAssetData ya que no es necesaria
 
   useEffect(() => {
-    fetchSubAccounts();
-  }, [fetchSubAccounts]); // Solo se ejecuta una vez al montar el componente
+    fetchSubAccounts()
+  }, [fetchSubAccounts]) // Solo se ejecuta una vez al montar el componente
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
-      setSelectedSubAccountId(null);
+      setSelectedSubAccountId(null)
+      setAssetData(null) // Limpiar datos de assets al cerrar
     } else {
-      setSelectedSubAccountId(sub.id);
+      setSelectedSubAccountId(sub.id)
+      // No cargamos los assets inmediatamente, solo cuando se selecciona la pestaña
     }
-  };
+  }
+
+  // Modificar el handleTabChange para no necesitar fetchAssetData
+  const handleTabChange = (value: string, userId: string) => {
+    // No necesitamos hacer nada especial al cambiar a la pestaña de assets
+    // ya que los datos ya están cargados
+  }
 
   const handleSort = (key: keyof SubAccount) => {
     setSortConfig((current) => {
       if (current?.key === key) {
         if (current.direction === "asc") {
-          return { key, direction: "desc" };
+          return { key, direction: "desc" }
         }
-        return null;
+        return null
       }
-      return { key, direction: "asc" };
-    });
-  };
+      return { key, direction: "asc" }
+    })
+  }
 
   const sortedAccounts = [...subAccounts].sort((a, b) => {
-    if (!sortConfig) return 0;
+    if (!sortConfig) return 0
 
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
+    const aValue = a[sortConfig.key]
+    const bValue = b[sortConfig.key]
 
-    if (aValue === undefined || bValue === undefined) return 0;
+    if (aValue === undefined || bValue === undefined) return 0
 
     if (sortConfig.direction === "asc") {
-      return aValue < bValue ? -1 : 1;
+      return aValue < bValue ? -1 : 1
     } else {
-      return aValue > bValue ? -1 : 1;
+      return aValue > bValue ? -1 : 1
     }
-  });
+  })
 
   const filteredAccounts = sortedAccounts.filter(
     (account) =>
       (selectedExchange === "all" || account.exchange === selectedExchange) &&
       (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        account.exchange.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+        account.exchange.toLowerCase().includes(searchTerm.toLowerCase())),
+  )
 
   // Función para formatear números con separadores de miles
   const formatNumber = (value: string | number) => {
-    const num = typeof value === "string" ? Number.parseFloat(value) : value;
-    return num.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 8 });
-  };
+    const num = typeof value === "string" ? Number.parseFloat(value) : value
+    return num.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 8 })
+  }
 
   return (
     <Card className="w-full">
@@ -326,6 +386,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                           <div className="flex items-center gap-2">
                             <Wallet className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">{accountBalances[sub.id]?.toFixed(2)} USDT</span>
+                            <span className="font-medium">{accountBalances[sub.id]?.toFixed(2)} USDT</span>
                           </div>
                         ) : (
                           "-"
@@ -346,7 +407,11 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                       <TableRow key={`${sub.id}-details`}>
                         <TableCell colSpan={5}>
                           <div className="p-6 bg-muted/50 rounded-lg space-y-6">
-                            <Tabs defaultValue="overview" className="w-full">
+                            <Tabs
+                              defaultValue="overview"
+                              className="w-full"
+                              onValueChange={(value) => handleTabChange(value, sub.userId)}
+                            >
                               <TabsList>
                                 <TabsTrigger value="overview">Vista General</TabsTrigger>
                                 <TabsTrigger value="assets">Assets</TabsTrigger>
@@ -387,49 +452,102 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                               </TabsContent>
                               <TabsContent value="assets">
                                 <div className="space-y-4">
-                                  <div className="mt-6">
-                                    <h4 className="font-medium mb-4">Todos los Assets</h4>
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow>
-                                          <TableHead>Token</TableHead>
-                                          <TableHead>Balance</TableHead>
-                                          <TableHead>Valor USD</TableHead>
-                                          <TableHead>Disponible</TableHead>
-                                          <TableHead>Estado</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {sub.assets?.map((coin) => (
-                                          <TableRow key={coin.coin}>
-                                            <TableCell className="font-medium">{coin.coin}</TableCell>
-                                            <TableCell>
-                                              {formatNumber(coin.walletBalance)} {coin.coin}
-                                            </TableCell>
-                                            <TableCell>${formatNumber(coin.usdValue)}</TableCell>
-                                            <TableCell>
-                                              {coin.availableToWithdraw
-                                                ? formatNumber(coin.availableToWithdraw)
-                                                : formatNumber(coin.walletBalance)}{" "}
-                                              {coin.coin}
-                                            </TableCell>
-                                            <TableCell>
-                                              <Badge
-                                                variant={coin.marginCollateral ? "default" : "outline"}
-                                                className={
-                                                  coin.marginCollateral
-                                                    ? "bg-green-100 text-green-800 hover:bg-green-100"
-                                                    : ""
-                                                }
-                                              >
-                                                {coin.marginCollateral ? "Colateral" : "Normal"}
-                                              </Badge>
-                                            </TableCell>
-                                          </TableRow>
-                                        ))}
-                                      </TableBody>
-                                    </Table>
-                                  </div>
+                                  {assetError && (
+                                    <div className="flex items-center gap-2 p-4 mb-4 text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg">
+                                      <AlertCircle className="h-5 w-5" />
+                                      <p className="text-sm font-medium">{assetError}</p>
+                                    </div>
+                                  )}
+
+                                  {isLoadingAssets ? (
+                                    <div className="flex justify-center items-center py-12">
+                                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                      <span className="ml-2 text-sm text-muted-foreground">Cargando assets...</span>
+                                    </div>
+                                  ) : assetData ? (
+                                    <>
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <Card>
+                                          <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium">Equity Total</CardTitle>
+                                          </CardHeader>
+                                          <CardContent>
+                                            <div className="text-2xl font-bold">
+                                              ${formatNumber(assetData.result.list[0].totalEquity)}
+                                            </div>
+                                          </CardContent>
+                                        </Card>
+                                        <Card>
+                                          <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
+                                          </CardHeader>
+                                          <CardContent>
+                                            <div className="text-2xl font-bold">
+                                              ${formatNumber(assetData.result.list[0].totalWalletBalance)}
+                                            </div>
+                                          </CardContent>
+                                        </Card>
+                                        <Card>
+                                          <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium">Disponible</CardTitle>
+                                          </CardHeader>
+                                          <CardContent>
+                                            <div className="text-2xl font-bold">
+                                              ${formatNumber(assetData.result.list[0].totalAvailableBalance)}
+                                            </div>
+                                          </CardContent>
+                                        </Card>
+                                      </div>
+                                      <div className="mt-6">
+                                        <h4 className="font-medium mb-4">Todos los Assets</h4>
+                                        <Table>
+                                          <TableHeader>
+                                            <TableRow>
+                                              <TableHead>Token</TableHead>
+                                              <TableHead>Balance</TableHead>
+                                              <TableHead>Valor USD</TableHead>
+                                              <TableHead>Disponible</TableHead>
+                                              <TableHead>Estado</TableHead>
+                                            </TableRow>
+                                          </TableHeader>
+                                          <TableBody>
+                                            {assetData.result.list[0].coin.map((coin) => (
+                                              <TableRow key={coin.coin}>
+                                                <TableCell className="font-medium">{coin.coin}</TableCell>
+                                                <TableCell>
+                                                  {formatNumber(coin.walletBalance)} {coin.coin}
+                                                </TableCell>
+                                                <TableCell>${formatNumber(coin.usdValue)}</TableCell>
+                                                <TableCell>
+                                                  {coin.availableToWithdraw
+                                                    ? formatNumber(coin.availableToWithdraw)
+                                                    : formatNumber(coin.walletBalance)}{" "}
+                                                  {coin.coin}
+                                                </TableCell>
+                                                <TableCell>
+                                                  <Badge
+                                                    variant={coin.marginCollateral ? "default" : "outline"}
+                                                    className={
+                                                      coin.marginCollateral
+                                                        ? "bg-green-100 text-green-800 hover:bg-green-100"
+                                                        : ""
+                                                    }
+                                                  >
+                                                    {coin.marginCollateral ? "Colateral" : "Normal"}
+                                                  </Badge>
+                                                </TableCell>
+                                              </TableRow>
+                                            ))}
+                                          </TableBody>
+                                        </Table>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                                      <AlertCircle className="h-12 w-12 mb-3" />
+                                      <p className="text-sm font-medium mb-2">No hay datos de assets disponibles</p>
+                                    </div>
+                                  )}
                                 </div>
                               </TabsContent>
                             </Tabs>
@@ -445,5 +563,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
         </div>
       </CardContent>
     </Card>
-  );
+  )
 }
+
