@@ -23,49 +23,6 @@ interface SubAccount {
   lastUpdated?: string
 }
 
-interface CoinData {
-  coin: string
-  walletBalance: string
-  usdValue: string
-  equity: string
-  unrealisedPnl: string
-  availableToWithdraw: string
-  locked: string
-  collateralSwitch: boolean
-  marginCollateral: boolean
-  totalOrderIM: string
-  totalPositionMM: string
-  bonus: string
-  accruedInterest: string
-  spotHedgingQty: string
-  borrowAmount: string
-  totalPositionIM: string
-  cumRealisedPnl: string
-}
-
-interface AccountData {
-  totalEquity: string
-  accountIMRate: string
-  totalMarginBalance: string
-  totalInitialMargin: string
-  accountType: string
-  totalAvailableBalance: string
-  accountMMRate: string
-  totalPerpUPL: string
-  totalWalletBalance: string
-  accountLTV: string
-  totalMaintenanceMargin: string
-  coin: CoinData[]
-}
-
-interface AccountResponse {
-  retCode: number
-  retMsg: string
-  result: {
-    list: AccountData[]
-  }
-}
-
 type SortConfig = {
   key: keyof SubAccount
   direction: "asc" | "desc"
@@ -84,7 +41,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   const [error, setError] = useState<string | null>(null)
   const [sortConfig, setSortConfig] = useState<SortConfig>(null)
   const [selectedExchange, setSelectedExchange] = useState<string>("all")
-  const [accountDetails, setAccountDetails] = useState<Record<string, AccountData | null>>({})
   const router = useRouter()
 
   const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))]
@@ -121,32 +77,17 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
       // Fetch account details for each subaccount
       const balances: Record<string, number | null> = {}
-      const details: Record<string, AccountData | null> = {}
       let totalBalance = 0
-
       await Promise.all(
         data.map(async (sub: SubAccount) => {
-          const accountData = await fetchAccountDetails(sub.userId, token)
-
-          if (accountData) {
-            // Calcular balance total de la cuenta (convertido a número)
-            const balance = Number.parseFloat(accountData.totalEquity) || 0
-            balances[sub.id] = balance
-            details[sub.id] = accountData
-
-            if (balance) {
-              totalBalance += balance
-            }
-          } else {
-            balances[sub.id] = null
-            details[sub.id] = null
+          const balance = await fetchAccountDetails(sub.userId, token)
+          balances[sub.id] = balance
+          if (balance !== null) {
+            totalBalance += balance
           }
         }),
       )
-
       setAccountBalances(balances)
-      setAccountDetails(details)
-
       if (onBalanceUpdate) {
         onBalanceUpdate(totalBalance)
       }
@@ -158,7 +99,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
     }
   }, [router, onBalanceUpdate])
 
-  const fetchAccountDetails = async (userId: string, token: string): Promise<AccountData | null> => {
+  const fetchAccountDetails = async (userId: string, token: string) => {
     if (!API_URL || !userId || !token) return null
 
     try {
@@ -172,14 +113,8 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
       if (!res.ok) throw new Error("Error al obtener detalles de la cuenta")
 
-      const data: AccountResponse = await res.json()
-
-      // Verificar si la respuesta es válida y contiene los datos esperados
-      if (data.retCode === 0 && data.result && data.result.list && data.result.list.length > 0) {
-        return data.result.list[0]
-      }
-
-      return null
+      const data = await res.json()
+      return typeof data.balance === "number" ? data.balance : 0
     } catch (error) {
       console.error("❌ Error obteniendo detalles de la cuenta:", error)
       return null
@@ -188,7 +123,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
   useEffect(() => {
     fetchSubAccounts()
-  }, [fetchSubAccounts]) // Solo se ejecuta una vez al montar el componente
+  }, []) // Solo se ejecuta una vez al montar el componente
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
@@ -231,12 +166,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         account.exchange.toLowerCase().includes(searchTerm.toLowerCase())),
   )
-
-  // Función para formatear números con separadores de miles
-  const formatNumber = (value: string | number) => {
-    const num = typeof value === "string" ? Number.parseFloat(value) : value
-    return num.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 8 })
-  }
 
   return (
     <Card className="w-full">
@@ -426,94 +355,42 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                               </TabsContent>
                               <TabsContent value="assets">
                                 <div className="space-y-4">
-                                  {!accountDetails[sub.id] ? (
-                                    <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-                                      <AlertCircle className="h-12 w-12 mb-3" />
-                                      <p className="text-sm font-medium mb-2">No hay datos de assets disponibles</p>
-                                      <Button variant="outline" size="sm" onClick={fetchSubAccounts} className="mt-2">
-                                        <RefreshCw className="mr-2 h-4 w-4" />
-                                        Actualizar datos
-                                      </Button>
-                                    </div>
-                                  ) : (
-                                    <>
-                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <Card>
-                                          <CardHeader className="pb-2">
-                                            <CardTitle className="text-sm font-medium">Equity Total</CardTitle>
-                                          </CardHeader>
-                                          <CardContent>
-                                            <div className="text-2xl font-bold">
-                                              ${formatNumber(accountDetails[sub.id]?.totalEquity || "0")}
-                                            </div>
-                                          </CardContent>
-                                        </Card>
-                                        <Card>
-                                          <CardHeader className="pb-2">
-                                            <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
-                                          </CardHeader>
-                                          <CardContent>
-                                            <div className="text-2xl font-bold">
-                                              ${formatNumber(accountDetails[sub.id]?.totalWalletBalance || "0")}
-                                            </div>
-                                          </CardContent>
-                                        </Card>
-                                        <Card>
-                                          <CardHeader className="pb-2">
-                                            <CardTitle className="text-sm font-medium">Disponible</CardTitle>
-                                          </CardHeader>
-                                          <CardContent>
-                                            <div className="text-2xl font-bold">
-                                              ${formatNumber(accountDetails[sub.id]?.totalAvailableBalance || "0")}
-                                            </div>
-                                          </CardContent>
-                                        </Card>
-                                      </div>
-                                      <div className="mt-6">
-                                        <h4 className="font-medium mb-4">Todos los Assets</h4>
-                                        <Table>
-                                          <TableHeader>
-                                            <TableRow>
-                                              <TableHead>Token</TableHead>
-                                              <TableHead>Balance</TableHead>
-                                              <TableHead>Valor USD</TableHead>
-                                              <TableHead>Disponible</TableHead>
-                                              <TableHead>Estado</TableHead>
-                                            </TableRow>
-                                          </TableHeader>
-                                          <TableBody>
-                                            {accountDetails[sub.id]?.coin.map((coin) => (
-                                              <TableRow key={coin.coin}>
-                                                <TableCell className="font-medium">{coin.coin}</TableCell>
-                                                <TableCell>
-                                                  {formatNumber(coin.walletBalance)} {coin.coin}
-                                                </TableCell>
-                                                <TableCell>${formatNumber(coin.usdValue)}</TableCell>
-                                                <TableCell>
-                                                  {coin.availableToWithdraw
-                                                    ? formatNumber(coin.availableToWithdraw)
-                                                    : formatNumber(coin.walletBalance)}{" "}
-                                                  {coin.coin}
-                                                </TableCell>
-                                                <TableCell>
-                                                  <Badge
-                                                    variant={coin.marginCollateral ? "default" : "outline"}
-                                                    className={
-                                                      coin.marginCollateral
-                                                        ? "bg-green-100 text-green-800 hover:bg-green-100"
-                                                        : ""
-                                                    }
-                                                  >
-                                                    {coin.marginCollateral ? "Colateral" : "Normal"}
-                                                  </Badge>
-                                                </TableCell>
-                                              </TableRow>
-                                            ))}
-                                          </TableBody>
-                                        </Table>
-                                      </div>
-                                    </>
-                                  )}
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  </div>
+                                  <div className="mt-6">
+                                    <h4 className="font-medium mb-4">Todos los Assets</h4>
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead>Token</TableHead>
+                                          <TableHead>Balance</TableHead>
+                                          <TableHead>Valor USD</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        <TableRow>
+                                          <TableCell className="font-medium">BTC</TableCell>
+                                          <TableCell>0.5234 BTC</TableCell>
+                                          <TableCell>$23,456.78</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                          <TableCell className="font-medium">ETH</TableCell>
+                                          <TableCell>4.2156 ETH</TableCell>
+                                          <TableCell>$8,765.43</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                          <TableCell className="font-medium">USDT</TableCell>
+                                          <TableCell>15,234.56 USDT</TableCell>
+                                          <TableCell>$15,234.56</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                          <TableCell className="font-medium">SOL</TableCell>
+                                          <TableCell>125.45 SOL</TableCell>
+                                          <TableCell>$9,876.54</TableCell>
+                                        </TableRow>
+                                      </TableBody>
+                                    </Table>
+                                  </div>
                                 </div>
                               </TabsContent>
                             </Tabs>
