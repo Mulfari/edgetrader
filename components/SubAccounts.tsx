@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { Search, RefreshCw, AlertCircle, ChevronDown, Wallet, ArrowUpDown, Filter } from "lucide-react"
+import { Search, RefreshCw, AlertCircle, ChevronDown, Wallet, ArrowUpDown, Filter, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,6 +23,29 @@ interface SubAccount {
   lastUpdated?: string
 }
 
+interface CoinData {
+  coin: string
+  walletBalance: string
+  usdValue: string
+  equity: string
+  unrealisedPnl: string
+  availableToWithdraw: string
+  locked: string
+  collateralSwitch: boolean
+  marginCollateral: boolean
+}
+
+interface AssetResponse {
+  retCode: number
+  retMsg: string
+  result: {
+    totalEquity: string
+    totalWalletBalance: string
+    totalAvailableBalance: string
+    coin: CoinData[]
+  }
+}
+
 type SortConfig = {
   key: keyof SubAccount
   direction: "asc" | "desc"
@@ -41,6 +64,9 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   const [error, setError] = useState<string | null>(null)
   const [sortConfig, setSortConfig] = useState<SortConfig>(null)
   const [selectedExchange, setSelectedExchange] = useState<string>("all")
+  const [assetData, setAssetData] = useState<AssetResponse | null>(null)
+  const [isLoadingAssets, setIsLoadingAssets] = useState(false)
+  const [assetError, setAssetError] = useState<string | null>(null)
   const router = useRouter()
 
   const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))]
@@ -121,15 +147,56 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
     }
   }
 
+  const fetchAssetData = async (userId: string) => {
+    const token = localStorage.getItem("token")
+    if (!token || !API_URL) {
+      console.error("❌ No hay token para obtener assets")
+      return
+    }
+
+    try {
+      setIsLoadingAssets(true)
+      setAssetError(null)
+
+      const res = await fetch(`${API_URL}/assets/${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!res.ok) {
+        throw new Error(`Error al obtener assets - Código ${res.status}`)
+      }
+
+      const data = await res.json()
+      setAssetData(data)
+    } catch (error) {
+      console.error("❌ Error obteniendo assets:", error)
+      setAssetError("No se pudieron cargar los assets")
+    } finally {
+      setIsLoadingAssets(false)
+    }
+  }
+
   useEffect(() => {
     fetchSubAccounts()
-  }, []) // Solo se ejecuta una vez al montar el componente
+  }, [fetchSubAccounts]) // Solo se ejecuta una vez al montar el componente
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
       setSelectedSubAccountId(null)
+      setAssetData(null) // Limpiar datos de assets al cerrar
     } else {
       setSelectedSubAccountId(sub.id)
+      // No cargamos los assets inmediatamente, solo cuando se selecciona la pestaña
+    }
+  }
+
+  const handleTabChange = (value: string, userId: string) => {
+    if (value === "assets" && !assetData) {
+      fetchAssetData(userId)
     }
   }
 
@@ -166,6 +233,12 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         account.exchange.toLowerCase().includes(searchTerm.toLowerCase())),
   )
+
+  // Función para formatear números con separadores de miles
+  const formatNumber = (value: string | number) => {
+    const num = typeof value === "string" ? Number.parseFloat(value) : value
+    return num.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 8 })
+  }
 
   return (
     <Card className="w-full">
@@ -294,6 +367,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                           <div className="flex items-center gap-2">
                             <Wallet className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">{accountBalances[sub.id]?.toFixed(2)} USDT</span>
+                            <span className="font-medium">{accountBalances[sub.id]?.toFixed(2)} USDT</span>
                           </div>
                         ) : (
                           "-"
@@ -314,7 +388,11 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                       <TableRow key={`${sub.id}-details`}>
                         <TableCell colSpan={5}>
                           <div className="p-6 bg-muted/50 rounded-lg space-y-6">
-                            <Tabs defaultValue="overview" className="w-full">
+                            <Tabs
+                              defaultValue="overview"
+                              className="w-full"
+                              onValueChange={(value) => handleTabChange(value, sub.userId)}
+                            >
                               <TabsList>
                                 <TabsTrigger value="overview">Vista General</TabsTrigger>
                                 <TabsTrigger value="assets">Assets</TabsTrigger>
@@ -355,42 +433,110 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                               </TabsContent>
                               <TabsContent value="assets">
                                 <div className="space-y-4">
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                  </div>
-                                  <div className="mt-6">
-                                    <h4 className="font-medium mb-4">Todos los Assets</h4>
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow>
-                                          <TableHead>Token</TableHead>
-                                          <TableHead>Balance</TableHead>
-                                          <TableHead>Valor USD</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        <TableRow>
-                                          <TableCell className="font-medium">BTC</TableCell>
-                                          <TableCell>0.5234 BTC</TableCell>
-                                          <TableCell>$23,456.78</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                          <TableCell className="font-medium">ETH</TableCell>
-                                          <TableCell>4.2156 ETH</TableCell>
-                                          <TableCell>$8,765.43</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                          <TableCell className="font-medium">USDT</TableCell>
-                                          <TableCell>15,234.56 USDT</TableCell>
-                                          <TableCell>$15,234.56</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                          <TableCell className="font-medium">SOL</TableCell>
-                                          <TableCell>125.45 SOL</TableCell>
-                                          <TableCell>$9,876.54</TableCell>
-                                        </TableRow>
-                                      </TableBody>
-                                    </Table>
-                                  </div>
+                                  {assetError && (
+                                    <div className="flex items-center gap-2 p-4 mb-4 text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg">
+                                      <AlertCircle className="h-5 w-5" />
+                                      <p className="text-sm font-medium">{assetError}</p>
+                                    </div>
+                                  )}
+
+                                  {isLoadingAssets ? (
+                                    <div className="flex justify-center items-center py-12">
+                                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                      <span className="ml-2 text-sm text-muted-foreground">Cargando assets...</span>
+                                    </div>
+                                  ) : assetData ? (
+                                    <>
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <Card>
+                                          <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium">Equity Total</CardTitle>
+                                          </CardHeader>
+                                          <CardContent>
+                                            <div className="text-2xl font-bold">
+                                              ${formatNumber(assetData.result.totalEquity)}
+                                            </div>
+                                          </CardContent>
+                                        </Card>
+                                        <Card>
+                                          <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
+                                          </CardHeader>
+                                          <CardContent>
+                                            <div className="text-2xl font-bold">
+                                              ${formatNumber(assetData.result.totalWalletBalance)}
+                                            </div>
+                                          </CardContent>
+                                        </Card>
+                                        <Card>
+                                          <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium">Disponible</CardTitle>
+                                          </CardHeader>
+                                          <CardContent>
+                                            <div className="text-2xl font-bold">
+                                              ${formatNumber(assetData.result.totalAvailableBalance)}
+                                            </div>
+                                          </CardContent>
+                                        </Card>
+                                      </div>
+                                      <div className="mt-6">
+                                        <h4 className="font-medium mb-4">Todos los Assets</h4>
+                                        <Table>
+                                          <TableHeader>
+                                            <TableRow>
+                                              <TableHead>Token</TableHead>
+                                              <TableHead>Balance</TableHead>
+                                              <TableHead>Valor USD</TableHead>
+                                              <TableHead>Disponible</TableHead>
+                                              <TableHead>Estado</TableHead>
+                                            </TableRow>
+                                          </TableHeader>
+                                          <TableBody>
+                                            {assetData.result.coin.map((coin) => (
+                                              <TableRow key={coin.coin}>
+                                                <TableCell className="font-medium">{coin.coin}</TableCell>
+                                                <TableCell>
+                                                  {formatNumber(coin.walletBalance)} {coin.coin}
+                                                </TableCell>
+                                                <TableCell>${formatNumber(coin.usdValue)}</TableCell>
+                                                <TableCell>
+                                                  {coin.availableToWithdraw
+                                                    ? formatNumber(coin.availableToWithdraw)
+                                                    : formatNumber(coin.walletBalance)}{" "}
+                                                  {coin.coin}
+                                                </TableCell>
+                                                <TableCell>
+                                                  <Badge
+                                                    variant={coin.marginCollateral ? "default" : "outline"}
+                                                    className={
+                                                      coin.marginCollateral
+                                                        ? "bg-green-100 text-green-800 hover:bg-green-100"
+                                                        : ""
+                                                    }
+                                                  >
+                                                    {coin.marginCollateral ? "Colateral" : "Normal"}
+                                                  </Badge>
+                                                </TableCell>
+                                              </TableRow>
+                                            ))}
+                                          </TableBody>
+                                        </Table>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                                      <AlertCircle className="h-12 w-12 mb-3" />
+                                      <p className="text-sm font-medium mb-2">No hay datos de assets disponibles</p>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => fetchAssetData(sub.userId)}
+                                        className="mt-2"
+                                      >
+                                        Cargar Assets
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
                               </TabsContent>
                             </Tabs>
