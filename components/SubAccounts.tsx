@@ -23,43 +23,6 @@ interface SubAccount {
   lastUpdated?: string
 }
 
-// Define the structure for API account details response
-interface CoinData {
-  locked?: string
-  availableToBorrow?: string
-  marginCollateral?: boolean
-  bonus?: string
-  coin?: string
-  accruedInterest?: string
-  availableToWithdraw?: string
-  walletBalance?: string
-  usdValue?: string
-  equity?: string
-}
-
-interface AccountDetailsResponse {
-  retCode: number
-  retMsg: string
-  result: {
-    list: Array<{
-      totalEquity: string
-      accountIMRate: string
-      totalMarginBalance: string
-      totalPositionMM: string
-      totalInitialMargin: string
-      accountType: string
-      totalAvailableBalance: string
-      accountMMRate: string
-      totalPerpUPL: string
-      totalWalletBalance: string
-      accountLTV: string
-      totalPositionIM: string
-      totalMaintenanceMargin: string
-      coin: CoinData[]
-    }>
-  }
-}
-
 type SortConfig = {
   key: keyof SubAccount
   direction: "asc" | "desc"
@@ -73,7 +36,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
   const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null)
   const [accountBalances, setAccountBalances] = useState<Record<string, number | null>>({})
-  const [accountAssets, setAccountAssets] = useState<Record<string, CoinData[]>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -115,23 +77,17 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
       // Fetch account details for each subaccount
       const balances: Record<string, number | null> = {}
-      const assets: Record<string, CoinData[]> = {}
       let totalBalance = 0
       await Promise.all(
         data.map(async (sub: SubAccount) => {
-          const accountData = await fetchAccountDetails(sub.userId, token)
-          if (accountData) {
-            balances[sub.id] = Number.parseFloat(accountData.totalWalletBalance || "0")
-            assets[sub.id] = accountData.coin || []
-
-            if (balances[sub.id] !== null) {
-              totalBalance += balances[sub.id] || 0
-            }
+          const balance = await fetchAccountDetails(sub.userId, token)
+          balances[sub.id] = balance
+          if (balance !== null) {
+            totalBalance += balance
           }
         }),
       )
       setAccountBalances(balances)
-      setAccountAssets(assets)
       if (onBalanceUpdate) {
         onBalanceUpdate(totalBalance)
       }
@@ -157,14 +113,8 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
       if (!res.ok) throw new Error("Error al obtener detalles de la cuenta")
 
-      const data = (await res.json()) as AccountDetailsResponse
-
-      // Check if data is in the expected format
-      if (data.retCode === 0 && data.result?.list?.length > 0) {
-        return data.result.list[0]
-      }
-
-      return null
+      const data = await res.json()
+      return typeof data.balance === "number" ? data.balance : 0
     } catch (error) {
       console.error("❌ Error obteniendo detalles de la cuenta:", error)
       return null
@@ -173,7 +123,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
   useEffect(() => {
     fetchSubAccounts()
-  }, [fetchSubAccounts]) // Solo se ejecuta una vez al montar el componente
+  }, []) // Solo se ejecuta una vez al montar el componente
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
@@ -406,47 +356,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                               <TabsContent value="assets">
                                 <div className="space-y-4">
                                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <Card>
-                                      <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm font-medium">Total Equity</CardTitle>
-                                      </CardHeader>
-                                      <CardContent>
-                                        <div className="text-2xl font-bold">
-                                          {accountAssets[sub.id]?.length > 0
-                                            ? Number.parseFloat(accountAssets[sub.id][0]?.equity || "0").toFixed(2)
-                                            : "0.00"}{" "}
-                                          USDT
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-                                    <Card>
-                                      <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm font-medium">Wallet Balance</CardTitle>
-                                      </CardHeader>
-                                      <CardContent>
-                                        <div className="text-2xl font-bold">
-                                          {accountAssets[sub.id]?.length > 0
-                                            ? Number.parseFloat(accountAssets[sub.id][0]?.walletBalance || "0").toFixed(
-                                                2,
-                                              )
-                                            : "0.00"}{" "}
-                                          USDT
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-                                    <Card>
-                                      <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm font-medium">USD Value</CardTitle>
-                                      </CardHeader>
-                                      <CardContent>
-                                        <div className="text-2xl font-bold">
-                                          {accountAssets[sub.id]?.length > 0
-                                            ? Number.parseFloat(accountAssets[sub.id][0]?.usdValue || "0").toFixed(2)
-                                            : "0.00"}{" "}
-                                          $
-                                        </div>
-                                      </CardContent>
-                                    </Card>
                                   </div>
                                   <div className="mt-6">
                                     <h4 className="font-medium mb-4">Todos los Assets</h4>
@@ -455,30 +364,30 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                         <TableRow>
                                           <TableHead>Token</TableHead>
                                           <TableHead>Balance</TableHead>
-                                          <TableHead>Disponible</TableHead>
+                                          <TableHead>Valor USD</TableHead>
                                         </TableRow>
                                       </TableHeader>
                                       <TableBody>
-                                        {accountAssets[sub.id] && accountAssets[sub.id].length > 0 ? (
-                                          accountAssets[sub.id].map((asset, index) => (
-                                            <TableRow key={`${asset.coin}-${index}`}>
-                                              <TableCell className="font-medium">{asset.coin || "Unknown"}</TableCell>
-                                              <TableCell>
-                                                {Number.parseFloat(asset.walletBalance || "0").toFixed(8)}
-                                              </TableCell>
-                                              <TableCell>{asset.availableToBorrow || "N/A"}</TableCell>
-                                            </TableRow>
-                                          ))
-                                        ) : (
-                                          <TableRow>
-                                            <TableCell colSpan={3} className="text-center py-4">
-                                              <div className="flex flex-col items-center justify-center text-muted-foreground">
-                                                <AlertCircle className="h-8 w-8 mb-2" />
-                                                <p>No hay información de assets disponible</p>
-                                              </div>
-                                            </TableCell>
-                                          </TableRow>
-                                        )}
+                                        <TableRow>
+                                          <TableCell className="font-medium">BTC</TableCell>
+                                          <TableCell>0.5234 BTC</TableCell>
+                                          <TableCell>$23,456.78</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                          <TableCell className="font-medium">ETH</TableCell>
+                                          <TableCell>4.2156 ETH</TableCell>
+                                          <TableCell>$8,765.43</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                          <TableCell className="font-medium">USDT</TableCell>
+                                          <TableCell>15,234.56 USDT</TableCell>
+                                          <TableCell>$15,234.56</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                          <TableCell className="font-medium">SOL</TableCell>
+                                          <TableCell>125.45 SOL</TableCell>
+                                          <TableCell>$9,876.54</TableCell>
+                                        </TableRow>
                                       </TableBody>
                                     </Table>
                                   </div>
