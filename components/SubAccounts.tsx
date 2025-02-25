@@ -137,7 +137,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       // Fetch account details for each subaccount
       const balances: Record<string, number | null> = {};
       let totalBalance = 0;
-      await Promise.all(
+      const updatedSubAccounts = await Promise.all(
         data.map(async (sub: SubAccount) => {
           const details = await fetchAccountDetails(sub.userId, token);
           balances[sub.id] = details.balance;
@@ -145,8 +145,10 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
           if (details.balance !== null) {
             totalBalance += details.balance;
           }
+          return sub;
         })
       );
+      setSubAccounts(updatedSubAccounts);
       setAccountBalances(balances);
       if (onBalanceUpdate) {
         onBalanceUpdate(totalBalance);
