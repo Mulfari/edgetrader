@@ -139,15 +139,16 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       let totalBalance = 0;
       const updatedSubAccounts = await Promise.all(
         data.map(async (sub: SubAccount) => {
-          const details = await fetchAccountDetails(sub.userId, token);
+          console.log("Solicitando balance para:", sub.id); // 🛠 Agrega un log para depuración
+          const details = await fetchAccountDetails(sub.id, token); // ✅ CORRECTO
           balances[sub.id] = details.balance;
           sub.assets = details.assets;
           if (details.balance !== null) {
             totalBalance += details.balance;
           }
-          return sub;
         })
       );
+      
       setSubAccounts(updatedSubAccounts);
       setAccountBalances(balances);
       if (onBalanceUpdate) {
