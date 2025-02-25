@@ -1,106 +1,115 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useCallback } from "react"
-import { Search, RefreshCw, AlertCircle, ChevronDown, Wallet, ArrowUpDown, Filter } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useEffect, useState, useCallback } from "react";
+import {
+  Search,
+  RefreshCw,
+  AlertCircle,
+  ChevronDown,
+  Wallet,
+  ArrowUpDown,
+  Filter,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface SubAccount {
-  id: string
-  userId: string
-  name: string
-  exchange: string
-  balance?: number
-  lastUpdated?: string
+  id: string;
+  userId: string;
+  name: string;
+  exchange: string;
+  balance?: number;
+  lastUpdated?: string;
 }
 
 type SortConfig = {
-  key: keyof SubAccount
-  direction: "asc" | "desc"
-} | null
+  key: keyof SubAccount;
+  direction: "asc" | "desc";
+} | null;
 
 interface SubAccountsProps {
-  onBalanceUpdate?: (totalBalance: number) => void
+  onBalanceUpdate?: (totalBalance: number) => void;
 }
 
 export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
-  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
-  const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null)
-  const [accountBalances, setAccountBalances] = useState<Record<string, number | null>>({})
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [sortConfig, setSortConfig] = useState<SortConfig>(null)
-  const [selectedExchange, setSelectedExchange] = useState<string>("all")
-  const router = useRouter()
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
+  const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null);
+  const [accountBalances, setAccountBalances] = useState<Record<string, number | null>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+  const [selectedExchange, setSelectedExchange] = useState<string>("all");
+  const router = useRouter();
 
-  const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))]
+  const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))];
 
   const fetchSubAccounts = useCallback(async () => {
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("token");
     if (!token) {
-      console.error("❌ No hay token, redirigiendo a login.")
-      router.push("/login")
-      return
+      console.error("❌ No hay token, redirigiendo a login.");
+      router.push("/login");
+      return;
     }
 
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       const res = await fetch(`${API_URL}/subaccounts`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-      })
+      });
 
       if (!res.ok) {
         if (res.status === 401) {
-          console.error("❌ Token inválido, redirigiendo a login.")
-          localStorage.removeItem("token")
-          router.push("/login")
+          console.error("❌ Token inválido, redirigiendo a login.");
+          localStorage.removeItem("token");
+          router.push("/login");
         }
-        throw new Error(`Error al obtener subcuentas - Código ${res.status}`)
+        throw new Error(`Error al obtener subcuentas - Código ${res.status}`);
       }
 
-      const data = await res.json()
-      setSubAccounts(data)
+      const data = await res.json();
+      console.log("Respuesta del backend:", data); // Mostrar toda la respuesta en la consola
+      setSubAccounts(data);
 
       // Fetch account details for each subaccount
-      const balances: Record<string, number | null> = {}
-      let totalBalance = 0
+      const balances: Record<string, number | null> = {};
+      let totalBalance = 0;
       await Promise.all(
         data.map(async (sub: SubAccount) => {
-          const balance = await fetchAccountDetails(sub.userId, token)
-          balances[sub.id] = balance
+          const balance = await fetchAccountDetails(sub.userId, token);
+          balances[sub.id] = balance;
           if (balance !== null) {
-            totalBalance += balance
+            totalBalance += balance;
           }
-        }),
-      )
-      setAccountBalances(balances)
+        })
+      );
+      setAccountBalances(balances);
       if (onBalanceUpdate) {
-        onBalanceUpdate(totalBalance)
+        onBalanceUpdate(totalBalance);
       }
     } catch (error) {
-      console.error("❌ Error obteniendo subcuentas:", error)
-      setError("No se pudieron cargar las subcuentas")
+      console.error("❌ Error obteniendo subcuentas:", error);
+      setError("No se pudieron cargar las subcuentas");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [router, onBalanceUpdate])
+  }, [router, onBalanceUpdate]);
 
   const fetchAccountDetails = async (userId: string, token: string) => {
-    if (!API_URL || !userId || !token) return null
+    if (!API_URL || !userId || !token) return null;
 
     try {
       const res = await fetch(`${API_URL}/account-details/${userId}`, {
@@ -109,63 +118,63 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-      })
+      });
 
-      if (!res.ok) throw new Error("Error al obtener detalles de la cuenta")
+      if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
 
-      const data = await res.json()
-      return typeof data.balance === "number" ? data.balance : 0
+      const data = await res.json();
+      return typeof data.balance === "number" ? data.balance : 0;
     } catch (error) {
-      console.error("❌ Error obteniendo detalles de la cuenta:", error)
-      return null
+      console.error("❌ Error obteniendo detalles de la cuenta:", error);
+      return null;
     }
-  }
+  };
 
   useEffect(() => {
-    fetchSubAccounts()
-  }, []) // Solo se ejecuta una vez al montar el componente
+    fetchSubAccounts();
+  }, [fetchSubAccounts]); // Solo se ejecuta una vez al montar el componente
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
-      setSelectedSubAccountId(null)
+      setSelectedSubAccountId(null);
     } else {
-      setSelectedSubAccountId(sub.id)
+      setSelectedSubAccountId(sub.id);
     }
-  }
+  };
 
   const handleSort = (key: keyof SubAccount) => {
     setSortConfig((current) => {
       if (current?.key === key) {
         if (current.direction === "asc") {
-          return { key, direction: "desc" }
+          return { key, direction: "desc" };
         }
-        return null
+        return null;
       }
-      return { key, direction: "asc" }
-    })
-  }
+      return { key, direction: "asc" };
+    });
+  };
 
   const sortedAccounts = [...subAccounts].sort((a, b) => {
-    if (!sortConfig) return 0
+    if (!sortConfig) return 0;
 
-    const aValue = a[sortConfig.key]
-    const bValue = b[sortConfig.key]
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
 
-    if (aValue === undefined || bValue === undefined) return 0
+    if (aValue === undefined || bValue === undefined) return 0;
 
     if (sortConfig.direction === "asc") {
-      return aValue < bValue ? -1 : 1
+      return aValue < bValue ? -1 : 1;
     } else {
-      return aValue > bValue ? -1 : 1
+      return aValue > bValue ? -1 : 1;
     }
-  })
+  });
 
   const filteredAccounts = sortedAccounts.filter(
     (account) =>
       (selectedExchange === "all" || account.exchange === selectedExchange) &&
       (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        account.exchange.toLowerCase().includes(searchTerm.toLowerCase())),
-  )
+        account.exchange.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   return (
     <Card className="w-full">
@@ -406,6 +415,5 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-
