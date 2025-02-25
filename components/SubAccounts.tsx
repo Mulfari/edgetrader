@@ -73,6 +73,36 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
   const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))];
 
+  const fetchAccountDetails = useCallback(async (userId: string, token: string) => {
+    if (!API_URL || !userId || !token) return { balance: null, assets: [] };
+
+    try {
+      const res = await fetch(`${API_URL}/account-details/${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
+
+      const data: AccountDetailsResponse = await res.json();
+      console.log("Detalles de la cuenta:", data); // Mostrar toda la respuesta en la consola
+      return {
+        balance: parseFloat(data.result.list?.[0]?.totalEquity ?? "0"),
+        assets: data.result.list?.[0]?.coin.map((coin) => ({
+          coin: coin.coin,
+          walletBalance: parseFloat(coin.walletBalance),
+          usdValue: parseFloat(coin.usdValue),
+        })) || [],
+      };
+    } catch (error) {
+      console.error("❌ Error obteniendo detalles de la cuenta:", error);
+      return { balance: null, assets: [] };
+    }
+  }, []);
+
   const fetchSubAccounts = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -127,37 +157,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [router, onBalanceUpdate]);
-
-  const fetchAccountDetails = useCallback(async (userId: string, token: string) => {
-    if (!API_URL || !userId || !token) return { balance: null, assets: [] };
-
-    try {
-      const res = await fetch(`${API_URL}/account-details/${userId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
-
-      const data: AccountDetailsResponse = await res.json();
-      console.log("Detalles de la cuenta:", data); // Mostrar toda la respuesta en la consola
-      return {
-        balance: parseFloat(data.result.list?.[0]?.totalEquity ?? "0"),
-        assets: data.result.list?.[0]?.coin.map((coin) => ({
-          coin: coin.coin,
-          walletBalance: parseFloat(coin.walletBalance),
-          usdValue: parseFloat(coin.usdValue),
-        })) || [],
-      };
-    } catch (error) {
-      console.error("❌ Error obteniendo detalles de la cuenta:", error);
-      return { balance: null, assets: [] };
-    }
-  }, []);
+  }, [fetchAccountDetails, router, onBalanceUpdate]);
 
   useEffect(() => {
     fetchSubAccounts();
