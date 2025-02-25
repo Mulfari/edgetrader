@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { Search, RefreshCw, AlertCircle, ChevronDown, Wallet, ArrowUpDown, Filter, Loader2 } from "lucide-react"
+import { Search, RefreshCw, AlertCircle, ChevronDown, Wallet, ArrowUpDown, Filter } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -33,48 +33,36 @@ interface CoinData {
   locked: string
   collateralSwitch: boolean
   marginCollateral: boolean
+  totalOrderIM: string
+  totalPositionMM: string
+  bonus: string
+  accruedInterest: string
+  spotHedgingQty: string
+  borrowAmount: string
+  totalPositionIM: string
+  cumRealisedPnl: string
 }
 
-// Modificar la interfaz para los detalles de la cuenta para incluir la estructura completa
-interface AccountDetailsResponse {
-  balance?: number
+interface AccountData {
+  totalEquity: string
+  accountIMRate: string
+  totalMarginBalance: string
+  totalInitialMargin: string
+  accountType: string
+  totalAvailableBalance: string
+  accountMMRate: string
+  totalPerpUPL: string
+  totalWalletBalance: string
+  accountLTV: string
+  totalMaintenanceMargin: string
+  coin: CoinData[]
+}
+
+interface AccountResponse {
   retCode: number
   retMsg: string
   result: {
-    list: [
-      {
-        totalEquity: string
-        accountIMRate: string
-        totalMarginBalance: string
-        totalInitialMargin: string
-        accountType: string
-        totalAvailableBalance: string
-        accountMMRate: string
-        totalPerpUPL: string
-        totalWalletBalance: string
-        accountLTV: string
-        totalMaintenanceMargin: string
-        coin: CoinData[]
-      },
-    ]
-  }
-}
-
-// Modificar la interfaz AssetResponse para que coincida con la estructura real de la respuesta
-interface AssetResponse {
-  retCode: number
-  retMsg: string
-  result: {
-    list: [
-      {
-        totalEquity: string
-        totalWalletBalance: string
-        totalAvailableBalance: string
-        totalMarginBalance: string
-        accountType: string
-        coin: CoinData[]
-      },
-    ]
+    list: AccountData[]
   }
 }
 
@@ -96,12 +84,8 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   const [error, setError] = useState<string | null>(null)
   const [sortConfig, setSortConfig] = useState<SortConfig>(null)
   const [selectedExchange, setSelectedExchange] = useState<string>("all")
-  const [assetData, setAssetData] = useState<AssetResponse | null>(null)
-  const [isLoadingAssets, setIsLoadingAssets] = useState(false)
-  const [assetError, setAssetError] = useState<string | null>(null)
+  const [accountDetails, setAccountDetails] = useState<Record<string, AccountData | null>>({})
   const router = useRouter()
-  // Modificar el estado para almacenar la respuesta completa
-  const [accountDetails, setAccountDetails] = useState<Record<string, AccountDetailsResponse | null>>({})
 
   const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))]
 
@@ -135,34 +119,34 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       const data = await res.json()
       setSubAccounts(data)
 
-      // Modificar la parte del fetchSubAccounts que procesa los detalles de la cuenta
-      // Dentro de la función fetchSubAccounts, reemplazar la parte que obtiene los balances:
-      const accountDetailsData: Record<string, AccountDetailsResponse | null> = {}
+      // Fetch account details for each subaccount
       const balances: Record<string, number | null> = {}
+      const details: Record<string, AccountData | null> = {}
       let totalBalance = 0
 
       await Promise.all(
         data.map(async (sub: SubAccount) => {
-          const details = await fetchAccountDetails(sub.userId, token)
-          accountDetailsData[sub.id] = details
+          const accountData = await fetchAccountDetails(sub.userId, token)
 
-          // Extraer el balance para mantener la funcionalidad existente
-          let balance = null
-          if (details && details.balance) {
-            balance = details.balance
-          } else if (details && details.result && details.result.list && details.result.list[0]) {
-            balance = Number.parseFloat(details.result.list[0].totalWalletBalance)
-          }
+          if (accountData) {
+            // Calcular balance total de la cuenta (convertido a número)
+            const balance = Number.parseFloat(accountData.totalEquity) || 0
+            balances[sub.id] = balance
+            details[sub.id] = accountData
 
-          balances[sub.id] = balance
-          if (balance !== null) {
-            totalBalance += balance
+            if (balance) {
+              totalBalance += balance
+            }
+          } else {
+            balances[sub.id] = null
+            details[sub.id] = null
           }
         }),
       )
 
-      setAccountDetails(accountDetailsData)
       setAccountBalances(balances)
+      setAccountDetails(details)
+
       if (onBalanceUpdate) {
         onBalanceUpdate(totalBalance)
       }
@@ -174,8 +158,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
     }
   }, [router, onBalanceUpdate])
 
-  // Modificar la función fetchAccountDetails para guardar la respuesta completa
-  const fetchAccountDetails = async (userId: string, token: string) => {
+  const fetchAccountDetails = async (userId: string, token: string): Promise<AccountData | null> => {
     if (!API_URL || !userId || !token) return null
 
     try {
@@ -189,15 +172,19 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
       if (!res.ok) throw new Error("Error al obtener detalles de la cuenta")
 
-      const data = await res.json()
-      return data
+      const data: AccountResponse = await res.json()
+
+      // Verificar si la respuesta es válida y contiene los datos esperados
+      if (data.retCode === 0 && data.result && data.result.list && data.result.list.length > 0) {
+        return data.result.list[0]
+      }
+
+      return null
     } catch (error) {
       console.error("❌ Error obteniendo detalles de la cuenta:", error)
       return null
     }
   }
-
-  // Eliminar la función fetchAssetData ya que no es necesaria
 
   useEffect(() => {
     fetchSubAccounts()
@@ -206,17 +193,9 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
       setSelectedSubAccountId(null)
-      setAssetData(null) // Limpiar datos de assets al cerrar
     } else {
       setSelectedSubAccountId(sub.id)
-      // No cargamos los assets inmediatamente, solo cuando se selecciona la pestaña
     }
-  }
-
-  // Modificar el handleTabChange para no necesitar fetchAssetData
-  const handleTabChange = (value: string, userId: string) => {
-    // No necesitamos hacer nada especial al cambiar a la pestaña de assets
-    // ya que los datos ya están cargados
   }
 
   const handleSort = (key: keyof SubAccount) => {
@@ -386,7 +365,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                           <div className="flex items-center gap-2">
                             <Wallet className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">{accountBalances[sub.id]?.toFixed(2)} USDT</span>
-                            <span className="font-medium">{accountBalances[sub.id]?.toFixed(2)} USDT</span>
                           </div>
                         ) : (
                           "-"
@@ -407,11 +385,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                       <TableRow key={`${sub.id}-details`}>
                         <TableCell colSpan={5}>
                           <div className="p-6 bg-muted/50 rounded-lg space-y-6">
-                            <Tabs
-                              defaultValue="overview"
-                              className="w-full"
-                              onValueChange={(value) => handleTabChange(value, sub.userId)}
-                            >
+                            <Tabs defaultValue="overview" className="w-full">
                               <TabsList>
                                 <TabsTrigger value="overview">Vista General</TabsTrigger>
                                 <TabsTrigger value="assets">Assets</TabsTrigger>
@@ -452,19 +426,16 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                               </TabsContent>
                               <TabsContent value="assets">
                                 <div className="space-y-4">
-                                  {assetError && (
-                                    <div className="flex items-center gap-2 p-4 mb-4 text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg">
-                                      <AlertCircle className="h-5 w-5" />
-                                      <p className="text-sm font-medium">{assetError}</p>
+                                  {!accountDetails[sub.id] ? (
+                                    <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                                      <AlertCircle className="h-12 w-12 mb-3" />
+                                      <p className="text-sm font-medium mb-2">No hay datos de assets disponibles</p>
+                                      <Button variant="outline" size="sm" onClick={fetchSubAccounts} className="mt-2">
+                                        <RefreshCw className="mr-2 h-4 w-4" />
+                                        Actualizar datos
+                                      </Button>
                                     </div>
-                                  )}
-
-                                  {isLoadingAssets ? (
-                                    <div className="flex justify-center items-center py-12">
-                                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                      <span className="ml-2 text-sm text-muted-foreground">Cargando assets...</span>
-                                    </div>
-                                  ) : assetData ? (
+                                  ) : (
                                     <>
                                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <Card>
@@ -473,7 +444,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                           </CardHeader>
                                           <CardContent>
                                             <div className="text-2xl font-bold">
-                                              ${formatNumber(assetData.result.list[0].totalEquity)}
+                                              ${formatNumber(accountDetails[sub.id]?.totalEquity || "0")}
                                             </div>
                                           </CardContent>
                                         </Card>
@@ -483,7 +454,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                           </CardHeader>
                                           <CardContent>
                                             <div className="text-2xl font-bold">
-                                              ${formatNumber(assetData.result.list[0].totalWalletBalance)}
+                                              ${formatNumber(accountDetails[sub.id]?.totalWalletBalance || "0")}
                                             </div>
                                           </CardContent>
                                         </Card>
@@ -493,7 +464,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                           </CardHeader>
                                           <CardContent>
                                             <div className="text-2xl font-bold">
-                                              ${formatNumber(assetData.result.list[0].totalAvailableBalance)}
+                                              ${formatNumber(accountDetails[sub.id]?.totalAvailableBalance || "0")}
                                             </div>
                                           </CardContent>
                                         </Card>
@@ -511,7 +482,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                             </TableRow>
                                           </TableHeader>
                                           <TableBody>
-                                            {assetData.result.list[0].coin.map((coin) => (
+                                            {accountDetails[sub.id]?.coin.map((coin) => (
                                               <TableRow key={coin.coin}>
                                                 <TableCell className="font-medium">{coin.coin}</TableCell>
                                                 <TableCell>
@@ -542,11 +513,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                         </Table>
                                       </div>
                                     </>
-                                  ) : (
-                                    <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-                                      <AlertCircle className="h-12 w-12 mb-3" />
-                                      <p className="text-sm font-medium mb-2">No hay datos de assets disponibles</p>
-                                    </div>
                                   )}
                                 </div>
                               </TabsContent>
