@@ -24,7 +24,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface Asset {
   coin: string;
-  balance: number;
+  walletBalance: number;
   usdValue: number;
 }
 
@@ -134,7 +134,11 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       console.log("Detalles de la cuenta:", data); // Mostrar toda la respuesta en la consola
       return {
         balance: parseFloat(data.result.list?.[0]?.totalEquity ?? "0"),
-        assets: data.result.list?.[0]?.coin || [],
+        assets: data.result.list?.[0]?.coin.map((coin: any) => ({
+          coin: coin.coin,
+          walletBalance: parseFloat(coin.walletBalance),
+          usdValue: parseFloat(coin.usdValue),
+        })) || [],
       };
     } catch (error) {
       console.error("❌ Error obteniendo detalles de la cuenta:", error);
@@ -392,7 +396,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                         {sub.assets?.map((asset) => (
                                           <TableRow key={asset.coin}>
                                             <TableCell className="font-medium">{asset.coin}</TableCell>
-                                            <TableCell>{asset.balance} {asset.coin}</TableCell>
+                                            <TableCell>{asset.walletBalance} {asset.coin}</TableCell>
                                             <TableCell>${asset.usdValue}</TableCell>
                                           </TableRow>
                                         ))}
