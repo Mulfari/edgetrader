@@ -38,6 +38,19 @@ interface SubAccount {
   assets?: Asset[];
 }
 
+interface AccountDetailsResponse {
+  result: {
+    list: {
+      totalEquity: string;
+      coin: {
+        coin: string;
+        walletBalance: string;
+        usdValue: string;
+      }[];
+    }[];
+  };
+}
+
 type SortConfig = {
   key: keyof SubAccount;
   direction: "asc" | "desc";
@@ -130,11 +143,11 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
       if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
 
-      const data = await res.json();
+      const data: AccountDetailsResponse = await res.json();
       console.log("Detalles de la cuenta:", data); // Mostrar toda la respuesta en la consola
       return {
         balance: parseFloat(data.result.list?.[0]?.totalEquity ?? "0"),
-        assets: data.result.list?.[0]?.coin.map((coin: any) => ({
+        assets: data.result.list?.[0]?.coin.map((coin) => ({
           coin: coin.coin,
           walletBalance: parseFloat(coin.walletBalance),
           usdValue: parseFloat(coin.usdValue),
