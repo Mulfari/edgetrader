@@ -89,10 +89,10 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       let totalBalance = 0;
       await Promise.all(
         data.map(async (sub: SubAccount) => {
-          const balance = await fetchAccountDetails(sub.userId, token);
-          balances[sub.id] = balance;
-          if (balance !== null) {
-            totalBalance += balance;
+          const details = await fetchAccountDetails(sub.userId, token);
+          balances[sub.id] = details.balance;
+          if (details.balance !== null) {
+            totalBalance += details.balance;
           }
         })
       );
@@ -109,7 +109,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   }, [router, onBalanceUpdate]);
 
   const fetchAccountDetails = async (userId: string, token: string) => {
-    if (!API_URL || !userId || !token) return null;
+    if (!API_URL || !userId || !token) return { balance: null, assets: [] };
 
     try {
       const res = await fetch(`${API_URL}/account-details/${userId}`, {
@@ -123,10 +123,14 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
 
       const data = await res.json();
-      return typeof data.balance === "number" ? data.balance : 0;
+      console.log("Detalles de la cuenta:", data); // Mostrar toda la respuesta en la consola
+      return {
+        balance: typeof data.balance === "number" ? data.balance : 0,
+        assets: data.assets || [],
+      };
     } catch (error) {
       console.error("❌ Error obteniendo detalles de la cuenta:", error);
-      return null;
+      return { balance: null, assets: [] };
     }
   };
 
