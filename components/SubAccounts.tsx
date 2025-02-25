@@ -35,14 +35,21 @@ interface CoinData {
   marginCollateral: boolean
 }
 
+// Modificar la interfaz AssetResponse para que coincida con la estructura real de la respuesta
 interface AssetResponse {
   retCode: number
   retMsg: string
   result: {
-    totalEquity: string
-    totalWalletBalance: string
-    totalAvailableBalance: string
-    coin: CoinData[]
+    list: [
+      {
+        totalEquity: string
+        totalWalletBalance: string
+        totalAvailableBalance: string
+        totalMarginBalance: string
+        accountType: string
+        coin: CoinData[]
+      },
+    ]
   }
 }
 
@@ -147,6 +154,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
     }
   }
 
+  // Modificar la función fetchAssetData para usar el endpoint correcto
   const fetchAssetData = async (userId: string) => {
     const token = localStorage.getItem("token")
     if (!token || !API_URL) {
@@ -158,7 +166,8 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       setIsLoadingAssets(true)
       setAssetError(null)
 
-      const res = await fetch(`${API_URL}/assets/${userId}`, {
+      // Usar el endpoint que devuelve la información de assets
+      const res = await fetch(`${API_URL}/wallet/${userId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -454,7 +463,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                           </CardHeader>
                                           <CardContent>
                                             <div className="text-2xl font-bold">
-                                              ${formatNumber(assetData.result.totalEquity)}
+                                              ${formatNumber(assetData.result.list[0].totalEquity)}
                                             </div>
                                           </CardContent>
                                         </Card>
@@ -464,7 +473,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                           </CardHeader>
                                           <CardContent>
                                             <div className="text-2xl font-bold">
-                                              ${formatNumber(assetData.result.totalWalletBalance)}
+                                              ${formatNumber(assetData.result.list[0].totalWalletBalance)}
                                             </div>
                                           </CardContent>
                                         </Card>
@@ -474,7 +483,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                           </CardHeader>
                                           <CardContent>
                                             <div className="text-2xl font-bold">
-                                              ${formatNumber(assetData.result.totalAvailableBalance)}
+                                              ${formatNumber(assetData.result.list[0].totalAvailableBalance)}
                                             </div>
                                           </CardContent>
                                         </Card>
@@ -492,7 +501,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                             </TableRow>
                                           </TableHeader>
                                           <TableBody>
-                                            {assetData.result.coin.map((coin) => (
+                                            {assetData.result.list[0].coin.map((coin) => (
                                               <TableRow key={coin.coin}>
                                                 <TableCell className="font-medium">{coin.coin}</TableCell>
                                                 <TableCell>
