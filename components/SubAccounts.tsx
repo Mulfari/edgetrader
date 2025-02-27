@@ -73,11 +73,11 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
   const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))];
 
-  const fetchAccountDetails = useCallback(async (userId: string, token: string) => {
+  const fetchAccountDetails = useCallback(async (userId: string, subAccountId: string, token: string) => {
     if (!API_URL || !userId || !token) return { balance: null, assets: [] };
 
     try {
-      const res = await fetch(`${API_URL}/account-details/${userId}`, {
+      const res = await fetch(`${API_URL}/account-details/${userId}/${subAccountId}`, { // 🔹 Agregamos `subAccountId`
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -139,7 +139,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       let totalBalance = 0;
       const updatedSubAccounts = await Promise.all(
         data.map(async (sub: SubAccount) => {
-          const details = await fetchAccountDetails(sub.userId, token);
+          const details = await fetchAccountDetails(sub.userId, sub.id, token); // 🔹 Ahora pasa `sub.id`
           balances[sub.id] = details.balance;
           sub.assets = details.assets;
           if (details.balance !== null) {
