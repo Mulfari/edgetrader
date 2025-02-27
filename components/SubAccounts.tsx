@@ -89,14 +89,20 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
       const data: AccountDetailsResponse = await res.json();
       console.log("Detalles de la cuenta:", data); // Mostrar toda la respuesta en la consola
-      return {
-        balance: parseFloat(data.result.list?.[0]?.totalEquity ?? "0"),
-        assets: data.result.list?.[0]?.coin.map((coin) => ({
-          coin: coin.coin,
-          walletBalance: parseFloat(coin.walletBalance),
-          usdValue: parseFloat(coin.usdValue),
-        })) || [],
-      };
+      if (!data.result || !data.result.list || data.result.list.length === 0) {
+        console.error("❌ La respuesta de Bybit no contiene 'list' o está vacía:", data);
+        return { balance: null, assets: [] };
+    }
+    
+    return {
+      balance: parseFloat(data.result.list[0]?.totalEquity ?? "0"),
+      assets: data.result.list[0]?.coin?.map((coin) => ({
+        coin: coin.coin,
+        walletBalance: parseFloat(coin.walletBalance) || 0,
+        usdValue: parseFloat(coin.usdValue) || 0,
+      })) || [],
+    };
+    
     } catch (error) {
       console.error("❌ Error obteniendo detalles de la cuenta:", error);
       return { balance: null, assets: [] };
