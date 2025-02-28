@@ -161,6 +161,8 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
         onBalanceUpdate(totalBalance);
       }
       setDataFetched(true);
+      localStorage.setItem("subAccounts", JSON.stringify(updatedSubAccounts));
+      localStorage.setItem("accountBalances", JSON.stringify(balances));
     } catch (error) {
       console.error("❌ Error obteniendo subcuentas:", error);
       setError("No se pudieron cargar las subcuentas");
@@ -170,10 +172,17 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   }, [fetchAccountDetails, router, onBalanceUpdate]);
 
   useEffect(() => {
-    if (!dataFetched) {
+    const storedSubAccounts = localStorage.getItem("subAccounts");
+    const storedAccountBalances = localStorage.getItem("accountBalances");
+
+    if (storedSubAccounts && storedAccountBalances) {
+      setSubAccounts(JSON.parse(storedSubAccounts));
+      setAccountBalances(JSON.parse(storedAccountBalances));
+      setIsLoading(false);
+    } else {
       fetchSubAccounts();
     }
-  }, [dataFetched, fetchSubAccounts]);
+  }, [fetchSubAccounts]);
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
