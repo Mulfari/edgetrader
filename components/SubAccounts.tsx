@@ -180,7 +180,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
   useEffect(() => {
     fetchSubAccounts()
-  }, [fetchSubAccounts])
+  }, [])
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
