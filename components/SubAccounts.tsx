@@ -452,5 +452,5 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
         </div>
       </CardContent>
     </Card>
-  );asd
+  )
 }
