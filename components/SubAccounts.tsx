@@ -68,7 +68,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const [selectedExchange, setSelectedExchange] = useState<string>("all");
-  const [dataFetched, setDataFetched] = useState(false);
   const router = useRouter();
 
   const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))];
@@ -160,7 +159,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       if (onBalanceUpdate) {
         onBalanceUpdate(totalBalance);
       }
-      setDataFetched(true);
       localStorage.setItem("subAccounts", JSON.stringify(updatedSubAccounts));
       localStorage.setItem("accountBalances", JSON.stringify(balances));
     } catch (error) {
@@ -234,7 +232,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
             <CardTitle className="text-2xl font-bold">Subcuentas</CardTitle>
             <CardDescription>Gestiona y monitorea todas tus cuentas de trading</CardDescription>
           </div>
-          <Button onClick={() => { setDataFetched(false); fetchSubAccounts(); }} variant="outline" size="sm" className="w-full md:w-auto">
+          <Button onClick={fetchSubAccounts} variant="outline" size="sm" className="w-full md:w-auto">
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
             Actualizar
           </Button>
