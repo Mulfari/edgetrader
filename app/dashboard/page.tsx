@@ -9,11 +9,61 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import SubAccounts from "@/components/SubAccounts";
+import Operations from "@/components/Operations"; // Importa el componente Operations
+
+// Definir el tipo de operación
+interface Trade {
+  id: string;
+  userId: string;
+  pair: string;
+  type: "buy" | "sell";
+  entryPrice: number;
+  exitPrice?: number;
+  amount: number;
+  status: "open" | "closed";
+  openDate: string;
+  closeDate?: string;
+  pnl?: number;
+  market: "spot" | "futures";
+  leverage?: number;
+  stopLoss?: number;
+  takeProfit?: number;
+}
 
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [totalBalance, setTotalBalance] = useState<number>(0);
   const router = useRouter();
+
+  // Ejemplo de operaciones
+  const trades: Trade[] = [
+    {
+      id: "1",
+      userId: "user1",
+      pair: "BTC/USDT",
+      type: "buy",
+      entryPrice: 45000,
+      amount: 0.1,
+      status: "open",
+      openDate: new Date().toISOString(),
+      market: "spot",
+    },
+    {
+      id: "2",
+      userId: "user1",
+      pair: "ETH/USDT",
+      type: "sell",
+      entryPrice: 3000,
+      exitPrice: 3200,
+      amount: 1,
+      status: "closed",
+      openDate: new Date().toISOString(),
+      closeDate: new Date().toISOString(),
+      pnl: 200,
+      market: "futures",
+      leverage: 10,
+    },
+  ];
 
   useEffect(() => {
     setIsLoading(false);
@@ -85,15 +135,7 @@ export default function Dashboard() {
               </TabsContent>
 
               <TabsContent value="trades">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Operaciones</CardTitle>
-                    <CardDescription>Historial de operaciones y estadísticas</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground text-center py-8">Próximamente: Historial de operaciones</p>
-                  </CardContent>
-                </Card>
+                <Operations trades={trades} /> {/* Pasa las operaciones como propiedad */}
               </TabsContent>
             </Tabs>
           </>

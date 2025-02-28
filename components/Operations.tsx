@@ -1,40 +1,40 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ChevronUp, ChevronDown, Search, Plus } from 'lucide-react'
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { useState, useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChevronUp, ChevronDown, Search, Plus } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface Trade {
-  id: string
-  userId: string
-  pair: string
-  type: "buy" | "sell"
-  entryPrice: number
-  exitPrice?: number
-  amount: number
-  status: "open" | "closed"
-  openDate: string
-  closeDate?: string
-  pnl?: number
-  market: "spot" | "futures"
-  leverage?: number
-  stopLoss?: number
-  takeProfit?: number
+  id: string;
+  userId: string;
+  pair: string;
+  type: "buy" | "sell";
+  entryPrice: number;
+  exitPrice?: number;
+  amount: number;
+  status: "open" | "closed";
+  openDate: string;
+  closeDate?: string;
+  pnl?: number;
+  market: "spot" | "futures";
+  leverage?: number;
+  stopLoss?: number;
+  takeProfit?: number;
 }
 
 interface OperationsProps {
-  trades: Trade[]
+  trades: Trade[];
 }
 
 export default function Operations({ trades }: OperationsProps) {
-  const [tradeMarketFilter, setTradeMarketFilter] = useState<"all" | "spot" | "futures">("all")
-  const [activeTab, setActiveTab] = useState<"open" | "closed">("open")
-  const [searchTerm, setSearchTerm] = useState("")
+  const [tradeMarketFilter, setTradeMarketFilter] = useState<"all" | "spot" | "futures">("all");
+  const [activeTab, setActiveTab] = useState<"open" | "closed">("open");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const filteredTrades = useMemo(() => {
     return trades
@@ -44,12 +44,12 @@ export default function Operations({ trades }: OperationsProps) {
         (trade) =>
           trade.pair.toLowerCase().includes(searchTerm.toLowerCase()) ||
           trade.market.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
-  }, [trades, tradeMarketFilter, activeTab, searchTerm])
+      );
+  }, [trades, tradeMarketFilter, activeTab, searchTerm]);
 
   const totalPnL = useMemo(() => {
-    return filteredTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0)
-  }, [filteredTrades])
+    return filteredTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
+  }, [filteredTrades]);
 
   return (
     <div className="space-y-6 p-6 max-w-7xl mx-auto">
@@ -226,5 +226,5 @@ export default function Operations({ trades }: OperationsProps) {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
