@@ -68,6 +68,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const [selectedExchange, setSelectedExchange] = useState<string>("all");
+  const [dataFetched, setDataFetched] = useState(false);
   const router = useRouter();
 
   const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))];
@@ -76,7 +77,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
     if (!API_URL || !userId || !token) return { balance: null, assets: [] };
 
     try {
-      const res = await fetch(`${API_URL}/account-details/${userId}/${subAccountId}`, { // 🔹 Agregamos `subAccountId`
+      const res = await fetch(`${API_URL}/account-details/${userId}/${subAccountId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -87,12 +88,12 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
 
       const data: AccountDetailsResponse = await res.json();
-      console.log("Detalles de la cuenta:", data); // Mostrar toda la respuesta en la consola
+      console.log("Detalles de la cuenta:", data);
       if (!data || !data.list || data.list.length === 0) {
         console.error("❌ La respuesta de Bybit no contiene 'list' o está vacía:", data);
         return { balance: 0, assets: [], rawData: data };
-      }      
-    
+      }
+
       return {
         balance: parseFloat(data.list[0]?.totalEquity ?? "0"),
         assets: data.list[0]?.coin?.map((coin) => ({
@@ -100,10 +101,9 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
           walletBalance: parseFloat(coin.walletBalance) || 0,
           usdValue: parseFloat(coin.usdValue) || 0,
         })) || [],
-        rawData: data, // 🔹 Guarda la respuesta completa por si la necesitas más adelante
+        rawData: data,
       };
-      
-    
+
     } catch (error) {
       console.error("❌ Error obteniendo detalles de la cuenta:", error);
       return { balance: null, assets: [] };
@@ -138,18 +138,17 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       }
 
       const data = await res.json();
-      console.log("Respuesta del backend:", data); // Mostrar toda la respuesta en la consola
+      console.log("Respuesta del backend:", data);
       setSubAccounts(data);
 
-      // Fetch account details for each subaccount
       const balances: Record<string, number | null> = {};
       let totalBalance = 0;
       const updatedSubAccounts = await Promise.all(
         data.map(async (sub: SubAccount) => {
-          const details = await fetchAccountDetails(sub.userId, sub.id, token); // 🔹 Ahora pasa `sub.id`
+          const details = await fetchAccountDetails(sub.userId, sub.id, token);
           balances[sub.id] = details.balance;
           sub.assets = details.assets;
-          sub.performance = Math.random() * 100; // Ejemplo de rendimiento aleatorio
+          sub.performance = Math.random() * 100;
           if (details.balance !== null) {
             totalBalance += details.balance;
           }
@@ -161,6 +160,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       if (onBalanceUpdate) {
         onBalanceUpdate(totalBalance);
       }
+      setDataFetched(true);
     } catch (error) {
       console.error("❌ Error obteniendo subcuentas:", error);
       setError("No se pudieron cargar las subcuentas");
@@ -170,8 +170,10 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   }, [fetchAccountDetails, router, onBalanceUpdate]);
 
   useEffect(() => {
-    fetchSubAccounts();
-  }, []); // Solo se ejecuta una vez al montar el componente
+    if (!dataFetched) {
+      fetchSubAccounts();
+    }
+  }, [dataFetched, fetchSubAccounts]);
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
@@ -223,7 +225,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
             <CardTitle className="text-2xl font-bold">Subcuentas</CardTitle>
             <CardDescription>Gestiona y monitorea todas tus cuentas de trading</CardDescription>
           </div>
-          <Button onClick={fetchSubAccounts} variant="outline" size="sm" className="w-full md:w-auto">
+          <Button onClick={() => { setDataFetched(false); fetchSubAccounts(); }} variant="outline" size="sm" className="w-full md:w-auto">
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
             Actualizar
           </Button>
