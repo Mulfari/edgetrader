@@ -36,6 +36,7 @@ interface SubAccount {
   balance?: number;
   lastUpdated?: string;
   assets?: Asset[];
+  performance?: number; // Añadimos el campo de rendimiento
 }
 
 interface AccountDetailsResponse {
@@ -148,6 +149,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
           const details = await fetchAccountDetails(sub.userId, sub.id, token); // 🔹 Ahora pasa `sub.id`
           balances[sub.id] = details.balance;
           sub.assets = details.assets;
+          sub.performance = Math.random() * 100; // Ejemplo de rendimiento aleatorio
           if (details.balance !== null) {
             totalBalance += details.balance;
           }
@@ -281,8 +283,8 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                   Balance
                   <ArrowUpDown className="ml-2 h-4 w-4 inline" />
                 </TableHead>
-                <TableHead onClick={() => handleSort("lastUpdated")} className="cursor-pointer hover:bg-muted/50">
-                  Última Actualización
+                <TableHead onClick={() => handleSort("performance")} className="cursor-pointer hover:bg-muted/50">
+                  Rendimiento
                   <ArrowUpDown className="ml-2 h-4 w-4 inline" />
                 </TableHead>
                 <TableHead className="w-[50px]"></TableHead>
@@ -346,7 +348,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                         )}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleString() : "-"}
+                        {sub.performance !== undefined ? `${sub.performance.toFixed(2)}%` : "-"}
                       </TableCell>
                       <TableCell>
                         <ChevronDown
@@ -389,11 +391,11 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                   </Card>
                                   <Card>
                                     <CardHeader className="pb-2">
-                                      <CardTitle className="text-sm font-medium">Última Actualización</CardTitle>
+                                      <CardTitle className="text-sm font-medium">Rendimiento</CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                       <div className="text-2xl font-bold">
-                                        {sub.lastUpdated ? new Date(sub.lastUpdated).toLocaleTimeString() : "-"}
+                                        {sub.performance !== undefined ? `${sub.performance.toFixed(2)}%` : "No disponible"}
                                       </div>
                                     </CardContent>
                                   </Card>
