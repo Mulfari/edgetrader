@@ -39,53 +39,20 @@ export default function Dashboard() {
   const router = useRouter();
   const { toast } = useToast();
 
-  // Función para verificar si el token es válido
-  const verifySession = async (token: string) => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      return response.ok;
-    } catch (error) {
-      console.error('Error al verificar sesión:', error);
-      return false;
-    }
-  };
-
   useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem('token');
-      const userId = localStorage.getItem('userId');
+    // Comprobar si hay token y userId en localStorage
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
 
-      if (!token || !userId) {
-        console.error('No hay token o userId');
-        router.push('/login');
-        return;
-      }
+    if (!token || !userId) {
+      console.error('No hay token o userId');
+      router.push('/login');
+      return;
+    }
 
-      // Verificar si el token es válido
-      const isValidToken = await verifySession(token);
-      
-      if (!isValidToken) {
-        toast({
-          variant: "destructive",
-          title: "Sesión expirada",
-          description: "Por favor, inicia sesión nuevamente"
-        });
-        handleLogout();
-        return;
-      }
-
-      setCurrentUserId(userId);
-      setIsLoading(false);
-    };
-
-    checkAuth();
+    // Si hay token y userId, establecer el estado
+    setCurrentUserId(userId);
+    setIsLoading(false);
   }, [router]);
 
   // Función para obtener las operaciones de la API
@@ -98,18 +65,6 @@ export default function Dashboard() {
           variant: "destructive",
           title: "Error de autenticación",
           description: "No hay token de autenticación"
-        });
-        handleLogout();
-        return;
-      }
-
-      // Verificar token antes de hacer la petición
-      const isValidToken = await verifySession(token);
-      if (!isValidToken) {
-        toast({
-          variant: "destructive",
-          title: "Sesión expirada",
-          description: "Por favor, inicia sesión nuevamente"
         });
         handleLogout();
         return;
