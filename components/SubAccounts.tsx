@@ -114,7 +114,7 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
     const token = localStorage.getItem("token");
     if (!token) {
       console.error("❌ No hay token, redirigiendo a login.");
-      router.push("/login");
+      setError("No hay token de autenticación");
       return;
     }
 
@@ -130,9 +130,9 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
 
       if (!res.ok) {
         if (res.status === 401) {
-          console.error("❌ Token inválido, redirigiendo a login.");
-          localStorage.removeItem("token");
-          router.push("/login");
+          console.error("❌ Token inválido o expirado.");
+          setError("Token inválido o expirado");
+          return;
         }
         throw new Error(`Error al obtener subcuentas - Código ${res.status}`);
       }
@@ -175,13 +175,27 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
     const storedAccountBalances = localStorage.getItem("accountBalances");
 
     if (storedSubAccounts && storedAccountBalances) {
-      setSubAccounts(JSON.parse(storedSubAccounts));
-      setAccountBalances(JSON.parse(storedAccountBalances));
+      const parsedSubAccounts = JSON.parse(storedSubAccounts);
+      const parsedBalances = JSON.parse(storedAccountBalances);
+      setSubAccounts(parsedSubAccounts);
+      setAccountBalances(parsedBalances);
+      
+      // Calcular el balance total para actualizar el dashboard
+      if (onBalanceUpdate && parsedSubAccounts.length > 0) {
+        let totalBalance = 0;
+        Object.values(parsedBalances).forEach(balance => {
+          if (balance !== null) {
+            totalBalance += Number(balance);
+          }
+        });
+        onBalanceUpdate(totalBalance, parsedSubAccounts[0].id);
+      }
+      
       setIsLoading(false);
     } else {
       fetchSubAccounts();
     }
-  }, [fetchSubAccounts]);
+  }, [fetchSubAccounts, onBalanceUpdate]);
 
   useEffect(() => {
     if (refreshTrigger) {

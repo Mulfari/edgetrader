@@ -69,6 +69,20 @@ export default function Dashboard() {
 
   // Función para refrescar los datos
   const refreshData = useCallback(() => {
+    // Verificar token antes de refrescar
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+    
+    if (!token || !userId) {
+      toast({
+        variant: "destructive",
+        title: "Error de sesión",
+        description: "No se pudo actualizar. Sesión no válida."
+      });
+      return;
+    }
+    
+    // Si el token es válido, proceder con la actualización
     setRefreshing(true);
     setDataLoaded(false);
     
@@ -76,7 +90,7 @@ export default function Dashboard() {
     setTimeout(() => {
       setRefreshing(false);
     }, 1000);
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -247,10 +261,10 @@ export default function Dashboard() {
                 variant="outline" 
                 size="sm" 
                 onClick={refreshData} 
-                disabled={refreshing}
+                disabled={refreshing || isLoading}
               >
                 <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                Actualizar
+                {refreshing ? 'Actualizando...' : 'Actualizar'}
               </Button>
               <ThemeToggle />
               <Button variant="ghost" size="sm" onClick={handleLogout}>
