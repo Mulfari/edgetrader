@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,13 +26,7 @@ interface ApiError {
   status?: number;
 }
 
-type Props = {
-  params: {
-    id: string;
-  };
-};
-
-export default function EditSubAccountPage({ params }: Props) {
+export default function EditSubAccountPage() {
   const [formData, setFormData] = useState({
     name: "",
     exchange: "bybit",
@@ -45,9 +39,12 @@ export default function EditSubAccountPage({ params }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
   const router = useRouter();
-  const { id } = params;
+  const params = useParams();
+  const id = params?.id as string;
 
   useEffect(() => {
+    if (!id) return;
+    
     const fetchSubAccount = async () => {
       const token = localStorage.getItem("token");
       if (!token) {

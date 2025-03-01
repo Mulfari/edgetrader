@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,13 +35,7 @@ interface ApiError {
   status?: number;
 }
 
-type Props = {
-  params: {
-    id: string;
-  };
-};
-
-export default function SubAccountDetailsPage({ params }: Props) {
+export default function SubAccountDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
@@ -49,10 +43,11 @@ export default function SubAccountDetailsPage({ params }: Props) {
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [balanceError, setBalanceError] = useState<string | null>(null);
   const router = useRouter();
-  const { id } = params;
+  const params = useParams();
+  const id = params?.id as string;
 
   const fetchBalance = useCallback(async () => {
-    if (!subAccount) return;
+    if (!subAccount || !id) return;
     
     setIsLoadingBalance(true);
     setBalanceError(null);
@@ -98,6 +93,8 @@ export default function SubAccountDetailsPage({ params }: Props) {
   }, [id, router, subAccount]);
 
   useEffect(() => {
+    if (!id) return;
+    
     const fetchSubAccount = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
