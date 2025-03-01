@@ -9,33 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { AlertCircle } from "lucide-react"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
-
-// Definir una interfaz para el error
-interface ErrorWithMessage {
-  message: string;
-}
-
-function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    typeof (error as Record<string, unknown>).message === 'string'
-  )
-}
-
-function toErrorWithMessage(maybeError: unknown): ErrorWithMessage {
-  if (isErrorWithMessage(maybeError)) return maybeError
-  
-  try {
-    return new Error(JSON.stringify(maybeError))
-  } catch {
-    // Si la serialización falla, devolvemos un error genérico
-    return new Error(String(maybeError))
-  }
-}
-
 export default function CreateSubAccount() {
   const [name, setName] = useState("")
   const [apiKey, setApiKey] = useState("")
@@ -50,17 +23,10 @@ export default function CreateSubAccount() {
     setError("")
 
     try {
-      const token = localStorage.getItem("token")
-      if (!token) {
-        router.push("/login")
-        return
-      }
-
-      const response = await fetch(`${API_URL}/subaccounts`, {
+      const response = await fetch("/api/subaccounts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
           name,
@@ -71,15 +37,13 @@ export default function CreateSubAccount() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null)
-        throw new Error(errorData?.message || "Error al crear la subcuenta")
+        throw new Error("Error al crear la subcuenta")
       }
 
-      router.push("/dashboard") // Redirección al dashboard después de crear la subcuenta
+      router.push("/account") // Redirección a la página de cuentas después de la creación exitosa
       router.refresh() // Actualizar la página para mostrar la nueva subcuenta
-    } catch (err: unknown) {
-      const errorWithMessage = toErrorWithMessage(err)
-      setError(errorWithMessage.message || "Ocurrió un error al crear la subcuenta")
+    } catch (err) {
+      setError("Ocurrió un error al crear la subcuenta")
       console.error(err)
     } finally {
       setIsLoading(false)
