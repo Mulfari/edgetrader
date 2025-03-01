@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,11 @@ interface ApiError {
   status?: number;
 }
 
-export default function SubAccountDetailsPage({ params }: { params: { id: string } }) {
+interface PageParams {
+  id: string;
+}
+
+export default function SubAccountDetailsPage({ params }: { params: PageParams }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
@@ -45,7 +49,7 @@ export default function SubAccountDetailsPage({ params }: { params: { id: string
   const router = useRouter();
   const { id } = params;
 
-  const fetchBalance = async () => {
+  const fetchBalance = useCallback(async () => {
     if (!subAccount) return;
     
     setIsLoadingBalance(true);
@@ -89,7 +93,7 @@ export default function SubAccountDetailsPage({ params }: { params: { id: string
     } finally {
       setIsLoadingBalance(false);
     }
-  };
+  }, [id, router, subAccount]);
 
   useEffect(() => {
     const fetchSubAccount = async () => {
