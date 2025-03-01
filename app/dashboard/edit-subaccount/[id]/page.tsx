@@ -26,11 +26,13 @@ interface ApiError {
   status?: number;
 }
 
-interface PageParams {
-  id: string;
-}
+type Props = {
+  params: {
+    id: string;
+  };
+};
 
-export default function EditSubAccountPage({ params }: { params: PageParams }) {
+export default function EditSubAccountPage({ params }: Props) {
   const [formData, setFormData] = useState({
     name: "",
     exchange: "bybit",

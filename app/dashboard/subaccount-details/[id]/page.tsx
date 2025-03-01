@@ -35,11 +35,13 @@ interface ApiError {
   status?: number;
 }
 
-interface PageParams {
-  id: string;
-}
+type Props = {
+  params: {
+    id: string;
+  };
+};
 
-export default function SubAccountDetailsPage({ params }: { params: PageParams }) {
+export default function SubAccountDetailsPage({ params }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [subAccount, setSubAccount] = useState<SubAccount | null>(null);
