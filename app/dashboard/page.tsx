@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import SubAccounts from "@/components/SubAccounts";
-import Operations from "@/components/Operations"; // Importa el componente Operations
+import Operations from "@/components/Operations";
 
 // Definir el tipo de operación
 interface Trade {
@@ -36,7 +36,7 @@ export default function Dashboard() {
   const router = useRouter();
 
   // Ejemplo de operaciones
-  const trades: Trade[] = [
+  const [trades] = useState<Trade[]>([
     {
       id: "1",
       userId: "user1",
@@ -57,13 +57,43 @@ export default function Dashboard() {
       exitPrice: 3200,
       amount: 1,
       status: "closed",
-      openDate: new Date().toISOString(),
-      closeDate: new Date().toISOString(),
+      openDate: "2024-02-20T10:00:00Z",
+      closeDate: "2024-02-21T15:30:00Z",
       pnl: 200,
       market: "futures",
       leverage: 10,
+      stopLoss: 2900,
+      takeProfit: 3300,
     },
-  ];
+    {
+      id: "3",
+      userId: "user1",
+      pair: "SOL/USDT",
+      type: "buy",
+      entryPrice: 120,
+      amount: 10,
+      status: "open",
+      openDate: "2024-02-22T08:15:00Z",
+      market: "spot",
+    },
+    {
+      id: "4",
+      userId: "user1",
+      pair: "BNB/USDT",
+      type: "sell",
+      entryPrice: 350,
+      exitPrice: 340,
+      amount: 2,
+      status: "closed",
+      openDate: "2024-02-19T14:20:00Z",
+      closeDate: "2024-02-20T09:45:00Z",
+      pnl: -20,
+      market: "futures",
+      leverage: 5,
+      stopLoss: 360,
+      takeProfit: 330,
+    }
+  ]);
 
   useEffect(() => {
     setIsLoading(false);
@@ -83,7 +113,7 @@ export default function Dashboard() {
       <header className="bg-card shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold">Dashboard Finaasdfasdfnciero</h1>
+            <h1 className="text-2xl font-bold">Dashboard Financiero</h1>
             <div className="flex items-center gap-4">
               <ThemeToggle />
               <Button variant="ghost" size="sm" onClick={handleLogout}>
