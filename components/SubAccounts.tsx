@@ -56,7 +56,7 @@ type SortConfig = {
 } | null;
 
 interface SubAccountsProps {
-  onBalanceUpdate?: (totalBalance: number) => void;
+  onBalanceUpdate?: (totalBalance: number, subAccountId: string) => void;
 }
 
 export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
@@ -156,8 +156,8 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       );
       setSubAccounts(updatedSubAccounts);
       setAccountBalances(balances);
-      if (onBalanceUpdate) {
-        onBalanceUpdate(totalBalance);
+      if (onBalanceUpdate && updatedSubAccounts.length > 0) {
+        onBalanceUpdate(totalBalance, updatedSubAccounts[0].id);
       }
       localStorage.setItem("subAccounts", JSON.stringify(updatedSubAccounts));
       localStorage.setItem("accountBalances", JSON.stringify(balances));

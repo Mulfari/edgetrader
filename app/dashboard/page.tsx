@@ -33,76 +33,41 @@ interface Trade {
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [totalBalance, setTotalBalance] = useState<number>(0);
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [selectedSubAccount, setSelectedSubAccount] = useState<string>("");
   const router = useRouter();
 
-  // Ejemplo de operaciones
-  const [trades] = useState<Trade[]>([
-    {
-      id: "1",
-      userId: "user1",
-      pair: "BTC/USDT",
-      type: "buy",
-      entryPrice: 45000,
-      amount: 0.1,
-      status: "open",
-      openDate: new Date().toISOString(),
-      market: "spot",
-    },
-    {
-      id: "2",
-      userId: "user1",
-      pair: "ETH/USDT",
-      type: "sell",
-      entryPrice: 3000,
-      exitPrice: 3200,
-      amount: 1,
-      status: "closed",
-      openDate: "2024-02-20T10:00:00Z",
-      closeDate: "2024-02-21T15:30:00Z",
-      pnl: 200,
-      market: "futures",
-      leverage: 10,
-      stopLoss: 2900,
-      takeProfit: 3300,
-    },
-    {
-      id: "3",
-      userId: "user1",
-      pair: "SOL/USDT",
-      type: "buy",
-      entryPrice: 120,
-      amount: 10,
-      status: "open",
-      openDate: "2024-02-22T08:15:00Z",
-      market: "spot",
-    },
-    {
-      id: "4",
-      userId: "user1",
-      pair: "BNB/USDT",
-      type: "sell",
-      entryPrice: 350,
-      exitPrice: 340,
-      amount: 2,
-      status: "closed",
-      openDate: "2024-02-19T14:20:00Z",
-      closeDate: "2024-02-20T09:45:00Z",
-      pnl: -20,
-      market: "futures",
-      leverage: 5,
-      stopLoss: 360,
-      takeProfit: 330,
+  // Función para obtener las operaciones de la API
+  const fetchTrades = async (userId: string, subAccountId: string) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/account-details/${userId}/${subAccountId}/trades`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al obtener operaciones');
+      }
+
+      const data = await response.json();
+      setTrades(data);
+    } catch (error) {
+      console.error('Error al obtener operaciones:', error);
     }
-  ]);
+  };
+
+  // Función para actualizar el balance total y obtener operaciones
+  const updateTotalBalance = (balance: number, subAccountId: string) => {
+    setTotalBalance(balance);
+    setSelectedSubAccount(subAccountId);
+    // Obtener operaciones cuando se selecciona una subcuenta
+    if (subAccountId) {
+      fetchTrades("user1", subAccountId); // Reemplazar "user1" con el ID real del usuario
+    }
+  };
 
   useEffect(() => {
     setIsLoading(false);
   }, []);
-
-  // Función para actualizar el balance total
-  const updateTotalBalance = (balance: number) => {
-    setTotalBalance(balance);
-  };
 
   const handleLogout = () => {
     router.push("/login");
@@ -157,7 +122,7 @@ export default function Dashboard() {
             <Tabs defaultValue="accounts" className="space-y-4">
               <TabsList>
                 <TabsTrigger value="accounts">Subcuentas</TabsTrigger>
-                <TabsTrigger value="trades">Operasdfiones</TabsTrigger>
+                <TabsTrigger value="trades">Operaciones</TabsTrigger>
               </TabsList>
 
               <TabsContent value="accounts" className="space-y-4">
