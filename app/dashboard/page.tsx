@@ -6,7 +6,7 @@ import { LogOut, TrendingUp, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import SubAccounts from "@/components/SubAccounts";
 import Operations from "@/components/Operations"; // Importa el componente Operations
@@ -130,12 +130,12 @@ export default function Dashboard() {
                 <TabsTrigger value="trades">Operaciones</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="accounts">
+              <TabsContent value="accounts" className="space-y-4">
                 <SubAccounts onBalanceUpdate={updateTotalBalance} />
               </TabsContent>
 
-              <TabsContent value="trades">
-                <Operations trades={trades} /> {/* Pasa las operaciones como propiedad */}
+              <TabsContent value="trades" className="space-y-4">
+                <Operations trades={trades} />
               </TabsContent>
             </Tabs>
           </>
