@@ -39,18 +39,53 @@ export default function Dashboard() {
   const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userId = localStorage.getItem('userId');
+  // Función para verificar si el token es válido
+  const verifySession = async (token: string) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-    if (!token || !userId) {
-      console.error('No hay token o userId');
-      router.push('/login');
-      return;
+      return response.ok;
+    } catch (error) {
+      console.error('Error al verificar sesión:', error);
+      return false;
     }
+  };
 
-    setCurrentUserId(userId);
-    setIsLoading(false);
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userId');
+
+      if (!token || !userId) {
+        console.error('No hay token o userId');
+        router.push('/login');
+        return;
+      }
+
+      // Verificar si el token es válido
+      const isValidToken = await verifySession(token);
+      
+      if (!isValidToken) {
+        toast({
+          variant: "destructive",
+          title: "Sesión expirada",
+          description: "Por favor, inicia sesión nuevamente"
+        });
+        handleLogout();
+        return;
+      }
+
+      setCurrentUserId(userId);
+      setIsLoading(false);
+    };
+
+    checkAuth();
   }, [router]);
 
   // Función para obtener las operaciones de la API
@@ -64,7 +99,19 @@ export default function Dashboard() {
           title: "Error de autenticación",
           description: "No hay token de autenticación"
         });
-        router.push('/login');
+        handleLogout();
+        return;
+      }
+
+      // Verificar token antes de hacer la petición
+      const isValidToken = await verifySession(token);
+      if (!isValidToken) {
+        toast({
+          variant: "destructive",
+          title: "Sesión expirada",
+          description: "Por favor, inicia sesión nuevamente"
+        });
+        handleLogout();
         return;
       }
 
@@ -74,7 +121,7 @@ export default function Dashboard() {
           title: "Error de usuario",
           description: "ID de usuario no válido"
         });
-        router.push('/login');
+        handleLogout();
         return;
       }
 
@@ -90,7 +137,6 @@ export default function Dashboard() {
       console.log(`📡 Obteniendo operaciones para usuario ${userId} y subcuenta ${subAccountId}`);
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/account-details/${userId}/${subAccountId}/trades`, {
-        credentials: 'include',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -104,7 +150,7 @@ export default function Dashboard() {
             title: "Error de autenticación",
             description: "Token inválido o expirado"
           });
-          router.push('/login');
+          handleLogout();
           return;
         }
         
