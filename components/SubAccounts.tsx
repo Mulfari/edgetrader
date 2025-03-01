@@ -261,12 +261,6 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
         }
         
         setIsLoading(false);
-        
-        // Después de cargar los datos del localStorage, verificar con el servidor
-        // para asegurarse de que los datos estén actualizados
-        setTimeout(() => {
-          fetchSubAccounts();
-        }, 1000); // Pequeño retraso para permitir que la interfaz se cargue primero
       } catch (e) {
         console.error("Error al parsear datos almacenados:", e);
         fetchSubAccounts();
