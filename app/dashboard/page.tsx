@@ -39,11 +39,27 @@ export default function Dashboard() {
   // Función para obtener las operaciones de la API
   const fetchTrades = async (userId: string, subAccountId: string) => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No hay token de autenticación');
+        router.push('/login');
+        return;
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/account-details/${userId}/${subAccountId}/trades`, {
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
       
       if (!response.ok) {
+        if (response.status === 401) {
+          console.error('Token inválido o expirado');
+          router.push('/login');
+          return;
+        }
         throw new Error('Error al obtener operaciones');
       }
 
@@ -59,7 +75,8 @@ export default function Dashboard() {
     setTotalBalance(balance);
     // Obtener operaciones cuando se selecciona una subcuenta
     if (subAccountId) {
-      fetchTrades("user1", subAccountId); // Reemplazar "user1" con el ID real del usuario
+      const userId = localStorage.getItem('userId') || 'user1'; // Obtener el ID real del usuario
+      fetchTrades(userId, subAccountId);
     }
   };
 

@@ -49,6 +49,7 @@ export default function LoginPage() {
 
       if (res.ok) {
         localStorage.setItem("token", data.access_token);
+        localStorage.setItem("userId", data.userId);
         if (rememberMe) {
           localStorage.setItem("email", email);
           localStorage.setItem("password", password);
