@@ -166,6 +166,29 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
 
       const data = await res.json();
       console.log("Respuesta del backend:", data);
+      
+      // Verificar si hay subcuentas almacenadas que ya no existen en el servidor
+      const storedSubAccounts = localStorage.getItem("subAccounts");
+      if (storedSubAccounts) {
+        try {
+          const parsedSubAccounts = JSON.parse(storedSubAccounts);
+          const missingAccounts = parsedSubAccounts.filter((stored: SubAccount) => 
+            !data.some((current: SubAccount) => current.id === stored.id)
+          );
+          
+          if (missingAccounts.length > 0) {
+            console.log("Subcuentas que ya no existen en el servidor:", missingAccounts);
+            // Mostrar notificación si hay subcuentas que ya no existen
+            toast({
+              title: "Información",
+              description: "Algunas subcuentas han sido eliminadas del servidor y se han actualizado tus datos locales.",
+            });
+          }
+        } catch (e) {
+          console.error("Error al verificar subcuentas almacenadas:", e);
+        }
+      }
+      
       setSubAccounts(data);
 
       const balances: AccountBalance[] = [];
@@ -214,6 +237,14 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
     if (storedSubAccounts && storedAccountBalances) {
       try {
         const parsedSubAccounts = JSON.parse(storedSubAccounts);
+        
+        // Si no hay subcuentas almacenadas o el array está vacío, cargar desde el servidor
+        if (!parsedSubAccounts || parsedSubAccounts.length === 0) {
+          console.log("No hay subcuentas almacenadas, cargando desde el servidor");
+          fetchSubAccounts();
+          return;
+        }
+        
         const parsedBalances = JSON.parse(storedAccountBalances);
         setSubAccounts(parsedSubAccounts);
         setAccountBalances(parsedBalances);
@@ -230,6 +261,12 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
         }
         
         setIsLoading(false);
+        
+        // Después de cargar los datos del localStorage, verificar con el servidor
+        // para asegurarse de que los datos estén actualizados
+        setTimeout(() => {
+          fetchSubAccounts();
+        }, 1000); // Pequeño retraso para permitir que la interfaz se cargue primero
       } catch (e) {
         console.error("Error al parsear datos almacenados:", e);
         fetchSubAccounts();
@@ -300,6 +337,20 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
     // Verificar que la subcuenta existe antes de intentar editarla
     const subAccountExists = subAccounts.some(account => account.id === id);
     if (!subAccountExists) {
+      // Limpiar cualquier ID de subcuenta almacenado que ya no exista
+      const storedSubAccounts = localStorage.getItem("subAccounts");
+      if (storedSubAccounts) {
+        try {
+          const parsedSubAccounts = JSON.parse(storedSubAccounts);
+          const filteredSubAccounts = parsedSubAccounts.filter((acc: SubAccount) => 
+            subAccounts.some(current => current.id === acc.id)
+          );
+          localStorage.setItem("subAccounts", JSON.stringify(filteredSubAccounts));
+        } catch (e) {
+          console.error("Error al actualizar subcuentas almacenadas:", e);
+        }
+      }
+      
       toast({
         variant: "destructive",
         title: "Error",

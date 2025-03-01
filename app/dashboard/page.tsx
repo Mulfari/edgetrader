@@ -116,6 +116,10 @@ export default function Dashboard() {
       return;
     }
     
+    // Limpiar datos de subcuentas almacenados para forzar una recarga completa
+    localStorage.removeItem('subAccounts');
+    localStorage.removeItem('accountBalances');
+    
     // Si el token es válido, proceder con la actualización
     setRefreshing(true);
     setDataLoaded(false);

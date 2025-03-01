@@ -42,8 +42,13 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: Ma
   const { toast } = useToast()
 
   useEffect(() => {
+    // Variable para controlar si el componente está montado
+    let isMounted = true;
+    
     const fetchSubAccount = async () => {
-      setIsLoading(true)
+      if (!isMounted) return;
+      
+      setIsLoading(true);
       try {
         const token = localStorage.getItem("token");
         
@@ -51,18 +56,52 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: Ma
           throw new Error("No hay token de autenticación");
         }
 
+        // Verificar si la subcuenta existe en localStorage primero
+        const storedSubAccounts = localStorage.getItem("subAccounts");
+        if (storedSubAccounts) {
+          try {
+            const parsedSubAccounts = JSON.parse(storedSubAccounts);
+            const existingSubAccount = parsedSubAccounts.find((acc: SubAccount) => acc.id === subAccountId);
+            
+            // Si la subcuenta no existe en localStorage, es probable que tampoco exista en el servidor
+            if (!existingSubAccount) {
+              console.warn(`La subcuenta con ID ${subAccountId} no existe en localStorage`);
+              // No lanzar error aquí, continuar con la petición al servidor para confirmar
+            }
+          } catch (e) {
+            console.error("Error al verificar subcuentas en localStorage:", e);
+          }
+        }
+
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subaccounts/${subAccountId}`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }
-        })
+        });
 
         if (response.status === 404) {
+          console.error(`Subcuenta con ID ${subAccountId} no encontrada en el servidor`);
+          
+          // Limpiar el ID de la subcuenta de localStorage si existe
+          const storedSubAccounts = localStorage.getItem("subAccounts");
+          if (storedSubAccounts) {
+            try {
+              const parsedSubAccounts = JSON.parse(storedSubAccounts);
+              const filteredSubAccounts = parsedSubAccounts.filter((acc: SubAccount) => acc.id !== subAccountId);
+              localStorage.setItem("subAccounts", JSON.stringify(filteredSubAccounts));
+            } catch (e) {
+              console.error("Error al actualizar subcuentas en localStorage:", e);
+            }
+          }
+          
+          if (!isMounted) return;
+          
           toast({
             variant: "destructive",
             title: "Subcuenta no encontrada",
             description: "La subcuenta solicitada no existe o ha sido eliminada.",
           });
+          
           if (onClose) {
             onClose();
           }
@@ -74,6 +113,9 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: Ma
         }
 
         const data = await response.json();
+        
+        if (!isMounted) return;
+        
         setSubAccount(data);
         setName(data.name);
         setExchange(data.exchange);
@@ -81,6 +123,8 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: Ma
         setApiSecret(data.apiSecret || ""); // La API Secret podría estar oculta
         setIsDemo(data.isDemo || false);
       } catch (err) {
+        if (!isMounted) return;
+        
         const errorMessage = err instanceof Error ? err.message : "Error al obtener la subcuenta";
         setError(errorMessage);
         toast({
@@ -89,14 +133,28 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: Ma
           description: errorMessage,
         });
         console.error(err);
+        
+        // Si hay un error, cerrar el diálogo después de un breve retraso
+        setTimeout(() => {
+          if (isMounted && onClose) {
+            onClose();
+          }
+        }, 3000);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     if (subAccountId) {
       fetchSubAccount();
     }
+    
+    // Cleanup function para evitar actualizar el estado si el componente se desmonta
+    return () => {
+      isMounted = false;
+    };
   }, [subAccountId, toast, onClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
