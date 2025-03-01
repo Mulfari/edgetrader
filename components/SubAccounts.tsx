@@ -10,8 +10,6 @@ import {
   ArrowUpDown,
   Filter,
   Plus,
-  Edit,
-  Trash2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -236,10 +234,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
             <CardDescription>Gestiona y monitorea todas tus cuentas de trading</CardDescription>
           </div>
           <div className="flex flex-col md:flex-row gap-2">
-            <Button className="w-full md:w-auto" onClick={() => router.push("/dashboard/add-subaccount")}>
-              <Plus className="mr-2 h-4 w-4" />
-              Agregar Subcuenta
-            </Button>
             <Button onClick={fetchSubAccounts} variant="outline" size="sm" className="w-full md:w-auto">
               <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
               Actualizar
@@ -374,59 +368,10 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => router.push(`/dashboard/edit-subaccount/${sub.id}`)}
-                          >
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Editar</span>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              if (confirm(`¿Estás seguro de eliminar la subcuenta ${sub.name}?`)) {
-                                // Aquí iría la lógica para eliminar la subcuenta
-                                const token = localStorage.getItem("token");
-                                if (!token) {
-                                  console.error("❌ No hay token, redirigiendo a login.");
-                                  router.push("/login");
-                                  return;
-                                }
-                                
-                                fetch(`${API_URL}/subaccounts/${sub.id}`, {
-                                  method: "DELETE",
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                    Authorization: `Bearer ${token}`,
-                                  },
-                                })
-                                .then(res => {
-                                  if (!res.ok) {
-                                    throw new Error(`Error al eliminar subcuenta - Código ${res.status}`);
-                                  }
-                                  fetchSubAccounts();
-                                  alert("Subcuenta eliminada correctamente");
-                                })
-                                .catch(error => {
-                                  console.error("❌ Error al eliminar subcuenta:", error);
-                                  alert("Error al eliminar subcuenta. Inténtalo de nuevo.");
-                                });
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Eliminar</span>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
                             onClick={() => handleRowClick(sub)}
                           >
-                            <ChevronDown
-                              className={`h-4 w-4 transition-transform duration-200 ${
-                                selectedSubAccountId === sub.id ? "rotate-180" : ""
-                              }`}
-                            />
-                            <span className="sr-only">Detalles</span>
+                            <ChevronDown className="h-4 w-4" />
+                            <span className="sr-only">Ver detalles</span>
                           </Button>
                         </div>
                       </TableCell>
