@@ -157,7 +157,7 @@ export default function Dashboard() {
             <Tabs defaultValue="accounts" className="space-y-4">
               <TabsList>
                 <TabsTrigger value="accounts">Subcuentas</TabsTrigger>
-                <TabsTrigger value="trades">Operaciones</TabsTrigger>
+                <TabsTrigger value="trades">Operasdfiones</TabsTrigger>
               </TabsList>
 
               <TabsContent value="accounts" className="space-y-4">
