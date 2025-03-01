@@ -130,6 +130,11 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
     if (!token || !userId) {
       console.error("❌ No hay token o userId");
       setError("No hay token de autenticación o ID de usuario");
+      toast({
+        variant: "destructive",
+        title: "Error de autenticación",
+        description: "No hay token de autenticación o ID de usuario",
+      });
       setIsLoading(false);
       return;
     }
@@ -148,6 +153,11 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
         if (res.status === 401) {
           console.error("❌ Token inválido o expirado.");
           setError("Token inválido o expirado");
+          toast({
+            variant: "destructive",
+            title: "Error de autenticación",
+            description: "Token inválido o expirado",
+          });
           setIsLoading(false);
           return;
         }
@@ -280,19 +290,6 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
   const handleManageAccount = (id: string) => {
     setSelectedSubAccountId(id);
     setIsManageDialogOpen(true);
-  };
-
-  const getExchangeIcon = (exchange: string) => {
-    switch (exchange.toLowerCase()) {
-      case 'bybit':
-        return '🅱️';
-      case 'binance':
-        return '🔶';
-      case 'kucoin':
-        return '🟢';
-      default:
-        return '💱';
-    }
   };
 
   const getAccountBalance = (accountId: string) => {
