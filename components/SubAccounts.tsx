@@ -9,6 +9,9 @@ import {
   Wallet,
   ArrowUpDown,
   Filter,
+  Plus,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,6 +22,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/hooks/use-toast";
+import SubAccountActions from "@/components/SubAccountActions";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -68,6 +83,17 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const [selectedExchange, setSelectedExchange] = useState<string>("all");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [currentSubAccount, setCurrentSubAccount] = useState<SubAccount | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    exchange: "bybit",
+    apiKey: "",
+    apiSecret: "",
+    isDemo: false,
+  });
   const router = useRouter();
 
   const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))];
@@ -224,6 +250,184 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
         account.exchange.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Función para manejar la creación de una nueva subcuenta
+  const handleCreateSubAccount = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("❌ No hay token, redirigiendo a login.");
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/subaccounts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          exchange: formData.exchange,
+          apiKey: formData.apiKey,
+          apiSecret: formData.apiSecret,
+          isDemo: formData.isDemo,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Error al crear subcuenta - Código ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log("Subcuenta creada:", data);
+      
+      // Actualizar la lista de subcuentas
+      fetchSubAccounts();
+      
+      // Cerrar el diálogo y limpiar el formulario
+      setIsAddDialogOpen(false);
+      setFormData({
+        name: "",
+        exchange: "bybit",
+        apiKey: "",
+        apiSecret: "",
+        isDemo: false,
+      });
+      
+      toast({
+        title: "Subcuenta creada",
+        description: "La subcuenta se ha creado correctamente.",
+      });
+    } catch (error) {
+      console.error("❌ Error al crear subcuenta:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la subcuenta. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Función para manejar la actualización de una subcuenta
+  const handleUpdateSubAccount = async () => {
+    if (!currentSubAccount) return;
+    
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("❌ No hay token, redirigiendo a login.");
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/subaccounts/${currentSubAccount.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          exchange: formData.exchange,
+          apiKey: formData.apiKey,
+          apiSecret: formData.apiSecret,
+          isDemo: formData.isDemo,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Error al actualizar subcuenta - Código ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log("Subcuenta actualizada:", data);
+      
+      // Actualizar la lista de subcuentas
+      fetchSubAccounts();
+      
+      // Cerrar el diálogo y limpiar el formulario
+      setIsEditDialogOpen(false);
+      setCurrentSubAccount(null);
+      
+      toast({
+        title: "Subcuenta actualizada",
+        description: "La subcuenta se ha actualizado correctamente.",
+      });
+    } catch (error) {
+      console.error("❌ Error al actualizar subcuenta:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la subcuenta. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Función para manejar la eliminación de una subcuenta
+  const handleDeleteSubAccount = async () => {
+    if (!currentSubAccount) return;
+    
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("❌ No hay token, redirigiendo a login.");
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/subaccounts/${currentSubAccount.id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error(`Error al eliminar subcuenta - Código ${res.status}`);
+      }
+
+      // Actualizar la lista de subcuentas
+      fetchSubAccounts();
+      
+      // Cerrar el diálogo
+      setIsDeleteDialogOpen(false);
+      setCurrentSubAccount(null);
+      
+      toast({
+        title: "Subcuenta eliminada",
+        description: "La subcuenta se ha eliminado correctamente.",
+      });
+    } catch (error) {
+      console.error("❌ Error al eliminar subcuenta:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la subcuenta. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Función para abrir el diálogo de edición
+  const openEditDialog = (sub: SubAccount) => {
+    setCurrentSubAccount(sub);
+    setFormData({
+      name: sub.name,
+      exchange: sub.exchange,
+      apiKey: "", // No mostramos la API key por seguridad
+      apiSecret: "", // No mostramos la API secret por seguridad
+      isDemo: false, // Asumimos false por defecto
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  // Función para abrir el diálogo de eliminación
+  const openDeleteDialog = (sub: SubAccount) => {
+    setCurrentSubAccount(sub);
+    setIsDeleteDialogOpen(true);
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -232,10 +436,16 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
             <CardTitle className="text-2xl font-bold">Subcuentas</CardTitle>
             <CardDescription>Gestiona y monitorea todas tus cuentas de trading</CardDescription>
           </div>
-          <Button onClick={fetchSubAccounts} variant="outline" size="sm" className="w-full md:w-auto">
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            Actualizar
-          </Button>
+          <div className="flex flex-col md:flex-row gap-2">
+            <Button className="w-full md:w-auto" onClick={() => router.push("/dashboard/add-subaccount")}>
+              <Plus className="mr-2 h-4 w-4" />
+              Agregar Subcuenta
+            </Button>
+            <Button onClick={fetchSubAccounts} variant="outline" size="sm" className="w-full md:w-auto">
+              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              Actualizar
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-col md:flex-row items-center gap-4 mt-4">
@@ -296,7 +506,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                   Rendimiento
                   <ArrowUpDown className="ml-2 h-4 w-4 inline" />
                 </TableHead>
-                <TableHead className="w-[50px]"></TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -337,16 +547,17 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                   <>
                     <TableRow
                       key={sub.id}
-                      onClick={() => handleRowClick(sub)}
-                      className="cursor-pointer transition-colors hover:bg-muted/50"
+                      className="transition-colors hover:bg-muted/50"
                     >
-                      <TableCell className="font-medium">{sub.name}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-medium" onClick={() => handleRowClick(sub)}>
+                        {sub.name}
+                      </TableCell>
+                      <TableCell onClick={() => handleRowClick(sub)}>
                         <Badge variant="secondary" className="uppercase">
                           {sub.exchange}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={() => handleRowClick(sub)}>
                         {accountBalances[sub.id] !== undefined ? (
                           <div className="flex items-center gap-2">
                             <Wallet className="h-4 w-4 text-muted-foreground" />
@@ -356,15 +567,69 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                           "-"
                         )}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="text-muted-foreground" onClick={() => handleRowClick(sub)}>
                         {sub.performance !== undefined ? `${sub.performance.toFixed(2)}%` : "-"}
                       </TableCell>
-                      <TableCell>
-                        <ChevronDown
-                          className={`h-4 w-4 transition-transform duration-200 ${
-                            selectedSubAccountId === sub.id ? "rotate-180" : ""
-                          }`}
-                        />
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => router.push(`/dashboard/edit-subaccount/${sub.id}`)}
+                          >
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Editar</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (confirm(`¿Estás seguro de eliminar la subcuenta ${sub.name}?`)) {
+                                // Aquí iría la lógica para eliminar la subcuenta
+                                const token = localStorage.getItem("token");
+                                if (!token) {
+                                  console.error("❌ No hay token, redirigiendo a login.");
+                                  router.push("/login");
+                                  return;
+                                }
+                                
+                                fetch(`${API_URL}/subaccounts/${sub.id}`, {
+                                  method: "DELETE",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                    Authorization: `Bearer ${token}`,
+                                  },
+                                })
+                                .then(res => {
+                                  if (!res.ok) {
+                                    throw new Error(`Error al eliminar subcuenta - Código ${res.status}`);
+                                  }
+                                  fetchSubAccounts();
+                                  alert("Subcuenta eliminada correctamente");
+                                })
+                                .catch(error => {
+                                  console.error("❌ Error al eliminar subcuenta:", error);
+                                  alert("Error al eliminar subcuenta. Inténtalo de nuevo.");
+                                });
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Eliminar</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRowClick(sub)}
+                          >
+                            <ChevronDown
+                              className={`h-4 w-4 transition-transform duration-200 ${
+                                selectedSubAccountId === sub.id ? "rotate-180" : ""
+                              }`}
+                            />
+                            <span className="sr-only">Detalles</span>
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                     {selectedSubAccountId === sub.id && (
