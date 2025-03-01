@@ -9,15 +9,21 @@ import {
   Wallet,
   ArrowUpDown,
   Filter,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import ManageSubAccount from "./ManageSubAccount";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -35,7 +41,9 @@ interface SubAccount {
   balance?: number;
   lastUpdated?: string;
   assets?: Asset[];
-  performance?: number; // Añadimos el campo de rendimiento
+  performance?: number;
+  apiKey: string;
+  isDemo: boolean;
 }
 
 interface AccountDetailsResponse {
@@ -47,6 +55,12 @@ interface AccountDetailsResponse {
       usdValue: string;
     }[];
   }[];
+}
+
+interface AccountBalance {
+  subAccountId: string;
+  balance: number;
+  currency: string;
 }
 
 type SortConfig = {
@@ -62,12 +76,14 @@ interface SubAccountsProps {
 export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAccountsProps) {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null);
-  const [accountBalances, setAccountBalances] = useState<Record<string, number | null>>({});
+  const [accountBalances, setAccountBalances] = useState<AccountBalance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const [selectedExchange, setSelectedExchange] = useState<string>("all");
+  const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))];
 
@@ -144,17 +160,27 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
       console.log("Respuesta del backend:", data);
       setSubAccounts(data);
 
-      const balances: Record<string, number | null> = {};
+      const balances: AccountBalance[] = [];
       let totalBalance = 0;
       const updatedSubAccounts = await Promise.all(
         data.map(async (sub: SubAccount) => {
           const details = await fetchAccountDetails(sub.userId, sub.id, token);
-          balances[sub.id] = details.balance;
+          if (details.balance !== null) {
+            balances.push({
+              subAccountId: sub.id,
+              balance: details.balance,
+              currency: "USD"
+            });
+            totalBalance += details.balance;
+          } else {
+            balances.push({
+              subAccountId: sub.id,
+              balance: 0,
+              currency: "USD"
+            });
+          }
           sub.assets = details.assets;
           sub.performance = Math.random() * 100;
-          if (details.balance !== null) {
-            totalBalance += details.balance;
-          }
           return sub;
         })
       );
@@ -187,9 +213,9 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
         // Calcular el balance total para actualizar el dashboard
         if (onBalanceUpdate && parsedSubAccounts.length > 0) {
           let totalBalance = 0;
-          Object.values(parsedBalances).forEach(balance => {
+          parsedBalances.forEach((balance: AccountBalance) => {
             if (balance !== null) {
-              totalBalance += Number(balance);
+              totalBalance += Number(balance.balance);
             }
           });
           onBalanceUpdate(totalBalance, parsedSubAccounts[0].id);
@@ -252,6 +278,34 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
       (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         account.exchange.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const handleManageAccount = (id: string) => {
+    setSelectedSubAccountId(id);
+    setIsManageDialogOpen(true);
+  };
+
+  const getExchangeIcon = (exchange: string) => {
+    switch (exchange.toLowerCase()) {
+      case 'bybit':
+        return '🅱️';
+      case 'binance':
+        return '🔶';
+      case 'kucoin':
+        return '🟢';
+      default:
+        return '💱';
+    }
+  };
+
+  const getAccountBalance = (accountId: string) => {
+    const balance = accountBalances.find(b => b.subAccountId === accountId);
+    return balance ? balance.balance : 0;
+  };
+
+  const getCurrency = (accountId: string) => {
+    const balance = accountBalances.find(b => b.subAccountId === accountId);
+    return balance ? balance.currency : 'USD';
+  };
 
   return (
     <Card className="w-full">
@@ -376,10 +430,10 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {accountBalances[sub.id] !== undefined ? (
+                        {getAccountBalance(sub.id) !== undefined ? (
                           <div className="flex items-center gap-2">
                             <Wallet className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{accountBalances[sub.id]?.toFixed(2)} USDT</span>
+                            <span className="font-medium">{getAccountBalance(sub.id).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {getCurrency(sub.id)}</span>
                           </div>
                         ) : (
                           "-"
@@ -413,8 +467,8 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
                                     </CardHeader>
                                     <CardContent>
                                       <div className="text-2xl font-bold">
-                                        {accountBalances[sub.id] !== undefined
-                                          ? `${accountBalances[sub.id]?.toFixed(2)} USDT`
+                                        {getAccountBalance(sub.id) !== undefined
+                                          ? `${getAccountBalance(sub.id).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${getCurrency(sub.id)}`
                                           : "No disponible"}
                                       </div>
                                     </CardContent>
@@ -478,6 +532,25 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
           </Table>
         </div>
       </CardContent>
+
+      <CardFooter>
+        <Button onClick={() => handleManageAccount(subAccounts[0].id)}>
+          <Edit className="mr-2 h-4 w-4" />
+          Editar
+        </Button>
+      </CardFooter>
+
+      <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          {selectedSubAccountId && (
+            <ManageSubAccount 
+              subAccountId={selectedSubAccountId} 
+              onClose={() => setIsManageDialogOpen(false)}
+              onUpdate={fetchSubAccounts}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
