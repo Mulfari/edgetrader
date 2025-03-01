@@ -11,6 +11,31 @@ import { AlertCircle } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
+// Definir una interfaz para el error
+interface ErrorWithMessage {
+  message: string;
+}
+
+function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as Record<string, unknown>).message === 'string'
+  )
+}
+
+function toErrorWithMessage(maybeError: unknown): ErrorWithMessage {
+  if (isErrorWithMessage(maybeError)) return maybeError
+  
+  try {
+    return new Error(JSON.stringify(maybeError))
+  } catch {
+    // Si la serialización falla, devolvemos un error genérico
+    return new Error(String(maybeError))
+  }
+}
+
 export default function CreateSubAccount() {
   const [name, setName] = useState("")
   const [apiKey, setApiKey] = useState("")
@@ -52,8 +77,9 @@ export default function CreateSubAccount() {
 
       router.push("/dashboard") // Redirección al dashboard después de crear la subcuenta
       router.refresh() // Actualizar la página para mostrar la nueva subcuenta
-    } catch (err: any) {
-      setError(err.message || "Ocurrió un error al crear la subcuenta")
+    } catch (err: unknown) {
+      const errorWithMessage = toErrorWithMessage(err)
+      setError(errorWithMessage.message || "Ocurrió un error al crear la subcuenta")
       console.error(err)
     } finally {
       setIsLoading(false)
