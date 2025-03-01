@@ -298,8 +298,8 @@ export default function SubAccountActions({ onRefresh, subAccount, mode }: SubAc
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button 
-          variant={getButtonVariant() as any} 
-          size={getButtonSize() as any}
+          variant={getButtonVariant() as "default" | "ghost" | "outline" | "secondary" | "destructive" | "link"} 
+          size={getButtonSize() as "default" | "sm" | "lg" | "icon"}
           className={mode === "add" ? "w-full md:w-auto" : ""}
         >
           {getButtonContent()}
@@ -394,7 +394,7 @@ export default function SubAccountActions({ onRefresh, subAccount, mode }: SubAc
           <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancelar
           </Button>
-          <Button variant={getSubmitButtonVariant() as any} onClick={handleSubmit}>
+          <Button variant={getSubmitButtonVariant() as "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"} onClick={handleSubmit}>
             {getSubmitButtonText()}
           </Button>
         </DialogFooter>
