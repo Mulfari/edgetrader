@@ -9,20 +9,16 @@ import {
   Wallet,
   ArrowUpDown,
   Filter,
-  Edit,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import ManageSubAccount from "./ManageSubAccount";
-import SubAccountSelector from "./SubAccountSelector";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -40,9 +36,7 @@ interface SubAccount {
   balance?: number;
   lastUpdated?: string;
   assets?: Asset[];
-  performance?: number;
-  apiKey: string;
-  isDemo: boolean;
+  performance?: number; // Añadimos el campo de rendimiento
 }
 
 interface AccountDetailsResponse {
@@ -56,34 +50,25 @@ interface AccountDetailsResponse {
   }[];
 }
 
-interface AccountBalance {
-  subAccountId: string;
-  balance: number;
-  currency: string;
-}
-
 type SortConfig = {
   key: keyof SubAccount;
   direction: "asc" | "desc";
 } | null;
 
 interface SubAccountsProps {
-  onBalanceUpdate?: (totalBalance: number, subAccountId: string) => void;
-  refreshTrigger?: boolean;
+  onBalanceUpdate?: (totalBalance: number) => void;
 }
 
-export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAccountsProps) {
+export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null);
-  const [accountBalances, setAccountBalances] = useState<AccountBalance[]>([]);
+  const [accountBalances, setAccountBalances] = useState<Record<string, number | null>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const [selectedExchange, setSelectedExchange] = useState<string>("all");
-  const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
-  const [isSelectorDialogOpen, setIsSelectorDialogOpen] = useState(false);
-  const { toast } = useToast();
+  const router = useRouter();
 
   const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))];
 
@@ -125,19 +110,10 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
   }, []);
 
   const fetchSubAccounts = useCallback(async () => {
-    setError(null);
     const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
-    
-    if (!token || !userId) {
-      console.error("❌ No hay token o userId");
-      setError("No hay token de autenticación o ID de usuario");
-      toast({
-        variant: "destructive",
-        title: "Error de autenticación",
-        description: "No hay token de autenticación o ID de usuario",
-      });
-      setIsLoading(false);
+    if (!token) {
+      console.error("❌ No hay token, redirigiendo a login.");
+      router.push("/login");
       return;
     }
 
@@ -153,74 +129,35 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
 
       if (!res.ok) {
         if (res.status === 401) {
-          console.error("❌ Token inválido o expirado.");
-          setError("Token inválido o expirado");
-          toast({
-            variant: "destructive",
-            title: "Error de autenticación",
-            description: "Token inválido o expirado",
-          });
-          setIsLoading(false);
-          return;
+          console.error("❌ Token inválido, redirigiendo a login.");
+          localStorage.removeItem("token");
+          router.push("/login");
         }
         throw new Error(`Error al obtener subcuentas - Código ${res.status}`);
       }
 
       const data = await res.json();
       console.log("Respuesta del backend:", data);
-      
-      // Verificar si hay subcuentas almacenadas que ya no existen en el servidor
-      const storedSubAccounts = localStorage.getItem("subAccounts");
-      if (storedSubAccounts) {
-        try {
-          const parsedSubAccounts = JSON.parse(storedSubAccounts);
-          const missingAccounts = parsedSubAccounts.filter((stored: SubAccount) => 
-            !data.some((current: SubAccount) => current.id === stored.id)
-          );
-          
-          if (missingAccounts.length > 0) {
-            console.log("Subcuentas que ya no existen en el servidor:", missingAccounts);
-            // Mostrar notificación si hay subcuentas que ya no existen
-            toast({
-              title: "Información",
-              description: "Algunas subcuentas han sido eliminadas del servidor y se han actualizado tus datos locales.",
-            });
-          }
-        } catch (e) {
-          console.error("Error al verificar subcuentas almacenadas:", e);
-        }
-      }
-      
       setSubAccounts(data);
 
-      const balances: AccountBalance[] = [];
+      const balances: Record<string, number | null> = {};
       let totalBalance = 0;
       const updatedSubAccounts = await Promise.all(
         data.map(async (sub: SubAccount) => {
           const details = await fetchAccountDetails(sub.userId, sub.id, token);
-          if (details.balance !== null) {
-            balances.push({
-              subAccountId: sub.id,
-              balance: details.balance,
-              currency: "USD"
-            });
-            totalBalance += details.balance;
-          } else {
-            balances.push({
-              subAccountId: sub.id,
-              balance: 0,
-              currency: "USD"
-            });
-          }
+          balances[sub.id] = details.balance;
           sub.assets = details.assets;
           sub.performance = Math.random() * 100;
+          if (details.balance !== null) {
+            totalBalance += details.balance;
+          }
           return sub;
         })
       );
       setSubAccounts(updatedSubAccounts);
       setAccountBalances(balances);
-      if (onBalanceUpdate && updatedSubAccounts.length > 0) {
-        onBalanceUpdate(totalBalance, updatedSubAccounts[0].id);
+      if (onBalanceUpdate) {
+        onBalanceUpdate(totalBalance);
       }
       localStorage.setItem("subAccounts", JSON.stringify(updatedSubAccounts));
       localStorage.setItem("accountBalances", JSON.stringify(balances));
@@ -230,53 +167,20 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
     } finally {
       setIsLoading(false);
     }
-  }, [fetchAccountDetails, onBalanceUpdate, toast]);
+  }, [fetchAccountDetails, router, onBalanceUpdate]);
 
   useEffect(() => {
     const storedSubAccounts = localStorage.getItem("subAccounts");
     const storedAccountBalances = localStorage.getItem("accountBalances");
 
     if (storedSubAccounts && storedAccountBalances) {
-      try {
-        const parsedSubAccounts = JSON.parse(storedSubAccounts);
-        
-        // Si no hay subcuentas almacenadas o el array está vacío, cargar desde el servidor
-        if (!parsedSubAccounts || parsedSubAccounts.length === 0) {
-          console.log("No hay subcuentas almacenadas, cargando desde el servidor");
-          fetchSubAccounts();
-          return;
-        }
-        
-        const parsedBalances = JSON.parse(storedAccountBalances);
-        setSubAccounts(parsedSubAccounts);
-        setAccountBalances(parsedBalances);
-        
-        // Calcular el balance total para actualizar el dashboard
-        if (onBalanceUpdate && parsedSubAccounts.length > 0) {
-          let totalBalance = 0;
-          parsedBalances.forEach((balance: AccountBalance) => {
-            if (balance !== null) {
-              totalBalance += Number(balance.balance);
-            }
-          });
-          onBalanceUpdate(totalBalance, parsedSubAccounts[0].id);
-        }
-        
-        setIsLoading(false);
-      } catch (e) {
-        console.error("Error al parsear datos almacenados:", e);
-        fetchSubAccounts();
-      }
+      setSubAccounts(JSON.parse(storedSubAccounts));
+      setAccountBalances(JSON.parse(storedAccountBalances));
+      setIsLoading(false);
     } else {
       fetchSubAccounts();
     }
-  }, [fetchSubAccounts, onBalanceUpdate]);
-
-  useEffect(() => {
-    if (refreshTrigger) {
-      fetchSubAccounts();
-    }
-  }, [refreshTrigger, fetchSubAccounts]);
+  }, [fetchSubAccounts]);
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
@@ -319,59 +223,6 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
       (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         account.exchange.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-
-  const handleOpenSelector = () => {
-    if (subAccounts.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No hay subcuentas disponibles para editar",
-      });
-      return;
-    }
-    
-    setIsSelectorDialogOpen(true);
-  };
-
-  const handleSelectSubAccount = (id: string) => {
-    setSelectedSubAccountId(id);
-    setIsSelectorDialogOpen(false);
-    setIsManageDialogOpen(true);
-  };
-
-  const handleSubAccountUpdated = () => {
-    // Cerrar el diálogo de gestión
-    setIsManageDialogOpen(false);
-    // Actualizar la lista de subcuentas
-    fetchSubAccounts();
-    // Mostrar mensaje de éxito
-    toast({
-      title: "Subcuenta actualizada",
-      description: "La información de la subcuenta se ha actualizado correctamente",
-    });
-  };
-
-  const handleSubAccountDeleted = () => {
-    // Cerrar el diálogo de gestión
-    setIsManageDialogOpen(false);
-    // Actualizar la lista de subcuentas
-    fetchSubAccounts();
-    // Mostrar mensaje de éxito
-    toast({
-      title: "Subcuenta eliminada",
-      description: "La subcuenta se ha eliminado correctamente",
-    });
-  };
-
-  const getAccountBalance = (accountId: string) => {
-    const balance = accountBalances.find(b => b.subAccountId === accountId);
-    return balance ? balance.balance : 0;
-  };
-
-  const getCurrency = (accountId: string) => {
-    const balance = accountBalances.find(b => b.subAccountId === accountId);
-    return balance ? balance.currency : 'USD';
-  };
 
   return (
     <Card className="w-full">
@@ -496,10 +347,10 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {getAccountBalance(sub.id) !== undefined ? (
+                        {accountBalances[sub.id] !== undefined ? (
                           <div className="flex items-center gap-2">
                             <Wallet className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{getAccountBalance(sub.id).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {getCurrency(sub.id)}</span>
+                            <span className="font-medium">{accountBalances[sub.id]?.toFixed(2)} USDT</span>
                           </div>
                         ) : (
                           "-"
@@ -533,8 +384,8 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
                                     </CardHeader>
                                     <CardContent>
                                       <div className="text-2xl font-bold">
-                                        {getAccountBalance(sub.id) !== undefined
-                                          ? `${getAccountBalance(sub.id).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${getCurrency(sub.id)}`
+                                        {accountBalances[sub.id] !== undefined
+                                          ? `${accountBalances[sub.id]?.toFixed(2)} USDT`
                                           : "No disponible"}
                                       </div>
                                     </CardContent>
@@ -598,46 +449,6 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
           </Table>
         </div>
       </CardContent>
-
-      <CardFooter>
-        {subAccounts.length > 0 && (
-          <Button onClick={handleOpenSelector}>
-            <Edit className="mr-2 h-4 w-4" />
-            Editar
-          </Button>
-        )}
-      </CardFooter>
-
-      <Dialog open={isSelectorDialogOpen} onOpenChange={setIsSelectorDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogTitle className="sr-only">Seleccionar Subcuenta</DialogTitle>
-          <DialogDescription className="sr-only">
-            Selecciona la subcuenta que deseas editar o eliminar
-          </DialogDescription>
-          <SubAccountSelector 
-            subAccounts={subAccounts}
-            onSelect={handleSelectSubAccount}
-            onClose={() => setIsSelectorDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogTitle className="sr-only">Gestionar Subcuenta</DialogTitle>
-          <DialogDescription className="sr-only">
-            Edita o elimina la información de tu subcuenta de trading
-          </DialogDescription>
-          {selectedSubAccountId && (
-            <ManageSubAccount 
-              subAccountId={selectedSubAccountId} 
-              onClose={() => setIsManageDialogOpen(false)}
-              onUpdate={handleSubAccountUpdated}
-              onDelete={handleSubAccountDeleted}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </Card>
   );
 }

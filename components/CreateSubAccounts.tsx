@@ -2,31 +2,15 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import type React from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { AlertCircle, Loader2, Server, Key, Eye, EyeOff } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
-import { Checkbox } from "@/components/ui/checkbox"
+import type React from "react" // Added import for React
 
-interface CreateSubAccountProps {
-  onClose?: () => void;
-}
-
-export default function CreateSubAccount({ onClose }: CreateSubAccountProps) {
+export default function CreateSubAccount() {
   const [name, setName] = useState("")
-  const [exchange, setExchange] = useState("bybit")
   const [apiKey, setApiKey] = useState("")
   const [apiSecret, setApiSecret] = useState("")
-  const [isDemo, setIsDemo] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const [showSecret, setShowSecret] = useState(false)
   const router = useRouter()
-  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,194 +18,85 @@ export default function CreateSubAccount({ onClose }: CreateSubAccountProps) {
     setError("")
 
     try {
-      const token = localStorage.getItem("token");
-      
-      if (!token) {
-        throw new Error("No hay token de autenticación");
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subaccounts`, {
+      const response = await fetch("/api/subaccounts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
           name,
-          exchange,
+          exchange: "bybit",
           apiKey,
           apiSecret,
-          isDemo,
         }),
       })
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Error al crear la subcuenta");
+        throw new Error("Failed to create subaccount")
       }
 
-      toast({
-        title: "Subcuenta creada",
-        description: `La subcuenta ${isDemo ? 'demo' : ''} se ha creado correctamente`,
-      });
-
-      if (onClose) {
-        onClose();
-      }
-      
-      router.refresh(); // Refrescar la página para mostrar la nueva subcuenta
+      router.push("/account") // Redirect to account page after successful creation
+      router.refresh() // Refresh the page to show the new subaccount
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Error al crear la subcuenta";
-      setError(errorMessage);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: errorMessage,
-      });
-      console.error(err);
+      setError("An error occurred while creating the subaccount")
+      console.error(err)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold">Crear Nueva Subcuenta</CardTitle>
-        <CardDescription>
-          Conecta tu cuenta de exchange para monitorear tus operaciones y balance.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name" className="text-sm font-medium">
-                Nombre de la Subcuenta
-              </Label>
-              <Input
-                id="name"
-                placeholder="Mi Cuenta Principal"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="w-full"
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="exchange" className="text-sm font-medium">
-                Exchange
-              </Label>
-              <Select value={exchange} onValueChange={setExchange}>
-                <SelectTrigger id="exchange">
-                  <SelectValue placeholder="Selecciona un exchange" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bybit">Bybit</SelectItem>
-                  <SelectItem value="binance">Binance</SelectItem>
-                  <SelectItem value="kucoin">KuCoin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="apiKey" className="text-sm font-medium">
-                API Key
-              </Label>
-              <div className="flex items-center space-x-2">
-                <Key className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="apiKey"
-                  placeholder="Ingresa tu API Key"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  required
-                  className="flex-1"
-                />
-              </div>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="apiSecret" className="text-sm font-medium">
-                API Secret
-              </Label>
-              <div className="flex items-center space-x-2 relative">
-                <Key className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="apiSecret"
-                  type={showSecret ? "text" : "password"}
-                  placeholder="Ingresa tu API Secret"
-                  value={apiSecret}
-                  onChange={(e) => setApiSecret(e.target.value)}
-                  required
-                  className="flex-1 pr-10"
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowSecret(!showSecret)}
-                >
-                  {showSecret ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Tus credenciales están seguras y encriptadas. Nunca compartimos tus claves con terceros.
-              </p>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="isDemo" 
-                checked={isDemo} 
-                onCheckedChange={(checked: boolean | "indeterminate") => setIsDemo(checked === true)}
-              />
-              <Label 
-                htmlFor="isDemo" 
-                className="text-sm font-medium cursor-pointer"
-              >
-                Esta es una cuenta demo
-              </Label>
-            </div>
-            <div className={`text-xs text-muted-foreground ${isDemo ? 'block' : 'hidden'}`}>
-              <p className="mb-1">Al marcar esta opción, se utilizará la API de demo de Bybit:</p>
-              <p className="font-mono text-xs bg-muted p-1 rounded">https://api-demo.bybit.com</p>
-            </div>
-          </div>
-
-          {error && (
-            <div className="flex items-center gap-2 p-3 text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg">
-              <AlertCircle className="h-5 w-5" />
-              <p className="text-sm font-medium">{error}</p>
-            </div>
-          )}
-          
-          <div className="flex justify-end space-x-2">
-            {onClose && (
-              <Button variant="outline" type="button" onClick={onClose}>
-                Cancelar
-              </Button>
-            )}
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creando...
-                </>
-              ) : (
-                <>
-                  <Server className="mr-2 h-4 w-4" />
-                  Crear Subcuenta
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+    <div className="max-w-md mx-auto mt-8">
+      <h2 className="text-2xl font-bold mb-4">Create New Subaccount</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+            Subaccount Name
+          </label>
+          <input
+            type="text"
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          />
+        </div>
+        <div>
+          <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700">
+            Bybit API Key
+          </label>
+          <input
+            type="text"
+            id="apiKey"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            required
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          />
+        </div>
+        <div>
+          <label htmlFor="apiSecret" className="block text-sm font-medium text-gray-700">
+            Bybit API Secret
+          </label>
+          <input
+            type="password"
+            id="apiSecret"
+            value={apiSecret}
+            onChange={(e) => setApiSecret(e.target.value)}
+            required
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          {isLoading ? "Creating..." : "Create Subaccount"}
+        </button>
+      </form>
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+    </div>
   )
 }
