@@ -84,7 +84,7 @@ export default function Operations({ trades }: OperationsProps) {
         </Tabs>
       </div>
 
-      <Card className="shadow-lg">
+      <Card>
         <CardHeader className="bg-secondary">
           <CardTitle className="flex items-center justify-between text-2xl">
             <span>{activeTab === "open" ? "Operaciones Abiertas" : "Operaciones Cerradas"}</span>
@@ -113,116 +113,113 @@ export default function Operations({ trades }: OperationsProps) {
             />
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
-          <div className="overflow-x-auto">
-            <Accordion type="single" collapsible className="w-full">
-              {filteredTrades.map((trade) => (
-                <AccordionItem value={trade.id} key={trade.id} className="border-b">
-                  <AccordionTrigger className="hover:bg-secondary/50 transition-colors">
-                    <div className="grid grid-cols-6 w-full gap-4 items-center">
-                      <span className="font-medium text-primary">{trade.pair}</span>
-                      <Badge
-                        variant={trade.type === "buy" ? "default" : "destructive"}
-                        className="flex items-center gap-1 w-fit"
-                      >
-                        {trade.type === "buy" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                        {trade.type.toUpperCase()}
-                      </Badge>
-                      <span className="text-muted-foreground">{trade.entryPrice.toFixed(2)}</span>
-                      <span className="text-muted-foreground">{trade.amount}</span>
-                      <Badge variant={trade.market === "spot" ? "secondary" : "outline"} className="w-fit">
-                        {trade.market.toUpperCase()}
-                      </Badge>
-                      {activeTab === "open" ? (
-                        <span className="text-muted-foreground">{new Date(trade.openDate).toLocaleString()}</span>
-                      ) : (
-                        <span
-                          className={`font-medium ${trade.pnl && trade.pnl >= 0 ? "text-green-500" : "text-red-500"}`}
-                        >
-                          {trade.pnl?.toFixed(2)} USDT
-                        </span>
-                      )}
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="bg-secondary/30 rounded-lg mt-4 overflow-hidden">
-                      <div className="grid md:grid-cols-2 gap-6 p-6">
-                        <div className="space-y-4">
-                          <h4 className="font-semibold text-lg text-primary">Detalles de la Operación</h4>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <p className="font-medium">ID:</p>
-                            <p>{trade.id}</p>
-                            <p className="font-medium">Usuario ID:</p>
-                            <p>{trade.userId}</p>
-                            <p className="font-medium">Estado:</p>
-                            <p>{trade.status === "open" ? "Abierta" : "Cerrada"}</p>
-                            <p className="font-medium">Fecha de Apertura:</p>
-                            <p>{new Date(trade.openDate).toLocaleString()}</p>
-                            {trade.closeDate && (
-                              <>
-                                <p className="font-medium">Fecha de Cierre:</p>
-                                <p>{new Date(trade.closeDate).toLocaleString()}</p>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        <div className="space-y-4">
-                          <h4 className="font-semibold text-lg text-primary">Información Financiera</h4>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <p className="font-medium">Precio de Entrada:</p>
-                            <p>{trade.entryPrice.toFixed(2)}</p>
-                            {trade.exitPrice && (
-                              <>
-                                <p className="font-medium">Precio de Salida:</p>
-                                <p>{trade.exitPrice.toFixed(2)}</p>
-                              </>
-                            )}
-                            <p className="font-medium">Cantidad:</p>
-                            <p>{trade.amount}</p>
-                            {trade.pnl !== undefined && (
-                              <>
-                                <p className="font-medium">PnL:</p>
-                                <p className={trade.pnl >= 0 ? "text-green-500 font-semibold" : "text-red-500 font-semibold"}>
-                                  {trade.pnl.toFixed(2)} USDT
-                                </p>
-                              </>
-                            )}
-                            {trade.market === "futures" && (
-                              <>
-                                {trade.leverage && (
-                                  <>
-                                    <p className="font-medium">Apalancamiento:</p>
-                                    <p>{trade.leverage}x</p>
-                                  </>
-                                )}
-                                {trade.stopLoss && (
-                                  <>
-                                    <p className="font-medium">Stop Loss:</p>
-                                    <p>{trade.stopLoss}</p>
-                                  </>
-                                )}
-                                {trade.takeProfit && (
-                                  <>
-                                    <p className="font-medium">Take Profit:</p>
-                                    <p>{trade.takeProfit}</p>
-                                  </>
-                                )}
-                              </>
-                            )}
-                          </div>
+          
+          <Accordion type="single" collapsible className="w-full">
+            {filteredTrades.map((trade) => (
+              <AccordionItem value={trade.id} key={trade.id} className="border-b">
+                <AccordionTrigger className="hover:bg-secondary/50 transition-colors">
+                  <div className="grid grid-cols-6 w-full gap-4 items-center">
+                    <span className="font-medium text-primary">{trade.pair}</span>
+                    <Badge
+                      variant={trade.type === "buy" ? "default" : "destructive"}
+                      className="flex items-center gap-1 w-fit"
+                    >
+                      {trade.type === "buy" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      {trade.type.toUpperCase()}
+                    </Badge>
+                    <span className="text-muted-foreground">{trade.entryPrice.toFixed(2)}</span>
+                    <span className="text-muted-foreground">{trade.amount}</span>
+                    <Badge variant={trade.market === "spot" ? "secondary" : "outline"} className="w-fit">
+                      {trade.market.toUpperCase()}
+                    </Badge>
+                    {activeTab === "open" ? (
+                      <span className="text-muted-foreground">{new Date(trade.openDate).toLocaleString()}</span>
+                    ) : (
+                      <span className={`font-medium ${trade.pnl && trade.pnl >= 0 ? "text-green-500" : "text-red-500"}`}>
+                        {trade.pnl?.toFixed(2)} USDT
+                      </span>
+                    )}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="bg-secondary/30 rounded-lg mt-4 overflow-hidden">
+                    <div className="grid md:grid-cols-2 gap-6 p-6">
+                      <div className="space-y-4">
+                        <h4 className="font-semibold text-lg text-primary">Detalles de la Operación</h4>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <p className="font-medium">ID:</p>
+                          <p>{trade.id}</p>
+                          <p className="font-medium">Usuario ID:</p>
+                          <p>{trade.userId}</p>
+                          <p className="font-medium">Estado:</p>
+                          <p>{trade.status === "open" ? "Abierta" : "Cerrada"}</p>
+                          <p className="font-medium">Fecha de Apertura:</p>
+                          <p>{new Date(trade.openDate).toLocaleString()}</p>
+                          {trade.closeDate && (
+                            <>
+                              <p className="font-medium">Fecha de Cierre:</p>
+                              <p>{new Date(trade.closeDate).toLocaleString()}</p>
+                            </>
+                          )}
                         </div>
                       </div>
-                      {trade.status === "open" && (
-                        <div className="bg-primary/5 p-4 flex justify-end space-x-2">
-                          <Button variant="outline" className="w-32">Editar</Button>
-                          <Button variant="destructive" className="w-32">Cerrar</Button>
+                      <div>
+                        <h4 className="font-semibold text-lg text-primary">Información Financiera</h4>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <p className="font-medium">Precio de Entrada:</p>
+                          <p>{trade.entryPrice.toFixed(2)}</p>
+                          {trade.exitPrice && (
+                            <>
+                              <p className="font-medium">Precio de Salida:</p>
+                              <p>{trade.exitPrice.toFixed(2)}</p>
+                            </>
+                          )}
+                          <p className="font-medium">Cantidad:</p>
+                          <p>{trade.amount}</p>
+                          {trade.pnl !== undefined && (
+                            <>
+                              <p className="font-medium">PnL:</p>
+                              <p className={trade.pnl >= 0 ? "text-green-500 font-semibold" : "text-red-500 font-semibold"}>
+                                {trade.pnl.toFixed(2)} USDT
+                              </p>
+                            </>
+                          )}
+                          {trade.market === "futures" && (
+                            <>
+                              {trade.leverage && (
+                                <>
+                                  <p className="font-medium">Apalancamiento:</p>
+                                  <p>{trade.leverage}x</p>
+                                </>
+                              )}
+                              {trade.stopLoss && (
+                                <>
+                                  <p className="font-medium">Stop Loss:</p>
+                                  <p>{trade.stopLoss}</p>
+                                </>
+                              )}
+                              {trade.takeProfit && (
+                                <>
+                                  <p className="font-medium">Take Profit:</p>
+                                  <p>{trade.takeProfit}</p>
+                                </>
+                              )}
+                            </>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </div>
+                    {trade.status === "open" && (
+                      <div className="bg-primary/5 p-4 flex justify-end space-x-2">
+                        <Button variant="outline" className="w-32">Editar</Button>
+                        <Button variant="destructive" className="w-32">Cerrar</Button>
+                      </div>
+                    )}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </CardContent>
       </Card>
     </div>
