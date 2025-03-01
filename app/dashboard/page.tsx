@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import SubAccounts from "@/components/SubAccounts";
 import Operations from "@/components/Operations";
+import { useToast } from "@/hooks/use-toast";
 
 // Definir el tipo de operación
 interface Trade {
@@ -34,7 +35,9 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [totalBalance, setTotalBalance] = useState<number>(0);
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -46,6 +49,7 @@ export default function Dashboard() {
       return;
     }
 
+    setCurrentUserId(userId);
     setIsLoading(false);
   }, [router]);
 
@@ -53,15 +57,33 @@ export default function Dashboard() {
   const fetchTrades = async (userId: string, subAccountId: string) => {
     try {
       const token = localStorage.getItem('token');
+      
       if (!token) {
-        console.error('No hay token de autenticación');
+        toast({
+          variant: "destructive",
+          title: "Error de autenticación",
+          description: "No hay token de autenticación"
+        });
         router.push('/login');
         return;
       }
 
-      if (!userId) {
-        console.error('No hay ID de usuario');
+      if (!userId || userId === 'undefined') {
+        toast({
+          variant: "destructive",
+          title: "Error de usuario",
+          description: "ID de usuario no válido"
+        });
         router.push('/login');
+        return;
+      }
+
+      if (!subAccountId) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "ID de subcuenta no válido"
+        });
         return;
       }
 
@@ -77,10 +99,24 @@ export default function Dashboard() {
       
       if (!response.ok) {
         if (response.status === 401) {
-          console.error('Token inválido o expirado');
+          toast({
+            variant: "destructive",
+            title: "Error de autenticación",
+            description: "Token inválido o expirado"
+          });
           router.push('/login');
           return;
         }
+        
+        if (response.status === 404) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Subcuenta no encontrada"
+          });
+          return;
+        }
+
         const errorData = await response.json();
         throw new Error(errorData.message || 'Error al obtener operaciones');
       }
@@ -89,9 +125,11 @@ export default function Dashboard() {
       setTrades(data);
     } catch (error) {
       console.error('Error al obtener operaciones:', error);
-      if (error instanceof Error) {
-        console.error(error.message);
-      }
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error al obtener operaciones"
+      });
     }
   };
 
@@ -99,20 +137,23 @@ export default function Dashboard() {
   const updateTotalBalance = (balance: number, subAccountId: string) => {
     setTotalBalance(balance);
     // Obtener operaciones cuando se selecciona una subcuenta
-    if (subAccountId) {
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
-        console.error('No hay ID de usuario almacenado');
-        router.push('/login');
-        return;
-      }
-      fetchTrades(userId, subAccountId);
+    if (subAccountId && currentUserId) {
+      fetchTrades(currentUserId, subAccountId);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Falta ID de usuario o subcuenta"
+      });
     }
   };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
+    setCurrentUserId(null);
+    setTrades([]);
+    setTotalBalance(0);
     router.push("/login");
   };
 
