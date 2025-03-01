@@ -2,7 +2,14 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import type React from "react" // Added import for React
+import type React from "react"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { AlertCircle } from "lucide-react"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 export default function CreateSubAccount() {
   const [name, setName] = useState("")
@@ -18,10 +25,17 @@ export default function CreateSubAccount() {
     setError("")
 
     try {
-      const response = await fetch("/api/subaccounts", {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        router.push("/login")
+        return
+      }
+
+      const response = await fetch(`${API_URL}/subaccounts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
           name,
@@ -32,13 +46,14 @@ export default function CreateSubAccount() {
       })
 
       if (!response.ok) {
-        throw new Error("Failed to create subaccount")
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.message || "Error al crear la subcuenta")
       }
 
-      router.push("/account") // Redirect to account page after successful creation
-      router.refresh() // Refresh the page to show the new subaccount
-    } catch (err) {
-      setError("An error occurred while creating the subaccount")
+      router.push("/dashboard") // Redirección al dashboard después de crear la subcuenta
+      router.refresh() // Actualizar la página para mostrar la nueva subcuenta
+    } catch (err: any) {
+      setError(err.message || "Ocurrió un error al crear la subcuenta")
       console.error(err)
     } finally {
       setIsLoading(false)
@@ -46,57 +61,69 @@ export default function CreateSubAccount() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-8">
-      <h2 className="text-2xl font-bold mb-4">Create New Subaccount</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-            Subaccount Name
-          </label>
-          <input
-            type="text"
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-          />
-        </div>
-        <div>
-          <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700">
-            Bybit API Key
-          </label>
-          <input
-            type="text"
-            id="apiKey"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-          />
-        </div>
-        <div>
-          <label htmlFor="apiSecret" className="block text-sm font-medium text-gray-700">
-            Bybit API Secret
-          </label>
-          <input
-            type="password"
-            id="apiSecret"
-            value={apiSecret}
-            onChange={(e) => setApiSecret(e.target.value)}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          {isLoading ? "Creating..." : "Create Subaccount"}
-        </button>
-      </form>
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-    </div>
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle>Crear Nueva Subcuenta</CardTitle>
+        <CardDescription>Agrega una nueva subcuenta de Bybit para monitorear</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Nombre de la Subcuenta</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="Mi Subcuenta"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="apiKey">API Key de Bybit</Label>
+            <Input
+              id="apiKey"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              required
+              placeholder="Ingresa tu API Key"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="apiSecret">API Secret de Bybit</Label>
+            <Input
+              id="apiSecret"
+              type="password"
+              value={apiSecret}
+              onChange={(e) => setApiSecret(e.target.value)}
+              required
+              placeholder="Ingresa tu API Secret"
+            />
+          </div>
+          
+          {error && (
+            <div className="flex items-center gap-2 p-3 mt-4 text-sm border border-red-500 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md">
+              <AlertCircle className="h-4 w-4" />
+              <p>{error}</p>
+            </div>
+          )}
+          
+          <div className="pt-4">
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isLoading}
+            >
+              {isLoading ? "Creando..." : "Crear Subcuenta"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        <Button variant="outline" onClick={() => router.back()}>Cancelar</Button>
+        <Button variant="link" onClick={() => window.open("https://www.bybit.com/app/user/api-management", "_blank")}>
+          ¿Cómo obtener API Keys?
+        </Button>
+      </CardFooter>
+    </Card>
   )
 }
