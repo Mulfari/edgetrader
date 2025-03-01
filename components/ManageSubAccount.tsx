@@ -73,6 +73,7 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: Ma
           }
         }
 
+        // Usar el nuevo endpoint para obtener una subcuenta específica
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subaccounts/${subAccountId}`, {
           headers: {
             "Authorization": `Bearer ${token}`
