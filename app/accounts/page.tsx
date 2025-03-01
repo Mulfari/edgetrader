@@ -9,13 +9,12 @@ import {
   Trash2, 
   Eye, 
   EyeOff, 
-  ChevronDown,
   Filter,
   ArrowUpDown,
   AlertCircle
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -38,6 +37,10 @@ interface SubAccount {
   isDemo: boolean
 }
 
+type ApiError = {
+  message: string;
+}
+
 const exchangeOptions = [
   { value: "bybit", label: "Bybit" },
   { value: "binance", label: "Binance" },
@@ -55,7 +58,6 @@ export default function AccountsPage() {
     name: "",
     isDemo: false
   })
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [showApiSecret, setShowApiSecret] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -97,9 +99,10 @@ export default function AccountsPage() {
 
       const data: SubAccount[] = await res.json()
       setAccounts(data)
-    } catch (error: any) {
+    } catch (error: Error | ApiError | unknown) {
       console.error("Error al cargar subcuentas:", error)
-      setError(error.message || "Error al cargar las subcuentas. Intenta nuevamente más tarde.")
+      const errorMessage = error instanceof Error ? error.message : "Error al cargar las subcuentas. Intenta nuevamente más tarde."
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -108,10 +111,8 @@ export default function AccountsPage() {
   useEffect(() => {
     const token = getToken()
     if (token) {
-      setIsAuthenticated(true)
       fetchAccounts()
     } else {
-      setIsAuthenticated(false)
       setIsLoading(false)
       router.push("/login")
     }
@@ -145,16 +146,17 @@ export default function AccountsPage() {
       })
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
+        const errorData = await res.json().catch(() => ({})) as ApiError
         throw new Error(errorData.message || "Error al crear la subcuenta")
       }
 
       setIsAddDialogOpen(false)
       setNewAccount({ exchange: "", apiKey: "", apiSecret: "", name: "", isDemo: false })
       fetchAccounts()
-    } catch (error: any) {
+    } catch (error: Error | ApiError | unknown) {
       console.error("Error al crear subcuenta:", error)
-      setError(error.message || "Error al crear la subcuenta. Intenta nuevamente más tarde.")
+      const errorMessage = error instanceof Error ? error.message : "Error al crear la subcuenta. Intenta nuevamente más tarde."
+      setError(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
@@ -186,9 +188,10 @@ export default function AccountsPage() {
       }
 
       fetchAccounts()
-    } catch (error: any) {
+    } catch (error: Error | ApiError | unknown) {
       console.error("Error al eliminar subcuenta:", error)
-      setError(error.message || "Error al eliminar la subcuenta. Intenta nuevamente más tarde.")
+      const errorMessage = error instanceof Error ? error.message : "Error al eliminar la subcuenta. Intenta nuevamente más tarde."
+      setError(errorMessage)
     }
   }
 
