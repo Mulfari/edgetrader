@@ -36,6 +36,19 @@ export default function Dashboard() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const router = useRouter();
 
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+
+    if (!token || !userId) {
+      console.error('No hay token o userId');
+      router.push('/login');
+      return;
+    }
+
+    setIsLoading(false);
+  }, [router]);
+
   // Función para obtener las operaciones de la API
   const fetchTrades = async (userId: string, subAccountId: string) => {
     try {
@@ -45,6 +58,14 @@ export default function Dashboard() {
         router.push('/login');
         return;
       }
+
+      if (!userId) {
+        console.error('No hay ID de usuario');
+        router.push('/login');
+        return;
+      }
+
+      console.log(`📡 Obteniendo operaciones para usuario ${userId} y subcuenta ${subAccountId}`);
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/account-details/${userId}/${subAccountId}/trades`, {
         credentials: 'include',
@@ -60,13 +81,17 @@ export default function Dashboard() {
           router.push('/login');
           return;
         }
-        throw new Error('Error al obtener operaciones');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al obtener operaciones');
       }
 
       const data = await response.json();
       setTrades(data);
     } catch (error) {
       console.error('Error al obtener operaciones:', error);
+      if (error instanceof Error) {
+        console.error(error.message);
+      }
     }
   };
 
@@ -75,18 +100,27 @@ export default function Dashboard() {
     setTotalBalance(balance);
     // Obtener operaciones cuando se selecciona una subcuenta
     if (subAccountId) {
-      const userId = localStorage.getItem('userId') || 'user1'; // Obtener el ID real del usuario
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        console.error('No hay ID de usuario almacenado');
+        router.push('/login');
+        return;
+      }
       fetchTrades(userId, subAccountId);
     }
   };
 
-  useEffect(() => {
-    setIsLoading(false);
-  }, []);
-
   const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
     router.push("/login");
   };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <p className="text-center text-muted-foreground">Cargando datos...</p>
+    </div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,52 +140,48 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto py-6 px-4">
-        {isLoading ? (
-          <p className="text-center text-muted-foreground">Cargando datos...</p>
-        ) : (
-          <>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
-                  <Wallet className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{totalBalance.toFixed(2)} USDT</div>
-                  <p className="text-xs text-muted-foreground mt-1">Balance agregado de todas las cuentas</p>
-                </CardContent>
-              </Card>
+        <>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
+                <Wallet className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalBalance.toFixed(2)} USDT</div>
+                <p className="text-xs text-muted-foreground mt-1">Balance agregado de todas las cuentas</p>
+              </CardContent>
+            </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Rendimiento Promedio</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">- %</div>
-                  <Progress value={0} className="mt-2" />
-                </CardContent>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Rendimiento Promedio</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">- %</div>
+                <Progress value={0} className="mt-2" />
+              </CardContent>
+            </Card>
+          </div>
 
-            <Tabs defaultValue="accounts" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="accounts">Subcuentas</TabsTrigger>
-                <TabsTrigger value="trades">Operaciones</TabsTrigger>
-              </TabsList>
+          <Tabs defaultValue="accounts" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="accounts">Subcuentas</TabsTrigger>
+              <TabsTrigger value="trades">Operaciones</TabsTrigger>
+            </TabsList>
 
-              <TabsContent value="accounts" className="space-y-4">
-                <SubAccounts onBalanceUpdate={updateTotalBalance} />
-              </TabsContent>
+            <TabsContent value="accounts" className="space-y-4">
+              <SubAccounts onBalanceUpdate={updateTotalBalance} />
+            </TabsContent>
 
-              <TabsContent value="trades" className="space-y-4">
-                <div className="bg-card rounded-lg">
-                  <Operations trades={trades} />
-                </div>
-              </TabsContent>
-            </Tabs>
-          </>
-        )}
+            <TabsContent value="trades" className="space-y-4">
+              <div className="bg-card rounded-lg">
+                <Operations trades={trades} />
+              </div>
+            </TabsContent>
+          </Tabs>
+        </>
       </main>
     </div>
   );
