@@ -34,7 +34,6 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [totalBalance, setTotalBalance] = useState<number>(0);
   const [trades, setTrades] = useState<Trade[]>([]);
-  const [selectedSubAccount, setSelectedSubAccount] = useState<string>("");
   const router = useRouter();
 
   // Función para obtener las operaciones de la API
@@ -58,7 +57,6 @@ export default function Dashboard() {
   // Función para actualizar el balance total y obtener operaciones
   const updateTotalBalance = (balance: number, subAccountId: string) => {
     setTotalBalance(balance);
-    setSelectedSubAccount(subAccountId);
     // Obtener operaciones cuando se selecciona una subcuenta
     if (subAccountId) {
       fetchTrades("user1", subAccountId); // Reemplazar "user1" con el ID real del usuario
