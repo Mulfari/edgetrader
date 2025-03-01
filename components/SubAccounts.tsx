@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import ManageSubAccount from "./ManageSubAccount";
+import SubAccountSelector from "./SubAccountSelector";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -81,6 +82,7 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const [selectedExchange, setSelectedExchange] = useState<string>("all");
   const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
+  const [isSelectorDialogOpen, setIsSelectorDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))];
@@ -357,6 +359,49 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
     setIsManageDialogOpen(true);
   };
 
+  const handleOpenSelector = () => {
+    if (subAccounts.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No hay subcuentas disponibles para editar",
+      });
+      return;
+    }
+    
+    setIsSelectorDialogOpen(true);
+  };
+
+  const handleSelectSubAccount = (id: string) => {
+    setSelectedSubAccountId(id);
+    setIsSelectorDialogOpen(false);
+    setIsManageDialogOpen(true);
+  };
+
+  const handleSubAccountUpdated = () => {
+    // Cerrar el diálogo de gestión
+    setIsManageDialogOpen(false);
+    // Actualizar la lista de subcuentas
+    fetchSubAccounts();
+    // Mostrar mensaje de éxito
+    toast({
+      title: "Subcuenta actualizada",
+      description: "La información de la subcuenta se ha actualizado correctamente",
+    });
+  };
+
+  const handleSubAccountDeleted = () => {
+    // Cerrar el diálogo de gestión
+    setIsManageDialogOpen(false);
+    // Actualizar la lista de subcuentas
+    fetchSubAccounts();
+    // Mostrar mensaje de éxito
+    toast({
+      title: "Subcuenta eliminada",
+      description: "La subcuenta se ha eliminado correctamente",
+    });
+  };
+
   const getAccountBalance = (accountId: string) => {
     const balance = accountBalances.find(b => b.subAccountId === accountId);
     return balance ? balance.balance : 0;
@@ -595,12 +640,26 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
 
       <CardFooter>
         {subAccounts.length > 0 && (
-          <Button onClick={() => handleManageAccount(subAccounts[0].id)}>
+          <Button onClick={handleOpenSelector}>
             <Edit className="mr-2 h-4 w-4" />
             Editar
           </Button>
         )}
       </CardFooter>
+
+      <Dialog open={isSelectorDialogOpen} onOpenChange={setIsSelectorDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogTitle className="sr-only">Seleccionar Subcuenta</DialogTitle>
+          <DialogDescription className="sr-only">
+            Selecciona la subcuenta que deseas editar o eliminar
+          </DialogDescription>
+          <SubAccountSelector 
+            subAccounts={subAccounts}
+            onSelect={handleSelectSubAccount}
+            onClose={() => setIsSelectorDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
@@ -612,7 +671,8 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
             <ManageSubAccount 
               subAccountId={selectedSubAccountId} 
               onClose={() => setIsManageDialogOpen(false)}
-              onUpdate={fetchSubAccounts}
+              onUpdate={handleSubAccountUpdated}
+              onDelete={handleSubAccountDeleted}
             />
           )}
         </DialogContent>

@@ -25,9 +25,10 @@ interface ManageSubAccountProps {
   subAccountId: string;
   onClose?: () => void;
   onUpdate?: () => void;
+  onDelete?: () => void;
 }
 
-export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: ManageSubAccountProps) {
+export default function ManageSubAccount({ subAccountId, onClose, onUpdate, onDelete }: ManageSubAccountProps) {
   const [subAccount, setSubAccount] = useState<SubAccount | null>(null)
   const [name, setName] = useState("")
   const [exchange, setExchange] = useState("bybit")
@@ -37,6 +38,7 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: Ma
   const [isLoading, setIsLoading] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState("")
+  const [notFound, setNotFound] = useState(false)
   const [showSecret, setShowSecret] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const { toast } = useToast()
@@ -49,6 +51,7 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: Ma
       if (!isMounted) return;
       
       setIsLoading(true);
+      setNotFound(false);
       try {
         const token = localStorage.getItem("token");
         
@@ -97,15 +100,10 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: Ma
           
           if (!isMounted) return;
           
-          toast({
-            variant: "destructive",
-            title: "Subcuenta no encontrada",
-            description: "La subcuenta solicitada no existe o ha sido eliminada.",
-          });
+          setNotFound(true);
+          setError("La subcuenta solicitada no existe o ha sido eliminada.");
           
-          if (onClose) {
-            onClose();
-          }
+          // No cerrar automáticamente, permitir que el usuario vea el mensaje
           return;
         }
 
@@ -134,13 +132,6 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: Ma
           description: errorMessage,
         });
         console.error(err);
-        
-        // Si hay un error, cerrar el diálogo después de un breve retraso
-        setTimeout(() => {
-          if (isMounted && onClose) {
-            onClose();
-          }
-        }, 3000);
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -188,6 +179,30 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: Ma
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.message || "Error al actualizar la subcuenta");
+      }
+
+      // Actualizar la subcuenta en localStorage si existe
+      const storedSubAccounts = localStorage.getItem("subAccounts");
+      if (storedSubAccounts) {
+        try {
+          const parsedSubAccounts = JSON.parse(storedSubAccounts);
+          const updatedSubAccounts = parsedSubAccounts.map((acc: SubAccount) => {
+            if (acc.id === subAccountId) {
+              return {
+                ...acc,
+                name,
+                exchange,
+                apiKey,
+                apiSecret,
+                isDemo
+              };
+            }
+            return acc;
+          });
+          localStorage.setItem("subAccounts", JSON.stringify(updatedSubAccounts));
+        } catch (e) {
+          console.error("Error al actualizar subcuentas en localStorage:", e);
+        }
       }
 
       toast({
@@ -241,7 +256,9 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: Ma
         description: "La subcuenta se ha eliminado correctamente",
       });
 
-      if (onUpdate) {
+      if (onDelete) {
+        onDelete();
+      } else if (onUpdate) {
         onUpdate();
       }
 
@@ -267,6 +284,26 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: Ma
       <div className="flex justify-center items-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
+    )
+  }
+
+  if (notFound) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Subcuenta no encontrada</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <AlertCircle className="h-12 w-12 mb-3 text-destructive" />
+            <p className="text-lg font-medium mb-4">La subcuenta solicitada no existe o ha sido eliminada</p>
+            <p className="text-sm text-muted-foreground mb-6">
+              Es posible que la subcuenta haya sido eliminada o que no tengas permisos para acceder a ella.
+            </p>
+            <Button onClick={onClose}>Volver</Button>
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
