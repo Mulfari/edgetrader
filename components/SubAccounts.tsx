@@ -111,10 +111,14 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
   }, []);
 
   const fetchSubAccounts = useCallback(async () => {
+    setError(null);
     const token = localStorage.getItem("token");
-    if (!token) {
-      console.error("❌ No hay token, redirigiendo a login.");
-      setError("No hay token de autenticación");
+    const userId = localStorage.getItem("userId");
+    
+    if (!token || !userId) {
+      console.error("❌ No hay token o userId");
+      setError("No hay token de autenticación o ID de usuario");
+      setIsLoading(false);
       return;
     }
 
@@ -132,6 +136,7 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
         if (res.status === 401) {
           console.error("❌ Token inválido o expirado.");
           setError("Token inválido o expirado");
+          setIsLoading(false);
           return;
         }
         throw new Error(`Error al obtener subcuentas - Código ${res.status}`);
@@ -168,30 +173,35 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
     } finally {
       setIsLoading(false);
     }
-  }, [fetchAccountDetails, router, onBalanceUpdate]);
+  }, [fetchAccountDetails, onBalanceUpdate]);
 
   useEffect(() => {
     const storedSubAccounts = localStorage.getItem("subAccounts");
     const storedAccountBalances = localStorage.getItem("accountBalances");
 
     if (storedSubAccounts && storedAccountBalances) {
-      const parsedSubAccounts = JSON.parse(storedSubAccounts);
-      const parsedBalances = JSON.parse(storedAccountBalances);
-      setSubAccounts(parsedSubAccounts);
-      setAccountBalances(parsedBalances);
-      
-      // Calcular el balance total para actualizar el dashboard
-      if (onBalanceUpdate && parsedSubAccounts.length > 0) {
-        let totalBalance = 0;
-        Object.values(parsedBalances).forEach(balance => {
-          if (balance !== null) {
-            totalBalance += Number(balance);
-          }
-        });
-        onBalanceUpdate(totalBalance, parsedSubAccounts[0].id);
+      try {
+        const parsedSubAccounts = JSON.parse(storedSubAccounts);
+        const parsedBalances = JSON.parse(storedAccountBalances);
+        setSubAccounts(parsedSubAccounts);
+        setAccountBalances(parsedBalances);
+        
+        // Calcular el balance total para actualizar el dashboard
+        if (onBalanceUpdate && parsedSubAccounts.length > 0) {
+          let totalBalance = 0;
+          Object.values(parsedBalances).forEach(balance => {
+            if (balance !== null) {
+              totalBalance += Number(balance);
+            }
+          });
+          onBalanceUpdate(totalBalance, parsedSubAccounts[0].id);
+        }
+        
+        setIsLoading(false);
+      } catch (e) {
+        console.error("Error al parsear datos almacenados:", e);
+        fetchSubAccounts();
       }
-      
-      setIsLoading(false);
     } else {
       fetchSubAccounts();
     }

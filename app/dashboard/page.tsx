@@ -47,16 +47,36 @@ export default function Dashboard() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
 
+  // Definir handleLogout antes de usarlo
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('subAccounts');
+    localStorage.removeItem('accountBalances');
+    setCurrentUserId(null);
+    setTrades([]);
+    setTotalBalance(0);
+    setDataLoaded(false);
+    setAuthChecked(false);
+    router.push("/login");
+  }, [router]);
+
   // Verificar si el token es válido (expiración)
-  const isTokenValid = (token: string): boolean => {
+  const isTokenValid = useCallback((token: string): boolean => {
     try {
       const decoded = jwtDecode<DecodedToken>(token);
       const currentTime = Date.now() / 1000;
       
+      console.log('Token expira en:', new Date(decoded.exp * 1000).toLocaleString());
+      console.log('Hora actual:', new Date(currentTime * 1000).toLocaleString());
+      
       if (decoded.exp < currentTime) {
+        console.log('Token expirado');
         return false;
       }
       
@@ -65,7 +85,7 @@ export default function Dashboard() {
       console.error('Error al decodificar token:', error);
       return false;
     }
-  };
+  }, []);
 
   // Función para refrescar los datos
   const refreshData = useCallback(() => {
@@ -82,6 +102,17 @@ export default function Dashboard() {
       return;
     }
     
+    // Verificar si el token es válido
+    if (!isTokenValid(token)) {
+      toast({
+        variant: "destructive",
+        title: "Sesión expirada",
+        description: "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+      });
+      handleLogout();
+      return;
+    }
+    
     // Si el token es válido, proceder con la actualización
     setRefreshing(true);
     setDataLoaded(false);
@@ -90,19 +121,31 @@ export default function Dashboard() {
     setTimeout(() => {
       setRefreshing(false);
     }, 1000);
-  }, [toast]);
+  }, [toast, isTokenValid, handleLogout]);
 
+  // Verificar autenticación solo una vez al cargar
   useEffect(() => {
+    console.log('Ejecutando efecto de verificación de autenticación, authChecked:', authChecked);
+    
+    if (authChecked) return;
+
     const checkAuth = () => {
+      console.log('Verificando autenticación...');
+      
       // Comprobar si hay token y userId en localStorage
       const token = localStorage.getItem('token');
       const userId = localStorage.getItem('userId');
 
+      console.log('Token encontrado:', !!token);
+      console.log('UserId encontrado:', !!userId);
+
       if (!token || !userId) {
+        console.log('No hay token o userId, redirigiendo a login');
+        setAuthError('No hay sesión activa');
         toast({
           variant: "destructive",
           title: "Sesión no iniciada",
-          description: "Por favor, inicia sesión para continuar"
+          description: "Por favor, inicia sesión para acceder al dashboard."
         });
         router.push('/login');
         return;
@@ -110,6 +153,7 @@ export default function Dashboard() {
 
       // Verificar si el token ha expirado
       if (!isTokenValid(token)) {
+        console.log('Token expirado, redirigiendo a login');
         toast({
           variant: "destructive",
           title: "Sesión expirada",
@@ -120,15 +164,22 @@ export default function Dashboard() {
       }
 
       // Si hay token y userId válidos, establecer el estado
+      console.log('Token válido, estableciendo userId:', userId);
       setCurrentUserId(userId);
       setIsLoading(false);
+      setAuthChecked(true);
     };
 
-    checkAuth();
-  }, [router]);
+    // Ejecutar verificación después de un pequeño retraso para asegurar que el componente esté montado
+    const timer = setTimeout(() => {
+      checkAuth();
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [router, isTokenValid, toast, authChecked, handleLogout]);
 
   // Función para obtener las operaciones de la API
-  const fetchTrades = async (userId: string, subAccountId: string) => {
+  const fetchTrades = useCallback(async (userId: string, subAccountId: string) => {
     try {
       const token = localStorage.getItem('token');
       
@@ -138,18 +189,6 @@ export default function Dashboard() {
           title: "Error de autenticación",
           description: "No hay token de autenticación"
         });
-        handleLogout();
-        return;
-      }
-
-      // Verificar si el token ha expirado
-      if (!isTokenValid(token)) {
-        toast({
-          variant: "destructive",
-          title: "Sesión expirada",
-          description: "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
-        });
-        handleLogout();
         return;
       }
 
@@ -159,7 +198,6 @@ export default function Dashboard() {
           title: "Error de usuario",
           description: "ID de usuario no válido"
         });
-        handleLogout();
         return;
       }
 
@@ -188,7 +226,6 @@ export default function Dashboard() {
             title: "Error de autenticación",
             description: "Token inválido o expirado"
           });
-          handleLogout();
           return;
         }
         
@@ -215,10 +252,10 @@ export default function Dashboard() {
         description: error instanceof Error ? error.message : "Error al obtener operaciones"
       });
     }
-  };
+  }, [toast]);
 
   // Función para actualizar el balance total y obtener operaciones
-  const updateTotalBalance = (balance: number, subAccountId: string, forceRefresh = false) => {
+  const updateTotalBalance = useCallback((balance: number, subAccountId: string, forceRefresh = false) => {
     setTotalBalance(balance);
     
     // Solo cargar datos si no se han cargado antes o si se fuerza la recarga
@@ -232,21 +269,18 @@ export default function Dashboard() {
         description: "Falta ID de usuario o subcuenta"
       });
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    setCurrentUserId(null);
-    setTrades([]);
-    setTotalBalance(0);
-    setDataLoaded(false);
-    router.push("/login");
-  };
+  }, [currentUserId, dataLoaded, fetchTrades, toast]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">
       <p className="text-center text-muted-foreground">Cargando datos...</p>
+    </div>;
+  }
+
+  if (authError) {
+    return <div className="flex flex-col items-center justify-center min-h-screen">
+      <p className="text-center text-red-500 mb-4">{authError}</p>
+      <Button onClick={() => router.push('/login')}>Ir a Login</Button>
     </div>;
   }
 
