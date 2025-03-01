@@ -7,11 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, Loader2, Server, Key, Eye, EyeOff, Trash2, Edit } from "lucide-react"
+import { AlertCircle, Loader2, Key, Eye, EyeOff, Trash2, Edit } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
 interface SubAccount {
@@ -41,7 +40,6 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: Ma
   const [error, setError] = useState("")
   const [showSecret, setShowSecret] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const router = useRouter()
   const { toast } = useToast()
 
   useEffect(() => {
