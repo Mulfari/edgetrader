@@ -10,6 +10,11 @@ import { Label } from "@/components/ui/label";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+interface ApiError {
+  message?: string;
+  status?: number;
+}
+
 export default function AddSubAccountPage() {
   const [formData, setFormData] = useState({
     name: "",
@@ -45,7 +50,7 @@ export default function AddSubAccountPage() {
       });
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
+        const errorData = await res.json().catch(() => ({})) as ApiError;
         throw new Error(errorData.message || `Error al crear subcuenta - Código ${res.status}`);
       }
 
@@ -54,9 +59,9 @@ export default function AddSubAccountPage() {
       
       // Redirigir al dashboard
       router.push("/dashboard");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("❌ Error al crear subcuenta:", error);
-      setError(error.message || "Error al crear subcuenta. Inténtalo de nuevo.");
+      setError(error instanceof Error ? error.message : "Error al crear subcuenta. Inténtalo de nuevo.");
     } finally {
       setIsLoading(false);
     }

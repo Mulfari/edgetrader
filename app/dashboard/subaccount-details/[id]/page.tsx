@@ -30,6 +30,11 @@ interface Balance {
   currency: string;
 }
 
+interface ApiError {
+  message?: string;
+  status?: number;
+}
+
 export default function SubAccountDetailsPage({ params }: { params: { id: string } }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +44,52 @@ export default function SubAccountDetailsPage({ params }: { params: { id: string
   const [balanceError, setBalanceError] = useState<string | null>(null);
   const router = useRouter();
   const { id } = params;
+
+  const fetchBalance = async () => {
+    if (!subAccount) return;
+    
+    setIsLoadingBalance(true);
+    setBalanceError(null);
+    
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("❌ No hay token, redirigiendo a login.");
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/subaccounts/${id}/balance`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({})) as ApiError;
+        throw new Error(errorData.message || `Error al obtener balance - Código ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log("Balance obtenido:", data);
+      
+      setBalance({
+        totalEquity: data.totalEquity || 0,
+        availableBalance: data.availableBalance || 0,
+        usedMargin: data.usedMargin || 0,
+        orderMargin: data.orderMargin || 0,
+        unrealizedPnL: data.unrealizedPnL || 0,
+        currency: data.currency || "USDT",
+      });
+    } catch (error: unknown) {
+      console.error("❌ Error al obtener balance:", error);
+      setBalanceError(error instanceof Error ? error.message : "Error al obtener balance. Inténtalo de nuevo.");
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  };
 
   useEffect(() => {
     const fetchSubAccount = async () => {
@@ -71,9 +122,9 @@ export default function SubAccountDetailsPage({ params }: { params: { id: string
         }
         
         setSubAccount(account);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("❌ Error al obtener subcuenta:", error);
-        setError(error.message || "Error al obtener subcuenta");
+        setError(error instanceof Error ? error.message : "Error al obtener subcuenta");
       } finally {
         setIsLoading(false);
       }
@@ -82,57 +133,11 @@ export default function SubAccountDetailsPage({ params }: { params: { id: string
     fetchSubAccount();
   }, [id, router]);
 
-  const fetchBalance = async () => {
-    if (!subAccount) return;
-    
-    setIsLoadingBalance(true);
-    setBalanceError(null);
-    
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.error("❌ No hay token, redirigiendo a login.");
-      router.push("/login");
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API_URL}/subaccounts/${id}/balance`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || `Error al obtener balance - Código ${res.status}`);
-      }
-
-      const data = await res.json();
-      console.log("Balance obtenido:", data);
-      
-      setBalance({
-        totalEquity: data.totalEquity || 0,
-        availableBalance: data.availableBalance || 0,
-        usedMargin: data.usedMargin || 0,
-        orderMargin: data.orderMargin || 0,
-        unrealizedPnL: data.unrealizedPnL || 0,
-        currency: data.currency || "USDT",
-      });
-    } catch (error: any) {
-      console.error("❌ Error al obtener balance:", error);
-      setBalanceError(error.message || "Error al obtener balance. Inténtalo de nuevo.");
-    } finally {
-      setIsLoadingBalance(false);
-    }
-  };
-
   useEffect(() => {
     if (subAccount) {
       fetchBalance();
     }
-  }, [subAccount]);
+  }, [subAccount, fetchBalance]);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "N/A";
@@ -315,7 +320,7 @@ export default function SubAccountDetailsPage({ params }: { params: { id: string
                           })
                           .catch(error => {
                             console.error("❌ Error al eliminar subcuenta:", error);
-                            alert(error.message || "Error al eliminar subcuenta. Inténtalo de nuevo.");
+                            alert(error instanceof Error ? error.message : "Error al eliminar subcuenta. Inténtalo de nuevo.");
                           });
                       }
                     }}

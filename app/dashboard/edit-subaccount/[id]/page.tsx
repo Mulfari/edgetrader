@@ -21,6 +21,11 @@ interface SubAccount {
   isDemo?: boolean;
 }
 
+interface ApiError {
+  message?: string;
+  status?: number;
+}
+
 export default function EditSubAccountPage({ params }: { params: { id: string } }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -74,9 +79,9 @@ export default function EditSubAccountPage({ params }: { params: { id: string } 
           apiSecret: "", // No mostramos la API secret por seguridad
           isDemo: account.isDemo || false,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("❌ Error al obtener subcuenta:", error);
-        setError(error.message || "Error al obtener subcuenta");
+        setError(error instanceof Error ? error.message : "Error al obtener subcuenta");
       } finally {
         setIsLoading(false);
       }
@@ -108,7 +113,7 @@ export default function EditSubAccountPage({ params }: { params: { id: string } 
       });
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
+        const errorData = await res.json().catch(() => ({})) as ApiError;
         throw new Error(errorData.message || `Error al actualizar subcuenta - Código ${res.status}`);
       }
 
@@ -117,9 +122,9 @@ export default function EditSubAccountPage({ params }: { params: { id: string } 
       
       // Redirigir al dashboard
       router.push("/dashboard");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("❌ Error al actualizar subcuenta:", error);
-      setError(error.message || "Error al actualizar subcuenta. Inténtalo de nuevo.");
+      setError(error instanceof Error ? error.message : "Error al actualizar subcuenta. Inténtalo de nuevo.");
     } finally {
       setIsSaving(false);
     }
