@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import ManageSubAccount from "./ManageSubAccount";
 
@@ -288,6 +288,26 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
   );
 
   const handleManageAccount = (id: string) => {
+    if (!id || subAccounts.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No hay subcuentas disponibles para editar",
+      });
+      return;
+    }
+    
+    // Verificar que la subcuenta existe antes de intentar editarla
+    const subAccountExists = subAccounts.some(account => account.id === id);
+    if (!subAccountExists) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "La subcuenta seleccionada no existe o ha sido eliminada",
+      });
+      return;
+    }
+    
     setSelectedSubAccountId(id);
     setIsManageDialogOpen(true);
   };
@@ -529,15 +549,20 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
       </CardContent>
 
       <CardFooter>
-        <Button onClick={() => handleManageAccount(subAccounts[0].id)}>
-          <Edit className="mr-2 h-4 w-4" />
-          Editar
-        </Button>
+        {subAccounts.length > 0 && (
+          <Button onClick={() => handleManageAccount(subAccounts[0].id)}>
+            <Edit className="mr-2 h-4 w-4" />
+            Editar
+          </Button>
+        )}
       </CardFooter>
 
       <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogTitle className="sr-only">Gestionar Subcuenta</DialogTitle>
+          <DialogDescription className="sr-only">
+            Edita o elimina la información de tu subcuenta de trading
+          </DialogDescription>
           {selectedSubAccountId && (
             <ManageSubAccount 
               subAccountId={selectedSubAccountId} 

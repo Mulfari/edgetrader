@@ -13,7 +13,7 @@ import Operations from "@/components/Operations";
 import { useToast } from "@/hooks/use-toast";
 import { jwtDecode } from "jwt-decode";
 import CreateSubAccount from "@/components/CreateSubAccounts";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 // Definir el tipo de operación
 interface Trade {
@@ -369,6 +369,9 @@ export default function Dashboard() {
       <Dialog open={showCreateSubAccount} onOpenChange={setShowCreateSubAccount}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogTitle className="sr-only">Crear Nueva Subcuenta</DialogTitle>
+          <DialogDescription className="sr-only">
+            Configura una nueva subcuenta para conectar con tu exchange de trading
+          </DialogDescription>
           <CreateSubAccount onClose={() => {
             setShowCreateSubAccount(false);
             refreshData();

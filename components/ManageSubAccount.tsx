@@ -57,6 +57,18 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: Ma
           }
         })
 
+        if (response.status === 404) {
+          toast({
+            variant: "destructive",
+            title: "Subcuenta no encontrada",
+            description: "La subcuenta solicitada no existe o ha sido eliminada.",
+          });
+          if (onClose) {
+            onClose();
+          }
+          return;
+        }
+
         if (!response.ok) {
           throw new Error("Error al obtener la subcuenta");
         }
@@ -85,7 +97,7 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate }: Ma
     if (subAccountId) {
       fetchSubAccount();
     }
-  }, [subAccountId, toast]);
+  }, [subAccountId, toast, onClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
