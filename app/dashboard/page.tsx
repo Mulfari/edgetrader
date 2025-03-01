@@ -12,6 +12,8 @@ import SubAccounts from "@/components/SubAccounts";
 import Operations from "@/components/Operations";
 import { useToast } from "@/hooks/use-toast";
 import { jwtDecode } from "jwt-decode";
+import CreateSubAccount from "@/components/CreateSubAccounts";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 // Definir el tipo de operación
 interface Trade {
@@ -49,6 +51,7 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [showCreateSubAccount, setShowCreateSubAccount] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -343,6 +346,11 @@ export default function Dashboard() {
             </TabsList>
 
             <TabsContent value="accounts" className="space-y-4">
+              <div className="flex justify-end mb-4">
+                <Button onClick={() => setShowCreateSubAccount(true)}>
+                  Añadir Subcuenta
+                </Button>
+              </div>
               <SubAccounts 
                 onBalanceUpdate={(balance, subAccountId) => updateTotalBalance(balance, subAccountId, refreshing)} 
                 refreshTrigger={refreshing} 
@@ -357,6 +365,15 @@ export default function Dashboard() {
           </Tabs>
         </>
       </main>
+
+      <Dialog open={showCreateSubAccount} onOpenChange={setShowCreateSubAccount}>
+        <DialogContent className="sm:max-w-[600px]">
+          <CreateSubAccount onClose={() => {
+            setShowCreateSubAccount(false);
+            refreshData();
+          }} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
