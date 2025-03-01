@@ -57,9 +57,10 @@ type SortConfig = {
 
 interface SubAccountsProps {
   onBalanceUpdate?: (totalBalance: number, subAccountId: string) => void;
+  refreshTrigger?: boolean;
 }
 
-export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
+export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAccountsProps) {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null);
   const [accountBalances, setAccountBalances] = useState<Record<string, number | null>>({});
@@ -181,6 +182,12 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       fetchSubAccounts();
     }
   }, [fetchSubAccounts]);
+
+  useEffect(() => {
+    if (refreshTrigger) {
+      fetchSubAccounts();
+    }
+  }, [refreshTrigger, fetchSubAccounts]);
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {

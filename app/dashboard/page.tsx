@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, TrendingUp, Wallet } from "lucide-react";
+import { LogOut, TrendingUp, Wallet, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import SubAccounts from "@/components/SubAccounts";
 import Operations from "@/components/Operations";
 import { useToast } from "@/hooks/use-toast";
+import { jwtDecode } from "jwt-decode";
 
 // Definir el tipo de operación
 interface Trade {
@@ -31,28 +32,85 @@ interface Trade {
   takeProfit?: number;
 }
 
+// Interfaz para el token decodificado
+interface DecodedToken {
+  email: string;
+  sub: string;
+  iat: number;
+  exp: number;
+}
+
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [totalBalance, setTotalBalance] = useState<number>(0);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Comprobar si hay token y userId en localStorage
-    const token = localStorage.getItem('token');
-    const userId = localStorage.getItem('userId');
-
-    if (!token || !userId) {
-      console.error('No hay token o userId');
-      router.push('/login');
-      return;
+  // Verificar si el token es válido (expiración)
+  const isTokenValid = (token: string): boolean => {
+    try {
+      const decoded = jwtDecode<DecodedToken>(token);
+      const currentTime = Date.now() / 1000;
+      
+      if (decoded.exp < currentTime) {
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error al decodificar token:', error);
+      return false;
     }
+  };
 
-    // Si hay token y userId, establecer el estado
-    setCurrentUserId(userId);
-    setIsLoading(false);
+  // Función para refrescar los datos
+  const refreshData = useCallback(() => {
+    setRefreshing(true);
+    setDataLoaded(false);
+    
+    // Simular un pequeño retraso para mostrar el indicador de carga
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  }, []);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      // Comprobar si hay token y userId en localStorage
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userId');
+
+      if (!token || !userId) {
+        toast({
+          variant: "destructive",
+          title: "Sesión no iniciada",
+          description: "Por favor, inicia sesión para continuar"
+        });
+        router.push('/login');
+        return;
+      }
+
+      // Verificar si el token ha expirado
+      if (!isTokenValid(token)) {
+        toast({
+          variant: "destructive",
+          title: "Sesión expirada",
+          description: "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+        });
+        handleLogout();
+        return;
+      }
+
+      // Si hay token y userId válidos, establecer el estado
+      setCurrentUserId(userId);
+      setIsLoading(false);
+    };
+
+    checkAuth();
   }, [router]);
 
   // Función para obtener las operaciones de la API
@@ -65,6 +123,17 @@ export default function Dashboard() {
           variant: "destructive",
           title: "Error de autenticación",
           description: "No hay token de autenticación"
+        });
+        handleLogout();
+        return;
+      }
+
+      // Verificar si el token ha expirado
+      if (!isTokenValid(token)) {
+        toast({
+          variant: "destructive",
+          title: "Sesión expirada",
+          description: "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
         });
         handleLogout();
         return;
@@ -135,12 +204,14 @@ export default function Dashboard() {
   };
 
   // Función para actualizar el balance total y obtener operaciones
-  const updateTotalBalance = (balance: number, subAccountId: string) => {
+  const updateTotalBalance = (balance: number, subAccountId: string, forceRefresh = false) => {
     setTotalBalance(balance);
-    // Obtener operaciones cuando se selecciona una subcuenta
-    if (subAccountId && currentUserId) {
+    
+    // Solo cargar datos si no se han cargado antes o si se fuerza la recarga
+    if ((subAccountId && currentUserId && (!dataLoaded || forceRefresh))) {
       fetchTrades(currentUserId, subAccountId);
-    } else {
+      setDataLoaded(true);
+    } else if (!subAccountId || !currentUserId) {
       toast({
         variant: "destructive",
         title: "Error",
@@ -155,6 +226,7 @@ export default function Dashboard() {
     setCurrentUserId(null);
     setTrades([]);
     setTotalBalance(0);
+    setDataLoaded(false);
     router.push("/login");
   };
 
@@ -171,6 +243,15 @@ export default function Dashboard() {
           <div className="flex justify-between items-center py-4">
             <h1 className="text-2xl font-bold">Dashboard Financiero</h1>
             <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={refreshData} 
+                disabled={refreshing}
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                Actualizar
+              </Button>
               <ThemeToggle />
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
@@ -214,7 +295,10 @@ export default function Dashboard() {
             </TabsList>
 
             <TabsContent value="accounts" className="space-y-4">
-              <SubAccounts onBalanceUpdate={updateTotalBalance} />
+              <SubAccounts 
+                onBalanceUpdate={(balance, subAccountId) => updateTotalBalance(balance, subAccountId, refreshing)} 
+                refreshTrigger={refreshing} 
+              />
             </TabsContent>
 
             <TabsContent value="trades" className="space-y-4">
