@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import ManageSubAccount from "./ManageSubAccount";
 
@@ -537,6 +537,7 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
 
       <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
+          <DialogTitle className="sr-only">Gestionar Subcuenta</DialogTitle>
           {selectedSubAccountId && (
             <ManageSubAccount 
               subAccountId={selectedSubAccountId} 
