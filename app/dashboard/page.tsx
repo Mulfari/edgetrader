@@ -135,7 +135,9 @@ export default function Dashboard() {
               </TabsContent>
 
               <TabsContent value="trades" className="space-y-4">
-                <Operations trades={trades} />
+                <div className="bg-card rounded-lg">
+                  <Operations trades={trades} />
+                </div>
               </TabsContent>
             </Tabs>
           </>

@@ -51,6 +51,15 @@ export default function Operations({ trades }: OperationsProps) {
     return filteredTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
   }, [filteredTrades]);
 
+  if (!trades || trades.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 text-center">
+        <h2 className="text-2xl font-bold mb-4">No hay operaciones disponibles</h2>
+        <p className="text-muted-foreground">No se encontraron operaciones para mostrar.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center">
