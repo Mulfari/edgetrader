@@ -147,7 +147,7 @@ export default function ManageSubAccount({ subAccountId, onClose, onUpdate, onDe
     return () => {
       isMounted = false;
     };
-  }, [subAccountId, toast, onClose]);
+  }, [subAccountId, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

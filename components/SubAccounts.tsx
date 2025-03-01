@@ -230,7 +230,7 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
     } finally {
       setIsLoading(false);
     }
-  }, [fetchAccountDetails, onBalanceUpdate]);
+  }, [fetchAccountDetails, onBalanceUpdate, toast]);
 
   useEffect(() => {
     const storedSubAccounts = localStorage.getItem("subAccounts");
@@ -319,45 +319,6 @@ export default function SubAccounts({ onBalanceUpdate, refreshTrigger }: SubAcco
       (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         account.exchange.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-
-  const handleManageAccount = (id: string) => {
-    if (!id || subAccounts.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No hay subcuentas disponibles para editar",
-      });
-      return;
-    }
-    
-    // Verificar que la subcuenta existe antes de intentar editarla
-    const subAccountExists = subAccounts.some(account => account.id === id);
-    if (!subAccountExists) {
-      // Limpiar cualquier ID de subcuenta almacenado que ya no exista
-      const storedSubAccounts = localStorage.getItem("subAccounts");
-      if (storedSubAccounts) {
-        try {
-          const parsedSubAccounts = JSON.parse(storedSubAccounts);
-          const filteredSubAccounts = parsedSubAccounts.filter((acc: SubAccount) => 
-            subAccounts.some(current => current.id === acc.id)
-          );
-          localStorage.setItem("subAccounts", JSON.stringify(filteredSubAccounts));
-        } catch (e) {
-          console.error("Error al actualizar subcuentas almacenadas:", e);
-        }
-      }
-      
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "La subcuenta seleccionada no existe o ha sido eliminada",
-      });
-      return;
-    }
-    
-    setSelectedSubAccountId(id);
-    setIsManageDialogOpen(true);
-  };
 
   const handleOpenSelector = () => {
     if (subAccounts.length === 0) {
