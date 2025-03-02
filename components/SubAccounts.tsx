@@ -340,6 +340,12 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }
   }, [fetchSubAccounts]);
 
+  // Nuevo useEffect para cargar los balances automáticamente al iniciar el componente
+  useEffect(() => {
+    console.log("🔄 Cargando balances automáticamente al iniciar el componente");
+    fetchSubAccounts();
+  }, [fetchSubAccounts]);
+
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
       setSelectedSubAccountId(null);
@@ -846,7 +852,14 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                                 }
                                               }}
                                             >
-                                              Actualizar
+                                              {loadingBalance === sub.id ? (
+                                                <div className="flex items-center gap-1">
+                                                  <RefreshCw className="h-3 w-3 animate-spin" />
+                                                  <span>Cargando...</span>
+                                                </div>
+                                              ) : (
+                                                "Actualizar"
+                                              )}
                                             </Button>
                                           </span>
                                         )}
