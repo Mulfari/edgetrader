@@ -10,14 +10,20 @@ import {
   ArrowUpDown,
   Filter,
   Sparkles,
-  Briefcase
+  Briefcase,
+  BarChart3,
+  TrendingUp,
+  LineChart,
+  PieChart,
+  LayoutDashboard,
+  ChevronRight
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -255,132 +261,204 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   );
 
   return (
-    <Card className="w-full shadow-sm border-primary/10 overflow-hidden" ref={componentRef} id="subaccounts-component">
-      <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="space-y-6" ref={componentRef} id="subaccounts-component">
+      {/* Header Section */}
+      <div className="flex flex-col space-y-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
-            <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">Subcuentas</CardTitle>
-            <CardDescription className="text-muted-foreground mt-1">Gestiona y monitorea todas tus cuentas de trading</CardDescription>
+            <h2 className="text-3xl font-bold tracking-tight">Subcuentas</h2>
+            <p className="text-muted-foreground mt-1">
+              Gestiona y monitorea todas tus cuentas de trading en un solo lugar
+            </p>
           </div>
-          <div className="flex flex-col md:flex-row gap-2">
-            <Button 
-              onClick={fetchSubAccounts} 
-              variant="outline" 
-              size="sm" 
-              className="w-full md:w-auto border-primary/20 hover:bg-primary/5 transition-all duration-200"
-            >
-              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin text-primary" : ""}`} />
-              Actualizar
-            </Button>
-          </div>
+          <Button 
+            onClick={fetchSubAccounts} 
+            variant="default" 
+            size="sm" 
+            className="mt-2 md:mt-0"
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            Actualizar Datos
+          </Button>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center gap-4 mt-6">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              type="text"
-              placeholder="Buscar subcuentas..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 border-primary/20 focus-visible:ring-primary/30"
-            />
-          </div>
+        {/* Stats Overview Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 border-blue-200 dark:border-blue-800/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-300">Total Subcuentas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                {subAccounts.length}
+              </div>
+              <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-1">
+                {subAccounts.filter(a => !a.isDemo).length} reales, {subAccounts.filter(a => a.isDemo).length} demo
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 border-green-200 dark:border-green-800/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-green-800 dark:text-green-300">Balance Total</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                {Object.values(accountBalances)
+                  .filter(val => val !== null && val !== undefined)
+                  .reduce((sum, val) => sum + (val || 0), 0)
+                  .toFixed(2)} USDT
+              </div>
+              <p className="text-xs text-green-600/70 dark:text-green-400/70 mt-1">
+                En todas las cuentas activas
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 border-purple-200 dark:border-purple-800/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-purple-800 dark:text-purple-300">Exchanges</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                {new Set(subAccounts.map(a => a.exchange)).size}
+              </div>
+              <p className="text-xs text-purple-600/70 dark:text-purple-400/70 mt-1">
+                Plataformas conectadas
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/20 dark:to-amber-900/20 border-amber-200 dark:border-amber-800/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-amber-800 dark:text-amber-300">Rendimiento Promedio</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">
+                {subAccounts.length > 0 
+                  ? (subAccounts.reduce((sum, acc) => sum + (acc.performance || 0), 0) / subAccounts.length).toFixed(2)
+                  : "0.00"}%
+              </div>
+              <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-1">
+                Basado en todas las cuentas
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full md:w-auto border-primary/20 hover:bg-primary/5 transition-all duration-200">
-                <Filter className="mr-2 h-4 w-4 text-primary/70" />
-                {selectedExchange === "all" ? "Todos los Exchanges" : selectedExchange}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px] border-primary/20 shadow-lg">
-              {exchanges.map((exchange) => (
+      {/* Filters and Search */}
+      <Card className="border shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Buscar subcuentas..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full md:w-auto">
+                  <Filter className="mr-2 h-4 w-4" />
+                  {selectedExchange === "all" ? "Todos los Exchanges" : selectedExchange}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[200px]">
+                {exchanges.map((exchange) => (
+                  <DropdownMenuItem 
+                    key={exchange} 
+                    onClick={() => setSelectedExchange(exchange)}
+                    className="cursor-pointer"
+                  >
+                    {exchange === "all" ? "Todos los Exchanges" : exchange}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full md:w-auto">
+                  <Filter className="mr-2 h-4 w-4" />
+                  {selectedType === "all" ? "Todos los Tipos" : 
+                   selectedType === "demo" ? "Solo Demo" : "Solo Real"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[200px]">
                 <DropdownMenuItem 
-                  key={exchange} 
-                  onClick={() => setSelectedExchange(exchange)}
-                  className="cursor-pointer hover:bg-primary/5"
+                  onClick={() => setSelectedType("all")}
+                  className="cursor-pointer"
                 >
-                  {exchange === "all" ? "Todos los Exchanges" : exchange}
+                  Todos los Tipos
                 </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full md:w-auto border-primary/20 hover:bg-primary/5 transition-all duration-200">
-                <Filter className="mr-2 h-4 w-4 text-primary/70" />
-                {selectedType === "all" ? "Todos los Tipos" : 
-                 selectedType === "demo" ? "Solo Demo" : "Solo Real"}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px] border-primary/20 shadow-lg">
-              <DropdownMenuItem 
-                onClick={() => setSelectedType("all")}
-                className="cursor-pointer hover:bg-primary/5"
-              >
-                Todos los Tipos
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setSelectedType("demo")}
-                className="cursor-pointer hover:bg-primary/5"
-              >
-                <Sparkles className="h-3.5 w-3.5 mr-2 text-yellow-500" />
-                Solo Demo
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setSelectedType("real")}
-                className="cursor-pointer hover:bg-primary/5"
-              >
-                <Briefcase className="h-3.5 w-3.5 mr-2 text-green-500" />
-                Solo Real
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </CardHeader>
-
-      <CardContent className="p-6">
-        {error && (
-          <div className="flex items-center gap-2 p-4 mb-6 text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800/30 shadow-sm">
-            <AlertCircle className="h-5 w-5 flex-shrink-0" />
-            <p className="text-sm font-medium">{error}</p>
+                <DropdownMenuItem 
+                  onClick={() => setSelectedType("demo")}
+                  className="cursor-pointer"
+                >
+                  <Sparkles className="h-3.5 w-3.5 mr-2 text-yellow-500" />
+                  Solo Demo
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSelectedType("real")}
+                  className="cursor-pointer"
+                >
+                  <Briefcase className="h-3.5 w-3.5 mr-2 text-green-500" />
+                  Solo Real
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        )}
+        </CardContent>
+      </Card>
 
-        <div className="rounded-lg border border-primary/10 overflow-hidden shadow-sm">
+      {/* Error Message */}
+      {error && (
+        <div className="flex items-center gap-2 p-4 text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800/30 shadow-sm">
+          <AlertCircle className="h-5 w-5 flex-shrink-0" />
+          <p className="text-sm font-medium">{error}</p>
+        </div>
+      )}
+
+      {/* Main Content - Accounts Table */}
+      <Card className="border shadow-sm">
+        <CardContent className="p-0">
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead onClick={() => handleSort("name")} className="cursor-pointer hover:bg-muted/80 transition-colors">
                   <div className="flex items-center">
                     Nombre
-                    <ArrowUpDown className="ml-2 h-4 w-4 text-primary/50" />
+                    <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
                   </div>
                 </TableHead>
                 <TableHead onClick={() => handleSort("exchange")} className="cursor-pointer hover:bg-muted/80 transition-colors">
                   <div className="flex items-center">
                     Exchange
-                    <ArrowUpDown className="ml-2 h-4 w-4 text-primary/50" />
+                    <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
                   </div>
                 </TableHead>
                 <TableHead onClick={() => handleSort("balance")} className="cursor-pointer hover:bg-muted/80 transition-colors">
                   <div className="flex items-center">
                     Balance
-                    <ArrowUpDown className="ml-2 h-4 w-4 text-primary/50" />
+                    <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
                   </div>
                 </TableHead>
                 <TableHead onClick={() => handleSort("isDemo")} className="cursor-pointer hover:bg-muted/80 transition-colors">
                   <div className="flex items-center">
                     Tipo
-                    <ArrowUpDown className="ml-2 h-4 w-4 text-primary/50" />
+                    <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
                   </div>
                 </TableHead>
                 <TableHead onClick={() => handleSort("performance")} className="cursor-pointer hover:bg-muted/80 transition-colors">
                   <div className="flex items-center">
                     Rendimiento
-                    <ArrowUpDown className="ml-2 h-4 w-4 text-primary/50" />
+                    <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
                   </div>
                 </TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
@@ -429,20 +507,23 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                   <>
                     <TableRow
                       key={sub.id}
-                      className="transition-all duration-200 hover:bg-primary/5 cursor-pointer group"
+                      className="transition-all duration-200 hover:bg-muted/50 cursor-pointer"
                     >
                       <TableCell className="font-medium" onClick={() => handleRowClick(sub)}>
-                        {sub.name}
+                        <div className="flex items-center">
+                          <div className="w-2 h-10 rounded-r-md bg-primary mr-3 opacity-70"></div>
+                          {sub.name}
+                        </div>
                       </TableCell>
                       <TableCell onClick={() => handleRowClick(sub)}>
-                        <Badge variant="secondary" className="uppercase bg-secondary/20 text-secondary-foreground group-hover:bg-secondary/30 transition-colors">
+                        <Badge variant="secondary" className="uppercase">
                           {sub.exchange}
                         </Badge>
                       </TableCell>
                       <TableCell onClick={() => handleRowClick(sub)}>
                         {accountBalances[sub.id] !== undefined ? (
                           <div className="flex items-center gap-2">
-                            <Wallet className="h-4 w-4 text-primary/70" />
+                            <Wallet className="h-4 w-4 text-primary" />
                             <span className="font-medium">{accountBalances[sub.id]?.toFixed(2)} USDT</span>
                           </div>
                         ) : (
@@ -470,7 +551,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                           "-"
                         )}
                       </TableCell>
-                      <TableCell className="text-muted-foreground" onClick={() => handleRowClick(sub)}>
+                      <TableCell onClick={() => handleRowClick(sub)}>
                         <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${
                             sub.performance && sub.performance > 0 
@@ -491,57 +572,61 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleRowClick(sub)}
-                            className="h-8 w-8 rounded-full hover:bg-primary/10"
-                          >
-                            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${selectedSubAccountId === sub.id ? "rotate-180" : ""}`} />
-                            <span className="sr-only">Ver detalles</span>
-                          </Button>
-                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRowClick(sub)}
+                          className="h-8 w-8 p-0 rounded-full"
+                        >
+                          <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${selectedSubAccountId === sub.id ? "rotate-180" : ""}`} />
+                          <span className="sr-only">Ver detalles</span>
+                        </Button>
                       </TableCell>
                     </TableRow>
                     {selectedSubAccountId === sub.id && (
                       <TableRow key={`${sub.id}-details`} className="bg-muted/30">
                         <TableCell colSpan={6} className="p-0 border-t-0">
-                          <div className="p-6 rounded-lg space-y-6 animate-in fade-in-50 duration-200">
+                          <div className="p-6 space-y-6 animate-in fade-in-50 duration-200">
                             <Tabs defaultValue="overview" className="w-full">
-                              <TabsList className="bg-background border border-primary/10 p-1">
-                                <TabsTrigger value="overview" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Vista General</TabsTrigger>
-                                <TabsTrigger value="assets" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Assets</TabsTrigger>
+                              <TabsList className="bg-background border">
+                                <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                                  Vista General
+                                </TabsTrigger>
+                                <TabsTrigger value="assets" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                                  <PieChart className="h-4 w-4 mr-2" />
+                                  Assets
+                                </TabsTrigger>
                               </TabsList>
                               <TabsContent value="overview" className="mt-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                  <Card className="border-primary/10 shadow-sm hover:shadow-md transition-shadow duration-200">
-                                    <CardHeader className="pb-2 bg-primary/5">
+                                  <Card>
+                                    <CardHeader className="pb-2 bg-blue-50 dark:bg-blue-950/20">
                                       <CardTitle className="text-sm font-medium text-muted-foreground">Balance Total</CardTitle>
                                     </CardHeader>
                                     <CardContent className="pt-4">
-                                      <div className="text-2xl font-bold text-primary">
+                                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                                         {accountBalances[sub.id] !== undefined
                                           ? `${accountBalances[sub.id]?.toFixed(2)} USDT`
                                           : "No disponible"}
                                       </div>
                                     </CardContent>
                                   </Card>
-                                  <Card className="border-primary/10 shadow-sm hover:shadow-md transition-shadow duration-200">
-                                    <CardHeader className="pb-2 bg-primary/5">
+                                  <Card>
+                                    <CardHeader className="pb-2 bg-purple-50 dark:bg-purple-950/20">
                                       <CardTitle className="text-sm font-medium text-muted-foreground">Exchange</CardTitle>
                                     </CardHeader>
                                     <CardContent className="pt-4">
-                                      <div className="text-2xl font-bold uppercase text-secondary-foreground">{sub.exchange}</div>
+                                      <div className="text-2xl font-bold uppercase text-purple-600 dark:text-purple-400">{sub.exchange}</div>
                                     </CardContent>
                                   </Card>
-                                  <Card className="border-primary/10 shadow-sm hover:shadow-md transition-shadow duration-200">
-                                    <CardHeader className="pb-2 bg-primary/5">
+                                  <Card>
+                                    <CardHeader className="pb-2 bg-amber-50 dark:bg-amber-950/20">
                                       <CardTitle className="text-sm font-medium text-muted-foreground">Tipo de Cuenta</CardTitle>
                                     </CardHeader>
                                     <CardContent className="pt-4">
                                       <div className="flex items-center gap-2">
-                                        <div className="text-2xl font-bold">{sub.isDemo ? "Demo" : "Real"}</div>
+                                        <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{sub.isDemo ? "Demo" : "Real"}</div>
                                         <Badge variant="outline" className={sub.isDemo ? 
                                           "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30" : 
                                           "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500 border-green-200 dark:border-green-800/30"}>
@@ -560,8 +645,8 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                       </div>
                                     </CardContent>
                                   </Card>
-                                  <Card className="border-primary/10 shadow-sm hover:shadow-md transition-shadow duration-200">
-                                    <CardHeader className="pb-2 bg-primary/5">
+                                  <Card>
+                                    <CardHeader className="pb-2 bg-green-50 dark:bg-green-950/20">
                                       <CardTitle className="text-sm font-medium text-muted-foreground">Rendimiento</CardTitle>
                                     </CardHeader>
                                     <CardContent className="pt-4">
@@ -570,7 +655,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                           ? "text-green-600 dark:text-green-400" 
                                           : sub.performance && sub.performance < 0 
                                             ? "text-red-600 dark:text-red-400" 
-                                            : ""
+                                            : "text-yellow-600 dark:text-yellow-400"
                                       }`}>
                                         {sub.performance !== undefined ? `${sub.performance.toFixed(2)}%` : "No disponible"}
                                       </div>
@@ -580,12 +665,18 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                               </TabsContent>
                               <TabsContent value="assets" className="mt-6">
                                 <div className="space-y-4">
-                                  <div className="mt-2">
-                                    <h4 className="font-medium mb-4 text-lg flex items-center gap-2">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="font-medium text-lg flex items-center gap-2">
                                       <Wallet className="h-5 w-5 text-primary" />
                                       Todos los Assets
                                     </h4>
-                                    <div className="rounded-lg border border-primary/10 overflow-hidden shadow-sm">
+                                    <Button variant="outline" size="sm" className="gap-1">
+                                      <RefreshCw className="h-3.5 w-3.5" />
+                                      Actualizar
+                                    </Button>
+                                  </div>
+                                  <Card>
+                                    <CardContent className="p-0">
                                       <Table>
                                         <TableHeader className="bg-muted/50">
                                           <TableRow>
@@ -597,7 +688,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                         <TableBody>
                                           {sub.assets?.length ? (
                                             sub.assets.map((asset) => (
-                                              <TableRow key={asset.coin} className="hover:bg-primary/5 transition-colors">
+                                              <TableRow key={asset.coin} className="hover:bg-muted/50 transition-colors">
                                                 <TableCell className="font-medium">{asset.coin}</TableCell>
                                                 <TableCell>{asset.walletBalance} {asset.coin}</TableCell>
                                                 <TableCell>${asset.usdValue}</TableCell>
@@ -612,8 +703,8 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                           )}
                                         </TableBody>
                                       </Table>
-                                    </div>
-                                  </div>
+                                    </CardContent>
+                                  </Card>
                                 </div>
                               </TabsContent>
                             </Tabs>
@@ -626,8 +717,8 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
               )}
             </TableBody>
           </Table>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
