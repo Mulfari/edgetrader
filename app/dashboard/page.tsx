@@ -384,13 +384,10 @@ export default function DashboardPage() {
         </div>
 
         {/* Gestión de subcuentas */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between p-4 md:p-6 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+        <div className="bg-white dark:bg-blue-950/20 rounded-xl border border-slate-200 dark:border-blue-800/30 shadow-sm overflow-hidden mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between p-4 md:p-6 border-b border-slate-200 dark:border-blue-800/30 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
             <div>
-              <h2 className="text-xl font-bold text-blue-800 dark:text-blue-300">Gestión de Subcuentas</h2>
-              <p className="text-sm text-blue-600/70 dark:text-blue-400/70 mt-1">
-                Monitorea y administra tus subcuentas de trading
-              </p>
+              {/* Eliminado el título "Subcuentas" */}
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3 mt-4 md:mt-0">
@@ -404,10 +401,11 @@ export default function DashboardPage() {
               <Button 
                 variant="outline" 
                 onClick={() => setShowDeleteModal(true)}
-                className="border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                className="w-10 h-10 p-0 rounded-full border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300 transition-all duration-200"
+                title="Eliminar Subcuenta"
               >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Eliminar Subcuenta
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Eliminar Subcuenta</span>
               </Button>
             </div>
           </div>
