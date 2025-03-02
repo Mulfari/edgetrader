@@ -51,6 +51,10 @@ interface AccountDetails {
   balance: number | null;
   assets: Asset[];
   performance: number;
+  isSimulated?: boolean;
+  isDemo?: boolean;
+  isError?: boolean;
+  error?: string;
 }
 
 interface AccountStats {
@@ -93,6 +97,14 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const fetchAccountDetails = async (userId: string, accountId: string, token: string): Promise<AccountDetails> => {
     try {
       setLoadingBalance(accountId);
+      console.log(`🔍 Solicitando balance para cuenta ${accountId}...`);
+      
+      // Buscar la cuenta para verificar si es demo o real
+      const account = subAccounts.find(acc => acc.id === accountId);
+      const isDemo = account?.isDemo === true;
+      
+      console.log(`📊 Tipo de cuenta: ${isDemo ? 'Demo' : 'Real'}, Exchange: ${account?.exchange}`);
+      
       const res = await fetch(`${API_URL}/subaccounts/${accountId}/balance`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -100,29 +112,98 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       });
       
       if (!res.ok) {
-        console.log(`⚠️ Error al obtener balance para cuenta ${accountId}. Usando datos simulados.`);
-        // Generar datos simulados en lugar de mostrar error
-        return { 
-          balance: Math.random() * 10000, 
-          assets: [], 
-          performance: (Math.random() * 20) - 10 // Entre -10% y +10%
-        };
+        const errorData = await res.json().catch(() => ({}));
+        console.error(`❌ Error al obtener balance para cuenta ${accountId}:`, errorData);
+        console.error(`   Status: ${res.status} ${res.statusText}`);
+        
+        // Detectar error de restricción geográfica
+        const isGeoRestriction = 
+          errorData.message?.includes('ubicación geográfica') || 
+          errorData.message?.includes('CloudFront') ||
+          errorData.statusCode === 403;
+        
+        if (isDemo) {
+          console.log(`⚠️ Cuenta demo ${accountId}: Usando datos simulados.`);
+          // Solo generar datos simulados para cuentas demo
+          return { 
+            balance: Math.random() * 10000, 
+            assets: [
+              { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
+              { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
+              { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
+            ], 
+            performance: (Math.random() * 20) - 10, // Entre -10% y +10%
+            isSimulated: true,
+            isDemo: true,
+            isError: false
+          };
+        } else {
+          // Para cuentas reales, lanzar un error que será capturado por el catch
+          let errorMessage = errorData.message || errorData.error || 'Error al obtener balance real';
+          
+          // Mensaje específico para restricción geográfica
+          if (isGeoRestriction) {
+            errorMessage = 'La API de Bybit no está disponible en tu ubicación geográfica. Considera usar una VPN o contactar con soporte.';
+          }
+          
+          throw new Error(errorMessage);
+        }
       }
       
       const data = await res.json();
+      console.log(`✅ Datos recibidos para cuenta ${accountId}:`, {
+        balance: data.balance,
+        assetsCount: data.assets?.length || 0,
+        isSimulated: data.isSimulated,
+        isDemo: data.isDemo
+      });
+      
+      // Importante: No generar datos simulados aquí si la cuenta es demo
+      // Usar los datos que devuelve el backend
       return {
         balance: data.balance || 0,
         assets: data.assets || [],
-        performance: data.performance || Math.random() * 10 // Simulamos rendimiento si no viene del backend
+        performance: data.performance || 0,
+        isSimulated: data.isSimulated || false,
+        isDemo: isDemo, // Usar el valor de isDemo de la cuenta, no del backend
+        isError: false
       };
-    } catch {
-      console.log(`⚠️ Error al obtener balance para cuenta ${accountId}. Usando datos simulados.`);
-      // Generar datos simulados en caso de error
-      return { 
-        balance: Math.random() * 10000, 
-        assets: [], 
-        performance: (Math.random() * 20) - 10 // Entre -10% y +10%
-      };
+    } catch (error: unknown) {
+      console.error(`❌ Error al obtener balance para cuenta ${accountId}:`, error);
+      
+      // Buscar la cuenta para verificar si es demo o real
+      const account = subAccounts.find(acc => acc.id === accountId);
+      const isDemo = account?.isDemo === true;
+      
+      if (isDemo) {
+        console.log(`⚠️ Cuenta demo ${accountId}: Usando datos simulados debido al error.`);
+        // Solo generar datos simulados para cuentas demo
+        return { 
+          balance: Math.random() * 10000, 
+          assets: [
+            { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
+            { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
+            { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
+          ], 
+          performance: (Math.random() * 20) - 10, // Entre -10% y +10%
+          isSimulated: true,
+          isDemo: true,
+          isError: false
+        };
+      } else {
+        // Para cuentas reales, establecer un objeto con error
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido al obtener balance';
+        setError(`Error al obtener balance de la cuenta real: ${errorMessage}`);
+        return { 
+          balance: null, 
+          assets: [], 
+          performance: 0,
+          error: errorMessage,
+          isError: true,
+          isSimulated: false,
+          isDemo: false
+        };
+      }
     } finally {
       setLoadingBalance(null);
     }
@@ -135,6 +216,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     await Promise.all(accounts.map(async (account) => {
       if (account.active) {
         try {
+          console.log(`🔄 Obteniendo balance para cuenta ${account.id} (${account.isDemo ? 'Demo' : 'Real'})`);
           const details = await fetchAccountDetails(account.userId, account.id, token);
           balances[account.id] = details;
           
@@ -142,20 +224,46 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
           if (onBalanceUpdate) {
             onBalanceUpdate(account.id, details);
           }
-        } catch {
-          console.log(`⚠️ Error al procesar balance para cuenta ${account.id}. Usando datos simulados.`);
-          // Generar datos simulados en caso de error
-          const simulatedDetails = { 
-            balance: Math.random() * 10000, 
-            assets: [], 
-            performance: (Math.random() * 20) - 10 // Entre -10% y +10%
-          };
+        } catch (error) {
+          console.error(`❌ Error al procesar balance para cuenta ${account.id}:`, error);
           
-          balances[account.id] = simulatedDetails;
-          
-          // Actualizar con datos simulados
-          if (onBalanceUpdate) {
-            onBalanceUpdate(account.id, simulatedDetails);
+          // Manejar el error según el tipo de cuenta
+          if (account.isDemo) {
+            // Para cuentas demo, generar datos simulados
+            const simulatedDetails: AccountDetails = { 
+              balance: Math.random() * 10000, 
+              assets: [
+                { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
+                { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
+                { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
+              ], 
+              performance: (Math.random() * 20) - 10, // Entre -10% y +10%
+              isSimulated: true,
+              isDemo: true,
+              isError: false
+            };
+            balances[account.id] = simulatedDetails;
+            
+            if (onBalanceUpdate) {
+              onBalanceUpdate(account.id, simulatedDetails);
+            }
+          } else {
+            // Para cuentas reales, establecer un objeto con error
+            const errorMessage = error instanceof Error ? error.message : 'Error desconocido al obtener balance';
+            const errorDetails: AccountDetails = { 
+              balance: null, 
+              assets: [], 
+              performance: 0,
+              error: errorMessage,
+              isError: true,
+              isSimulated: false,
+              isDemo: false
+            };
+            balances[account.id] = errorDetails;
+            
+            if (onBalanceUpdate) {
+              onBalanceUpdate(account.id, errorDetails);
+            }
           }
         }
       }
@@ -349,109 +457,56 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     <div className="space-y-6 animate-in fade-in-50 duration-300" ref={componentRef} id="subaccounts-component">
       {/* Header Section */}
       <div className="flex flex-col space-y-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-          <Button 
-            onClick={fetchSubAccounts} 
-            variant="outline" 
-            size="sm" 
-            className="bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 dark:from-blue-950/30 dark:to-purple-950/30 dark:hover:from-blue-900/40 dark:hover:to-purple-900/40 transition-all duration-200 border-blue-200 dark:border-blue-800/30 text-blue-700 dark:text-blue-300 shadow-sm hover:shadow"
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin text-blue-600" : "text-blue-500"}`} />
-            {isLoading ? "Actualizando..." : "Actualizar Datos"}
-          </Button>
-          
-          {/* Contador de subcuentas */}
-          {!isLoading && subAccounts.length > 0 && (
-            <div className="mt-2 md:mt-0 text-sm text-blue-600/70 dark:text-blue-400/70 flex items-center gap-1.5">
-              <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/30">
-                {subAccounts.length} {subAccounts.length === 1 ? "subcuenta" : "subcuentas"}
-              </Badge>
-              <span>·</span>
-              <span>Última actualización: {new Date().toLocaleTimeString()}</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Filters and Search */}
-      <Card className="border shadow-sm dark:border-blue-800/30 dark:bg-blue-950/10 overflow-hidden transition-all duration-200 hover:shadow">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row items-center gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <h2 className="text-2xl font-bold tracking-tight">Subcuentas</h2>
+          <div className="flex items-center gap-2">
             <div className="relative w-full md:w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500 dark:text-blue-400 h-4 w-4" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                type="text"
+                type="search"
                 placeholder="Buscar subcuentas..."
+                className="w-full pl-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 dark:border-blue-800/30 dark:bg-blue-950/20 focus:border-blue-400 dark:focus:border-blue-500 transition-all"
               />
             </div>
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full md:w-auto dark:border-blue-800/30 dark:bg-blue-950/20 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all">
-                  <Filter className="mr-2 h-4 w-4 text-blue-500 dark:text-blue-400" />
-                  {selectedExchange === "all" ? "Todos los Exchanges" : selectedExchange}
+                <Button variant="outline" size="sm" className="h-9 gap-1">
+                  <Filter className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Filtrar</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[200px] dark:bg-blue-950 dark:border-blue-800/30 animate-in fade-in-20 zoom-in-95 duration-100">
-                {exchanges.map((exchange) => (
-                  <DropdownMenuItem 
-                    key={exchange} 
-                    onClick={() => setSelectedExchange(exchange)}
-                    className="cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30"
-                  >
-                    {exchange === "all" ? "Todos los Exchanges" : exchange}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full md:w-auto dark:border-blue-800/30 dark:bg-blue-950/20 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all">
-                  <Filter className="mr-2 h-4 w-4 text-blue-500 dark:text-blue-400" />
-                  {selectedType === "all" ? "Todos los Tipos" : 
-                   selectedType === "demo" ? "Solo Demo" : "Solo Real"}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[200px] dark:bg-blue-950 dark:border-blue-800/30 animate-in fade-in-20 zoom-in-95 duration-100">
-                <DropdownMenuItem 
-                  onClick={() => setSelectedType("all")}
-                  className="cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30"
-                >
-                  Todos los Tipos
+              <DropdownMenuContent align="end" className="w-[200px]">
+                <DropdownMenuItem onClick={() => setSelectedType("all")}>
+                  Todas las cuentas
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setSelectedType("demo")}
-                  className="cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30"
-                >
-                  <Sparkles className="h-3.5 w-3.5 mr-2 text-yellow-300" />
-                  Solo Demo
+                <DropdownMenuItem onClick={() => setSelectedType("real")}>
+                  Cuentas reales
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setSelectedType("real")}
-                  className="cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30"
-                >
-                  <Briefcase className="h-3.5 w-3.5 mr-2 text-green-300" />
-                  Solo Real
+                <DropdownMenuItem onClick={() => setSelectedType("demo")}>
+                  Cuentas demo
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Error Message */}
-      {error && (
-        <div className="flex items-center gap-2 p-4 text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800/30 shadow-sm animate-in fade-in-50 duration-200 slide-in-from-top-5">
-          <AlertCircle className="h-5 w-5 flex-shrink-0" />
-          <p className="text-sm font-medium">{error}</p>
         </div>
-      )}
+      </div>
 
-      {/* Main Content - Accounts Table */}
+      <div className="p-4 border border-yellow-200 dark:border-yellow-800/30 rounded-lg bg-yellow-50/50 dark:bg-yellow-950/10">
+        <div className="flex items-start gap-3">
+          <Sparkles className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-medium text-yellow-700 dark:text-yellow-300">Información sobre cuentas demo</h3>
+            <p className="text-xs text-yellow-600/90 dark:text-yellow-400/90 mt-1">
+              Las cuentas demo de Bybit ahora muestran datos reales desde el endpoint <code className="bg-yellow-100 dark:bg-yellow-900/30 px-1 py-0.5 rounded text-xs">api-demo.bybit.com</code>. 
+              Para ver balances y activos, asegúrate de tener fondos virtuales en tu cuenta demo de Bybit.
+              Si no ves datos, es posible que necesites depositar fondos virtuales en tu cuenta demo.
+            </p>
+          </div>
+        </div>
+      </div>
+      
       <Card className="border shadow-sm dark:border-blue-800/30 dark:bg-blue-950/10 overflow-hidden transition-all duration-200 hover:shadow">
         <CardContent className="p-0">
           <Table>
@@ -551,12 +606,37 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                         {loadingBalance === sub.id ? (
                           <Skeleton className="h-6 w-[100px]" />
                         ) : accountBalances[sub.id] ? (
-                          <span className="font-medium">
-                            ${accountBalances[sub.id].balance?.toLocaleString('es-ES', {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2
-                            })}
-                          </span>
+                          accountBalances[sub.id].isError ? (
+                            <div className="flex items-center text-red-500 dark:text-red-400 text-lg">
+                              <AlertCircle className="h-5 w-5 mr-2" />
+                              <span>Error al cargar datos</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">
+                                ${accountBalances[sub.id].balance?.toLocaleString('es-ES', {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2
+                                })}
+                              </span>
+                              {accountBalances[sub.id].isDemo && !accountBalances[sub.id].isSimulated && (
+                                <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30">
+                                  <div className="flex items-center gap-1">
+                                    <Sparkles className="h-3 w-3" />
+                                    <span>Demo</span>
+                                  </div>
+                                </Badge>
+                              )}
+                              {accountBalances[sub.id].isSimulated && (
+                                <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500 border-blue-200 dark:border-blue-800/30">
+                                  <div className="flex items-center gap-1">
+                                    <PieChart className="h-3 w-3" />
+                                    <span>Simulado</span>
+                                  </div>
+                                </Badge>
+                              )}
+                            </div>
+                          )
                         ) : (
                           <span className="text-blue-500 dark:text-blue-400 text-sm">
                             <Button 
@@ -661,12 +741,37 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                         {loadingBalance === sub.id ? (
                                           <Skeleton className="h-6 w-[100px]" />
                                         ) : accountBalances[sub.id] ? (
-                                          <span className="font-medium">
-                                            ${accountBalances[sub.id].balance?.toLocaleString('es-ES', {
-                                              minimumFractionDigits: 2,
-                                              maximumFractionDigits: 2
-                                            })}
-                                          </span>
+                                          accountBalances[sub.id].isError ? (
+                                            <div className="flex items-center text-red-500 dark:text-red-400 text-lg">
+                                              <AlertCircle className="h-5 w-5 mr-2" />
+                                              <span>Error al cargar datos</span>
+                                            </div>
+                                          ) : (
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-medium">
+                                                ${accountBalances[sub.id].balance?.toLocaleString('es-ES', {
+                                                  minimumFractionDigits: 2,
+                                                  maximumFractionDigits: 2
+                                                })}
+                                              </span>
+                                              {accountBalances[sub.id].isDemo && !accountBalances[sub.id].isSimulated && (
+                                                <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30">
+                                                  <div className="flex items-center gap-1">
+                                                    <Sparkles className="h-3 w-3" />
+                                                    <span>Demo</span>
+                                                  </div>
+                                                </Badge>
+                                              )}
+                                              {accountBalances[sub.id].isSimulated && (
+                                                <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500 border-blue-200 dark:border-blue-800/30">
+                                                  <div className="flex items-center gap-1">
+                                                    <PieChart className="h-3 w-3" />
+                                                    <span>Simulado</span>
+                                                  </div>
+                                                </Badge>
+                                              )}
+                                            </div>
+                                          )
                                         ) : (
                                           <span className="text-blue-500 dark:text-blue-400 text-sm">
                                             <Button 
