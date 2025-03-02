@@ -305,12 +305,12 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     <div className="space-y-6" ref={componentRef} id="subaccounts-component">
       {/* Header Section */}
       <div className="flex flex-col space-y-4">
-        <div className="flex flex-col md:flex-row justify-end items-start md:items-center">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <Button 
             onClick={fetchSubAccounts} 
             variant="outline" 
             size="sm" 
-            className="mt-2 md:mt-0 bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-all duration-200 border-blue-200 dark:border-blue-800/30"
+            className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 dark:from-blue-950/30 dark:to-indigo-950/30 dark:hover:from-blue-900/40 dark:hover:to-indigo-900/40 transition-all duration-200 border-blue-200 dark:border-blue-800/30 text-blue-700 dark:text-blue-300"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin text-blue-600" : "text-blue-500"}`} />
             Actualizar Datos
@@ -641,7 +641,11 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                       <Wallet className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                       Todos los Assets
                                     </h4>
-                                    <Button variant="outline" size="sm" className="gap-1 border-blue-200 dark:border-blue-800/30 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="gap-1 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 dark:from-blue-950/30 dark:to-indigo-950/30 dark:hover:from-blue-900/40 dark:hover:to-indigo-900/40 border-blue-200 dark:border-blue-800/30 text-blue-700 dark:text-blue-300 transition-colors"
+                                    >
                                       <RefreshCw className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
                                       Actualizar
                                     </Button>

@@ -401,11 +401,10 @@ export default function DashboardPage() {
               <Button 
                 variant="outline" 
                 onClick={() => setShowDeleteModal(true)}
-                className="w-10 h-10 p-0 rounded-full border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300 transition-all duration-200"
-                title="Eliminar Subcuenta"
+                className="border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300 transition-all duration-200"
               >
-                <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Eliminar Subcuenta</span>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Eliminar Subcuenta
               </Button>
             </div>
           </div>
