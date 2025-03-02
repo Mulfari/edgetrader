@@ -143,15 +143,15 @@ export default function DashboardPage() {
               <LayoutDashboard className="mr-2 h-4 w-4" />
               Dashboard
             </Button>
-            <Button variant="ghost" className="text-slate-600 dark:text-slate-300">
+            <Button variant="ghost" className="text-slate-600 dark:text-blue-300/70">
               <TrendingUp className="mr-2 h-4 w-4" />
               Operaciones
             </Button>
-            <Button variant="ghost" className="text-slate-600 dark:text-slate-300">
+            <Button variant="ghost" className="text-slate-600 dark:text-blue-300/70">
               <LineChart className="mr-2 h-4 w-4" />
               Análisis
             </Button>
-            <Button variant="ghost" className="text-slate-600 dark:text-slate-300">
+            <Button variant="ghost" className="text-slate-600 dark:text-blue-300/70">
               <Bell className="mr-2 h-4 w-4" />
               Alertas
             </Button>
@@ -234,11 +234,11 @@ export default function DashboardPage() {
 
       {/* Sidebar móvil */}
       <div className={cn(
-        "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:hidden transition-opacity",
+        "fixed inset-0 z-50 bg-blue-950/60 backdrop-blur-sm md:hidden transition-opacity",
         isMobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
       )}>
         <div className={cn(
-          "fixed inset-y-0 left-0 w-3/4 max-w-xs bg-white dark:bg-slate-900 p-4 shadow-xl transition-transform",
+          "fixed inset-y-0 left-0 w-3/4 max-w-xs bg-white dark:bg-blue-950 p-4 shadow-xl transition-transform",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}>
           <div className="flex items-center justify-between mb-6">
@@ -287,25 +287,25 @@ export default function DashboardPage() {
               <LayoutDashboard className="mr-2 h-4 w-4" />
               Dashboard
             </Button>
-            <Button variant="ghost" className="w-full justify-start text-slate-600 dark:text-slate-300">
+            <Button variant="ghost" className="w-full justify-start text-slate-600 dark:text-blue-300/70">
               <TrendingUp className="mr-2 h-4 w-4" />
               Operaciones
             </Button>
-            <Button variant="ghost" className="w-full justify-start text-slate-600 dark:text-slate-300">
+            <Button variant="ghost" className="w-full justify-start text-slate-600 dark:text-blue-300/70">
               <LineChart className="mr-2 h-4 w-4" />
               Análisis
             </Button>
-            <Button variant="ghost" className="w-full justify-start text-slate-600 dark:text-slate-300">
+            <Button variant="ghost" className="w-full justify-start text-slate-600 dark:text-blue-300/70">
               <Bell className="mr-2 h-4 w-4" />
               Alertas
             </Button>
-            <Button variant="ghost" className="w-full justify-start text-slate-600 dark:text-slate-300">
+            <Button variant="ghost" className="w-full justify-start text-slate-600 dark:text-blue-300/70">
               <Settings className="mr-2 h-4 w-4" />
               Configuración
             </Button>
           </nav>
           
-          <div className="mt-auto pt-4 border-t border-slate-200 dark:border-slate-700">
+          <div className="mt-auto pt-4 border-t border-slate-200 dark:border-blue-800/30">
             <Button 
               variant="ghost" 
               className="w-full justify-start text-red-600 dark:text-red-400"
@@ -384,13 +384,10 @@ export default function DashboardPage() {
         </div>
 
         {/* Gestión de subcuentas */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between p-4 md:p-6 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+        <div className="bg-white dark:bg-blue-950/20 rounded-xl border border-slate-200 dark:border-blue-800/30 shadow-sm overflow-hidden mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between p-4 md:p-6 border-b border-slate-200 dark:border-blue-800/30 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
             <div>
-              <h2 className="text-xl font-bold text-blue-800 dark:text-blue-300">Gestión de Subcuentas</h2>
-              <p className="text-sm text-blue-600/70 dark:text-blue-400/70 mt-1">
-                Monitorea y administra tus subcuentas de trading
-              </p>
+              {/* Eliminado el título "Subcuentas" */}
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3 mt-4 md:mt-0">
