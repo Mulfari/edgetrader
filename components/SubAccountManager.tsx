@@ -7,7 +7,10 @@ import {
   Trash2, 
   Eye, 
   EyeOff, 
-  AlertCircle
+  AlertCircle,
+  CheckCircle2,
+  Server,
+  ExternalLink
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface SubAccount {
   id: string
@@ -61,16 +66,24 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+  console.log("API_URL en SubAccountManager:", API_URL)
 
   const fetchAccounts = async () => {
     const token = getToken()
-    if (!token) return
+    if (!token) {
+      setError("No se encontró token de autenticación")
+      setIsLoading(false)
+      return
+    }
 
     setIsLoading(true)
     setError(null)
+    console.log("Intentando cargar subcuentas desde:", `${API_URL}/subaccounts`)
+    console.log("Token disponible:", !!token)
 
     try {
       const res = await fetch(`${API_URL}/subaccounts`, {
@@ -81,16 +94,23 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
         },
       })
 
+      console.log("Respuesta del servidor:", res.status, res.statusText)
+
       if (!res.ok) {
         if (res.status === 401) {
           localStorage.removeItem("token")
           throw new Error("Sesión expirada. Por favor inicia sesión nuevamente.")
         }
-        throw new Error("Error al cargar las subcuentas")
+        throw new Error(`Error al cargar las subcuentas. Código: ${res.status}`)
       }
 
       const data: SubAccount[] = await res.json()
+      console.log("Subcuentas cargadas:", data)
       setAccounts(data)
+      
+      if (data.length === 0) {
+        setError("No se encontraron subcuentas. Crea una nueva subcuenta primero.")
+      }
     } catch (error: Error | ApiError | unknown) {
       console.error("Error al cargar subcuentas:", error)
       const errorMessage = error instanceof Error ? error.message : "Error al cargar las subcuentas. Intenta nuevamente más tarde."
@@ -101,8 +121,21 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
   }
 
   useEffect(() => {
-    if (isOpen && mode === "delete") {
-      fetchAccounts()
+    if (isOpen) {
+      if (mode === "delete") {
+        fetchAccounts()
+      } else {
+        // Resetear el formulario cuando se abre el modal de creación
+        setNewAccount({
+          exchange: "",
+          apiKey: "",
+          apiSecret: "",
+          name: "",
+          isDemo: false
+        })
+        setError(null)
+        setSuccess(null)
+      }
     }
   }, [isOpen, mode, fetchAccounts])
 
@@ -121,6 +154,7 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
 
     setIsSubmitting(true)
     setError(null)
+    setSuccess(null)
 
     try {
       const res = await fetch(`${API_URL}/subaccounts`, {
@@ -137,9 +171,14 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
         throw new Error(errorData.message || "Error al crear la subcuenta")
       }
 
-      setNewAccount({ exchange: "", apiKey: "", apiSecret: "", name: "", isDemo: false })
-      if (onSuccess) onSuccess()
-      onClose()
+      setSuccess("¡Subcuenta creada exitosamente!")
+      
+      // Esperar un momento antes de cerrar el modal para mostrar el mensaje de éxito
+      setTimeout(() => {
+        setNewAccount({ exchange: "", apiKey: "", apiSecret: "", name: "", isDemo: false })
+        if (onSuccess) onSuccess()
+        onClose()
+      }, 1500)
     } catch (error: Error | ApiError | unknown) {
       console.error("Error al crear subcuenta:", error)
       const errorMessage = error instanceof Error ? error.message : "Error al crear la subcuenta. Intenta nuevamente más tarde."
@@ -194,12 +233,22 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={mode === "delete" ? "sm:max-w-[600px]" : "sm:max-w-[425px]"}>
+      <DialogContent className={mode === "delete" ? "sm:max-w-[600px]" : "sm:max-w-[500px]"}>
         <DialogHeader>
-          <DialogTitle>
-            {mode === "create" ? "Agregar Nueva Subcuenta" : "Eliminar Subcuenta"}
+          <DialogTitle className="text-xl flex items-center gap-2">
+            {mode === "create" ? (
+              <>
+                <Server className="h-5 w-5 text-primary" />
+                Agregar Nueva Subcuenta
+              </>
+            ) : (
+              <>
+                <Trash2 className="h-5 w-5 text-destructive" />
+                Eliminar Subcuenta
+              </>
+            )}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm text-muted-foreground mt-1">
             {mode === "create" 
               ? "Ingresa los detalles de tu subcuenta de exchange para monitorearla."
               : "Selecciona la subcuenta que deseas eliminar."}
@@ -207,100 +256,198 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
         </DialogHeader>
 
         {mode === "create" ? (
-          <form onSubmit={handleAddAccount}>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Nombre de la Subcuenta</Label>
-                <Input
-                  id="name"
-                  value={newAccount.name}
-                  onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
-                  placeholder="Mi Subcuenta"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="exchange">Exchange</Label>
-                <Select 
-                  value={newAccount.exchange} 
-                  onValueChange={(value) => setNewAccount({ ...newAccount, exchange: value })}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un exchange" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {exchangeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="apiKey">API Key</Label>
-                <Input
-                  id="apiKey"
-                  value={newAccount.apiKey}
-                  onChange={(e) => setNewAccount({ ...newAccount, apiKey: e.target.value })}
-                  placeholder="Ingresa tu API Key"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="apiSecret">API Secret</Label>
-                <div className="relative">
-                  <Input
-                    id="apiSecret"
-                    type={showApiSecret ? "text" : "password"}
-                    value={newAccount.apiSecret}
-                    onChange={(e) => setNewAccount({ ...newAccount, apiSecret: e.target.value })}
-                    placeholder="Ingresa tu API Secret"
-                    required
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-full px-3"
-                    onClick={() => setShowApiSecret(!showApiSecret)}
-                  >
-                    {showApiSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
+          <form onSubmit={handleAddAccount} className="space-y-6">
+            <Tabs defaultValue="general" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="general">Información General</TabsTrigger>
+                <TabsTrigger value="api">Credenciales API</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="general" className="space-y-4 pt-4">
+                <div className="grid gap-3">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name" className="text-sm font-medium">
+                      Nombre de la Subcuenta
+                    </Label>
+                    <Input
+                      id="name"
+                      value={newAccount.name}
+                      onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
+                      placeholder="Mi Subcuenta"
+                      className="h-10"
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Elige un nombre descriptivo para identificar fácilmente esta cuenta
+                    </p>
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="exchange" className="text-sm font-medium">
+                      Exchange
+                    </Label>
+                    <Select 
+                      value={newAccount.exchange} 
+                      onValueChange={(value) => setNewAccount({ ...newAccount, exchange: value })}
+                      required
+                    >
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Selecciona un exchange" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {exchangeOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 mt-2">
+                    <input
+                      type="checkbox"
+                      id="isDemo"
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      checked={newAccount.isDemo}
+                      onChange={(e) => setNewAccount({ ...newAccount, isDemo: e.target.checked })}
+                    />
+                    <Label htmlFor="isDemo" className="text-sm cursor-pointer">
+                      Esta es una cuenta Demo
+                    </Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <AlertCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="w-[200px] text-xs">
+                            Marca esta opción si estás usando una cuenta de prueba o demo. 
+                            Esto te ayudará a diferenciar entre cuentas reales y de práctica.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="isDemo"
-                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                  checked={newAccount.isDemo}
-                  onChange={(e) => setNewAccount({ ...newAccount, isDemo: e.target.checked })}
-                />
-                <Label htmlFor="isDemo">Esta es una cuenta Demo</Label>
-              </div>
-              {error && (
-                <div className="flex items-center gap-2 p-3 text-sm border border-red-500 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md">
-                  <AlertCircle className="h-4 w-4" />
-                  <p>{error}</p>
+              </TabsContent>
+              
+              <TabsContent value="api" className="space-y-4 pt-4">
+                <div className="grid gap-3">
+                  <div className="grid gap-2">
+                    <Label htmlFor="apiKey" className="text-sm font-medium flex items-center gap-1">
+                      API Key
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <AlertCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="w-[200px] text-xs">
+                              La API Key proporcionada por tu exchange. Asegúrate de que tenga permisos de solo lectura.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </Label>
+                    <Input
+                      id="apiKey"
+                      value={newAccount.apiKey}
+                      onChange={(e) => setNewAccount({ ...newAccount, apiKey: e.target.value })}
+                      placeholder="Ingresa tu API Key"
+                      className="h-10 font-mono text-sm"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="apiSecret" className="text-sm font-medium flex items-center gap-1">
+                      API Secret
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <AlertCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="w-[200px] text-xs">
+                              El API Secret correspondiente a tu API Key. Esta información es sensible y se almacena de forma segura.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="apiSecret"
+                        type={showApiSecret ? "text" : "password"}
+                        value={newAccount.apiSecret}
+                        onChange={(e) => setNewAccount({ ...newAccount, apiSecret: e.target.value })}
+                        placeholder="Ingresa tu API Secret"
+                        className="h-10 pr-10 font-mono text-sm"
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full px-3"
+                        onClick={() => setShowApiSecret(!showApiSecret)}
+                      >
+                        {showApiSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-2">
+                    <a 
+                      href="#" 
+                      className="text-xs text-primary flex items-center gap-1 hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      ¿Cómo obtener mis claves API? <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
                 </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
+              </TabsContent>
+            </Tabs>
+            
+            {error && (
+              <div className="flex items-center gap-2 p-3 text-sm border border-destructive/50 bg-destructive/10 text-destructive rounded-md">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <p>{error}</p>
+              </div>
+            )}
+            
+            {success && (
+              <div className="flex items-center gap-2 p-3 text-sm border border-green-500/50 bg-green-500/10 text-green-600 dark:text-green-400 rounded-md">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                <p>{success}</p>
+              </div>
+            )}
+            
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Guardando..." : "Guardar"}
+              <Button type="submit" disabled={isSubmitting} className="gap-1">
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    Guardar Subcuenta
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>
         ) : (
-          <div className="py-4">
-            <div className="mb-4">
-              <div className="relative">
+          <div className="py-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   type="text"
@@ -310,44 +457,78 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
                   className="pl-9"
                 />
               </div>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={fetchAccounts}
+                disabled={isLoading}
+                className="h-10 w-10"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              </Button>
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 p-3 mb-4 text-sm border border-red-500 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md">
-                <AlertCircle className="h-4 w-4" />
+              <div className="flex items-center gap-2 p-3 text-sm border border-destructive/50 bg-destructive/10 text-destructive rounded-md">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
                 <p>{error}</p>
               </div>
             )}
 
-            <div className="rounded-lg border max-h-[300px] overflow-y-auto">
+            <div className="rounded-lg border overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Exchange</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead className="w-[40%]">Nombre</TableHead>
+                    <TableHead className="w-[30%]">Exchange</TableHead>
+                    <TableHead className="w-[20%]">Tipo</TableHead>
+                    <TableHead className="text-right w-[10%]">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     Array.from({ length: 3 }).map((_, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">Cargando...</TableCell>
-                        <TableCell>Cargando...</TableCell>
-                        <TableCell>Cargando...</TableCell>
-                        <TableCell className="text-right">Cargando...</TableCell>
+                      <TableRow key={index} className="h-[57px]">
+                        <TableCell className="font-medium">
+                          <div className="h-5 w-[150px] bg-muted animate-pulse rounded"></div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-5 w-[100px] bg-muted animate-pulse rounded"></div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-5 w-[80px] bg-muted animate-pulse rounded"></div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="h-8 w-8 bg-muted animate-pulse rounded-full ml-auto"></div>
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : filteredAccounts.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4}>
                         <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-                          <AlertCircle className="h-12 w-12 mb-3" />
+                          <AlertCircle className="h-12 w-12 mb-3 text-muted-foreground/70" />
                           <p className="text-sm font-medium mb-2">No se encontraron subcuentas</p>
                           <p className="text-xs text-muted-foreground">
                             {searchTerm ? "Intenta ajustar el término de búsqueda" : "No hay subcuentas disponibles"}
                           </p>
+                          {!searchTerm && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="mt-4"
+                              onClick={() => {
+                                onClose();
+                                // Pequeño retraso para evitar problemas con la animación del modal
+                                setTimeout(() => {
+                                  // Aquí deberías tener una forma de abrir el modal de creación
+                                  if (onSuccess) onSuccess();
+                                }, 300);
+                              }}
+                            >
+                              Crear una subcuenta
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -377,8 +558,9 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
                             size="icon"
                             onClick={() => handleDeleteAccount(account.id, account.name)}
                             disabled={isSubmitting}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4" />
                             <span className="sr-only">Eliminar</span>
                           </Button>
                         </TableCell>
@@ -392,14 +574,6 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
             <DialogFooter className="mt-4">
               <Button variant="outline" onClick={onClose}>
                 Cerrar
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={fetchAccounts}
-                disabled={isLoading}
-              >
-                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-                Actualizar
               </Button>
             </DialogFooter>
           </div>

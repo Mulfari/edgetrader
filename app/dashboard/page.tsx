@@ -113,10 +113,20 @@ export default function Dashboard() {
 
   const handleSubAccountSuccess = () => {
     // Actualizar la lista de subcuentas
+    console.log("Actualizando subcuentas después de una operación exitosa");
     const subAccountsComponent = document.getElementById('subaccounts-component');
     if (subAccountsComponent) {
+      console.log("Disparando evento refresh en el componente de subcuentas");
       // Forzar actualización del componente SubAccounts
-      subAccountsComponent.dispatchEvent(new Event('refresh'));
+      const refreshEvent = new Event('refresh', { bubbles: true });
+      subAccountsComponent.dispatchEvent(refreshEvent);
+    } else {
+      console.error("No se encontró el elemento subaccounts-component");
+    }
+    
+    // Si estamos eliminando, cerrar el modal de eliminación
+    if (isDeleteModalOpen) {
+      setIsDeleteModalOpen(false);
     }
   };
 
