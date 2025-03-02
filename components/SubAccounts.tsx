@@ -54,6 +54,7 @@ interface AccountDetails {
   isSimulated?: boolean;
   error?: string;
   isError?: boolean;
+  isDemo: boolean;
 }
 
 interface AccountStats {
@@ -96,6 +97,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const fetchAccountDetails = async (userId: string, accountId: string, token: string): Promise<AccountDetails> => {
     try {
       setLoadingBalance(accountId);
+      console.log(`🔍 Solicitando balance para cuenta ${accountId}...`);
+      
       const res = await fetch(`${API_URL}/subaccounts/${accountId}/balance`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -124,6 +127,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
             assets: [], 
             performance: (Math.random() * 20) - 10, // Entre -10% y +10%
             isSimulated: true,
+            isDemo: true,
             isError: false
           };
         } else {
@@ -140,11 +144,21 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       }
       
       const data = await res.json();
+      console.log(`✅ Datos recibidos para cuenta ${accountId}:`, {
+        balance: data.balance,
+        assetsCount: data.assets?.length || 0,
+        isSimulated: data.isSimulated,
+        isDemo: data.isDemo
+      });
+      
+      // Importante: No generar datos simulados aquí si la cuenta es demo
+      // Usar los datos que devuelve el backend
       return {
         balance: data.balance || 0,
         assets: data.assets || [],
         performance: data.performance || 0,
         isSimulated: data.isSimulated || false,
+        isDemo: data.isDemo || false,
         isError: false
       };
     } catch (error: unknown) {
@@ -162,6 +176,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
           assets: [], 
           performance: (Math.random() * 20) - 10, // Entre -10% y +10%
           isSimulated: true,
+          isDemo: true,
           isError: false
         };
       } else {
@@ -174,7 +189,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
           performance: 0,
           error: errorMessage,
           isError: true,
-          isSimulated: false
+          isSimulated: false,
+          isDemo: false
         };
       }
     } finally {
@@ -210,6 +226,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
               assets: [], 
               performance: (Math.random() * 20) - 10, // Entre -10% y +10%
               isSimulated: true,
+              isDemo: true,
               isError: false
             };
             
@@ -227,7 +244,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
               performance: 0,
               error: "Error al obtener balance real",
               isError: true,
-              isSimulated: false
+              isSimulated: false,
+              isDemo: false
             };
             
             balances[account.id] = errorDetails;
@@ -659,6 +677,11 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                   Simulado
                                 </Badge>
                               )}
+                              {accountBalances[sub.id].isDemo && !accountBalances[sub.id].isSimulated && (
+                                <Badge variant="outline" className="ml-2 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500 border-blue-200 dark:border-blue-800/30">
+                                  Demo
+                                </Badge>
+                              )}
                             </span>
                           )
                         ) : (
@@ -796,6 +819,11 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                               {accountBalances[sub.id].isSimulated && (
                                                 <Badge variant="outline" className="ml-2 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30">
                                                   Simulado
+                                                </Badge>
+                                              )}
+                                              {accountBalances[sub.id].isDemo && !accountBalances[sub.id].isSimulated && (
+                                                <Badge variant="outline" className="ml-2 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500 border-blue-200 dark:border-blue-800/30">
+                                                  Demo
                                                 </Badge>
                                               )}
                                             </div>
