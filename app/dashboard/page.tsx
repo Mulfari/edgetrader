@@ -12,8 +12,6 @@ import {
   Settings, 
   CreditCard, 
   LogOut, 
-  User,
-  ChevronDown,
   Wallet
 } from "lucide-react";
 import SubAccounts from "@/components/SubAccounts";
