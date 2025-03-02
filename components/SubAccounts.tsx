@@ -86,13 +86,10 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
-  const [selectedExchange, setSelectedExchange] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [loadingBalance, setLoadingBalance] = useState<string | null>(null);
   const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-
-  const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))];
 
   const fetchAccountDetails = async (userId: string, accountId: string, token: string): Promise<AccountDetails> => {
     try {
@@ -270,16 +267,16 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }));
     
     return balances;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onBalanceUpdate]);
 
   const fetchSubAccounts = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    
     try {
+      setIsLoading(true);
+      setError(null);
+      
       const token = localStorage.getItem("token");
       if (!token) {
-        console.error("❌ No hay token, redirigiendo a login.");
         router.push("/login");
         return;
       }
@@ -295,57 +292,23 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       }
       
       const data = await res.json();
-      
-      // Guardar en localStorage
-      localStorage.setItem("subAccounts", JSON.stringify(data));
-      
       setSubAccounts(data);
       
-      // Obtener balances
-      const balances = await fetchAccountBalances(data, token);
+      // Obtener balances para todas las subcuentas activas
+      const balances = await fetchAccountBalances(data.filter((acc: SubAccount) => acc.active), token);
       setAccountBalances(balances);
-      localStorage.setItem("accountBalances", JSON.stringify(balances));
       
       // Calcular estadísticas
-      if (onStatsUpdate) {
-        const activeAccounts = data.filter((account: SubAccount) => account.active);
-        const realAccounts = activeAccounts.filter((account: SubAccount) => !account.isDemo);
-        const demoAccounts = activeAccounts.filter((account: SubAccount) => account.isDemo);
-        
-        // Calcular balance total
-        let totalBalance = 0;
-        activeAccounts.forEach((account: SubAccount) => {
-          const balance = balances[account.id]?.balance || 0;
-          totalBalance += balance || 0;
-        });
-        
-        // Calcular exchanges únicos
-        const uniqueExchanges = new Set(activeAccounts.map((account: SubAccount) => account.exchange)).size;
-        
-        // Calcular rendimiento promedio
-        let totalPerformance = 0;
-        let accountsWithPerformance = 0;
-        
-        activeAccounts.forEach((account: SubAccount) => {
-          const performance = balances[account.id]?.performance;
-          if (performance !== undefined) {
-            totalPerformance += performance;
-            accountsWithPerformance++;
-          }
-        });
-        
-        const avgPerformance = accountsWithPerformance > 0 
-          ? totalPerformance / accountsWithPerformance 
-          : 0;
-        
-        onStatsUpdate({
-          totalAccounts: activeAccounts.length,
-          realAccounts: realAccounts.length,
-          demoAccounts: demoAccounts.length,
-          totalBalance,
-          uniqueExchanges,
-          avgPerformance
-        });
+      if (data.length > 0 && onStatsUpdate) {
+        const stats: AccountStats = {
+          totalAccounts: data.length,
+          realAccounts: data.filter((acc: SubAccount) => !acc.isDemo).length,
+          demoAccounts: data.filter((acc: SubAccount) => acc.isDemo).length,
+          totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
+          uniqueExchanges: new Set(data.map((acc: SubAccount) => acc.exchange)).size,
+          avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
+        };
+        onStatsUpdate(stats);
       }
     } catch (error) {
       console.error("❌ Error al obtener subcuentas:", error);
@@ -353,7 +316,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     } finally {
       setIsLoading(false);
     }
-  }, [router, onStatsUpdate, fetchAccountBalances]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router, onStatsUpdate]);
 
   useEffect(() => {
     const handleRefresh = () => {
@@ -445,7 +409,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
 
   const filteredAccounts = sortedSubAccounts.filter(
     (account) =>
-      (selectedExchange === "all" || account.exchange === selectedExchange) &&
       (selectedType === "all" || 
        (selectedType === "demo" && account.isDemo) || 
        (selectedType === "real" && !account.isDemo)) &&
@@ -492,6 +455,18 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
           </div>
         </div>
       </div>
+
+      {/* Mostrar mensaje de error si existe */}
+      {error && (
+        <div className="p-4 border border-red-200 dark:border-red-800/30 rounded-lg bg-red-50/50 dark:bg-red-950/10">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-red-700 dark:text-red-300">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="p-4 border border-yellow-200 dark:border-yellow-800/30 rounded-lg bg-yellow-50/50 dark:bg-yellow-950/10">
         <div className="flex items-start gap-3">
@@ -576,7 +551,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                       <AlertCircle className="h-16 w-16 mb-4 text-blue-300/50 animate-in fade-in-50 zoom-in-95 duration-300" />
                       <p className="text-lg font-medium mb-2 text-blue-800 dark:text-blue-300 animate-in fade-in-50 slide-in-from-bottom-5 duration-300 delay-100">No se encontraron subcuentas</p>
                       <p className="text-sm text-blue-600/70 dark:text-blue-400/70 max-w-md mx-auto animate-in fade-in-50 slide-in-from-bottom-5 duration-300 delay-200">
-                        {searchTerm || selectedExchange !== "all" || selectedType !== "all" 
+                        {searchTerm || selectedType !== "all" 
                           ? "Intenta ajustar los filtros o el término de búsqueda" 
                           : "Añade una nueva subcuenta para comenzar a monitorear tus inversiones"}
                       </p>
