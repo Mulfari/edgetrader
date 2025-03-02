@@ -16,8 +16,6 @@ import {
   Menu,
   ChevronRight,
   User,
-  ArrowUpRight,
-  Clock,
   DollarSign
 } from "lucide-react";
 import SubAccounts from "@/components/SubAccounts";
