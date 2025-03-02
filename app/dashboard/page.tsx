@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, TrendingUp, Wallet } from "lucide-react";
+import { LogOut, TrendingUp, Wallet, Plus, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -163,6 +163,22 @@ export default function Dashboard() {
               <TabsContent value="accounts" className="space-y-4">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Gestión de Subcuentas</h2>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => router.push("/accounts")}
+                    >
+                      <Trash className="mr-2 h-4 w-4" />
+                      Eliminar Subcuentas
+                    </Button>
+                    <Button 
+                      onClick={() => router.push("/accounts")}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Agregar Subcuenta
+                    </Button>
+                  </div>
                 </div>
                 <SubAccounts onBalanceUpdate={updateTotalBalance} />
               </TabsContent>
