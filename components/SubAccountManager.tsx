@@ -13,10 +13,7 @@ import {
   Sparkles,
   KeyRound,
   Database,
-  Tag,
-  Check,
-  Loader2,
-  X
+  Tag
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { useRouter } from "next/navigation"
 
 interface SubAccount {
@@ -573,9 +570,9 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
                             variant="ghost"
                             size="icon"
                             onClick={() => {
-                              setSelectedAccountId(account.id)
-                              setError(null)
-                              setSuccess(null)
+                              setSelectedAccountId(account.id);
+                              setError(null);
+                              setSuccess(null);
                             }}
                             disabled={isSubmitting}
                             className="text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -595,6 +592,26 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
               <Button variant="outline" onClick={onCancel}>
                 Cerrar
               </Button>
+              {selectedAccountId && (
+                <Button 
+                  variant="destructive" 
+                  onClick={handleDeleteAccount}
+                  disabled={isSubmitting}
+                  className="gap-1"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      Eliminando...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4" />
+                      Eliminar Subcuenta
+                    </>
+                  )}
+                </Button>
+              )}
             </DialogFooter>
           </div>
         )}
