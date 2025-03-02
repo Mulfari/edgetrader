@@ -88,6 +88,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [selectedType, setSelectedType] = useState<string>("all");
   const [loadingBalance, setLoadingBalance] = useState<string | null>(null);
+  const [isLoadingAllBalances, setIsLoadingAllBalances] = useState(false);
   const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -206,47 +207,85 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }
   };
 
+  // Función para cargar automáticamente los balances de todas las subcuentas
+  const loadAllBalances = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token || subAccounts.length === 0) return;
+    
+    console.log("🔄 Cargando balances para todas las subcuentas automáticamente...");
+    setIsLoadingAllBalances(true);
+    
+    try {
+      const activeAccounts = subAccounts.filter(acc => acc.active);
+      const balancesPromises = activeAccounts.map(acc => 
+        fetchAccountDetails(acc.userId, acc.id, token)
+          .then(details => ({ id: acc.id, details }))
+      );
+      
+      const results = await Promise.allSettled(balancesPromises);
+      
+      const newBalances = { ...accountBalances };
+      
+      results.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          const { id, details } = result.value;
+          newBalances[id] = details;
+          
+          if (onBalanceUpdate) {
+            onBalanceUpdate(id, details);
+          }
+        }
+      });
+      
+      setAccountBalances(newBalances);
+    } catch (error) {
+      console.error("Error al cargar todos los balances:", error);
+    } finally {
+      setIsLoadingAllBalances(false);
+    }
+  }, [subAccounts, fetchAccountDetails, accountBalances, onBalanceUpdate]);
+
   const fetchAccountBalances = useCallback(async (accounts: SubAccount[], token: string) => {
+    console.log(`🔄 Obteniendo balances para ${accounts.length} subcuentas...`);
+    setIsLoadingAllBalances(true);
+    
     const balances: Record<string, AccountDetails> = {};
     
-    // Procesar las cuentas en paralelo
     await Promise.all(accounts.map(async (account) => {
       if (account.active) {
         try {
-          console.log(`🔄 Obteniendo balance para cuenta ${account.id} (${account.isDemo ? 'Demo' : 'Real'})`);
           const details = await fetchAccountDetails(account.userId, account.id, token);
           balances[account.id] = details;
           
-          // Actualizar el balance en tiempo real si hay un callback
           if (onBalanceUpdate) {
             onBalanceUpdate(account.id, details);
           }
         } catch (error) {
-          console.error(`❌ Error al procesar balance para cuenta ${account.id}:`, error);
+          console.error(`Error al obtener balance para cuenta ${account.id}:`, error);
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
           
-          // Manejar el error según el tipo de cuenta
+          // Si es una cuenta demo, generar datos simulados
           if (account.isDemo) {
-            // Para cuentas demo, generar datos simulados
-            const simulatedDetails: AccountDetails = { 
+            console.log(`⚠️ Cuenta demo ${account.id}: Usando datos simulados debido al error.`);
+            const demoDetails: AccountDetails = { 
               balance: Math.random() * 10000, 
               assets: [
                 { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
                 { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
                 { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
               ], 
-              performance: (Math.random() * 20) - 10, // Entre -10% y +10%
+              performance: (Math.random() * 20) - 10,
               isSimulated: true,
               isDemo: true,
               isError: false
             };
-            balances[account.id] = simulatedDetails;
+            balances[account.id] = demoDetails;
             
             if (onBalanceUpdate) {
-              onBalanceUpdate(account.id, simulatedDetails);
+              onBalanceUpdate(account.id, demoDetails);
             }
           } else {
             // Para cuentas reales, establecer un objeto con error
-            const errorMessage = error instanceof Error ? error.message : 'Error desconocido al obtener balance';
             const errorDetails: AccountDetails = { 
               balance: null, 
               assets: [], 
@@ -266,6 +305,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       }
     }));
     
+    setIsLoadingAllBalances(false);
     return balances;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onBalanceUpdate]);
@@ -340,11 +380,18 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }
   }, [fetchSubAccounts]);
 
-  // Nuevo useEffect para cargar los balances automáticamente al iniciar el componente
+  // Modificar el useEffect para cargar los balances automáticamente
   useEffect(() => {
-    console.log("🔄 Cargando balances automáticamente al iniciar el componente");
+    console.log("🔄 Cargando subcuentas y balances automáticamente al iniciar el componente");
     fetchSubAccounts();
   }, [fetchSubAccounts]);
+
+  // Nuevo useEffect para cargar los balances cuando cambian las subcuentas
+  useEffect(() => {
+    if (subAccounts.length > 0) {
+      loadAllBalances();
+    }
+  }, [subAccounts, loadAllBalances]);
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
@@ -584,7 +631,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                         </Badge>
                       </TableCell>
                       <TableCell onClick={() => handleRowClick(sub)}>
-                        {loadingBalance === sub.id ? (
+                        {loadingBalance === sub.id || (isLoadingAllBalances && !accountBalances[sub.id]) ? (
                           <Skeleton className="h-6 w-[100px]" />
                         ) : accountBalances[sub.id] ? (
                           accountBalances[sub.id].isError ? (
@@ -628,17 +675,29 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                 e.stopPropagation();
                                 const token = localStorage.getItem("token");
                                 if (token) {
+                                  setLoadingBalance(sub.id);
                                   fetchAccountDetails(sub.userId, sub.id, token)
                                     .then(details => {
                                       setAccountBalances(prev => ({
                                         ...prev,
                                         [sub.id]: details
                                       }));
+                                      setLoadingBalance(null);
+                                    })
+                                    .catch(() => {
+                                      setLoadingBalance(null);
                                     });
                                 }
                               }}
                             >
-                              Cargar balance
+                              {loadingBalance === sub.id || (isLoadingAllBalances && !accountBalances[sub.id]) ? (
+                                <div className="flex items-center gap-1">
+                                  <RefreshCw className={`mr-2 h-3 w-3 ${loadingBalance === sub.id || isLoadingAllBalances ? "animate-spin" : ""}`} />
+                                  <span>Cargando...</span>
+                                </div>
+                              ) : (
+                                "Actualizar"
+                              )}
                             </Button>
                           </span>
                         )}
@@ -719,7 +778,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                     </CardHeader>
                                     <CardContent className="pt-4">
                                       <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                                        {loadingBalance === sub.id ? (
+                                        {loadingBalance === sub.id || (isLoadingAllBalances && !accountBalances[sub.id]) ? (
                                           <Skeleton className="h-6 w-[100px]" />
                                         ) : accountBalances[sub.id] ? (
                                           accountBalances[sub.id].isError ? (
@@ -763,17 +822,29 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                                 e.stopPropagation();
                                                 const token = localStorage.getItem("token");
                                                 if (token) {
+                                                  setLoadingBalance(sub.id);
                                                   fetchAccountDetails(sub.userId, sub.id, token)
                                                     .then(details => {
                                                       setAccountBalances(prev => ({
                                                         ...prev,
                                                         [sub.id]: details
                                                       }));
+                                                      setLoadingBalance(null);
+                                                    })
+                                                    .catch(() => {
+                                                      setLoadingBalance(null);
                                                     });
                                                 }
                                               }}
                                             >
-                                              Cargar balance
+                                              {loadingBalance === sub.id || (isLoadingAllBalances && !accountBalances[sub.id]) ? (
+                                                <div className="flex items-center gap-1">
+                                                  <RefreshCw className={`mr-2 h-3 w-3 ${loadingBalance === sub.id || isLoadingAllBalances ? "animate-spin" : ""}`} />
+                                                  <span>Cargando...</span>
+                                                </div>
+                                              ) : (
+                                                "Actualizar"
+                                              )}
                                             </Button>
                                           </span>
                                         )}
@@ -825,7 +896,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                             ? "text-red-600 dark:text-red-400" 
                                             : "text-yellow-600 dark:text-yellow-400"
                                       }`}>
-                                        {loadingBalance === sub.id ? (
+                                        {loadingBalance === sub.id || (isLoadingAllBalances && !accountBalances[sub.id]) ? (
                                           <Skeleton className="h-6 w-[100px]" />
                                         ) : accountBalances[sub.id] ? (
                                           <span className="font-medium">
@@ -842,19 +913,24 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                                 e.stopPropagation();
                                                 const token = localStorage.getItem("token");
                                                 if (token) {
+                                                  setLoadingBalance(sub.id);
                                                   fetchAccountDetails(sub.userId, sub.id, token)
                                                     .then(details => {
                                                       setAccountBalances(prev => ({
                                                         ...prev,
                                                         [sub.id]: details
                                                       }));
+                                                      setLoadingBalance(null);
+                                                    })
+                                                    .catch(() => {
+                                                      setLoadingBalance(null);
                                                     });
                                                 }
                                               }}
                                             >
-                                              {loadingBalance === sub.id ? (
+                                              {loadingBalance === sub.id || (isLoadingAllBalances && !accountBalances[sub.id]) ? (
                                                 <div className="flex items-center gap-1">
-                                                  <RefreshCw className="h-3 w-3 animate-spin" />
+                                                  <RefreshCw className={`mr-2 h-3 w-3 ${loadingBalance === sub.id || isLoadingAllBalances ? "animate-spin" : ""}`} />
                                                   <span>Cargando...</span>
                                                 </div>
                                               ) : (
@@ -882,22 +958,27 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                         e.stopPropagation();
                                         const token = localStorage.getItem("token");
                                         if (token) {
+                                          setLoadingBalance(sub.id);
                                           fetchAccountDetails(sub.userId, sub.id, token)
                                             .then(details => {
                                               setAccountBalances(prev => ({
                                                 ...prev,
                                                 [sub.id]: details
                                               }));
+                                              setLoadingBalance(null);
+                                            })
+                                            .catch(() => {
+                                              setLoadingBalance(null);
                                             });
                                         }
                                       }}
                                     >
-                                      <RefreshCw className={`mr-2 h-3 w-3 ${loadingBalance === sub.id ? "animate-spin" : ""}`} />
+                                      <RefreshCw className={`mr-2 h-3 w-3 ${loadingBalance === sub.id || isLoadingAllBalances ? "animate-spin" : ""}`} />
                                       Actualizar
                                     </Button>
                                   </div>
                                   
-                                  {loadingBalance === sub.id ? (
+                                  {loadingBalance === sub.id || (isLoadingAllBalances && !accountBalances[sub.id]) ? (
                                     <div className="space-y-2">
                                       <Skeleton className="h-8 w-full" />
                                       <Skeleton className="h-20 w-full" />
@@ -942,17 +1023,22 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                             e.stopPropagation();
                                             const token = localStorage.getItem("token");
                                             if (token) {
+                                              setLoadingBalance(sub.id);
                                               fetchAccountDetails(sub.userId, sub.id, token)
                                                 .then(details => {
                                                   setAccountBalances(prev => ({
                                                     ...prev,
                                                     [sub.id]: details
                                                   }));
+                                                  setLoadingBalance(null);
+                                                })
+                                                .catch(() => {
+                                                  setLoadingBalance(null);
                                                 });
                                             }
                                           }}
                                         >
-                                          <RefreshCw className="mr-2 h-4 w-4" />
+                                          <RefreshCw className={`mr-2 h-4 w-4`} />
                                           Cargar activos
                                         </Button>
                                       </div>
