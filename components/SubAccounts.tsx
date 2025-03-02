@@ -221,7 +221,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     } finally {
       setIsLoading(false);
     }
-  }, [router, onBalanceUpdate, onStatsUpdate]);
+  }, [router, onBalanceUpdate, onStatsUpdate, fetchAccountBalances]);
 
   useEffect(() => {
     const handleRefresh = () => {
@@ -265,7 +265,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   };
 
   const sortedSubAccounts = useMemo(() => {
-    let sortableAccounts = [...subAccounts];
+    const sortableAccounts = [...subAccounts];
     if (sortConfig !== null) {
       sortableAccounts.sort((a, b) => {
         if (sortConfig.key === 'balance') {

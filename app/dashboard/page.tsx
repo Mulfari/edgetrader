@@ -1,11 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   PlusCircle, 
-  Trash2, 
   LayoutDashboard, 
   LineChart, 
   Settings, 
@@ -21,20 +18,11 @@ import {
 import SubAccounts from "@/components/SubAccounts";
 import SubAccountManager from "@/components/SubAccountManager";
 import { useRouter } from "next/navigation";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
   const [totalBalance, setTotalBalance] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [userName, setUserName] = useState<string>("Usuario");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSubAccounts, setActiveSubAccounts] = useState(0);
   const [realAccounts, setRealAccounts] = useState(0);
@@ -49,12 +37,6 @@ export default function DashboardPage() {
     if (!token) {
       router.push("/login");
       return;
-    }
-    
-    // Intentar obtener el nombre de usuario del localStorage si existe
-    const storedUserName = localStorage.getItem("userName");
-    if (storedUserName) {
-      setUserName(storedUserName);
     }
   }, [router]);
 
@@ -160,7 +142,7 @@ export default function DashboardPage() {
           </div>
           
           <div className="p-4 border-t border-gray-200 dark:border-blue-800/30">
-            <a href="#" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-blue-300/70 hover:bg-gray-100 dark:hover:bg-blue-900/20 group transition-all duration-200">
+            <a href="#" onClick={handleLogout} className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-blue-300/70 hover:bg-gray-100 dark:hover:bg-blue-900/20 group transition-all duration-200">
               <LogOut className="mr-3 h-5 w-5 text-gray-400 dark:text-blue-400/50 group-hover:text-gray-500 dark:group-hover:text-blue-400" />
               Cerrar Sesión
             </a>

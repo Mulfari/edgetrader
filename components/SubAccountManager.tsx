@@ -584,7 +584,7 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
                           {filteredAccounts.length === 0 ? (
                             <TableRow>
                               <TableCell colSpan={4} className="h-24 text-center">
-                                No se encontraron resultados para "{searchTerm}"
+                                No se encontraron resultados para &quot;{searchTerm}&quot;
                               </TableCell>
                             </TableRow>
                           ) : (
