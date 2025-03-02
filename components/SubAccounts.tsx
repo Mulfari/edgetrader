@@ -211,13 +211,19 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     
     console.log(`🔄 Iniciando carga de balances para ${accounts.length} cuentas...`);
     
-    // Procesar las cuentas en paralelo
-    await Promise.all(accounts.map(async (account) => {
+    // Procesar las cuentas en paralelo con un pequeño retraso entre cada una para evitar sobrecarga
+    for (const account of accounts) {
       if (account.active) {
         try {
           console.log(`🔍 Obteniendo balance para cuenta ${account.id} (${account.name}) - ${account.isDemo ? 'Demo' : 'Real'}`);
           const details = await fetchAccountDetails(account.userId, account.id, token);
           balances[account.id] = details;
+          
+          // Actualizar el estado inmediatamente después de obtener cada balance
+          setAccountBalances(prev => ({
+            ...prev,
+            [account.id]: details
+          }));
           
           console.log(`✅ Balance obtenido para cuenta ${account.id}: $${details.balance?.toLocaleString('es-ES') || 'N/A'}`);
           
@@ -225,6 +231,9 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
           if (onBalanceUpdate) {
             onBalanceUpdate(account.id, details);
           }
+          
+          // Pequeño retraso para evitar sobrecarga de la API
+          await new Promise(resolve => setTimeout(resolve, 100));
         } catch (error) {
           console.error(`❌ Error al procesar balance para cuenta ${account.id}:`, error);
           
@@ -245,6 +254,12 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
             };
             balances[account.id] = simulatedDetails;
             
+            // Actualizar el estado inmediatamente
+            setAccountBalances(prev => ({
+              ...prev,
+              [account.id]: simulatedDetails
+            }));
+            
             console.log(`⚠️ Usando datos simulados para cuenta demo ${account.id}`);
             
             if (onBalanceUpdate) {
@@ -264,6 +279,12 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
             };
             balances[account.id] = errorDetails;
             
+            // Actualizar el estado inmediatamente
+            setAccountBalances(prev => ({
+              ...prev,
+              [account.id]: errorDetails
+            }));
+            
             console.log(`❌ Error en cuenta real ${account.id}: ${errorMessage}`);
             
             if (onBalanceUpdate) {
@@ -272,7 +293,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
           }
         }
       }
-    }));
+    }
     
     console.log(`✅ Proceso de carga de balances completado para ${Object.keys(balances).length} cuentas`);
     return balances;
@@ -313,9 +334,16 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       let balances: Record<string, AccountDetails> = {};
       if (activeAccounts.length > 0) {
         try {
+          // Cargar los balances de todas las subcuentas activas
           balances = await fetchAccountBalances(activeAccounts, token);
           setAccountBalances(balances);
           console.log("✅ Balances obtenidos correctamente");
+          
+          // Simular clic en la primera subcuenta para mostrar sus detalles automáticamente
+          if (activeAccounts.length > 0 && !selectedSubAccountId) {
+            console.log(`🔍 Seleccionando automáticamente la primera subcuenta: ${activeAccounts[0].id}`);
+            setSelectedSubAccountId(activeAccounts[0].id);
+          }
         } catch (balanceError) {
           console.error("❌ Error al obtener balances:", balanceError);
           setError("Error al cargar los balances. Intenta nuevamente más tarde.");
@@ -340,7 +368,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     } finally {
       setIsLoading(false);
     }
-  }, [router, onStatsUpdate, fetchAccountBalances]);
+  }, [router, onStatsUpdate, fetchAccountBalances, selectedSubAccountId]);
 
   useEffect(() => {
     const handleRefresh = () => {
@@ -395,19 +423,28 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     if (selectedSubAccountId === sub.id) {
       setSelectedSubAccountId(null);
     } else {
+      console.log(`🔍 Seleccionando subcuenta: ${sub.id} (${sub.name})`);
       setSelectedSubAccountId(sub.id);
-      // Cargar detalles de la cuenta si no están disponibles
-      if (!accountBalances[sub.id]) {
+      
+      // Cargar detalles de la cuenta si no están disponibles o si hay error
+      if (!accountBalances[sub.id] || accountBalances[sub.id].isError) {
         const token = localStorage.getItem("token");
         if (token) {
+          console.log(`🔄 Cargando detalles para subcuenta: ${sub.id}`);
           fetchAccountDetails(sub.userId, sub.id, token)
             .then(details => {
+              console.log(`✅ Detalles obtenidos para subcuenta: ${sub.id}`);
               setAccountBalances(prev => ({
                 ...prev,
                 [sub.id]: details
               }));
+            })
+            .catch(error => {
+              console.error(`❌ Error al obtener detalles para subcuenta ${sub.id}:`, error);
             });
         }
+      } else {
+        console.log(`ℹ️ Usando detalles existentes para subcuenta: ${sub.id}`);
       }
     }
   };
@@ -511,6 +548,16 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-9 gap-1"
+              onClick={() => fetchSubAccounts()}
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Actualizar</span>
+            </Button>
           </div>
         </div>
       </div>
