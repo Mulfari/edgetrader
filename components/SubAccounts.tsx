@@ -778,49 +778,93 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                               <TabsContent value="assets" className="mt-6">
                                 <div className="space-y-4">
                                   <div className="flex items-center justify-between">
-                                    <h4 className="font-medium text-lg flex items-center gap-2 text-blue-800 dark:text-blue-300">
-                                      <Wallet className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                                      Todos los Assets
-                                    </h4>
+                                    <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300">
+                                      Activos de la cuenta
+                                    </h3>
                                     <Button 
                                       variant="outline" 
                                       size="sm" 
-                                      className="gap-1 bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 dark:from-blue-950/30 dark:to-purple-950/30 dark:hover:from-blue-900/40 dark:hover:to-purple-900/40 border-blue-200 dark:border-blue-800/30 text-blue-700 dark:text-blue-300 transition-colors"
+                                      className="h-8 text-xs"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const token = localStorage.getItem("token");
+                                        if (token) {
+                                          fetchAccountDetails(sub.userId, sub.id, token)
+                                            .then(details => {
+                                              setAccountBalances(prev => ({
+                                                ...prev,
+                                                [sub.id]: details
+                                              }));
+                                            });
+                                        }
+                                      }}
                                     >
-                                      <RefreshCw className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
+                                      <RefreshCw className={`mr-2 h-3 w-3 ${loadingBalance === sub.id ? "animate-spin" : ""}`} />
                                       Actualizar
                                     </Button>
                                   </div>
-                                  <Card className="border dark:border-blue-800/30 overflow-hidden">
-                                    <CardContent className="p-0">
+                                  
+                                  {loadingBalance === sub.id ? (
+                                    <div className="space-y-2">
+                                      <Skeleton className="h-8 w-full" />
+                                      <Skeleton className="h-20 w-full" />
+                                    </div>
+                                  ) : accountBalances[sub.id]?.assets && accountBalances[sub.id].assets.length > 0 ? (
+                                    <div className="rounded-lg border border-blue-200 dark:border-blue-800/30 overflow-hidden">
                                       <Table>
-                                        <TableHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30">
+                                        <TableHeader className="bg-blue-50 dark:bg-blue-950/20">
                                           <TableRow>
-                                            <TableHead>Token</TableHead>
-                                            <TableHead>Balance</TableHead>
-                                            <TableHead>Valor USD</TableHead>
+                                            <TableHead className="font-medium text-blue-700 dark:text-blue-300">Moneda</TableHead>
+                                            <TableHead className="font-medium text-blue-700 dark:text-blue-300">Balance</TableHead>
+                                            <TableHead className="font-medium text-blue-700 dark:text-blue-300">Valor USD</TableHead>
                                           </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                          {sub.assets?.length ? (
-                                            sub.assets.map((asset) => (
-                                              <TableRow key={asset.coin} className="hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-colors">
-                                                <TableCell className="font-medium">{asset.coin}</TableCell>
-                                                <TableCell>{asset.walletBalance} {asset.coin}</TableCell>
-                                                <TableCell>${asset.usdValue}</TableCell>
-                                              </TableRow>
-                                            ))
-                                          ) : (
-                                            <TableRow>
-                                              <TableCell colSpan={3} className="text-center py-8 text-blue-600/70 dark:text-blue-300/70">
-                                                No hay assets disponibles
-                                              </TableCell>
+                                          {accountBalances[sub.id].assets.map((asset, index) => (
+                                            <TableRow key={index} className={index % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-900/10' : ''}>
+                                              <TableCell className="font-medium">{asset.coin}</TableCell>
+                                              <TableCell>{asset.walletBalance.toLocaleString('es-ES', {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 8
+                                              })}</TableCell>
+                                              <TableCell>${asset.usdValue.toLocaleString('es-ES', {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2
+                                              })}</TableCell>
                                             </TableRow>
-                                          )}
+                                          ))}
                                         </TableBody>
                                       </Table>
-                                    </CardContent>
-                                  </Card>
+                                    </div>
+                                  ) : (
+                                    <div className="text-center py-8 border border-dashed border-blue-200 dark:border-blue-800/30 rounded-lg bg-blue-50/50 dark:bg-blue-950/10">
+                                      <div className="flex flex-col items-center justify-center space-y-2">
+                                        <Wallet className="h-12 w-12 text-blue-400 dark:text-blue-500 opacity-50" />
+                                        <p className="text-blue-600 dark:text-blue-400">No hay activos disponibles para mostrar.</p>
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm" 
+                                          className="mt-2"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const token = localStorage.getItem("token");
+                                            if (token) {
+                                              fetchAccountDetails(sub.userId, sub.id, token)
+                                                .then(details => {
+                                                  setAccountBalances(prev => ({
+                                                    ...prev,
+                                                    [sub.id]: details
+                                                  }));
+                                                });
+                                            }
+                                          }}
+                                        >
+                                          <RefreshCw className="mr-2 h-4 w-4" />
+                                          Cargar activos
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </TabsContent>
                             </Tabs>
