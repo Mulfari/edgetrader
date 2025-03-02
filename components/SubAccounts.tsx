@@ -183,7 +183,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
     }
   }, [fetchSubAccounts]);
 
-  // Añadir un event listener para actualizar las subcuentas cuando se dispare el evento 'refresh'
   useEffect(() => {
     const handleRefresh = () => {
       console.log("Evento refresh recibido en SubAccounts");

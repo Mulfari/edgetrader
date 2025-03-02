@@ -119,6 +119,10 @@ export default function Dashboard() {
     setIsCreateModalOpen(false);
     setIsDeleteModalOpen(false);
     
+    // Limpiar el localStorage para forzar una recarga fresca de datos
+    localStorage.removeItem("subAccounts");
+    localStorage.removeItem("accountBalances");
+    
     // Pequeño retraso para asegurar que los modales se cierren primero
     setTimeout(() => {
       const subAccountsComponent = document.getElementById('subaccounts-component');
@@ -126,7 +130,7 @@ export default function Dashboard() {
         console.log("Disparando evento refresh en el componente de subcuentas");
         try {
           // Forzar actualización del componente SubAccounts
-          const refreshEvent = new Event('refresh', { bubbles: true });
+          const refreshEvent = new CustomEvent('refresh', { bubbles: true });
           subAccountsComponent.dispatchEvent(refreshEvent);
         } catch (error) {
           console.error("Error al disparar el evento:", error);
@@ -134,7 +138,7 @@ export default function Dashboard() {
       } else {
         console.error("No se encontró el elemento subaccounts-component");
       }
-    }, 300);
+    }, 500);
   };
 
   return (

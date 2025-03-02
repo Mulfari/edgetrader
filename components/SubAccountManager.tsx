@@ -157,13 +157,21 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
     setSuccess(null)
 
     try {
+      // Crear una copia del objeto para asegurar que isDemo se envía correctamente
+      const accountData = {
+        ...newAccount,
+        isDemo: newAccount.isDemo
+      }
+      
+      console.log("Enviando datos de subcuenta:", accountData)
+      
       const res = await fetch(`${API_URL}/subaccounts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(newAccount),
+        body: JSON.stringify(accountData),
       })
 
       if (!res.ok) {
@@ -171,6 +179,10 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
         throw new Error(errorData.message || "Error al crear la subcuenta")
       }
 
+      // Limpiar el localStorage para forzar una recarga fresca de datos
+      localStorage.removeItem("subAccounts")
+      localStorage.removeItem("accountBalances")
+      
       setSuccess("¡Subcuenta creada exitosamente!")
       
       // Esperar un momento antes de cerrar el modal para mostrar el mensaje de éxito
@@ -215,8 +227,20 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
         throw new Error("Error al eliminar la subcuenta")
       }
 
-      fetchAccounts()
-      if (onSuccess) onSuccess()
+      // Limpiar el localStorage para forzar una recarga fresca de datos
+      localStorage.removeItem("subAccounts")
+      localStorage.removeItem("accountBalances")
+      
+      // Actualizar la lista local de cuentas
+      setAccounts(accounts.filter(account => account.id !== accountId))
+      
+      // Mostrar mensaje de éxito
+      setSuccess(`Subcuenta "${accountName}" eliminada exitosamente`)
+      
+      // Esperar un momento antes de llamar a onSuccess
+      setTimeout(() => {
+        if (onSuccess) onSuccess()
+      }, 500)
     } catch (error: Error | ApiError | unknown) {
       console.error("Error al eliminar subcuenta:", error)
       const errorMessage = error instanceof Error ? error.message : "Error al eliminar la subcuenta. Intenta nuevamente más tarde."
@@ -230,6 +254,12 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
     (account) => account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 account.exchange.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  // Función para manejar el cambio en el checkbox de Demo
+  const handleDemoCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("Checkbox Demo cambiado a:", e.target.checked)
+    setNewAccount({ ...newAccount, isDemo: e.target.checked })
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -370,7 +400,7 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
                     id="isDemo"
                     className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                     checked={newAccount.isDemo}
-                    onChange={(e) => setNewAccount({ ...newAccount, isDemo: e.target.checked })}
+                    onChange={handleDemoCheckboxChange}
                   />
                   <span>Esta es una cuenta Demo</span>
                 </Label>
@@ -440,6 +470,13 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
               <div className="flex items-center gap-2 p-3 text-sm border border-destructive/50 bg-destructive/10 text-destructive rounded-md">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
                 <p>{error}</p>
+              </div>
+            )}
+            
+            {success && (
+              <div className="flex items-center gap-2 p-3 text-sm border border-green-500/50 bg-green-500/10 text-green-600 dark:text-green-400 rounded-md">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                <p>{success}</p>
               </div>
             )}
 
