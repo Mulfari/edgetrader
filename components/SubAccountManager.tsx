@@ -269,7 +269,7 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
   }
 
   return (
-    <Dialog open={mode === "delete" ? true : false} onOpenChange={onCancel}>
+    <Dialog open={true} onOpenChange={onCancel}>
       <DialogContent className={mode === "delete" ? "sm:max-w-[600px]" : "sm:max-w-[550px]"}>
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
