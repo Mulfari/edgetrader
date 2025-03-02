@@ -110,6 +110,12 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         const account = subAccounts.find(acc => acc.id === accountId);
         const isDemo = account?.isDemo === true;
         
+        // Detectar error de restricción geográfica
+        const isGeoRestriction = 
+          errorData.message?.includes('ubicación geográfica') || 
+          errorData.message?.includes('CloudFront') ||
+          errorData.statusCode === 403;
+        
         if (isDemo) {
           console.log(`⚠️ Cuenta demo ${accountId}: Usando datos simulados.`);
           // Solo generar datos simulados para cuentas demo
@@ -122,7 +128,13 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
           };
         } else {
           // Para cuentas reales, lanzar un error que será capturado por el catch
-          const errorMessage = errorData.message || errorData.error || 'Error al obtener balance real';
+          let errorMessage = errorData.message || errorData.error || 'Error al obtener balance real';
+          
+          // Mensaje específico para restricción geográfica
+          if (isGeoRestriction) {
+            errorMessage = 'La API de Bybit no está disponible en tu ubicación geográfica. Considera usar una VPN o contactar con soporte.';
+          }
+          
           throw new Error(errorMessage);
         }
       }
@@ -437,6 +449,19 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
               <span>Última actualización: {new Date().toLocaleTimeString()}</span>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Mensaje informativo sobre restricciones geográficas */}
+      <div className="p-4 border border-blue-200 dark:border-blue-800/30 rounded-lg bg-blue-50/50 dark:bg-blue-950/10 text-blue-700 dark:text-blue-300 text-sm">
+        <div className="flex items-start gap-2">
+          <AlertCircle className="h-5 w-5 flex-shrink-0 text-blue-500 mt-0.5" />
+          <div>
+            <p className="font-medium">Información importante sobre cuentas reales de Bybit</p>
+            <p className="mt-1 text-blue-600/80 dark:text-blue-400/80">
+              Bybit puede restringir el acceso a su API desde ciertas ubicaciones geográficas. Si experimentas errores al cargar balances de cuentas reales, considera usar una VPN para conectarte desde un país permitido.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -928,12 +953,30 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                     <div className="text-center py-8 border border-dashed border-red-200 dark:border-red-800/30 rounded-lg bg-red-50/50 dark:bg-red-950/10">
                                       <div className="flex flex-col items-center justify-center space-y-2">
                                         <AlertCircle className="h-12 w-12 text-red-400 dark:text-red-500 opacity-50" />
-                                        <p className="text-red-600 dark:text-red-400">
+                                        <p className="text-red-600 dark:text-red-400 font-medium">
                                           {accountBalances[sub.id].error || "Error al obtener los activos de la cuenta."}
                                         </p>
-                                        <p className="text-red-500/70 dark:text-red-400/70 text-sm max-w-md text-center">
-                                          Verifica que las credenciales de API sean correctas y tengan permisos de lectura.
-                                        </p>
+                                        
+                                        {/* Mensaje específico para restricción geográfica */}
+                                        {accountBalances[sub.id].error?.includes('ubicación geográfica') || 
+                                         accountBalances[sub.id].error?.includes('CloudFront') || 
+                                         accountBalances[sub.id].error?.includes('403') ? (
+                                          <div className="space-y-2 max-w-md text-center">
+                                            <p className="text-red-500/70 dark:text-red-400/70 text-sm">
+                                              Este error se debe a restricciones geográficas de Bybit. Para solucionarlo, puedes:
+                                            </p>
+                                            <ul className="text-red-500/70 dark:text-red-400/70 text-sm list-disc list-inside text-left">
+                                              <li>Usar una VPN para conectarte desde un país permitido</li>
+                                              <li>Contactar con soporte de Bybit para verificar restricciones</li>
+                                              <li>Verificar si tu ISP está bloqueado por Bybit</li>
+                                            </ul>
+                                          </div>
+                                        ) : (
+                                          <p className="text-red-500/70 dark:text-red-400/70 text-sm max-w-md text-center">
+                                            Verifica que las credenciales de API sean correctas y tengan permisos de lectura.
+                                          </p>
+                                        )}
+                                        
                                         <Button 
                                           variant="outline" 
                                           size="sm" 
