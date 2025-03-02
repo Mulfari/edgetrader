@@ -51,6 +51,9 @@ interface AccountDetails {
   balance: number | null;
   assets: Asset[];
   performance: number;
+  isSimulated?: boolean;
+  error?: string;
+  isError?: boolean;
 }
 
 interface AccountStats {
@@ -100,29 +103,67 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       });
       
       if (!res.ok) {
-        console.log(`⚠️ Error al obtener balance para cuenta ${accountId}. Usando datos simulados.`);
-        // Generar datos simulados en lugar de mostrar error
-        return { 
-          balance: Math.random() * 10000, 
-          assets: [], 
-          performance: (Math.random() * 20) - 10 // Entre -10% y +10%
-        };
+        const errorData = await res.json().catch(() => ({}));
+        console.error(`❌ Error al obtener balance para cuenta ${accountId}:`, errorData);
+        
+        // Buscar la cuenta para verificar si es demo o real
+        const account = subAccounts.find(acc => acc.id === accountId);
+        const isDemo = account?.isDemo === true;
+        
+        if (isDemo) {
+          console.log(`⚠️ Cuenta demo ${accountId}: Usando datos simulados.`);
+          // Solo generar datos simulados para cuentas demo
+          return { 
+            balance: Math.random() * 10000, 
+            assets: [], 
+            performance: (Math.random() * 20) - 10, // Entre -10% y +10%
+            isSimulated: true,
+            isError: false
+          };
+        } else {
+          // Para cuentas reales, lanzar un error que será capturado por el catch
+          const errorMessage = errorData.message || errorData.error || 'Error al obtener balance real';
+          throw new Error(errorMessage);
+        }
       }
       
       const data = await res.json();
       return {
         balance: data.balance || 0,
         assets: data.assets || [],
-        performance: data.performance || Math.random() * 10 // Simulamos rendimiento si no viene del backend
+        performance: data.performance || 0,
+        isSimulated: data.isSimulated || false,
+        isError: false
       };
-    } catch {
-      console.log(`⚠️ Error al obtener balance para cuenta ${accountId}. Usando datos simulados.`);
-      // Generar datos simulados en caso de error
-      return { 
-        balance: Math.random() * 10000, 
-        assets: [], 
-        performance: (Math.random() * 20) - 10 // Entre -10% y +10%
-      };
+    } catch (error: any) {
+      console.error(`❌ Error al obtener balance para cuenta ${accountId}:`, error);
+      
+      // Buscar la cuenta para verificar si es demo o real
+      const account = subAccounts.find(acc => acc.id === accountId);
+      const isDemo = account?.isDemo === true;
+      
+      if (isDemo) {
+        console.log(`⚠️ Cuenta demo ${accountId}: Usando datos simulados debido al error.`);
+        // Solo generar datos simulados para cuentas demo
+        return { 
+          balance: Math.random() * 10000, 
+          assets: [], 
+          performance: (Math.random() * 20) - 10, // Entre -10% y +10%
+          isSimulated: true,
+          isError: false
+        };
+      } else {
+        // Para cuentas reales, establecer un objeto con error
+        setError(`Error al obtener balance de la cuenta real: ${error.message}`);
+        return { 
+          balance: null, 
+          assets: [], 
+          performance: 0,
+          error: error.message,
+          isError: true,
+          isSimulated: false
+        };
+      }
     } finally {
       setLoadingBalance(null);
     }
@@ -143,19 +184,44 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
             onBalanceUpdate(account.id, details);
           }
         } catch {
-          console.log(`⚠️ Error al procesar balance para cuenta ${account.id}. Usando datos simulados.`);
-          // Generar datos simulados en caso de error
-          const simulatedDetails = { 
-            balance: Math.random() * 10000, 
-            assets: [], 
-            performance: (Math.random() * 20) - 10 // Entre -10% y +10%
-          };
+          console.log(`⚠️ Error al procesar balance para cuenta ${account.id}.`);
           
-          balances[account.id] = simulatedDetails;
+          // Verificar si es demo o real
+          const isDemo = account.isDemo === true;
           
-          // Actualizar con datos simulados
-          if (onBalanceUpdate) {
-            onBalanceUpdate(account.id, simulatedDetails);
+          // Generar datos simulados solo para cuentas demo
+          if (isDemo) {
+            console.log(`⚠️ Cuenta demo ${account.id}: Usando datos simulados.`);
+            const simulatedDetails: AccountDetails = { 
+              balance: Math.random() * 10000, 
+              assets: [], 
+              performance: (Math.random() * 20) - 10, // Entre -10% y +10%
+              isSimulated: true,
+              isError: false
+            };
+            
+            balances[account.id] = simulatedDetails;
+            
+            // Actualizar con datos simulados
+            if (onBalanceUpdate) {
+              onBalanceUpdate(account.id, simulatedDetails);
+            }
+          } else {
+            // Para cuentas reales, establecer un objeto con error
+            const errorDetails: AccountDetails = {
+              balance: null,
+              assets: [],
+              performance: 0,
+              error: "Error al obtener balance real",
+              isError: true,
+              isSimulated: false
+            };
+            
+            balances[account.id] = errorDetails;
+            
+            if (onBalanceUpdate) {
+              onBalanceUpdate(account.id, errorDetails);
+            }
           }
         }
       }
@@ -551,12 +617,24 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                         {loadingBalance === sub.id ? (
                           <Skeleton className="h-6 w-[100px]" />
                         ) : accountBalances[sub.id] ? (
-                          <span className="font-medium">
-                            ${accountBalances[sub.id].balance?.toLocaleString('es-ES', {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2
-                            })}
-                          </span>
+                          accountBalances[sub.id].isError ? (
+                            <span className="text-red-500 dark:text-red-400 text-sm flex items-center">
+                              <AlertCircle className="h-3.5 w-3.5 mr-1" />
+                              Error
+                            </span>
+                          ) : (
+                            <span className="font-medium">
+                              ${accountBalances[sub.id].balance?.toLocaleString('es-ES', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              })}
+                              {accountBalances[sub.id].isSimulated && (
+                                <Badge variant="outline" className="ml-2 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30">
+                                  Simulado
+                                </Badge>
+                              )}
+                            </span>
+                          )
                         ) : (
                           <span className="text-blue-500 dark:text-blue-400 text-sm">
                             <Button 
@@ -605,22 +683,37 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                       </TableCell>
                       <TableCell onClick={() => handleRowClick(sub)}>
                         <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${
-                            sub.performance && sub.performance > 0 
-                              ? "bg-green-500 group-hover:bg-green-600 transition-colors" 
-                              : sub.performance && sub.performance < 0 
-                                ? "bg-red-500 group-hover:bg-red-600 transition-colors" 
-                                : "bg-yellow-500 group-hover:bg-yellow-600 transition-colors"
-                          }`} />
-                          <span className={
-                            sub.performance && sub.performance > 0 
-                              ? "text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors" 
-                              : sub.performance && sub.performance < 0 
-                                ? "text-red-600 dark:text-red-400 group-hover:text-red-700 dark:group-hover:text-red-300 transition-colors" 
-                                : "text-yellow-600 dark:text-yellow-400 group-hover:text-yellow-700 dark:group-hover:text-yellow-300 transition-colors"
-                          }>
-                            {sub.performance !== undefined ? `${sub.performance.toFixed(2)}%` : "-"}
-                          </span>
+                          {loadingBalance === sub.id ? (
+                            <Skeleton className="h-4 w-[80px]" />
+                          ) : accountBalances[sub.id] ? (
+                            accountBalances[sub.id].isError ? (
+                              <span className="text-red-500 dark:text-red-400 text-sm flex items-center">
+                                <AlertCircle className="h-3.5 w-3.5 mr-1" />
+                                Error
+                              </span>
+                            ) : (
+                              <>
+                                <div className={`w-2 h-2 rounded-full ${
+                                  accountBalances[sub.id].performance > 0 
+                                    ? "bg-green-500 group-hover:bg-green-600 transition-colors" 
+                                    : accountBalances[sub.id].performance < 0 
+                                      ? "bg-red-500 group-hover:bg-red-600 transition-colors" 
+                                      : "bg-yellow-500 group-hover:bg-yellow-600 transition-colors"
+                                }`} />
+                                <span className={
+                                  accountBalances[sub.id].performance > 0 
+                                    ? "text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors" 
+                                    : accountBalances[sub.id].performance < 0 
+                                      ? "text-red-600 dark:text-red-400 group-hover:text-red-700 dark:group-hover:text-red-300 transition-colors" 
+                                      : "text-yellow-600 dark:text-yellow-400 group-hover:text-yellow-700 dark:group-hover:text-yellow-300 transition-colors"
+                                }>
+                                  {accountBalances[sub.id].performance.toFixed(2)}%
+                                </span>
+                              </>
+                            )
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500">-</span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
@@ -661,12 +754,26 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                         {loadingBalance === sub.id ? (
                                           <Skeleton className="h-6 w-[100px]" />
                                         ) : accountBalances[sub.id] ? (
-                                          <span className="font-medium">
-                                            ${accountBalances[sub.id].balance?.toLocaleString('es-ES', {
-                                              minimumFractionDigits: 2,
-                                              maximumFractionDigits: 2
-                                            })}
-                                          </span>
+                                          accountBalances[sub.id].isError ? (
+                                            <div className="flex items-center text-red-500 dark:text-red-400 text-lg">
+                                              <AlertCircle className="h-5 w-5 mr-2" />
+                                              <span>Error al cargar balance</span>
+                                            </div>
+                                          ) : (
+                                            <div className="flex items-center">
+                                              <span className="font-medium">
+                                                ${accountBalances[sub.id].balance?.toLocaleString('es-ES', {
+                                                  minimumFractionDigits: 2,
+                                                  maximumFractionDigits: 2
+                                                })}
+                                              </span>
+                                              {accountBalances[sub.id].isSimulated && (
+                                                <Badge variant="outline" className="ml-2 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30">
+                                                  Simulado
+                                                </Badge>
+                                              )}
+                                            </div>
+                                          )
                                         ) : (
                                           <span className="text-blue-500 dark:text-blue-400 text-sm">
                                             <Button 
@@ -742,10 +849,17 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                         {loadingBalance === sub.id ? (
                                           <Skeleton className="h-6 w-[100px]" />
                                         ) : accountBalances[sub.id] ? (
-                                          <span className="font-medium">
-                                            {accountBalances[sub.id].performance > 0 ? "+" : ""}
-                                            {accountBalances[sub.id].performance.toFixed(2)}%
-                                          </span>
+                                          accountBalances[sub.id].isError ? (
+                                            <div className="flex items-center text-red-500 dark:text-red-400 text-lg">
+                                              <AlertCircle className="h-5 w-5 mr-2" />
+                                              <span>Error al cargar datos</span>
+                                            </div>
+                                          ) : (
+                                            <span className="font-medium">
+                                              {accountBalances[sub.id].performance > 0 ? "+" : ""}
+                                              {accountBalances[sub.id].performance.toFixed(2)}%
+                                            </span>
+                                          )
                                         ) : (
                                           <span className="text-blue-500 dark:text-blue-400 text-sm">
                                             <Button 
@@ -808,6 +922,40 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                     <div className="space-y-2">
                                       <Skeleton className="h-8 w-full" />
                                       <Skeleton className="h-20 w-full" />
+                                    </div>
+                                  ) : accountBalances[sub.id]?.isError ? (
+                                    <div className="text-center py-8 border border-dashed border-red-200 dark:border-red-800/30 rounded-lg bg-red-50/50 dark:bg-red-950/10">
+                                      <div className="flex flex-col items-center justify-center space-y-2">
+                                        <AlertCircle className="h-12 w-12 text-red-400 dark:text-red-500 opacity-50" />
+                                        <p className="text-red-600 dark:text-red-400">
+                                          {accountBalances[sub.id].error || "Error al obtener los activos de la cuenta."}
+                                        </p>
+                                        <p className="text-red-500/70 dark:text-red-400/70 text-sm max-w-md text-center">
+                                          Verifica que las credenciales de API sean correctas y tengan permisos de lectura.
+                                        </p>
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm" 
+                                          className="mt-2 border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 hover:bg-red-100/50 dark:hover:bg-red-900/30"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setError(null);
+                                            const token = localStorage.getItem("token");
+                                            if (token) {
+                                              fetchAccountDetails(sub.userId, sub.id, token)
+                                                .then(details => {
+                                                  setAccountBalances(prev => ({
+                                                    ...prev,
+                                                    [sub.id]: details
+                                                  }));
+                                                });
+                                            }
+                                          }}
+                                        >
+                                          <RefreshCw className="mr-2 h-4 w-4" />
+                                          Reintentar
+                                        </Button>
+                                      </div>
                                     </div>
                                   ) : accountBalances[sub.id]?.assets && accountBalances[sub.id].assets.length > 0 ? (
                                     <div className="rounded-lg border border-blue-200 dark:border-blue-800/30 overflow-hidden">
