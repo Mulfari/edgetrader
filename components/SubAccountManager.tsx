@@ -13,7 +13,10 @@ import {
   Sparkles,
   KeyRound,
   Database,
-  Tag
+  Tag,
+  Check,
+  Loader2,
+  X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,7 +25,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { useRouter } from "next/navigation"
 
 interface SubAccount {
   id: string
@@ -39,9 +43,8 @@ type ApiError = {
 
 type SubAccountManagerProps = {
   mode: "create" | "delete";
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess: () => void;
+  onCancel: () => void;
 }
 
 const exchangeOptions = [
@@ -55,7 +58,7 @@ function getToken(): string | null {
   return localStorage.getItem("token") || null
 }
 
-export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: SubAccountManagerProps) {
+export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAccountManagerProps) {
   const [accounts, setAccounts] = useState<SubAccount[]>([])
   const [newAccount, setNewAccount] = useState({
     exchange: "",
@@ -70,14 +73,16 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
+  const router = useRouter()
   
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
   const fetchAccounts = useCallback(async () => {
     const token = getToken()
     if (!token) {
-      setError("No se encontró token de autenticación")
-      setIsLoading(false)
+      console.error("❌ No hay token, redirigiendo a login.")
+      router.push("/login")
       return
     }
 
@@ -98,8 +103,9 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
 
       if (!res.ok) {
         if (res.status === 401) {
+          console.error("❌ Token inválido, redirigiendo a login.")
           localStorage.removeItem("token")
-          throw new Error("Sesión expirada. Por favor inicia sesión nuevamente.")
+          router.push("/login")
         }
         throw new Error(`Error al cargar las subcuentas. Código: ${res.status}`)
       }
@@ -112,32 +118,30 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
         setError("No se encontraron subcuentas. Crea una nueva subcuenta primero.")
       }
     } catch (error: Error | ApiError | unknown) {
-      console.error("Error al cargar subcuentas:", error)
+      console.error("❌ Error al cargar subcuentas:", error)
       const errorMessage = error instanceof Error ? error.message : "Error al cargar las subcuentas. Intenta nuevamente más tarde."
       setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
-  }, [API_URL])
+  }, [API_URL, router])
 
   useEffect(() => {
-    if (isOpen) {
-      if (mode === "delete") {
-        fetchAccounts()
-      } else {
-        // Resetear el formulario cuando se abre el modal de creación
-        setNewAccount({
-          exchange: "",
-          apiKey: "",
-          apiSecret: "",
-          name: "",
-          isDemo: false
-        })
-        setError(null)
-        setSuccess(null)
-      }
+    if (mode === "delete") {
+      fetchAccounts()
+    } else {
+      // Resetear el formulario cuando se abre el modal de creación
+      setNewAccount({
+        exchange: "",
+        apiKey: "",
+        apiSecret: "",
+        name: "",
+        isDemo: false
+      })
+      setError(null)
+      setSuccess(null)
     }
-  }, [isOpen, mode, fetchAccounts])
+  }, [mode, fetchAccounts])
 
   const handleAddAccount = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -189,10 +193,10 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
       setTimeout(() => {
         setNewAccount({ exchange: "", apiKey: "", apiSecret: "", name: "", isDemo: false })
         if (onSuccess) onSuccess()
-        onClose()
+        onCancel()
       }, 1500)
     } catch (error: Error | ApiError | unknown) {
-      console.error("Error al crear subcuenta:", error)
+      console.error("❌ Error al crear subcuenta:", error)
       const errorMessage = error instanceof Error ? error.message : "Error al crear la subcuenta. Intenta nuevamente más tarde."
       setError(errorMessage)
     } finally {
@@ -200,14 +204,20 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
     }
   }
 
-  const handleDeleteAccount = async (accountId: string, accountName: string) => {
-    const token = getToken()
-    if (!token) {
-      setError("No estás autenticado. Por favor inicia sesión nuevamente.")
+  const handleDeleteAccount = async () => {
+    if (!selectedAccountId) {
+      setError("Debes seleccionar una cuenta para eliminar")
       return
     }
 
-    if (!confirm(`¿Estás seguro que deseas eliminar la subcuenta "${accountName}"?`)) {
+    const token = getToken()
+    if (!token) {
+      console.error("❌ No hay token, redirigiendo a login.")
+      router.push("/login")
+      return
+    }
+
+    if (!confirm(`¿Estás seguro que deseas eliminar la subcuenta "${accounts.find(a => a.id === selectedAccountId)?.name}"?`)) {
       return
     }
 
@@ -215,7 +225,7 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
     setError(null)
 
     try {
-      const res = await fetch(`${API_URL}/subaccounts/${accountId}`, {
+      const res = await fetch(`${API_URL}/subaccounts/${selectedAccountId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -232,17 +242,17 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
       localStorage.removeItem("accountBalances")
       
       // Actualizar la lista local de cuentas
-      setAccounts(accounts.filter(account => account.id !== accountId))
+      setAccounts(accounts.filter(account => account.id !== selectedAccountId))
       
       // Mostrar mensaje de éxito
-      setSuccess(`Subcuenta "${accountName}" eliminada exitosamente`)
+      setSuccess(`Subcuenta "${accounts.find(a => a.id === selectedAccountId)?.name}" eliminada exitosamente`)
       
       // Esperar un momento antes de llamar a onSuccess
       setTimeout(() => {
         if (onSuccess) onSuccess()
       }, 500)
     } catch (error: Error | ApiError | unknown) {
-      console.error("Error al eliminar subcuenta:", error)
+      console.error("❌ Error al eliminar subcuenta:", error)
       const errorMessage = error instanceof Error ? error.message : "Error al eliminar la subcuenta. Intenta nuevamente más tarde."
       setError(errorMessage)
     } finally {
@@ -262,7 +272,7 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={mode === "delete" ? true : false} onOpenChange={onCancel}>
       <DialogContent className={mode === "delete" ? "sm:max-w-[600px]" : "sm:max-w-[550px]"}>
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
@@ -401,6 +411,7 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
                     className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                     checked={newAccount.isDemo}
                     onChange={handleDemoCheckboxChange}
+                    disabled={isSubmitting}
                   />
                   <span>Esta es una cuenta Demo</span>
                 </Label>
@@ -425,7 +436,7 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
             )}
             
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+              <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={isSubmitting} className="gap-1">
@@ -523,7 +534,7 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
                               size="sm" 
                               className="mt-4"
                               onClick={() => {
-                                onClose();
+                                onCancel();
                                 // Pequeño retraso para evitar problemas con la animación del modal
                                 setTimeout(() => {
                                   // Aquí deberías tener una forma de abrir el modal de creación
@@ -561,7 +572,11 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDeleteAccount(account.id, account.name)}
+                            onClick={() => {
+                              setSelectedAccountId(account.id)
+                              setError(null)
+                              setSuccess(null)
+                            }}
                             disabled={isSubmitting}
                             className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
@@ -577,7 +592,7 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
             </div>
 
             <DialogFooter className="mt-4">
-              <Button variant="outline" onClick={onClose}>
+              <Button variant="outline" onClick={onCancel}>
                 Cerrar
               </Button>
             </DialogFooter>

@@ -255,22 +255,27 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   );
 
   return (
-    <Card className="w-full" ref={componentRef} id="subaccounts-component">
-      <CardHeader>
+    <Card className="w-full shadow-sm border-primary/10 overflow-hidden" ref={componentRef} id="subaccounts-component">
+      <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <CardTitle className="text-2xl font-bold">Subcuentas</CardTitle>
-            <CardDescription>Gestiona y monitorea todas tus cuentas de trading</CardDescription>
+            <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">Subcuentas</CardTitle>
+            <CardDescription className="text-muted-foreground mt-1">Gestiona y monitorea todas tus cuentas de trading</CardDescription>
           </div>
           <div className="flex flex-col md:flex-row gap-2">
-            <Button onClick={fetchSubAccounts} variant="outline" size="sm" className="w-full md:w-auto">
-              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            <Button 
+              onClick={fetchSubAccounts} 
+              variant="outline" 
+              size="sm" 
+              className="w-full md:w-auto border-primary/20 hover:bg-primary/5 transition-all duration-200"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin text-primary" : ""}`} />
               Actualizar
             </Button>
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center gap-4 mt-4">
+        <div className="flex flex-col md:flex-row items-center gap-4 mt-6">
           <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
@@ -278,20 +283,24 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
               placeholder="Buscar subcuentas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
+              className="pl-9 border-primary/20 focus-visible:ring-primary/30"
             />
           </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full md:w-auto">
-                <Filter className="mr-2 h-4 w-4" />
+              <Button variant="outline" className="w-full md:w-auto border-primary/20 hover:bg-primary/5 transition-all duration-200">
+                <Filter className="mr-2 h-4 w-4 text-primary/70" />
                 {selectedExchange === "all" ? "Todos los Exchanges" : selectedExchange}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px]">
+            <DropdownMenuContent align="end" className="w-[200px] border-primary/20 shadow-lg">
               {exchanges.map((exchange) => (
-                <DropdownMenuItem key={exchange} onClick={() => setSelectedExchange(exchange)}>
+                <DropdownMenuItem 
+                  key={exchange} 
+                  onClick={() => setSelectedExchange(exchange)}
+                  className="cursor-pointer hover:bg-primary/5"
+                >
                   {exchange === "all" ? "Todos los Exchanges" : exchange}
                 </DropdownMenuItem>
               ))}
@@ -300,20 +309,31 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full md:w-auto">
-                <Filter className="mr-2 h-4 w-4" />
+              <Button variant="outline" className="w-full md:w-auto border-primary/20 hover:bg-primary/5 transition-all duration-200">
+                <Filter className="mr-2 h-4 w-4 text-primary/70" />
                 {selectedType === "all" ? "Todos los Tipos" : 
                  selectedType === "demo" ? "Solo Demo" : "Solo Real"}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px]">
-              <DropdownMenuItem onClick={() => setSelectedType("all")}>
+            <DropdownMenuContent align="end" className="w-[200px] border-primary/20 shadow-lg">
+              <DropdownMenuItem 
+                onClick={() => setSelectedType("all")}
+                className="cursor-pointer hover:bg-primary/5"
+              >
                 Todos los Tipos
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSelectedType("demo")}>
+              <DropdownMenuItem 
+                onClick={() => setSelectedType("demo")}
+                className="cursor-pointer hover:bg-primary/5"
+              >
+                <Sparkles className="h-3.5 w-3.5 mr-2 text-yellow-500" />
                 Solo Demo
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSelectedType("real")}>
+              <DropdownMenuItem 
+                onClick={() => setSelectedType("real")}
+                className="cursor-pointer hover:bg-primary/5"
+              >
+                <Briefcase className="h-3.5 w-3.5 mr-2 text-green-500" />
                 Solo Real
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -321,37 +341,47 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
         </div>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="p-6">
         {error && (
-          <div className="flex items-center gap-2 p-4 mb-4 text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg">
-            <AlertCircle className="h-5 w-5" />
+          <div className="flex items-center gap-2 p-4 mb-6 text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800/30 shadow-sm">
+            <AlertCircle className="h-5 w-5 flex-shrink-0" />
             <p className="text-sm font-medium">{error}</p>
           </div>
         )}
 
-        <div className="rounded-lg border">
+        <div className="rounded-lg border border-primary/10 overflow-hidden shadow-sm">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead onClick={() => handleSort("name")} className="cursor-pointer hover:bg-muted/50">
-                  Nombre
-                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
+                <TableHead onClick={() => handleSort("name")} className="cursor-pointer hover:bg-muted/80 transition-colors">
+                  <div className="flex items-center">
+                    Nombre
+                    <ArrowUpDown className="ml-2 h-4 w-4 text-primary/50" />
+                  </div>
                 </TableHead>
-                <TableHead onClick={() => handleSort("exchange")} className="cursor-pointer hover:bg-muted/50">
-                  Exchange
-                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
+                <TableHead onClick={() => handleSort("exchange")} className="cursor-pointer hover:bg-muted/80 transition-colors">
+                  <div className="flex items-center">
+                    Exchange
+                    <ArrowUpDown className="ml-2 h-4 w-4 text-primary/50" />
+                  </div>
                 </TableHead>
-                <TableHead onClick={() => handleSort("balance")} className="cursor-pointer hover:bg-muted/50">
-                  Balance
-                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
+                <TableHead onClick={() => handleSort("balance")} className="cursor-pointer hover:bg-muted/80 transition-colors">
+                  <div className="flex items-center">
+                    Balance
+                    <ArrowUpDown className="ml-2 h-4 w-4 text-primary/50" />
+                  </div>
                 </TableHead>
-                <TableHead onClick={() => handleSort("isDemo")} className="cursor-pointer hover:bg-muted/50">
-                  Tipo
-                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
+                <TableHead onClick={() => handleSort("isDemo")} className="cursor-pointer hover:bg-muted/80 transition-colors">
+                  <div className="flex items-center">
+                    Tipo
+                    <ArrowUpDown className="ml-2 h-4 w-4 text-primary/50" />
+                  </div>
                 </TableHead>
-                <TableHead onClick={() => handleSort("performance")} className="cursor-pointer hover:bg-muted/50">
-                  Rendimiento
-                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
+                <TableHead onClick={() => handleSort("performance")} className="cursor-pointer hover:bg-muted/80 transition-colors">
+                  <div className="flex items-center">
+                    Rendimiento
+                    <ArrowUpDown className="ml-2 h-4 w-4 text-primary/50" />
+                  </div>
                 </TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -376,18 +406,20 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                       <Skeleton className="h-5 w-[200px]" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-5 w-[20px]" />
+                      <Skeleton className="h-5 w-[20px] ml-auto" />
                     </TableCell>
                   </TableRow>
                 ))
               ) : filteredAccounts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5}>
-                    <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-                      <AlertCircle className="h-12 w-12 mb-3" />
-                      <p className="text-sm font-medium mb-2">No se encontraron subcuentas</p>
-                      <p className="text-xs text-muted-foreground">
-                        Intenta ajustar los filtros o el término de búsqueda
+                  <TableCell colSpan={6} className="h-[300px]">
+                    <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                      <AlertCircle className="h-16 w-16 mb-4 text-muted-foreground/50" />
+                      <p className="text-lg font-medium mb-2">No se encontraron subcuentas</p>
+                      <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                        {searchTerm || selectedExchange !== "all" || selectedType !== "all" 
+                          ? "Intenta ajustar los filtros o el término de búsqueda" 
+                          : "Añade una nueva subcuenta para comenzar a monitorear tus inversiones"}
                       </p>
                     </div>
                   </TableCell>
@@ -397,20 +429,20 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                   <>
                     <TableRow
                       key={sub.id}
-                      className="transition-colors hover:bg-muted/50"
+                      className="transition-all duration-200 hover:bg-primary/5 cursor-pointer group"
                     >
                       <TableCell className="font-medium" onClick={() => handleRowClick(sub)}>
                         {sub.name}
                       </TableCell>
                       <TableCell onClick={() => handleRowClick(sub)}>
-                        <Badge variant="secondary" className="uppercase">
+                        <Badge variant="secondary" className="uppercase bg-secondary/20 text-secondary-foreground group-hover:bg-secondary/30 transition-colors">
                           {sub.exchange}
                         </Badge>
                       </TableCell>
                       <TableCell onClick={() => handleRowClick(sub)}>
                         {accountBalances[sub.id] !== undefined ? (
                           <div className="flex items-center gap-2">
-                            <Wallet className="h-4 w-4 text-muted-foreground" />
+                            <Wallet className="h-4 w-4 text-primary/70" />
                             <span className="font-medium">{accountBalances[sub.id]?.toFixed(2)} USDT</span>
                           </div>
                         ) : (
@@ -420,8 +452,8 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                       <TableCell onClick={() => handleRowClick(sub)}>
                         {sub.isDemo !== undefined ? (
                           <Badge variant="outline" className={sub.isDemo ? 
-                            "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500" : 
-                            "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500"}>
+                            "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30" : 
+                            "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500 border-green-200 dark:border-green-800/30"}>
                             {sub.isDemo ? (
                               <div className="flex items-center gap-1">
                                 <Sparkles className="h-3 w-3" />
@@ -439,7 +471,24 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                         )}
                       </TableCell>
                       <TableCell className="text-muted-foreground" onClick={() => handleRowClick(sub)}>
-                        {sub.performance !== undefined ? `${sub.performance.toFixed(2)}%` : "-"}
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${
+                            sub.performance && sub.performance > 0 
+                              ? "bg-green-500" 
+                              : sub.performance && sub.performance < 0 
+                                ? "bg-red-500" 
+                                : "bg-yellow-500"
+                          }`} />
+                          <span className={
+                            sub.performance && sub.performance > 0 
+                              ? "text-green-600 dark:text-green-400" 
+                              : sub.performance && sub.performance < 0 
+                                ? "text-red-600 dark:text-red-400" 
+                                : ""
+                          }>
+                            {sub.performance !== undefined ? `${sub.performance.toFixed(2)}%` : "-"}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -447,54 +496,55 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleRowClick(sub)}
+                            className="h-8 w-8 rounded-full hover:bg-primary/10"
                           >
-                            <ChevronDown className="h-4 w-4" />
+                            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${selectedSubAccountId === sub.id ? "rotate-180" : ""}`} />
                             <span className="sr-only">Ver detalles</span>
                           </Button>
                         </div>
                       </TableCell>
                     </TableRow>
                     {selectedSubAccountId === sub.id && (
-                      <TableRow key={`${sub.id}-details`}>
-                        <TableCell colSpan={5}>
-                          <div className="p-6 bg-muted/50 rounded-lg space-y-6">
+                      <TableRow key={`${sub.id}-details`} className="bg-muted/30">
+                        <TableCell colSpan={6} className="p-0 border-t-0">
+                          <div className="p-6 rounded-lg space-y-6 animate-in fade-in-50 duration-200">
                             <Tabs defaultValue="overview" className="w-full">
-                              <TabsList>
-                                <TabsTrigger value="overview">Vista General</TabsTrigger>
-                                <TabsTrigger value="assets">Assets</TabsTrigger>
+                              <TabsList className="bg-background border border-primary/10 p-1">
+                                <TabsTrigger value="overview" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Vista General</TabsTrigger>
+                                <TabsTrigger value="assets" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Assets</TabsTrigger>
                               </TabsList>
-                              <TabsContent value="overview" className="mt-4">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                  <Card>
-                                    <CardHeader className="pb-2">
-                                      <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
+                              <TabsContent value="overview" className="mt-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                  <Card className="border-primary/10 shadow-sm hover:shadow-md transition-shadow duration-200">
+                                    <CardHeader className="pb-2 bg-primary/5">
+                                      <CardTitle className="text-sm font-medium text-muted-foreground">Balance Total</CardTitle>
                                     </CardHeader>
-                                    <CardContent>
-                                      <div className="text-2xl font-bold">
+                                    <CardContent className="pt-4">
+                                      <div className="text-2xl font-bold text-primary">
                                         {accountBalances[sub.id] !== undefined
                                           ? `${accountBalances[sub.id]?.toFixed(2)} USDT`
                                           : "No disponible"}
                                       </div>
                                     </CardContent>
                                   </Card>
-                                  <Card>
-                                    <CardHeader className="pb-2">
-                                      <CardTitle className="text-sm font-medium">Exchange</CardTitle>
+                                  <Card className="border-primary/10 shadow-sm hover:shadow-md transition-shadow duration-200">
+                                    <CardHeader className="pb-2 bg-primary/5">
+                                      <CardTitle className="text-sm font-medium text-muted-foreground">Exchange</CardTitle>
                                     </CardHeader>
-                                    <CardContent>
-                                      <div className="text-2xl font-bold uppercase">{sub.exchange}</div>
+                                    <CardContent className="pt-4">
+                                      <div className="text-2xl font-bold uppercase text-secondary-foreground">{sub.exchange}</div>
                                     </CardContent>
                                   </Card>
-                                  <Card>
-                                    <CardHeader className="pb-2">
-                                      <CardTitle className="text-sm font-medium">Tipo de Cuenta</CardTitle>
+                                  <Card className="border-primary/10 shadow-sm hover:shadow-md transition-shadow duration-200">
+                                    <CardHeader className="pb-2 bg-primary/5">
+                                      <CardTitle className="text-sm font-medium text-muted-foreground">Tipo de Cuenta</CardTitle>
                                     </CardHeader>
-                                    <CardContent>
+                                    <CardContent className="pt-4">
                                       <div className="flex items-center gap-2">
                                         <div className="text-2xl font-bold">{sub.isDemo ? "Demo" : "Real"}</div>
                                         <Badge variant="outline" className={sub.isDemo ? 
-                                          "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500" : 
-                                          "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500"}>
+                                          "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30" : 
+                                          "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500 border-green-200 dark:border-green-800/30"}>
                                           {sub.isDemo ? (
                                             <div className="flex items-center gap-1">
                                               <Sparkles className="h-3 w-3" />
@@ -510,42 +560,59 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                       </div>
                                     </CardContent>
                                   </Card>
-                                  <Card>
-                                    <CardHeader className="pb-2">
-                                      <CardTitle className="text-sm font-medium">Rendimiento</CardTitle>
+                                  <Card className="border-primary/10 shadow-sm hover:shadow-md transition-shadow duration-200">
+                                    <CardHeader className="pb-2 bg-primary/5">
+                                      <CardTitle className="text-sm font-medium text-muted-foreground">Rendimiento</CardTitle>
                                     </CardHeader>
-                                    <CardContent>
-                                      <div className="text-2xl font-bold">
+                                    <CardContent className="pt-4">
+                                      <div className={`text-2xl font-bold ${
+                                        sub.performance && sub.performance > 0 
+                                          ? "text-green-600 dark:text-green-400" 
+                                          : sub.performance && sub.performance < 0 
+                                            ? "text-red-600 dark:text-red-400" 
+                                            : ""
+                                      }`}>
                                         {sub.performance !== undefined ? `${sub.performance.toFixed(2)}%` : "No disponible"}
                                       </div>
                                     </CardContent>
                                   </Card>
                                 </div>
                               </TabsContent>
-                              <TabsContent value="assets">
+                              <TabsContent value="assets" className="mt-6">
                                 <div className="space-y-4">
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                  </div>
-                                  <div className="mt-6">
-                                    <h4 className="font-medium mb-4">Todos los Assets</h4>
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow>
-                                          <TableHead>Token</TableHead>
-                                          <TableHead>Balance</TableHead>
-                                          <TableHead>Valor USD</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {sub.assets?.map((asset) => (
-                                          <TableRow key={asset.coin}>
-                                            <TableCell className="font-medium">{asset.coin}</TableCell>
-                                            <TableCell>{asset.walletBalance} {asset.coin}</TableCell>
-                                            <TableCell>${asset.usdValue}</TableCell>
+                                  <div className="mt-2">
+                                    <h4 className="font-medium mb-4 text-lg flex items-center gap-2">
+                                      <Wallet className="h-5 w-5 text-primary" />
+                                      Todos los Assets
+                                    </h4>
+                                    <div className="rounded-lg border border-primary/10 overflow-hidden shadow-sm">
+                                      <Table>
+                                        <TableHeader className="bg-muted/50">
+                                          <TableRow>
+                                            <TableHead>Token</TableHead>
+                                            <TableHead>Balance</TableHead>
+                                            <TableHead>Valor USD</TableHead>
                                           </TableRow>
-                                        ))}
-                                      </TableBody>
-                                    </Table>
+                                        </TableHeader>
+                                        <TableBody>
+                                          {sub.assets?.length ? (
+                                            sub.assets.map((asset) => (
+                                              <TableRow key={asset.coin} className="hover:bg-primary/5 transition-colors">
+                                                <TableCell className="font-medium">{asset.coin}</TableCell>
+                                                <TableCell>{asset.walletBalance} {asset.coin}</TableCell>
+                                                <TableCell>${asset.usdValue}</TableCell>
+                                              </TableRow>
+                                            ))
+                                          ) : (
+                                            <TableRow>
+                                              <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                                                No hay assets disponibles
+                                              </TableCell>
+                                            </TableRow>
+                                          )}
+                                        </TableBody>
+                                      </Table>
+                                    </div>
                                   </div>
                                 </div>
                               </TabsContent>
