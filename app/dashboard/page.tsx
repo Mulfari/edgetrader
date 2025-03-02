@@ -10,7 +10,6 @@ import {
   LineChart, 
   Settings, 
   LogOut, 
-  Wallet,
   BarChart3,
   TrendingUp,
   Bell,
@@ -18,7 +17,6 @@ import {
   ChevronRight,
   User,
   ArrowUpRight,
-  ArrowDownRight,
   Clock,
   DollarSign
 } from "lucide-react";
@@ -28,7 +26,6 @@ import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
