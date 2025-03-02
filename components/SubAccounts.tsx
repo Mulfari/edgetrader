@@ -9,6 +9,8 @@ import {
   Wallet,
   ArrowUpDown,
   Filter,
+  Sparkles,
+  Briefcase
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -37,6 +39,7 @@ interface SubAccount {
   lastUpdated?: string;
   assets?: Asset[];
   performance?: number; // Añadimos el campo de rendimiento
+  isDemo?: boolean; // Añadimos el campo isDemo para identificar el tipo de cuenta
 }
 
 interface AccountDetailsResponse {
@@ -68,6 +71,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const [selectedExchange, setSelectedExchange] = useState<string>("all");
+  const [selectedType, setSelectedType] = useState<string>("all");
   const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -149,6 +153,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
           balances[sub.id] = details.balance;
           sub.assets = details.assets;
           sub.performance = Math.random() * 100;
+          sub.isDemo = sub.isDemo !== undefined ? sub.isDemo : false;
           if (details.balance !== null) {
             totalBalance += details.balance;
           }
@@ -242,6 +247,9 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   const filteredAccounts = sortedAccounts.filter(
     (account) =>
       (selectedExchange === "all" || account.exchange === selectedExchange) &&
+      (selectedType === "all" || 
+       (selectedType === "demo" && account.isDemo) || 
+       (selectedType === "real" && !account.isDemo)) &&
       (account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         account.exchange.toLowerCase().includes(searchTerm.toLowerCase()))
   );
@@ -289,6 +297,27 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-full md:w-auto">
+                <Filter className="mr-2 h-4 w-4" />
+                {selectedType === "all" ? "Todos los Tipos" : 
+                 selectedType === "demo" ? "Solo Demo" : "Solo Real"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuItem onClick={() => setSelectedType("all")}>
+                Todos los Tipos
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedType("demo")}>
+                Solo Demo
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedType("real")}>
+                Solo Real
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
 
@@ -316,6 +345,10 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                   Balance
                   <ArrowUpDown className="ml-2 h-4 w-4 inline" />
                 </TableHead>
+                <TableHead onClick={() => handleSort("isDemo")} className="cursor-pointer hover:bg-muted/50">
+                  Tipo
+                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
+                </TableHead>
                 <TableHead onClick={() => handleSort("performance")} className="cursor-pointer hover:bg-muted/50">
                   Rendimiento
                   <ArrowUpDown className="ml-2 h-4 w-4 inline" />
@@ -335,6 +368,9 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                     </TableCell>
                     <TableCell>
                       <Skeleton className="h-5 w-[120px]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-[80px]" />
                     </TableCell>
                     <TableCell>
                       <Skeleton className="h-5 w-[200px]" />
@@ -377,6 +413,27 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                             <Wallet className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">{accountBalances[sub.id]?.toFixed(2)} USDT</span>
                           </div>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                      <TableCell onClick={() => handleRowClick(sub)}>
+                        {sub.isDemo !== undefined ? (
+                          <Badge variant="outline" className={sub.isDemo ? 
+                            "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500" : 
+                            "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500"}>
+                            {sub.isDemo ? (
+                              <div className="flex items-center gap-1">
+                                <Sparkles className="h-3 w-3" />
+                                <span>Demo</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <Briefcase className="h-3 w-3" />
+                                <span>Real</span>
+                              </div>
+                            )}
+                          </Badge>
                         ) : (
                           "-"
                         )}
@@ -426,6 +483,31 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
                                     </CardHeader>
                                     <CardContent>
                                       <div className="text-2xl font-bold uppercase">{sub.exchange}</div>
+                                    </CardContent>
+                                  </Card>
+                                  <Card>
+                                    <CardHeader className="pb-2">
+                                      <CardTitle className="text-sm font-medium">Tipo de Cuenta</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                      <div className="flex items-center gap-2">
+                                        <div className="text-2xl font-bold">{sub.isDemo ? "Demo" : "Real"}</div>
+                                        <Badge variant="outline" className={sub.isDemo ? 
+                                          "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500" : 
+                                          "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500"}>
+                                          {sub.isDemo ? (
+                                            <div className="flex items-center gap-1">
+                                              <Sparkles className="h-3 w-3" />
+                                              <span>Práctica</span>
+                                            </div>
+                                          ) : (
+                                            <div className="flex items-center gap-1">
+                                              <Briefcase className="h-3 w-3" />
+                                              <span>Fondos Reales</span>
+                                            </div>
+                                          )}
+                                        </Badge>
+                                      </div>
                                     </CardContent>
                                   </Card>
                                   <Card>
