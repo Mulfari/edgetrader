@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { 
-  Search, 
   RefreshCw, 
   Trash2, 
   Eye, 
@@ -13,16 +12,13 @@ import {
   Sparkles,
   KeyRound,
   Database,
-  Tag,
-  Briefcase
+  Tag
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent } from "@/components/ui/card"
 import { useRouter } from "next/navigation"
 
@@ -66,11 +62,11 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
     isDemo: false
   })
   const [showApiSecret, setShowApiSecret] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchTerm] = useState("")
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const router = useRouter()
@@ -262,11 +258,6 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
       setIsSubmitting(false)
     }
   }
-
-  const filteredAccounts = accounts.filter(
-    (account) => account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                account.exchange.toLowerCase().includes(searchTerm.toLowerCase())
-  )
 
   // Función para manejar el cambio en el checkbox de Demo
   const handleDemoCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
