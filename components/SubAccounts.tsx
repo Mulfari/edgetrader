@@ -12,8 +12,7 @@ import {
   Sparkles,
   Briefcase,
   PieChart,
-  LayoutDashboard,
-  Plus
+  LayoutDashboard
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -94,7 +93,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const fetchAccountDetails = async (userId: string, accountId: string, token: string): Promise<AccountDetails> => {
+  const fetchAccountDetails = useCallback(async (userId: string, accountId: string, token: string): Promise<AccountDetails> => {
     try {
       setLoadingBalance(accountId);
       console.log(`🔍 Solicitando balance para cuenta ${accountId}...`);
@@ -207,7 +206,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     } finally {
       setLoadingBalance(null);
     }
-  };
+  }, [subAccounts]);
 
   // Función para cargar automáticamente los balances de todas las subcuentas
   const loadAllBalances = useCallback(async () => {
@@ -311,8 +310,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     
     setIsLoadingAllBalances(false);
     return balances;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onBalanceUpdate]);
+  }, [onBalanceUpdate, fetchAccountDetails]);
 
   const fetchSubAccounts = useCallback(async () => {
     try {
@@ -360,7 +358,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, onStatsUpdate, fetchAccountBalances]);
 
   useEffect(() => {
@@ -389,7 +386,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     console.log("🔄 Cargando subcuentas automáticamente al iniciar el componente");
     fetchSubAccounts();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []);  // Intencionalmente vacío para ejecutar solo al montar
 
   // Nuevo useEffect para cargar los balances cuando cambian las subcuentas
   useEffect(() => {
@@ -401,8 +398,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       }, 500);
       return () => clearTimeout(timer);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subAccounts.length, isLoading, balancesInitiallyLoaded]);
+  }, [subAccounts.length, isLoading, balancesInitiallyLoaded, loadAllBalances]);
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
