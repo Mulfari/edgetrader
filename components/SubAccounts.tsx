@@ -84,6 +84,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [selectedExchange, setSelectedExchange] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
+  const [loadingBalance, setLoadingBalance] = useState<string | null>(null);
   const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -91,6 +92,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
 
   const fetchAccountDetails = async (userId: string, accountId: string, token: string): Promise<AccountDetails> => {
     try {
+      setLoadingBalance(accountId);
       const res = await fetch(`${API_URL}/subaccounts/${accountId}/balance`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -121,6 +123,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         assets: [], 
         performance: (Math.random() * 20) - 10 // Entre -10% y +10%
       };
+    } finally {
+      setLoadingBalance(null);
     }
   };
 
@@ -269,6 +273,19 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       setSelectedSubAccountId(null);
     } else {
       setSelectedSubAccountId(sub.id);
+      // Cargar detalles de la cuenta si no están disponibles
+      if (!accountBalances[sub.id]) {
+        const token = localStorage.getItem("token");
+        if (token) {
+          fetchAccountDetails(sub.userId, sub.id, token)
+            .then(details => {
+              setAccountBalances(prev => ({
+                ...prev,
+                [sub.id]: details
+              }));
+            });
+        }
+      }
     }
   };
 
@@ -531,12 +548,38 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                         </Badge>
                       </TableCell>
                       <TableCell onClick={() => handleRowClick(sub)}>
-                        {accountBalances[sub.id]?.balance !== null ? (
-                          <div className="font-medium">
-                            ${Number(accountBalances[sub.id]?.balance || 0).toFixed(2)}
-                          </div>
+                        {loadingBalance === sub.id ? (
+                          <Skeleton className="h-6 w-[100px]" />
+                        ) : accountBalances[sub.id] ? (
+                          <span className="font-medium">
+                            ${accountBalances[sub.id].balance?.toLocaleString('es-ES', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2
+                            })}
+                          </span>
                         ) : (
-                          <div className="text-muted-foreground text-sm">No disponible</div>
+                          <span className="text-blue-500 dark:text-blue-400 text-sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-7 px-2 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const token = localStorage.getItem("token");
+                                if (token) {
+                                  fetchAccountDetails(sub.userId, sub.id, token)
+                                    .then(details => {
+                                      setAccountBalances(prev => ({
+                                        ...prev,
+                                        [sub.id]: details
+                                      }));
+                                    });
+                                }
+                              }}
+                            >
+                              Cargar balance
+                            </Button>
+                          </span>
                         )}
                       </TableCell>
                       <TableCell onClick={() => handleRowClick(sub)}>
@@ -615,9 +658,39 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                     </CardHeader>
                                     <CardContent className="pt-4">
                                       <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                                        {accountBalances[sub.id]?.balance !== null
-                                          ? `${Number(accountBalances[sub.id]?.balance || 0).toFixed(2)} USDT`
-                                          : "No disponible"}
+                                        {loadingBalance === sub.id ? (
+                                          <Skeleton className="h-6 w-[100px]" />
+                                        ) : accountBalances[sub.id] ? (
+                                          <span className="font-medium">
+                                            ${accountBalances[sub.id].balance?.toLocaleString('es-ES', {
+                                              minimumFractionDigits: 2,
+                                              maximumFractionDigits: 2
+                                            })}
+                                          </span>
+                                        ) : (
+                                          <span className="text-blue-500 dark:text-blue-400 text-sm">
+                                            <Button 
+                                              variant="ghost" 
+                                              size="sm" 
+                                              className="h-7 px-2 text-xs"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const token = localStorage.getItem("token");
+                                                if (token) {
+                                                  fetchAccountDetails(sub.userId, sub.id, token)
+                                                    .then(details => {
+                                                      setAccountBalances(prev => ({
+                                                        ...prev,
+                                                        [sub.id]: details
+                                                      }));
+                                                    });
+                                                }
+                                              }}
+                                            >
+                                              Cargar balance
+                                            </Button>
+                                          </span>
+                                        )}
                                       </div>
                                     </CardContent>
                                   </Card>
@@ -666,7 +739,37 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                             ? "text-red-600 dark:text-red-400" 
                                             : "text-yellow-600 dark:text-yellow-400"
                                       }`}>
-                                        {sub.performance !== undefined ? `${sub.performance.toFixed(2)}%` : "No disponible"}
+                                        {loadingBalance === sub.id ? (
+                                          <Skeleton className="h-6 w-[100px]" />
+                                        ) : accountBalances[sub.id] ? (
+                                          <span className="font-medium">
+                                            {accountBalances[sub.id].performance > 0 ? "+" : ""}
+                                            {accountBalances[sub.id].performance.toFixed(2)}%
+                                          </span>
+                                        ) : (
+                                          <span className="text-blue-500 dark:text-blue-400 text-sm">
+                                            <Button 
+                                              variant="ghost" 
+                                              size="sm" 
+                                              className="h-7 px-2 text-xs"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const token = localStorage.getItem("token");
+                                                if (token) {
+                                                  fetchAccountDetails(sub.userId, sub.id, token)
+                                                    .then(details => {
+                                                      setAccountBalances(prev => ({
+                                                        ...prev,
+                                                        [sub.id]: details
+                                                      }));
+                                                    });
+                                                }
+                                              }}
+                                            >
+                                              Actualizar
+                                            </Button>
+                                          </span>
+                                        )}
                                       </div>
                                     </CardContent>
                                   </Card>
