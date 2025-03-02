@@ -108,7 +108,7 @@ export default function DashboardPage() {
               onClick={() => setIsMobileMenuOpen(true)}
             >
               <Menu className="h-5 w-5" />
-            </Button>
+              </Button>
             
             <div className="flex items-center gap-2">
               <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white p-1.5 rounded-md">
@@ -213,7 +213,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </header>
-      
+
       {/* Sidebar móvil */}
       <div className={cn(
         "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:hidden transition-opacity",
@@ -361,16 +361,16 @@ export default function DashboardPage() {
                   <LineChart className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
-            </CardHeader>
-            <CardContent>
+                </CardHeader>
+                <CardContent>
               <div className="text-3xl font-bold text-slate-900 dark:text-white">12</div>
               <div className="flex items-center mt-1 text-xs text-green-600 dark:text-green-400">
                 <ArrowUpRight className="h-3 w-3 mr-1" />
                 <span>3 operaciones nuevas hoy</span>
               </div>
-            </CardContent>
-          </Card>
-          
+                </CardContent>
+              </Card>
+
           <Card className="border-0 shadow-lg shadow-amber-100/40 dark:shadow-none bg-white dark:bg-slate-800 overflow-hidden">
             <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-bl-full"></div>
             <CardHeader className="pb-2">
@@ -380,17 +380,17 @@ export default function DashboardPage() {
                   <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 </div>
               </div>
-            </CardHeader>
-            <CardContent>
+                </CardHeader>
+                <CardContent>
               <div className="text-3xl font-bold text-slate-900 dark:text-white">7</div>
               <div className="flex items-center mt-1 text-xs text-amber-600 dark:text-amber-400">
                 <Clock className="h-3 w-3 mr-1" />
                 <span>2 alertas próximas a activarse</span>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-        
+                </CardContent>
+              </Card>
+            </div>
+
         {/* Gestión de subcuentas */}
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg shadow-slate-200/50 dark:shadow-none overflow-hidden mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between p-4 md:p-6 border-b border-slate-200 dark:border-slate-700">
@@ -423,7 +423,7 @@ export default function DashboardPage() {
           <div>
             <SubAccounts onBalanceUpdate={handleBalanceUpdate} />
           </div>
-        </div>
+                </div>
       </main>
       
       {/* Modales */}
