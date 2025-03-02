@@ -99,6 +99,12 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       setLoadingBalance(accountId);
       console.log(`🔍 Solicitando balance para cuenta ${accountId}...`);
       
+      // Buscar la cuenta para verificar si es demo o real
+      const account = subAccounts.find(acc => acc.id === accountId);
+      const isDemo = account?.isDemo === true;
+      
+      console.log(`📊 Tipo de cuenta: ${isDemo ? 'Demo' : 'Real'}, Exchange: ${account?.exchange}`);
+      
       const res = await fetch(`${API_URL}/subaccounts/${accountId}/balance`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -108,10 +114,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         console.error(`❌ Error al obtener balance para cuenta ${accountId}:`, errorData);
-        
-        // Buscar la cuenta para verificar si es demo o real
-        const account = subAccounts.find(acc => acc.id === accountId);
-        const isDemo = account?.isDemo === true;
+        console.error(`   Status: ${res.status} ${res.statusText}`);
         
         // Detectar error de restricción geográfica
         const isGeoRestriction = 
@@ -124,7 +127,11 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
           // Solo generar datos simulados para cuentas demo
           return { 
             balance: Math.random() * 10000, 
-            assets: [], 
+            assets: [
+              { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
+              { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
+              { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
+            ], 
             performance: (Math.random() * 20) - 10, // Entre -10% y +10%
             isSimulated: true,
             isDemo: true,
@@ -158,7 +165,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         assets: data.assets || [],
         performance: data.performance || 0,
         isSimulated: data.isSimulated || false,
-        isDemo: data.isDemo || false,
+        isDemo: isDemo, // Usar el valor de isDemo de la cuenta, no del backend
         isError: false
       };
     } catch (error: unknown) {
@@ -173,7 +180,11 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         // Solo generar datos simulados para cuentas demo
         return { 
           balance: Math.random() * 10000, 
-          assets: [], 
+          assets: [
+            { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
+            { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
+            { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
+          ], 
           performance: (Math.random() * 20) - 10, // Entre -10% y +10%
           isSimulated: true,
           isDemo: true,
@@ -444,6 +455,58 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
 
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-300" ref={componentRef} id="subaccounts-component">
+      {/* Header Section */}
+      <div className="flex flex-col space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <h2 className="text-2xl font-bold tracking-tight">Subcuentas</h2>
+          <div className="flex items-center gap-2">
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Buscar subcuentas..."
+                className="w-full pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 gap-1">
+                  <Filter className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Filtrar</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[200px]">
+                <DropdownMenuItem onClick={() => setSelectedType("all")}>
+                  Todas las cuentas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSelectedType("real")}>
+                  Cuentas reales
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSelectedType("demo")}>
+                  Cuentas demo
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 border border-yellow-200 dark:border-yellow-800/30 rounded-lg bg-yellow-50/50 dark:bg-yellow-950/10">
+        <div className="flex items-start gap-3">
+          <Sparkles className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-medium text-yellow-700 dark:text-yellow-300">Información sobre cuentas demo</h3>
+            <p className="text-xs text-yellow-600/90 dark:text-yellow-400/90 mt-1">
+              Las cuentas demo de Bybit ahora muestran datos reales desde el endpoint <code className="bg-yellow-100 dark:bg-yellow-900/30 px-1 py-0.5 rounded text-xs">api-demo.bybit.com</code>. 
+              Para ver balances y activos, asegúrate de tener fondos virtuales en tu cuenta demo de Bybit.
+              Si no ves datos, es posible que necesites depositar fondos virtuales en tu cuenta demo.
+            </p>
+          </div>
+        </div>
+      </div>
+      
       {/* Header Section */}
       <div className="flex flex-col space-y-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
@@ -1042,7 +1105,27 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                         <TableBody>
                                           {accountBalances[sub.id].assets.map((asset, index) => (
                                             <TableRow key={index} className={index % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-900/10' : ''}>
-                                              <TableCell className="font-medium">{asset.coin}</TableCell>
+                                              <TableCell className="font-medium">
+                                                <div className="flex items-center gap-2">
+                                                  {asset.coin}
+                                                  {accountBalances[sub.id].isDemo && !accountBalances[sub.id].isSimulated && (
+                                                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30 text-xs">
+                                                      <div className="flex items-center gap-1">
+                                                        <Sparkles className="h-2 w-2" />
+                                                        <span>Demo</span>
+                                                      </div>
+                                                    </Badge>
+                                                  )}
+                                                  {accountBalances[sub.id].isSimulated && (
+                                                    <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500 border-blue-200 dark:border-blue-800/30 text-xs">
+                                                      <div className="flex items-center gap-1">
+                                                        <PieChart className="h-2 w-2" />
+                                                        <span>Simulado</span>
+                                                      </div>
+                                                    </Badge>
+                                                  )}
+                                                </div>
+                                              </TableCell>
                                               <TableCell>{asset.walletBalance.toLocaleString('es-ES', {
                                                 minimumFractionDigits: 2,
                                                 maximumFractionDigits: 8
@@ -1060,7 +1143,19 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                     <div className="text-center py-8 border border-dashed border-blue-200 dark:border-blue-800/30 rounded-lg bg-blue-50/50 dark:bg-blue-950/10">
                                       <div className="flex flex-col items-center justify-center space-y-2">
                                         <Wallet className="h-12 w-12 text-blue-400 dark:text-blue-500 opacity-50" />
-                                        <p className="text-blue-600 dark:text-blue-400">No hay activos disponibles para mostrar.</p>
+                                        <p className="text-blue-600 dark:text-blue-400">
+                                          {sub.isDemo 
+                                            ? "No hay activos disponibles para esta cuenta demo." 
+                                            : "No hay activos disponibles para mostrar."}
+                                        </p>
+                                        
+                                        {sub.isDemo && (
+                                          <p className="text-blue-500/70 dark:text-blue-400/70 text-sm max-w-md text-center">
+                                            Las cuentas demo de Bybit deben tener fondos para mostrar activos. 
+                                            Puedes depositar fondos virtuales en tu cuenta demo de Bybit.
+                                          </p>
+                                        )}
+                                        
                                         <Button 
                                           variant="outline" 
                                           size="sm" 
