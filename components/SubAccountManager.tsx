@@ -13,7 +13,8 @@ import {
   Sparkles,
   KeyRound,
   Database,
-  Tag
+  Tag,
+  Briefcase
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -71,6 +72,7 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
   const [success, setSuccess] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const router = useRouter()
   
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
@@ -148,14 +150,22 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
       return
     }
 
-    if (!newAccount.name || !newAccount.exchange || !newAccount.apiKey || !newAccount.apiSecret) {
-      setError("Por favor completa todos los campos requeridos.")
+    // Validación del formulario
+    const errors: Record<string, string> = {}
+    if (!newAccount.name) errors.name = "El nombre es obligatorio"
+    if (!newAccount.exchange) errors.exchange = "Debes seleccionar un exchange"
+    if (!newAccount.apiKey) errors.apiKey = "La API Key es obligatoria"
+    if (!newAccount.apiSecret) errors.apiSecret = "El API Secret es obligatorio"
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
       return
     }
 
     setIsSubmitting(true)
     setError(null)
     setSuccess(null)
+    setFormErrors({})
 
     try {
       // Crear una copia del objeto para asegurar que isDemo se envía correctamente
@@ -211,10 +221,6 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
     if (!token) {
       console.error("❌ No hay token, redirigiendo a login.")
       router.push("/login")
-      return
-    }
-
-    if (!confirm(`¿Estás seguro que deseas eliminar la subcuenta "${accounts.find(a => a.id === selectedAccountId)?.name}"?`)) {
       return
     }
 
@@ -292,6 +298,20 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
           </DialogDescription>
         </DialogHeader>
 
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 rounded-lg p-3 text-sm flex items-start gap-2 animate-in fade-in-50 slide-in-from-top-5 duration-200">
+            <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <p>{error}</p>
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30 text-green-600 dark:text-green-400 rounded-lg p-3 text-sm flex items-start gap-2 animate-in fade-in-50 slide-in-from-top-5 duration-200">
+            <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <p>{success}</p>
+          </div>
+        )}
+
         {mode === "create" ? (
           <form onSubmit={handleAddAccount} className="space-y-6">
             <Card className="border-primary/10 bg-primary/5">
@@ -299,321 +319,369 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
                 <div className="grid gap-4">
                   <div className="flex items-center gap-3">
                     <div className="bg-primary/10 p-2 rounded-full">
-                      <Tag className="h-5 w-5 text-primary" />
+                      <Tag className="h-4 w-4 text-primary" />
                     </div>
-                    <div className="grid gap-1.5 flex-1">
+                    <div>
                       <Label htmlFor="name" className="text-sm font-medium">
                         Nombre de la Subcuenta
                       </Label>
-                      <Input
-                        id="name"
-                        value={newAccount.name}
-                        onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
-                        placeholder="Mi Subcuenta"
-                        className="h-10"
-                        required
-                      />
+                      <p className="text-xs text-muted-foreground">
+                        Un nombre descriptivo para identificar esta cuenta
+                      </p>
                     </div>
                   </div>
-                  
+                  <div className="pl-12">
+                    <Input
+                      id="name"
+                      placeholder="Ej: Bybit Principal"
+                      value={newAccount.name}
+                      onChange={(e) => {
+                        setNewAccount({ ...newAccount, name: e.target.value })
+                        if (formErrors.name) {
+                          const newErrors = { ...formErrors }
+                          delete newErrors.name
+                          setFormErrors(newErrors)
+                        }
+                      }}
+                      className={formErrors.name ? "border-red-300 focus-visible:ring-red-300" : ""}
+                    />
+                    {formErrors.name && (
+                      <p className="text-xs text-red-500 mt-1 animate-in fade-in-50 slide-in-from-top-1 duration-200">{formErrors.name}</p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/10 bg-primary/5">
+              <CardContent className="pt-6">
+                <div className="grid gap-4">
                   <div className="flex items-center gap-3">
                     <div className="bg-primary/10 p-2 rounded-full">
-                      <Database className="h-5 w-5 text-primary" />
+                      <Database className="h-4 w-4 text-primary" />
                     </div>
-                    <div className="grid gap-1.5 flex-1">
+                    <div>
                       <Label htmlFor="exchange" className="text-sm font-medium">
                         Exchange
                       </Label>
-                      <Select 
-                        value={newAccount.exchange} 
-                        onValueChange={(value) => setNewAccount({ ...newAccount, exchange: value })}
-                        required
-                      >
-                        <SelectTrigger className="h-10">
-                          <SelectValue placeholder="Selecciona un exchange" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {exchangeOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Selecciona la plataforma de trading
+                      </p>
                     </div>
                   </div>
-                  
+                  <div className="pl-12">
+                    <Select
+                      value={newAccount.exchange}
+                      onValueChange={(value) => {
+                        setNewAccount({ ...newAccount, exchange: value })
+                        if (formErrors.exchange) {
+                          const newErrors = { ...formErrors }
+                          delete newErrors.exchange
+                          setFormErrors(newErrors)
+                        }
+                      }}
+                    >
+                      <SelectTrigger className={formErrors.exchange ? "border-red-300 focus-visible:ring-red-300" : ""}>
+                        <SelectValue placeholder="Selecciona un exchange" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {exchangeOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formErrors.exchange && (
+                      <p className="text-xs text-red-500 mt-1 animate-in fade-in-50 slide-in-from-top-1 duration-200">{formErrors.exchange}</p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/10 bg-primary/5">
+              <CardContent className="pt-6">
+                <div className="grid gap-4">
                   <div className="flex items-center gap-3">
                     <div className="bg-primary/10 p-2 rounded-full">
-                      <KeyRound className="h-5 w-5 text-primary" />
+                      <KeyRound className="h-4 w-4 text-primary" />
                     </div>
-                    <div className="grid gap-1.5 flex-1">
+                    <div>
                       <Label htmlFor="apiKey" className="text-sm font-medium">
+                        Credenciales API
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Ingresa tus credenciales de API del exchange
+                      </p>
+                    </div>
+                  </div>
+                  <div className="pl-12 space-y-4">
+                    <div>
+                      <Label htmlFor="apiKey" className="text-xs mb-1.5 block">
                         API Key
                       </Label>
                       <Input
                         id="apiKey"
-                        value={newAccount.apiKey}
-                        onChange={(e) => setNewAccount({ ...newAccount, apiKey: e.target.value })}
                         placeholder="Ingresa tu API Key"
-                        className="h-10 font-mono text-sm"
-                        required
+                        value={newAccount.apiKey}
+                        onChange={(e) => {
+                          setNewAccount({ ...newAccount, apiKey: e.target.value })
+                          if (formErrors.apiKey) {
+                            const newErrors = { ...formErrors }
+                            delete newErrors.apiKey
+                            setFormErrors(newErrors)
+                          }
+                        }}
+                        className={formErrors.apiKey ? "border-red-300 focus-visible:ring-red-300" : ""}
                       />
+                      {formErrors.apiKey && (
+                        <p className="text-xs text-red-500 mt-1 animate-in fade-in-50 slide-in-from-top-1 duration-200">{formErrors.apiKey}</p>
+                      )}
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-full">
-                      <KeyRound className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="grid gap-1.5 flex-1">
-                      <Label htmlFor="apiSecret" className="text-sm font-medium">
+                    <div>
+                      <Label htmlFor="apiSecret" className="text-xs mb-1.5 block">
                         API Secret
                       </Label>
                       <div className="relative">
                         <Input
                           id="apiSecret"
                           type={showApiSecret ? "text" : "password"}
-                          value={newAccount.apiSecret}
-                          onChange={(e) => setNewAccount({ ...newAccount, apiSecret: e.target.value })}
                           placeholder="Ingresa tu API Secret"
-                          className="h-10 pr-10 font-mono text-sm"
-                          required
+                          value={newAccount.apiSecret}
+                          onChange={(e) => {
+                            setNewAccount({ ...newAccount, apiSecret: e.target.value })
+                            if (formErrors.apiSecret) {
+                              const newErrors = { ...formErrors }
+                              delete newErrors.apiSecret
+                              setFormErrors(newErrors)
+                            }
+                          }}
+                          className={`pr-10 ${formErrors.apiSecret ? "border-red-300 focus-visible:ring-red-300" : ""}`}
                         />
                         <Button
                           type="button"
                           variant="ghost"
-                          size="icon"
-                          className="absolute right-0 top-0 h-full px-3"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                           onClick={() => setShowApiSecret(!showApiSecret)}
                         >
-                          {showApiSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          {showApiSecret ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                          <span className="sr-only">
+                            {showApiSecret ? "Ocultar contraseña" : "Mostrar contraseña"}
+                          </span>
                         </Button>
                       </div>
+                      {formErrors.apiSecret && (
+                        <p className="text-xs text-red-500 mt-1 animate-in fade-in-50 slide-in-from-top-1 duration-200">{formErrors.apiSecret}</p>
+                      )}
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            
-            <div className="flex items-center gap-3 p-4 rounded-lg border bg-muted/30">
-              <div className="bg-yellow-500/10 p-2 rounded-full">
-                <Sparkles className="h-5 w-5 text-yellow-500" />
-              </div>
-              <div className="flex-1">
-                <Label htmlFor="isDemo" className="text-sm font-medium flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="isDemo"
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                    checked={newAccount.isDemo}
-                    onChange={handleDemoCheckboxChange}
-                    disabled={isSubmitting}
-                  />
-                  <span>Esta es una cuenta Demo</span>
+
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="isDemo"
+                  checked={newAccount.isDemo}
+                  onChange={handleDemoCheckboxChange}
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <Label htmlFor="isDemo" className="text-sm flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-yellow-500" />
+                  Cuenta Demo
                 </Label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Marca esta opción si estás usando una cuenta de práctica sin fondos reales
-                </p>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Marca esta opción si es una cuenta de práctica
+              </p>
             </div>
-            
-            {error && (
-              <div className="flex items-center gap-2 p-3 text-sm border border-destructive/50 bg-destructive/10 text-destructive rounded-md">
-                <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                <p>{error}</p>
-              </div>
-            )}
-            
-            {success && (
-              <div className="flex items-center gap-2 p-3 text-sm border border-green-500/50 bg-green-500/10 text-green-600 dark:text-green-400 rounded-md">
-                <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                <p>{success}</p>
-              </div>
-            )}
-            
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                disabled={isSubmitting}
+                className="w-full sm:w-auto"
+              >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting} className="gap-1">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              >
                 {isSubmitting ? (
                   <>
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    Guardando...
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Creando...
                   </>
                 ) : (
-                  <>
-                    Guardar Subcuenta
-                  </>
+                  "Crear Subcuenta"
                 )}
               </Button>
             </DialogFooter>
           </form>
         ) : (
-          <div className="py-4 space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  type="text"
-                  placeholder="Buscar subcuentas..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={fetchAccounts}
-                disabled={isLoading}
-                className="h-10 w-10"
-              >
-                <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-              </Button>
-            </div>
-
-            {error && (
-              <div className="flex items-center gap-2 p-3 text-sm border border-destructive/50 bg-destructive/10 text-destructive rounded-md">
-                <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                <p>{error}</p>
-              </div>
-            )}
-            
-            {success && (
-              <div className="flex items-center gap-2 p-3 text-sm border border-green-500/50 bg-green-500/10 text-green-600 dark:text-green-400 rounded-md">
-                <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                <p>{success}</p>
-              </div>
-            )}
-
-            <div className="rounded-lg border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[40%]">Nombre</TableHead>
-                    <TableHead className="w-[30%]">Exchange</TableHead>
-                    <TableHead className="w-[20%]">Tipo</TableHead>
-                    <TableHead className="text-right w-[10%]">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    Array.from({ length: 3 }).map((_, index) => (
-                      <TableRow key={index} className="h-[57px]">
-                        <TableCell className="font-medium">
-                          <div className="h-5 w-[150px] bg-muted animate-pulse rounded"></div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="h-5 w-[100px] bg-muted animate-pulse rounded"></div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="h-5 w-[80px] bg-muted animate-pulse rounded"></div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="h-8 w-8 bg-muted animate-pulse rounded-full ml-auto"></div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : filteredAccounts.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4}>
-                        <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-                          <AlertCircle className="h-12 w-12 mb-3 text-muted-foreground/70" />
-                          <p className="text-sm font-medium mb-2">No se encontraron subcuentas</p>
-                          <p className="text-xs text-muted-foreground">
-                            {searchTerm ? "Intenta ajustar el término de búsqueda" : "No hay subcuentas disponibles"}
-                          </p>
-                          {!searchTerm && (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="mt-4"
-                              onClick={() => {
-                                onCancel();
-                                // Pequeño retraso para evitar problemas con la animación del modal
-                                setTimeout(() => {
-                                  // Aquí deberías tener una forma de abrir el modal de creación
-                                  if (onSuccess) onSuccess();
-                                }, 300);
-                              }}
-                            >
-                              Crear una subcuenta
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredAccounts.map((account) => (
-                      <TableRow key={account.id} className="transition-colors hover:bg-muted/50">
-                        <TableCell className="font-medium">{account.name}</TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="uppercase">
-                            {account.exchange}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {account.isDemo ? (
-                            <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500">
-                              Demo
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500">
-                              Real
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setSelectedAccountId(account.id);
-                              setError(null);
-                              setSuccess(null);
-                            }}
-                            disabled={isSubmitting}
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Eliminar</span>
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-
-            <DialogFooter className="mt-4">
-              <Button variant="outline" onClick={onCancel}>
-                Cerrar
-              </Button>
-              {selectedAccountId && (
+          <>
+            {accounts.length === 0 && !isLoading ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="bg-muted/30 p-4 rounded-full mb-4">
+                  <AlertCircle className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">No hay subcuentas disponibles</h3>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  No se encontraron subcuentas para eliminar. Primero debes crear una subcuenta.
+                </p>
                 <Button 
-                  variant="destructive" 
-                  onClick={handleDeleteAccount}
-                  disabled={isSubmitting}
-                  className="gap-1"
+                  className="mt-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                  onClick={() => {
+                    onCancel()
+                    // Aquí podrías añadir lógica para abrir el modal de creación
+                  }}
                 >
-                  {isSubmitting ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      Eliminando...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="h-4 w-4" />
-                      Eliminar Subcuenta
-                    </>
-                  )}
+                  Crear Nueva Subcuenta
                 </Button>
-              )}
-            </DialogFooter>
-          </div>
+              </div>
+            ) : (
+              <>
+                <div className="relative">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar subcuentas..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  
+                  {isLoading ? (
+                    <div className="py-8 flex flex-col items-center justify-center">
+                      <RefreshCw className="h-8 w-8 animate-spin text-primary mb-4" />
+                      <p className="text-sm text-muted-foreground">Cargando subcuentas...</p>
+                    </div>
+                  ) : (
+                    <div className="mt-4 border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader className="bg-muted/30">
+                          <TableRow>
+                            <TableHead className="w-[50px]"></TableHead>
+                            <TableHead>Nombre</TableHead>
+                            <TableHead>Exchange</TableHead>
+                            <TableHead>Tipo</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredAccounts.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={4} className="h-24 text-center">
+                                No se encontraron resultados para "{searchTerm}"
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            filteredAccounts.map((account) => (
+                              <TableRow 
+                                key={account.id} 
+                                className={`cursor-pointer transition-colors hover:bg-muted/50 ${
+                                  selectedAccountId === account.id ? "bg-destructive/10 hover:bg-destructive/20" : ""
+                                }`}
+                                onClick={() => setSelectedAccountId(account.id)}
+                              >
+                                <TableCell>
+                                  <div className="flex items-center justify-center">
+                                    <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${
+                                      selectedAccountId === account.id 
+                                        ? "border-destructive bg-destructive/10" 
+                                        : "border-muted-foreground/30"
+                                    }`}>
+                                      {selectedAccountId === account.id && (
+                                        <div className="h-2 w-2 rounded-full bg-destructive" />
+                                      )}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="font-medium">{account.name}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="uppercase">
+                                    {account.exchange}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  {account.isDemo ? (
+                                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30">
+                                      <Sparkles className="h-3 w-3 mr-1" />
+                                      Demo
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500 border-green-200 dark:border-green-800/30">
+                                      <Briefcase className="h-3 w-3 mr-1" />
+                                      Real
+                                    </Badge>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-6 flex flex-col space-y-2">
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-sm">
+                    <p className="font-medium text-destructive mb-1 flex items-center gap-1.5">
+                      <AlertCircle className="h-4 w-4" />
+                      Advertencia
+                    </p>
+                    <p className="text-muted-foreground">
+                      Esta acción eliminará permanentemente la subcuenta seleccionada y no podrá ser recuperada.
+                    </p>
+                  </div>
+                </div>
+
+                <DialogFooter className="mt-6">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onCancel}
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={handleDeleteAccount}
+                    disabled={!selectedAccountId || isSubmitting}
+                    className="w-full sm:w-auto gap-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        Eliminando...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4" />
+                        Eliminar Subcuenta
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
+          </>
         )}
       </DialogContent>
     </Dialog>

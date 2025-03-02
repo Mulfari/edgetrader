@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import {
   Search,
   RefreshCw,
@@ -37,48 +37,49 @@ interface SubAccount {
   userId: string;
   name: string;
   exchange: string;
-  balance?: number;
-  lastUpdated?: string;
+  apiKey: string;
+  secretKey: string;
+  passphrase?: string;
   assets?: Asset[];
-  performance?: number; // Añadimos el campo de rendimiento
-  isDemo?: boolean; // Añadimos el campo isDemo para identificar el tipo de cuenta
+  performance?: number;
+  isDemo?: boolean;
+  active?: boolean;
+  balance?: number;
 }
 
-interface AccountDetailsResponse {
-  list: {
-    totalEquity: string;
-    coin: {
-      coin: string;
-      walletBalance: string;
-      usdValue: string;
-    }[];
-  }[];
+interface AccountDetails {
+  balance: number | null;
+  assets: Asset[];
+  performance: number;
 }
 
-type SortConfig = {
+type SortDirection = 'asc' | 'desc';
+
+interface SortConfig {
   key: keyof SubAccount;
-  direction: "asc" | "desc";
-} | null;
+  direction: SortDirection;
+}
 
-interface SubAccountsProps {
+export interface SubAccountsProps {
   onBalanceUpdate?: (totalBalance: number) => void;
-  onStatsUpdate?: (stats: { 
-    total: number; 
-    real: number; 
-    demo: number; 
-    exchanges: number; 
-    performance: number 
+  onStatsUpdate?: (stats: {
+    totalAccounts: number;
+    realAccounts: number;
+    demoAccounts: number;
+    totalBalance: number;
+    uniqueExchanges: number;
+    avgPerformance: number;
   }) => void;
 }
 
 export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccountsProps) {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null);
-  const [accountBalances, setAccountBalances] = useState<Record<string, number | null>>({});
+  const [accountBalances, setAccountBalances] = useState<Record<string, AccountDetails>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [selectedExchange, setSelectedExchange] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
   const componentRef = useRef<HTMLDivElement>(null);
@@ -86,154 +87,141 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
 
   const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))];
 
-  const fetchAccountDetails = useCallback(async (userId: string, subAccountId: string, token: string) => {
-    if (!API_URL || !userId || !token) return { balance: null, assets: [] };
-
+  const fetchAccountDetails = async (userId: string, accountId: string, token: string): Promise<AccountDetails> => {
     try {
-      const res = await fetch(`${API_URL}/account-details/${userId}/${subAccountId}`, {
-        method: "GET",
+      const res = await fetch(`${API_URL}/subaccounts/${accountId}/balance`, {
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) throw new Error("Error al obtener detalles de la cuenta");
-
-      const data: AccountDetailsResponse = await res.json();
-      console.log("Detalles de la cuenta:", data);
-      if (!data || !data.list || data.list.length === 0) {
-        console.error("❌ La respuesta de Bybit no contiene 'list' o está vacía:", data);
-        return { balance: 0, assets: [], rawData: data };
-      }
-
-      return {
-        balance: parseFloat(data.list[0]?.totalEquity ?? "0"),
-        assets: data.list[0]?.coin?.map((coin) => ({
-          coin: coin.coin,
-          walletBalance: parseFloat(coin.walletBalance) || 0,
-          usdValue: parseFloat(coin.usdValue) || 0,
-        })) || [],
-        rawData: data,
-      };
-
-    } catch (error) {
-      console.error("❌ Error obteniendo detalles de la cuenta:", error);
-      return { balance: null, assets: [] };
-    }
-  }, []);
-
-  const fetchSubAccounts = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.error("❌ No hay token, redirigiendo a login.");
-      router.push("/login");
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const res = await fetch(`${API_URL}/subaccounts`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          console.error("❌ Token inválido, redirigiendo a login.");
-          localStorage.removeItem("token");
-          router.push("/login");
+          Authorization: `Bearer ${token}`
         }
-        throw new Error(`Error al obtener subcuentas - Código ${res.status}`);
+      });
+      
+      if (!res.ok) {
+        console.error(`❌ Error al obtener balance para cuenta ${accountId}`);
+        return { balance: null, assets: [], performance: 0 };
       }
-
+      
       const data = await res.json();
-      console.log("Respuesta del backend:", data);
-      setSubAccounts(data);
+      return {
+        balance: data.balance || 0,
+        assets: data.assets || [],
+        performance: data.performance || Math.random() * 10 // Simulamos rendimiento si no viene del backend
+      };
+    } catch (error) {
+      console.error(`❌ Error al obtener balance para cuenta ${accountId}:`, error);
+      return { balance: null, assets: [], performance: 0 };
+    }
+  };
 
-      const balances: Record<string, number | null> = {};
+  const fetchAccountBalances = async (accounts: SubAccount[], token: string) => {
+    try {
+      const balances: Record<string, AccountDetails> = {};
       let totalBalance = 0;
-      const updatedSubAccounts = await Promise.all(
-        data.map(async (sub: SubAccount) => {
-          const details = await fetchAccountDetails(sub.userId, sub.id, token);
-          balances[sub.id] = details.balance;
-          sub.assets = details.assets;
-          sub.performance = Math.random() * 100;
-          sub.isDemo = sub.isDemo !== undefined ? sub.isDemo : false;
+      
+      await Promise.all(
+        accounts.map(async (account) => {
+          const details = await fetchAccountDetails(account.userId, account.id, token);
+          balances[account.id] = details;
+          
           if (details.balance !== null) {
             totalBalance += details.balance;
           }
-          return sub;
         })
       );
-      setSubAccounts(updatedSubAccounts);
+      
       setAccountBalances(balances);
+      localStorage.setItem("accountBalances", JSON.stringify(balances));
+      
       if (onBalanceUpdate) {
         onBalanceUpdate(totalBalance);
       }
       
-      // Enviar estadísticas al dashboard
-      if (onStatsUpdate) {
-        const realAccounts = updatedSubAccounts.filter((acc: SubAccount) => !acc.isDemo).length;
-        const demoAccounts = updatedSubAccounts.filter((acc: SubAccount) => acc.isDemo).length;
-        const uniqueExchanges = new Set(updatedSubAccounts.map((acc: SubAccount) => acc.exchange)).size;
-        const avgPerformance = updatedSubAccounts.length > 0 
-          ? updatedSubAccounts.reduce((sum: number, acc: SubAccount) => sum + (acc.performance || 0), 0) / updatedSubAccounts.length
-          : 0;
-          
-        onStatsUpdate({
-          total: updatedSubAccounts.length,
-          real: realAccounts,
-          demo: demoAccounts,
-          exchanges: uniqueExchanges,
-          performance: avgPerformance
-        });
+      return balances;
+    } catch (error) {
+      console.error("❌ Error al obtener balances:", error);
+      return {};
+    }
+  };
+
+  const fetchSubAccounts = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("❌ No hay token, redirigiendo a login.");
+        router.push("/login");
+        return;
       }
       
-      localStorage.setItem("subAccounts", JSON.stringify(updatedSubAccounts));
-      localStorage.setItem("accountBalances", JSON.stringify(balances));
+      const res = await fetch(`${API_URL}/subaccounts`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      if (!res.ok) {
+        throw new Error("Error al obtener subcuentas");
+      }
+      
+      const data = await res.json();
+      
+      // Guardar en localStorage
+      localStorage.setItem("subAccounts", JSON.stringify(data));
+      
+      setSubAccounts(data);
+      
+      // Obtener balances
+      const balances = await fetchAccountBalances(data, token);
+      
+      // Calcular estadísticas
+      if (onStatsUpdate) {
+        const activeAccounts = data.filter((account: SubAccount) => account.active);
+        const realAccounts = activeAccounts.filter((account: SubAccount) => !account.isDemo);
+        const demoAccounts = activeAccounts.filter((account: SubAccount) => account.isDemo);
+        
+        // Calcular balance total
+        let totalBalance = 0;
+        activeAccounts.forEach((account: SubAccount) => {
+          const balance = balances[account.id]?.balance || 0;
+          totalBalance += balance || 0;
+        });
+        
+        // Calcular exchanges únicos
+        const uniqueExchanges = new Set(activeAccounts.map((account: SubAccount) => account.exchange)).size;
+        
+        // Calcular rendimiento promedio
+        let totalPerformance = 0;
+        let accountsWithPerformance = 0;
+        
+        activeAccounts.forEach((account: SubAccount) => {
+          const performance = balances[account.id]?.performance;
+          if (performance !== undefined) {
+            totalPerformance += performance;
+            accountsWithPerformance++;
+          }
+        });
+        
+        const avgPerformance = accountsWithPerformance > 0 
+          ? totalPerformance / accountsWithPerformance 
+          : 0;
+        
+        onStatsUpdate({
+          totalAccounts: activeAccounts.length,
+          realAccounts: realAccounts.length,
+          demoAccounts: demoAccounts.length,
+          totalBalance,
+          uniqueExchanges,
+          avgPerformance
+        });
+      }
     } catch (error) {
-      console.error("❌ Error obteniendo subcuentas:", error);
-      setError("No se pudieron cargar las subcuentas");
+      console.error("❌ Error al obtener subcuentas:", error);
+      setError("Error al cargar las subcuentas. Intenta nuevamente más tarde.");
     } finally {
       setIsLoading(false);
     }
-  }, [fetchAccountDetails, router, onBalanceUpdate, onStatsUpdate]);
-
-  useEffect(() => {
-    const storedSubAccounts = localStorage.getItem("subAccounts");
-    const storedAccountBalances = localStorage.getItem("accountBalances");
-
-    if (storedSubAccounts && storedAccountBalances) {
-      const parsedSubAccounts = JSON.parse(storedSubAccounts);
-      setSubAccounts(parsedSubAccounts);
-      setAccountBalances(JSON.parse(storedAccountBalances));
-      setIsLoading(false);
-      
-      // Enviar estadísticas al dashboard
-      if (onStatsUpdate) {
-        const realAccounts = parsedSubAccounts.filter((acc: SubAccount) => !acc.isDemo).length;
-        const demoAccounts = parsedSubAccounts.filter((acc: SubAccount) => acc.isDemo).length;
-        const uniqueExchanges = new Set(parsedSubAccounts.map((acc: SubAccount) => acc.exchange)).size;
-        const avgPerformance = parsedSubAccounts.length > 0 
-          ? parsedSubAccounts.reduce((sum: number, acc: SubAccount) => sum + (acc.performance || 0), 0) / parsedSubAccounts.length
-          : 0;
-          
-        onStatsUpdate({
-          total: parsedSubAccounts.length,
-          real: realAccounts,
-          demo: demoAccounts,
-          exchanges: uniqueExchanges,
-          performance: avgPerformance
-        });
-      }
-    } else {
-      fetchSubAccounts();
-    }
-  }, [fetchSubAccounts, onStatsUpdate]);
+  }, [router, onBalanceUpdate, onStatsUpdate]);
 
   useEffect(() => {
     const handleRefresh = () => {
@@ -264,34 +252,53 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }
   };
 
-  const handleSort = (key: keyof SubAccount) => {
+  const handleSort = (key: string) => {
     setSortConfig((current) => {
-      if (current?.key === key) {
-        if (current.direction === "asc") {
-          return { key, direction: "desc" };
-        }
-        return null;
+      if (current && current.key === key) {
+        return {
+          key: key as keyof SubAccount,
+          direction: current.direction === 'asc' ? 'desc' : 'asc',
+        };
       }
-      return { key, direction: "asc" };
+      return { key: key as keyof SubAccount, direction: 'asc' };
     });
   };
 
-  const sortedAccounts = [...subAccounts].sort((a, b) => {
-    if (!sortConfig) return 0;
-
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
-
-    if (aValue === undefined || bValue === undefined) return 0;
-
-    if (sortConfig.direction === "asc") {
-      return aValue < bValue ? -1 : 1;
-    } else {
-      return aValue > bValue ? -1 : 1;
+  const sortedSubAccounts = useMemo(() => {
+    let sortableAccounts = [...subAccounts];
+    if (sortConfig !== null) {
+      sortableAccounts.sort((a, b) => {
+        if (sortConfig.key === 'balance') {
+          const aBalance = accountBalances[a.id]?.balance || 0;
+          const bBalance = accountBalances[b.id]?.balance || 0;
+          
+          if (aBalance < bBalance) {
+            return sortConfig.direction === 'asc' ? -1 : 1;
+          }
+          if (aBalance > bBalance) {
+            return sortConfig.direction === 'asc' ? 1 : -1;
+          }
+          return 0;
+        } else {
+          const aValue = a[sortConfig.key];
+          const bValue = b[sortConfig.key];
+          
+          if (aValue === undefined || bValue === undefined) return 0;
+          
+          if (aValue < bValue) {
+            return sortConfig.direction === 'asc' ? -1 : 1;
+          }
+          if (aValue > bValue) {
+            return sortConfig.direction === 'asc' ? 1 : -1;
+          }
+          return 0;
+        }
+      });
     }
-  });
+    return sortableAccounts;
+  }, [subAccounts, sortConfig, accountBalances]);
 
-  const filteredAccounts = sortedAccounts.filter(
+  const filteredAccounts = sortedSubAccounts.filter(
     (account) =>
       (selectedExchange === "all" || account.exchange === selectedExchange) &&
       (selectedType === "all" || 
@@ -302,7 +309,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   );
 
   return (
-    <div className="space-y-6" ref={componentRef} id="subaccounts-component">
+    <div className="space-y-6 animate-in fade-in-50 duration-300" ref={componentRef} id="subaccounts-component">
       {/* Header Section */}
       <div className="flex flex-col space-y-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
@@ -310,16 +317,27 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
             onClick={fetchSubAccounts} 
             variant="outline" 
             size="sm" 
-            className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 dark:from-blue-950/30 dark:to-indigo-950/30 dark:hover:from-blue-900/40 dark:hover:to-indigo-900/40 transition-all duration-200 border-blue-200 dark:border-blue-800/30 text-blue-700 dark:text-blue-300"
+            className="bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 dark:from-blue-950/30 dark:to-indigo-950/30 dark:hover:from-blue-900/40 dark:hover:to-indigo-900/40 transition-all duration-200 border-blue-200 dark:border-blue-800/30 text-blue-700 dark:text-blue-300 shadow-sm hover:shadow"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin text-blue-600" : "text-blue-500"}`} />
-            Actualizar Datos
+            {isLoading ? "Actualizando..." : "Actualizar Datos"}
           </Button>
+          
+          {/* Contador de subcuentas */}
+          {!isLoading && subAccounts.length > 0 && (
+            <div className="mt-2 md:mt-0 text-sm text-blue-600/70 dark:text-blue-400/70 flex items-center gap-1.5">
+              <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/30">
+                {subAccounts.length} {subAccounts.length === 1 ? "subcuenta" : "subcuentas"}
+              </Badge>
+              <span>·</span>
+              <span>Última actualización: {new Date().toLocaleTimeString()}</span>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Filters and Search */}
-      <Card className="border shadow-sm dark:border-blue-800/30 dark:bg-blue-950/10 overflow-hidden">
+      <Card className="border shadow-sm dark:border-blue-800/30 dark:bg-blue-950/10 overflow-hidden transition-all duration-200 hover:shadow">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row items-center gap-4">
             <div className="relative w-full md:w-64">
@@ -390,46 +408,46 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
 
       {/* Error Message */}
       {error && (
-        <div className="flex items-center gap-2 p-4 text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800/30 shadow-sm animate-in fade-in-50 duration-200">
+        <div className="flex items-center gap-2 p-4 text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800/30 shadow-sm animate-in fade-in-50 duration-200 slide-in-from-top-5">
           <AlertCircle className="h-5 w-5 flex-shrink-0" />
           <p className="text-sm font-medium">{error}</p>
         </div>
       )}
 
       {/* Main Content - Accounts Table */}
-      <Card className="border shadow-sm dark:border-blue-800/30 dark:bg-blue-950/10 overflow-hidden">
+      <Card className="border shadow-sm dark:border-blue-800/30 dark:bg-blue-950/10 overflow-hidden transition-all duration-200 hover:shadow">
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
+            <TableHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 sticky top-0 z-10">
               <TableRow>
                 <TableHead onClick={() => handleSort("name")} className="cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
                   <div className="flex items-center">
                     Nombre
-                    <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+                    <ArrowUpDown className={`ml-2 h-4 w-4 transition-opacity duration-200 ${sortConfig?.key === "name" ? "opacity-100" : "opacity-50"}`} />
                   </div>
                 </TableHead>
                 <TableHead onClick={() => handleSort("exchange")} className="cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
                   <div className="flex items-center">
                     Exchange
-                    <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+                    <ArrowUpDown className={`ml-2 h-4 w-4 transition-opacity duration-200 ${sortConfig?.key === "exchange" ? "opacity-100" : "opacity-50"}`} />
                   </div>
                 </TableHead>
                 <TableHead onClick={() => handleSort("balance")} className="cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
                   <div className="flex items-center">
                     Balance
-                    <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+                    <ArrowUpDown className={`ml-2 h-4 w-4 transition-opacity duration-200 ${sortConfig?.key === "balance" ? "opacity-100" : "opacity-50"}`} />
                   </div>
                 </TableHead>
                 <TableHead onClick={() => handleSort("isDemo")} className="cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
                   <div className="flex items-center">
                     Tipo
-                    <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+                    <ArrowUpDown className={`ml-2 h-4 w-4 transition-opacity duration-200 ${sortConfig?.key === "isDemo" ? "opacity-100" : "opacity-50"}`} />
                   </div>
                 </TableHead>
                 <TableHead onClick={() => handleSort("performance")} className="cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
                   <div className="flex items-center">
                     Rendimiento
-                    <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+                    <ArrowUpDown className={`ml-2 h-4 w-4 transition-opacity duration-200 ${sortConfig?.key === "performance" ? "opacity-100" : "opacity-50"}`} />
                   </div>
                 </TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
@@ -438,7 +456,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 3 }).map((_, index) => (
-                  <TableRow key={index}>
+                  <TableRow key={index} className="animate-pulse">
                     <TableCell>
                       <Skeleton className="h-5 w-[150px]" />
                     </TableCell>
@@ -463,9 +481,9 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                 <TableRow>
                   <TableCell colSpan={6} className="h-[300px]">
                     <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                      <AlertCircle className="h-16 w-16 mb-4 text-blue-300/50" />
-                      <p className="text-lg font-medium mb-2 text-blue-800 dark:text-blue-300">No se encontraron subcuentas</p>
-                      <p className="text-sm text-blue-600/70 dark:text-blue-400/70 max-w-md mx-auto">
+                      <AlertCircle className="h-16 w-16 mb-4 text-blue-300/50 animate-in fade-in-50 zoom-in-95 duration-300" />
+                      <p className="text-lg font-medium mb-2 text-blue-800 dark:text-blue-300 animate-in fade-in-50 slide-in-from-bottom-5 duration-300 delay-100">No se encontraron subcuentas</p>
+                      <p className="text-sm text-blue-600/70 dark:text-blue-400/70 max-w-md mx-auto animate-in fade-in-50 slide-in-from-bottom-5 duration-300 delay-200">
                         {searchTerm || selectedExchange !== "all" || selectedType !== "all" 
                           ? "Intenta ajustar los filtros o el término de búsqueda" 
                           : "Añade una nueva subcuenta para comenzar a monitorear tus inversiones"}
@@ -474,11 +492,12 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredAccounts.map((sub) => (
+                filteredAccounts.map((sub, index) => (
                   <>
                     <TableRow
                       key={sub.id}
-                      className="transition-all duration-200 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 cursor-pointer group"
+                      className={`transition-all duration-200 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 cursor-pointer group animate-in fade-in-50 slide-in-from-bottom-1 duration-300 ${index % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-900/10' : ''}`}
+                      style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <TableCell className="font-medium" onClick={() => handleRowClick(sub)}>
                         <div className="flex items-center">
@@ -492,13 +511,12 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                         </Badge>
                       </TableCell>
                       <TableCell onClick={() => handleRowClick(sub)}>
-                        {accountBalances[sub.id] !== undefined ? (
-                          <div className="flex items-center gap-2">
-                            <Wallet className="h-4 w-4 text-blue-500 dark:text-blue-400 group-hover:text-blue-600 dark:group-hover:text-blue-300 transition-colors" />
-                            <span className="font-medium">{accountBalances[sub.id]?.toFixed(2)} USDT</span>
+                        {accountBalances[sub.id]?.balance !== null ? (
+                          <div className="font-medium">
+                            ${Number(accountBalances[sub.id]?.balance || 0).toFixed(2)}
                           </div>
                         ) : (
-                          "-"
+                          <div className="text-muted-foreground text-sm">No disponible</div>
                         )}
                       </TableCell>
                       <TableCell onClick={() => handleRowClick(sub)}>
@@ -519,7 +537,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                             )}
                           </Badge>
                         ) : (
-                          "-"
+                          <span className="text-slate-400 dark:text-slate-500">No disponible</span>
                         )}
                       </TableCell>
                       <TableCell onClick={() => handleRowClick(sub)}>
@@ -577,8 +595,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                     </CardHeader>
                                     <CardContent className="pt-4">
                                       <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                                        {accountBalances[sub.id] !== undefined
-                                          ? `${accountBalances[sub.id]?.toFixed(2)} USDT`
+                                        {accountBalances[sub.id]?.balance !== null
+                                          ? `${Number(accountBalances[sub.id]?.balance || 0).toFixed(2)} USDT`
                                           : "No disponible"}
                                       </div>
                                     </CardContent>
