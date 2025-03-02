@@ -307,7 +307,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       <div className="flex flex-col space-y-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Subcuentas</h2>
+            {/* Eliminado el título "Subcuentas" */}
           </div>
           <Button 
             onClick={fetchSubAccounts} 
@@ -322,7 +322,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       </div>
 
       {/* Filters and Search */}
-      <Card className="border shadow-sm">
+      <Card className="border shadow-sm dark:border-blue-800/30 dark:bg-blue-950/10">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row items-center gap-4">
             <div className="relative w-full md:w-64">
@@ -332,18 +332,18 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                 placeholder="Buscar subcuentas..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
+                className="pl-9 dark:border-blue-800/30 dark:bg-blue-950/20"
               />
             </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full md:w-auto">
+                <Button variant="outline" className="w-full md:w-auto dark:border-blue-800/30 dark:bg-blue-950/20">
                   <Filter className="mr-2 h-4 w-4" />
                   {selectedExchange === "all" ? "Todos los Exchanges" : selectedExchange}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuContent align="end" className="w-[200px] dark:bg-blue-950 dark:border-blue-800/30">
                 {exchanges.map((exchange) => (
                   <DropdownMenuItem 
                     key={exchange} 
@@ -358,13 +358,13 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full md:w-auto">
+                <Button variant="outline" className="w-full md:w-auto dark:border-blue-800/30 dark:bg-blue-950/20">
                   <Filter className="mr-2 h-4 w-4" />
                   {selectedType === "all" ? "Todos los Tipos" : 
                    selectedType === "demo" ? "Solo Demo" : "Solo Real"}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuContent align="end" className="w-[200px] dark:bg-blue-950 dark:border-blue-800/30">
                 <DropdownMenuItem 
                   onClick={() => setSelectedType("all")}
                   className="cursor-pointer"
@@ -400,36 +400,36 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       )}
 
       {/* Main Content - Accounts Table */}
-      <Card className="border shadow-sm">
+      <Card className="border shadow-sm dark:border-blue-800/30 dark:bg-blue-950/10">
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-muted/50">
+            <TableHeader className="bg-muted/50 dark:bg-blue-950/30">
               <TableRow>
-                <TableHead onClick={() => handleSort("name")} className="cursor-pointer hover:bg-muted/80 transition-colors">
+                <TableHead onClick={() => handleSort("name")} className="cursor-pointer hover:bg-muted/80 dark:hover:bg-blue-900/20 transition-colors">
                   <div className="flex items-center">
                     Nombre
                     <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
                   </div>
                 </TableHead>
-                <TableHead onClick={() => handleSort("exchange")} className="cursor-pointer hover:bg-muted/80 transition-colors">
+                <TableHead onClick={() => handleSort("exchange")} className="cursor-pointer hover:bg-muted/80 dark:hover:bg-blue-900/20 transition-colors">
                   <div className="flex items-center">
                     Exchange
                     <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
                   </div>
                 </TableHead>
-                <TableHead onClick={() => handleSort("balance")} className="cursor-pointer hover:bg-muted/80 transition-colors">
+                <TableHead onClick={() => handleSort("balance")} className="cursor-pointer hover:bg-muted/80 dark:hover:bg-blue-900/20 transition-colors">
                   <div className="flex items-center">
                     Balance
                     <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
                   </div>
                 </TableHead>
-                <TableHead onClick={() => handleSort("isDemo")} className="cursor-pointer hover:bg-muted/80 transition-colors">
+                <TableHead onClick={() => handleSort("isDemo")} className="cursor-pointer hover:bg-muted/80 dark:hover:bg-blue-900/20 transition-colors">
                   <div className="flex items-center">
                     Tipo
                     <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
                   </div>
                 </TableHead>
-                <TableHead onClick={() => handleSort("performance")} className="cursor-pointer hover:bg-muted/80 transition-colors">
+                <TableHead onClick={() => handleSort("performance")} className="cursor-pointer hover:bg-muted/80 dark:hover:bg-blue-900/20 transition-colors">
                   <div className="flex items-center">
                     Rendimiento
                     <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
@@ -481,7 +481,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                   <>
                     <TableRow
                       key={sub.id}
-                      className="transition-all duration-200 hover:bg-muted/50 cursor-pointer"
+                      className="transition-all duration-200 hover:bg-muted/50 dark:hover:bg-blue-900/20 cursor-pointer"
                     >
                       <TableCell className="font-medium" onClick={() => handleRowClick(sub)}>
                         <div className="flex items-center">
@@ -558,11 +558,11 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                       </TableCell>
                     </TableRow>
                     {selectedSubAccountId === sub.id && (
-                      <TableRow key={`${sub.id}-details`} className="bg-muted/30">
+                      <TableRow key={`${sub.id}-details`} className="bg-muted/30 dark:bg-blue-950/20">
                         <TableCell colSpan={6} className="p-0 border-t-0">
                           <div className="p-6 space-y-6 animate-in fade-in-50 duration-200">
                             <Tabs defaultValue="overview" className="w-full">
-                              <TabsList className="bg-background border">
+                              <TabsList className="bg-background border dark:bg-blue-950/30 dark:border-blue-800/30">
                                 <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                                   <LayoutDashboard className="h-4 w-4 mr-2" />
                                   Vista General
@@ -576,7 +576,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                   <Card>
                                     <CardHeader className="pb-2 bg-blue-50 dark:bg-blue-950/20">
-                                      <CardTitle className="text-sm font-medium text-muted-foreground">Balance Total</CardTitle>
+                                      <CardTitle className="text-sm font-medium text-muted-foreground dark:text-blue-300">Balance Total</CardTitle>
                                     </CardHeader>
                                     <CardContent className="pt-4">
                                       <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
@@ -588,7 +588,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                   </Card>
                                   <Card>
                                     <CardHeader className="pb-2 bg-purple-50 dark:bg-purple-950/20">
-                                      <CardTitle className="text-sm font-medium text-muted-foreground">Exchange</CardTitle>
+                                      <CardTitle className="text-sm font-medium text-muted-foreground dark:text-purple-300">Exchange</CardTitle>
                                     </CardHeader>
                                     <CardContent className="pt-4">
                                       <div className="text-2xl font-bold uppercase text-purple-600 dark:text-purple-400">{sub.exchange}</div>
@@ -596,7 +596,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                   </Card>
                                   <Card>
                                     <CardHeader className="pb-2 bg-amber-50 dark:bg-amber-950/20">
-                                      <CardTitle className="text-sm font-medium text-muted-foreground">Tipo de Cuenta</CardTitle>
+                                      <CardTitle className="text-sm font-medium text-muted-foreground dark:text-amber-300">Tipo de Cuenta</CardTitle>
                                     </CardHeader>
                                     <CardContent className="pt-4">
                                       <div className="flex items-center gap-2">
@@ -621,7 +621,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                   </Card>
                                   <Card>
                                     <CardHeader className="pb-2 bg-green-50 dark:bg-green-950/20">
-                                      <CardTitle className="text-sm font-medium text-muted-foreground">Rendimiento</CardTitle>
+                                      <CardTitle className="text-sm font-medium text-muted-foreground dark:text-green-300">Rendimiento</CardTitle>
                                     </CardHeader>
                                     <CardContent className="pt-4">
                                       <div className={`text-2xl font-bold ${
@@ -652,7 +652,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                   <Card>
                                     <CardContent className="p-0">
                                       <Table>
-                                        <TableHeader className="bg-muted/50">
+                                        <TableHeader className="bg-muted/50 dark:bg-blue-950/30">
                                           <TableRow>
                                             <TableHead>Token</TableHead>
                                             <TableHead>Balance</TableHead>
@@ -662,7 +662,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                         <TableBody>
                                           {sub.assets?.length ? (
                                             sub.assets.map((asset) => (
-                                              <TableRow key={asset.coin} className="hover:bg-muted/50 transition-colors">
+                                              <TableRow key={asset.coin} className="hover:bg-muted/50 dark:hover:bg-blue-900/20 transition-colors">
                                                 <TableCell className="font-medium">{asset.coin}</TableCell>
                                                 <TableCell>{asset.walletBalance} {asset.coin}</TableCell>
                                                 <TableCell>${asset.usdValue}</TableCell>
@@ -670,7 +670,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                             ))
                                           ) : (
                                             <TableRow>
-                                              <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                                              <TableCell colSpan={3} className="text-center py-8 text-muted-foreground dark:text-blue-300/70">
                                                 No hay assets disponibles
                                               </TableCell>
                                             </TableRow>
