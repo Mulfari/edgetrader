@@ -9,7 +9,11 @@ import {
   EyeOff, 
   AlertCircle,
   CheckCircle2,
-  Server
+  Server,
+  Sparkles,
+  KeyRound,
+  Database,
+  Tag
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Card, CardContent } from "@/components/ui/card"
 
 interface SubAccount {
   id: string
@@ -228,7 +233,7 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={mode === "delete" ? "sm:max-w-[600px]" : "sm:max-w-[500px]"}>
+      <DialogContent className={mode === "delete" ? "sm:max-w-[600px]" : "sm:max-w-[550px]"}>
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
             {mode === "create" ? (
@@ -252,88 +257,114 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
 
         {mode === "create" ? (
           <form onSubmit={handleAddAccount} className="space-y-6">
-            <div className="space-y-4">
-              <div className="grid gap-3">
-                <div className="grid gap-2">
-                  <Label htmlFor="name" className="text-sm font-medium">
-                    Nombre de la Subcuenta
-                  </Label>
-                  <Input
-                    id="name"
-                    value={newAccount.name}
-                    onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
-                    placeholder="Mi Subcuenta"
-                    className="h-10"
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Elige un nombre descriptivo para identificar fácilmente esta cuenta
-                  </p>
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="exchange" className="text-sm font-medium">
-                    Exchange
-                  </Label>
-                  <Select 
-                    value={newAccount.exchange} 
-                    onValueChange={(value) => setNewAccount({ ...newAccount, exchange: value })}
-                    required
-                  >
-                    <SelectTrigger className="h-10">
-                      <SelectValue placeholder="Selecciona un exchange" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {exchangeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="apiKey" className="text-sm font-medium">
-                    API Key
-                  </Label>
-                  <Input
-                    id="apiKey"
-                    value={newAccount.apiKey}
-                    onChange={(e) => setNewAccount({ ...newAccount, apiKey: e.target.value })}
-                    placeholder="Ingresa tu API Key"
-                    className="h-10 font-mono text-sm"
-                    required
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="apiSecret" className="text-sm font-medium">
-                    API Secret
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="apiSecret"
-                      type={showApiSecret ? "text" : "password"}
-                      value={newAccount.apiSecret}
-                      onChange={(e) => setNewAccount({ ...newAccount, apiSecret: e.target.value })}
-                      placeholder="Ingresa tu API Secret"
-                      className="h-10 pr-10 font-mono text-sm"
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() => setShowApiSecret(!showApiSecret)}
-                    >
-                      {showApiSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
+            <Card className="border-primary/10 bg-primary/5">
+              <CardContent className="pt-6">
+                <div className="grid gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <Tag className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="grid gap-1.5 flex-1">
+                      <Label htmlFor="name" className="text-sm font-medium">
+                        Nombre de la Subcuenta
+                      </Label>
+                      <Input
+                        id="name"
+                        value={newAccount.name}
+                        onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
+                        placeholder="Mi Subcuenta"
+                        className="h-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <Database className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="grid gap-1.5 flex-1">
+                      <Label htmlFor="exchange" className="text-sm font-medium">
+                        Exchange
+                      </Label>
+                      <Select 
+                        value={newAccount.exchange} 
+                        onValueChange={(value) => setNewAccount({ ...newAccount, exchange: value })}
+                        required
+                      >
+                        <SelectTrigger className="h-10">
+                          <SelectValue placeholder="Selecciona un exchange" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {exchangeOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <KeyRound className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="grid gap-1.5 flex-1">
+                      <Label htmlFor="apiKey" className="text-sm font-medium">
+                        API Key
+                      </Label>
+                      <Input
+                        id="apiKey"
+                        value={newAccount.apiKey}
+                        onChange={(e) => setNewAccount({ ...newAccount, apiKey: e.target.value })}
+                        placeholder="Ingresa tu API Key"
+                        className="h-10 font-mono text-sm"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <KeyRound className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="grid gap-1.5 flex-1">
+                      <Label htmlFor="apiSecret" className="text-sm font-medium">
+                        API Secret
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="apiSecret"
+                          type={showApiSecret ? "text" : "password"}
+                          value={newAccount.apiSecret}
+                          onChange={(e) => setNewAccount({ ...newAccount, apiSecret: e.target.value })}
+                          placeholder="Ingresa tu API Secret"
+                          className="h-10 pr-10 font-mono text-sm"
+                          required
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-0 top-0 h-full px-3"
+                          onClick={() => setShowApiSecret(!showApiSecret)}
+                        >
+                          {showApiSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="flex items-center space-x-2 mt-2">
+              </CardContent>
+            </Card>
+            
+            <div className="flex items-center gap-3 p-4 rounded-lg border bg-muted/30">
+              <div className="bg-yellow-500/10 p-2 rounded-full">
+                <Sparkles className="h-5 w-5 text-yellow-500" />
+              </div>
+              <div className="flex-1">
+                <Label htmlFor="isDemo" className="text-sm font-medium flex items-center gap-2">
                   <input
                     type="checkbox"
                     id="isDemo"
@@ -341,10 +372,11 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
                     checked={newAccount.isDemo}
                     onChange={(e) => setNewAccount({ ...newAccount, isDemo: e.target.checked })}
                   />
-                  <Label htmlFor="isDemo" className="text-sm cursor-pointer">
-                    Esta es una cuenta Demo
-                  </Label>
-                </div>
+                  <span>Esta es una cuenta Demo</span>
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Marca esta opción si estás usando una cuenta de práctica sin fondos reales
+                </p>
               </div>
             </div>
             
