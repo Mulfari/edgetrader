@@ -12,7 +12,12 @@ import {
   Settings, 
   CreditCard, 
   LogOut, 
-  Wallet
+  Wallet,
+  BarChart3,
+  TrendingUp,
+  Bell,
+  Menu,
+  ChevronRight
 } from "lucide-react";
 import SubAccounts from "@/components/SubAccounts";
 import SubAccountManager from "@/components/SubAccountManager";
@@ -25,12 +30,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
   const [totalBalance, setTotalBalance] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userName, setUserName] = useState<string>("Usuario");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -89,22 +96,158 @@ export default function DashboardPage() {
   };
 
   return (
-    <>
-      {/* Panel de control superior */}
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center px-8">
-          <div className="flex items-center gap-2 font-semibold">
-            <CreditCard className="h-5 w-5 text-primary" />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
-              TradingApp
-            </span>
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900">
+      {/* Sidebar - Escritorio */}
+      <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-2">
+            <div className="bg-blue-600 text-white p-1.5 rounded">
+              <BarChart3 className="h-5 w-5" />
+            </div>
+            <span className="font-bold text-xl text-slate-900 dark:text-white">TradingPro</span>
           </div>
+        </div>
+        
+        <nav className="flex-1 p-4 space-y-1">
+          <Button variant="ghost" className="w-full justify-start font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+            <LayoutDashboard className="mr-2 h-4 w-4" />
+            Dashboard
+          </Button>
+          <Button variant="ghost" className="w-full justify-start text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
+            <TrendingUp className="mr-2 h-4 w-4" />
+            Operaciones
+          </Button>
+          <Button variant="ghost" className="w-full justify-start text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
+            <LineChart className="mr-2 h-4 w-4" />
+            Análisis
+          </Button>
+          <Button variant="ghost" className="w-full justify-start text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
+            <Bell className="mr-2 h-4 w-4" />
+            Alertas
+          </Button>
+          <Button variant="ghost" className="w-full justify-start text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
+            <Settings className="mr-2 h-4 w-4" />
+            Configuración
+          </Button>
+        </nav>
+        
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Avatar className="h-8 w-8 border border-slate-200 dark:border-slate-600">
+                <AvatarFallback className="bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">
+                  {userName.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-slate-900 dark:text-white">{userName}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">Trader</span>
+              </div>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Settings className="h-4 w-4 text-slate-500" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem 
+                  className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Cerrar Sesión
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </aside>
+      
+      {/* Sidebar - Móvil */}
+      <div className={cn(
+        "fixed inset-0 z-50 bg-black/80 backdrop-blur-sm md:hidden transition-opacity",
+        isMobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+      )}>
+        <div className={cn(
+          "fixed inset-y-0 left-0 w-3/4 max-w-xs bg-white dark:bg-slate-800 p-4 transition-transform",
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        )}>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <div className="bg-blue-600 text-white p-1.5 rounded">
+                <BarChart3 className="h-5 w-5" />
+              </div>
+              <span className="font-bold text-xl text-slate-900 dark:text-white">TradingPro</span>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-slate-500"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+          
+          <nav className="space-y-1 mb-6">
+            <Button variant="ghost" className="w-full justify-start font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              Dashboard
+            </Button>
+            <Button variant="ghost" className="w-full justify-start text-slate-600 dark:text-slate-300">
+              <TrendingUp className="mr-2 h-4 w-4" />
+              Operaciones
+            </Button>
+            <Button variant="ghost" className="w-full justify-start text-slate-600 dark:text-slate-300">
+              <LineChart className="mr-2 h-4 w-4" />
+              Análisis
+            </Button>
+            <Button variant="ghost" className="w-full justify-start text-slate-600 dark:text-slate-300">
+              <Bell className="mr-2 h-4 w-4" />
+              Alertas
+            </Button>
+            <Button variant="ghost" className="w-full justify-start text-slate-600 dark:text-slate-300">
+              <Settings className="mr-2 h-4 w-4" />
+              Configuración
+            </Button>
+          </nav>
+          
+          <div className="mt-auto pt-4 border-t border-slate-200 dark:border-slate-700">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start text-red-600 dark:text-red-400"
+              onClick={handleLogout}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Cerrar Sesión
+            </Button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Contenido principal */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 h-16 flex items-center px-4 md:px-6">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="md:hidden mr-2"
+            onClick={() => setIsMobileMenuOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white md:hidden">
+            Dashboard
+          </h1>
           
           <div className="ml-auto flex items-center gap-4">
             {totalBalance !== null && (
-              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/5 border border-primary/10">
-                <Wallet className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
+                <Wallet className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium text-green-700 dark:text-green-400">
                   ${totalBalance.toFixed(2)}
                 </span>
               </div>
@@ -112,9 +255,9 @@ export default function DashboardPage() {
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                  <Avatar className="h-9 w-9">
-                    <AvatarFallback className="bg-primary/10 text-primary">
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full md:hidden">
+                  <Avatar className="h-9 w-9 border border-slate-200 dark:border-slate-600">
+                    <AvatarFallback className="bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">
                       {userName.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -125,7 +268,7 @@ export default function DashboardPage() {
                   <div className="flex flex-col space-y-0.5">
                     <p className="text-sm font-medium">{userName}</p>
                     <p className="text-xs text-muted-foreground">
-                      Cuenta de Trading
+                      Trader
                     </p>
                   </div>
                 </div>
@@ -135,14 +278,14 @@ export default function DashboardPage() {
                     <div className="p-2">
                       <div className="flex items-center justify-between">
                         <p className="text-xs text-muted-foreground">Balance Total</p>
-                        <p className="text-sm font-medium text-primary">${totalBalance.toFixed(2)}</p>
+                        <p className="text-sm font-medium text-green-600">${totalBalance.toFixed(2)}</p>
                       </div>
                     </div>
                     <DropdownMenuSeparator />
                   </>
                 )}
                 <DropdownMenuItem 
-                  className="cursor-pointer flex items-center gap-2 text-destructive focus:text-destructive"
+                  className="cursor-pointer flex items-center gap-2 text-red-600 focus:text-red-600"
                   onClick={handleLogout}
                 >
                   <LogOut className="h-4 w-4" />
@@ -151,165 +294,122 @@ export default function DashboardPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+        </header>
+        
+        {/* Contenido */}
+        <div className="flex-1 overflow-auto p-4 md:p-6 bg-slate-50 dark:bg-slate-900">
+          <div className="max-w-7xl mx-auto space-y-6">
+            {/* Encabezado de página */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+                <p className="text-slate-500 dark:text-slate-400 mt-1">
+                  Bienvenido a tu panel de control de trading
+                </p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button 
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Nueva Subcuenta
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowDeleteModal(true)}
+                  className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                >
+                  <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                  Eliminar Subcuenta
+                </Button>
+              </div>
+            </div>
+            
+            {/* Tarjetas de resumen */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Card className="border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="pb-2 bg-blue-50/50 dark:bg-blue-900/10 border-b border-slate-200 dark:border-slate-700">
+                  <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-300">Subcuentas Activas</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">5</div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">+2 desde el mes pasado</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="pb-2 bg-green-50/50 dark:bg-green-900/10 border-b border-slate-200 dark:border-slate-700">
+                  <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-300">Rendimiento Total</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">+12.5%</div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">+2.3% desde la semana pasada</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="pb-2 bg-purple-50/50 dark:bg-purple-900/10 border-b border-slate-200 dark:border-slate-700">
+                  <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-300">Operaciones Abiertas</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">12</div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">3 operaciones nuevas hoy</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="pb-2 bg-amber-50/50 dark:bg-amber-900/10 border-b border-slate-200 dark:border-slate-700">
+                  <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-300">Alertas Activas</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">7</div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">2 alertas próximas a activarse</p>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Lista de subcuentas */}
+            <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+              <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Gestión de Subcuentas</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Monitorea y administra tus subcuentas de trading
+                </p>
+              </div>
+              <div className="p-0">
+                <SubAccounts onBalanceUpdate={handleBalanceUpdate} />
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div className="flex-1 space-y-8 p-8 pt-6 bg-gradient-to-b from-background to-muted/20 min-h-screen">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">Dashboard</h2>
-            <p className="text-muted-foreground mt-1">Bienvenido a tu panel de control de trading</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button 
-              onClick={() => setShowCreateModal(true)}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200 shadow-sm hover:shadow-md"
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Nueva Subcuenta
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowDeleteModal(true)}
-              className="border-primary/20 hover:bg-primary/5 transition-all duration-200"
-            >
-              <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-              Eliminar Subcuenta
-            </Button>
+      </main>
+      
+      {/* Modales */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in-0 duration-200">
+          <div className="w-full max-w-md p-4 animate-in slide-in-from-bottom-10 duration-300">
+            <SubAccountManager 
+              mode="create" 
+              onSuccess={handleSubAccountSuccess} 
+              onCancel={() => setShowCreateModal(false)} 
+            />
           </div>
         </div>
+      )}
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <div className="flex justify-between items-center">
-            <TabsList className="bg-background border border-primary/10 p-1">
-              <TabsTrigger 
-                value="overview" 
-                className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all duration-200"
-              >
-                <LayoutDashboard className="mr-2 h-4 w-4" />
-                Vista General
-              </TabsTrigger>
-              <TabsTrigger 
-                value="analytics" 
-                className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all duration-200"
-              >
-                <LineChart className="mr-2 h-4 w-4" />
-                Análisis
-              </TabsTrigger>
-              <TabsTrigger 
-                value="settings" 
-                className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all duration-200"
-              >
-                <Settings className="mr-2 h-4 w-4" />
-                Configuración
-              </TabsTrigger>
-            </TabsList>
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in-0 duration-200">
+          <div className="w-full max-w-md p-4 animate-in slide-in-from-bottom-10 duration-300">
+            <SubAccountManager 
+              mode="delete" 
+              onSuccess={handleSubAccountSuccess} 
+              onCancel={() => setShowDeleteModal(false)} 
+            />
           </div>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <Card className="shadow-sm border-primary/10 hover:shadow-md transition-shadow duration-200">
-                <CardHeader className="pb-2 bg-primary/5">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Subcuentas Activas</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="text-2xl font-bold text-primary">5</div>
-                  <p className="text-xs text-muted-foreground mt-1">+2 desde el mes pasado</p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-sm border-primary/10 hover:shadow-md transition-shadow duration-200">
-                <CardHeader className="pb-2 bg-primary/5">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Rendimiento Total</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="text-2xl font-bold text-green-600">+12.5%</div>
-                  <p className="text-xs text-muted-foreground mt-1">+2.3% desde la semana pasada</p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-sm border-primary/10 hover:shadow-md transition-shadow duration-200">
-                <CardHeader className="pb-2 bg-primary/5">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Operaciones Abiertas</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="text-2xl font-bold text-primary">12</div>
-                  <p className="text-xs text-muted-foreground mt-1">3 operaciones nuevas hoy</p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-sm border-primary/10 hover:shadow-md transition-shadow duration-200">
-                <CardHeader className="pb-2 bg-primary/5">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Alertas Activas</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="text-2xl font-bold text-primary">7</div>
-                  <p className="text-xs text-muted-foreground mt-1">2 alertas próximas a activarse</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <SubAccounts onBalanceUpdate={handleBalanceUpdate} />
-          </TabsContent>
-
-          <TabsContent value="analytics" className="space-y-4">
-            <Card className="shadow-sm border-primary/10">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold">Análisis de Rendimiento</CardTitle>
-                <CardDescription>Visualiza el rendimiento de tus inversiones a lo largo del tiempo</CardDescription>
-              </CardHeader>
-              <CardContent className="h-[400px] flex items-center justify-center bg-muted/20 rounded-md">
-                <div className="text-center text-muted-foreground">
-                  <LineChart className="h-12 w-12 mx-auto mb-4 text-primary/40" />
-                  <p className="text-lg font-medium">Análisis próximamente</p>
-                  <p className="text-sm max-w-md mx-auto mt-2">
-                    Estamos trabajando en herramientas avanzadas de análisis para ayudarte a visualizar y optimizar tu rendimiento.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-4">
-            <Card className="shadow-sm border-primary/10">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold">Configuración de la Cuenta</CardTitle>
-                <CardDescription>Administra las preferencias de tu cuenta y notificaciones</CardDescription>
-              </CardHeader>
-              <CardContent className="h-[400px] flex items-center justify-center bg-muted/20 rounded-md">
-                <div className="text-center text-muted-foreground">
-                  <Settings className="h-12 w-12 mx-auto mb-4 text-primary/40" />
-                  <p className="text-lg font-medium">Configuración próximamente</p>
-                  <p className="text-sm max-w-md mx-auto mt-2">
-                    Pronto podrás personalizar tu experiencia, configurar notificaciones y ajustar preferencias de seguridad.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in-0 duration-200">
-            <div className="w-full max-w-md p-4 animate-in slide-in-from-bottom-10 duration-300">
-              <SubAccountManager 
-                mode="create" 
-                onSuccess={handleSubAccountSuccess} 
-                onCancel={() => setShowCreateModal(false)} 
-              />
-            </div>
-          </div>
-        )}
-
-        {showDeleteModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in-0 duration-200">
-            <div className="w-full max-w-md p-4 animate-in slide-in-from-bottom-10 duration-300">
-              <SubAccountManager 
-                mode="delete" 
-                onSuccess={handleSubAccountSuccess} 
-                onCancel={() => setShowDeleteModal(false)} 
-              />
-            </div>
-          </div>
-        )}
-      </div>
-    </>
+        </div>
+      )}
+    </div>
   );
 }
