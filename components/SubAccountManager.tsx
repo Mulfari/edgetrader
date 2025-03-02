@@ -66,7 +66,6 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const [searchTerm] = useState("")
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const router = useRouter()

@@ -221,7 +221,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     } finally {
       setIsLoading(false);
     }
-  }, [router, onBalanceUpdate, onStatsUpdate, fetchAccountBalances]);
+  }, [router, onStatsUpdate, fetchAccountBalances]);
 
   useEffect(() => {
     const handleRefresh = () => {
