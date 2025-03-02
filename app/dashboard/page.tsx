@@ -114,20 +114,27 @@ export default function Dashboard() {
   const handleSubAccountSuccess = () => {
     // Actualizar la lista de subcuentas
     console.log("Actualizando subcuentas después de una operación exitosa");
-    const subAccountsComponent = document.getElementById('subaccounts-component');
-    if (subAccountsComponent) {
-      console.log("Disparando evento refresh en el componente de subcuentas");
-      // Forzar actualización del componente SubAccounts
-      const refreshEvent = new Event('refresh', { bubbles: true });
-      subAccountsComponent.dispatchEvent(refreshEvent);
-    } else {
-      console.error("No se encontró el elemento subaccounts-component");
-    }
     
-    // Si estamos eliminando, cerrar el modal de eliminación
-    if (isDeleteModalOpen) {
-      setIsDeleteModalOpen(false);
-    }
+    // Cerrar los modales
+    setIsCreateModalOpen(false);
+    setIsDeleteModalOpen(false);
+    
+    // Pequeño retraso para asegurar que los modales se cierren primero
+    setTimeout(() => {
+      const subAccountsComponent = document.getElementById('subaccounts-component');
+      if (subAccountsComponent) {
+        console.log("Disparando evento refresh en el componente de subcuentas");
+        try {
+          // Forzar actualización del componente SubAccounts
+          const refreshEvent = new Event('refresh', { bubbles: true });
+          subAccountsComponent.dispatchEvent(refreshEvent);
+        } catch (error) {
+          console.error("Error al disparar el evento:", error);
+        }
+      } else {
+        console.error("No se encontró el elemento subaccounts-component");
+      }
+    }, 300);
   };
 
   return (

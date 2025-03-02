@@ -186,16 +186,22 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   // Añadir un event listener para actualizar las subcuentas cuando se dispare el evento 'refresh'
   useEffect(() => {
     const handleRefresh = () => {
-      console.log("Actualizando subcuentas desde evento refresh");
+      console.log("Evento refresh recibido en SubAccounts");
       fetchSubAccounts();
     };
 
-    const element = componentRef.current;
+    // Usar el elemento actual o el elemento padre
+    const element = componentRef.current || document.getElementById('subaccounts-component');
     if (element) {
+      console.log("Agregando event listener para refresh en SubAccounts");
       element.addEventListener('refresh', handleRefresh);
+      
       return () => {
+        console.log("Eliminando event listener para refresh en SubAccounts");
         element.removeEventListener('refresh', handleRefresh);
       };
+    } else {
+      console.error("No se pudo encontrar el elemento para agregar el event listener en SubAccounts");
     }
   }, [fetchSubAccounts]);
 
@@ -242,7 +248,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   );
 
   return (
-    <Card className="w-full" ref={componentRef}>
+    <Card className="w-full" ref={componentRef} id="subaccounts-component">
       <CardHeader>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>

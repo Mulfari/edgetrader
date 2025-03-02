@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { 
   Search, 
   RefreshCw, 
@@ -9,8 +9,7 @@ import {
   EyeOff, 
   AlertCircle,
   CheckCircle2,
-  Server,
-  ExternalLink
+  Server
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,8 +18,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface SubAccount {
   id: string
@@ -63,16 +60,15 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
     isDemo: false
   })
   const [showApiSecret, setShowApiSecret] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
-  console.log("API_URL en SubAccountManager:", API_URL)
 
-  const fetchAccounts = async () => {
+  const fetchAccounts = useCallback(async () => {
     const token = getToken()
     if (!token) {
       setError("No se encontró token de autenticación")
@@ -83,7 +79,6 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
     setIsLoading(true)
     setError(null)
     console.log("Intentando cargar subcuentas desde:", `${API_URL}/subaccounts`)
-    console.log("Token disponible:", !!token)
 
     try {
       const res = await fetch(`${API_URL}/subaccounts`, {
@@ -118,7 +113,7 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [API_URL])
 
   useEffect(() => {
     if (isOpen) {
@@ -257,160 +252,101 @@ export default function SubAccountManager({ mode, isOpen, onClose, onSuccess }: 
 
         {mode === "create" ? (
           <form onSubmit={handleAddAccount} className="space-y-6">
-            <Tabs defaultValue="general" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="general">Información General</TabsTrigger>
-                <TabsTrigger value="api">Credenciales API</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="general" className="space-y-4 pt-4">
-                <div className="grid gap-3">
-                  <div className="grid gap-2">
-                    <Label htmlFor="name" className="text-sm font-medium">
-                      Nombre de la Subcuenta
-                    </Label>
+            <div className="space-y-4">
+              <div className="grid gap-3">
+                <div className="grid gap-2">
+                  <Label htmlFor="name" className="text-sm font-medium">
+                    Nombre de la Subcuenta
+                  </Label>
+                  <Input
+                    id="name"
+                    value={newAccount.name}
+                    onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
+                    placeholder="Mi Subcuenta"
+                    className="h-10"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Elige un nombre descriptivo para identificar fácilmente esta cuenta
+                  </p>
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="exchange" className="text-sm font-medium">
+                    Exchange
+                  </Label>
+                  <Select 
+                    value={newAccount.exchange} 
+                    onValueChange={(value) => setNewAccount({ ...newAccount, exchange: value })}
+                    required
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Selecciona un exchange" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {exchangeOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="apiKey" className="text-sm font-medium">
+                    API Key
+                  </Label>
+                  <Input
+                    id="apiKey"
+                    value={newAccount.apiKey}
+                    onChange={(e) => setNewAccount({ ...newAccount, apiKey: e.target.value })}
+                    placeholder="Ingresa tu API Key"
+                    className="h-10 font-mono text-sm"
+                    required
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="apiSecret" className="text-sm font-medium">
+                    API Secret
+                  </Label>
+                  <div className="relative">
                     <Input
-                      id="name"
-                      value={newAccount.name}
-                      onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
-                      placeholder="Mi Subcuenta"
-                      className="h-10"
+                      id="apiSecret"
+                      type={showApiSecret ? "text" : "password"}
+                      value={newAccount.apiSecret}
+                      onChange={(e) => setNewAccount({ ...newAccount, apiSecret: e.target.value })}
+                      placeholder="Ingresa tu API Secret"
+                      className="h-10 pr-10 font-mono text-sm"
                       required
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Elige un nombre descriptivo para identificar fácilmente esta cuenta
-                    </p>
-                  </div>
-                  
-                  <div className="grid gap-2">
-                    <Label htmlFor="exchange" className="text-sm font-medium">
-                      Exchange
-                    </Label>
-                    <Select 
-                      value={newAccount.exchange} 
-                      onValueChange={(value) => setNewAccount({ ...newAccount, exchange: value })}
-                      required
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3"
+                      onClick={() => setShowApiSecret(!showApiSecret)}
                     >
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Selecciona un exchange" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {exchangeOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 mt-2">
-                    <input
-                      type="checkbox"
-                      id="isDemo"
-                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                      checked={newAccount.isDemo}
-                      onChange={(e) => setNewAccount({ ...newAccount, isDemo: e.target.checked })}
-                    />
-                    <Label htmlFor="isDemo" className="text-sm cursor-pointer">
-                      Esta es una cuenta Demo
-                    </Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <AlertCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="w-[200px] text-xs">
-                            Marca esta opción si estás usando una cuenta de prueba o demo. 
-                            Esto te ayudará a diferenciar entre cuentas reales y de práctica.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                      {showApiSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
                   </div>
                 </div>
-              </TabsContent>
-              
-              <TabsContent value="api" className="space-y-4 pt-4">
-                <div className="grid gap-3">
-                  <div className="grid gap-2">
-                    <Label htmlFor="apiKey" className="text-sm font-medium flex items-center gap-1">
-                      API Key
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <AlertCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="w-[200px] text-xs">
-                              La API Key proporcionada por tu exchange. Asegúrate de que tenga permisos de solo lectura.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </Label>
-                    <Input
-                      id="apiKey"
-                      value={newAccount.apiKey}
-                      onChange={(e) => setNewAccount({ ...newAccount, apiKey: e.target.value })}
-                      placeholder="Ingresa tu API Key"
-                      className="h-10 font-mono text-sm"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="grid gap-2">
-                    <Label htmlFor="apiSecret" className="text-sm font-medium flex items-center gap-1">
-                      API Secret
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <AlertCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="w-[200px] text-xs">
-                              El API Secret correspondiente a tu API Key. Esta información es sensible y se almacena de forma segura.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="apiSecret"
-                        type={showApiSecret ? "text" : "password"}
-                        value={newAccount.apiSecret}
-                        onChange={(e) => setNewAccount({ ...newAccount, apiSecret: e.target.value })}
-                        placeholder="Ingresa tu API Secret"
-                        className="h-10 pr-10 font-mono text-sm"
-                        required
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-0 top-0 h-full px-3"
-                        onClick={() => setShowApiSecret(!showApiSecret)}
-                      >
-                        {showApiSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-2">
-                    <a 
-                      href="#" 
-                      className="text-xs text-primary flex items-center gap-1 hover:underline"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      ¿Cómo obtener mis claves API? <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </div>
+                
+                <div className="flex items-center space-x-2 mt-2">
+                  <input
+                    type="checkbox"
+                    id="isDemo"
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    checked={newAccount.isDemo}
+                    onChange={(e) => setNewAccount({ ...newAccount, isDemo: e.target.checked })}
+                  />
+                  <Label htmlFor="isDemo" className="text-sm cursor-pointer">
+                    Esta es una cuenta Demo
+                  </Label>
                 </div>
-              </TabsContent>
-            </Tabs>
+              </div>
+            </div>
             
             {error && (
               <div className="flex items-center gap-2 p-3 text-sm border border-destructive/50 bg-destructive/10 text-destructive rounded-md">
