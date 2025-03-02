@@ -135,7 +135,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         isSimulated: data.isSimulated || false,
         isError: false
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`❌ Error al obtener balance para cuenta ${accountId}:`, error);
       
       // Buscar la cuenta para verificar si es demo o real
@@ -154,12 +154,13 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         };
       } else {
         // Para cuentas reales, establecer un objeto con error
-        setError(`Error al obtener balance de la cuenta real: ${error.message}`);
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido al obtener balance';
+        setError(`Error al obtener balance de la cuenta real: ${errorMessage}`);
         return { 
           balance: null, 
           assets: [], 
           performance: 0,
-          error: error.message,
+          error: errorMessage,
           isError: true,
           isSimulated: false
         };
@@ -228,7 +229,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }));
     
     return balances;
-  }, [onBalanceUpdate]);
+  }, [onBalanceUpdate, fetchAccountDetails]);
 
   const fetchSubAccounts = useCallback(async () => {
     setIsLoading(true);
