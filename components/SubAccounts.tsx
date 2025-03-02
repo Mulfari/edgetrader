@@ -401,11 +401,73 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       if (token) {
         console.log("🔑 Token encontrado, cargando datos...");
         try {
-          await fetchSubAccounts();
+          // Primero obtenemos las subcuentas
+          setIsLoading(true);
+          console.log("🔍 Obteniendo subcuentas...");
+          const res = await fetch(`${API_URL}/subaccounts`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+          
+          if (!res.ok) {
+            throw new Error("Error al obtener subcuentas");
+          }
+          
+          const data = await res.json();
+          console.log(`✅ ${data.length} subcuentas obtenidas`);
+          setSubAccounts(data);
+          
+          // Ahora cargamos los balances de todas las subcuentas activas
+          const activeAccounts = data.filter((acc: SubAccount) => acc.active);
+          console.log(`🔍 Cargando balances para ${activeAccounts.length} subcuentas activas...`);
+          
+          // Cargar los balances uno por uno para mostrar el progreso
+          for (const account of activeAccounts) {
+            console.log(`🔍 Cargando balance para subcuenta ${account.id} (${account.name})...`);
+            setLoadingBalance(account.id);
+            
+            try {
+              const details = await fetchAccountDetails(account.userId, account.id, token);
+              console.log(`✅ Balance cargado para subcuenta ${account.id}: $${details.balance?.toLocaleString('es-ES') || 'N/A'}`);
+              
+              // Actualizar el estado inmediatamente
+              setAccountBalances(prev => ({
+                ...prev,
+                [account.id]: details
+              }));
+              
+              // Pequeño retraso para evitar sobrecarga de la API
+              await new Promise(resolve => setTimeout(resolve, 100));
+            } catch (error) {
+              console.error(`❌ Error al cargar balance para subcuenta ${account.id}:`, error);
+            } finally {
+              setLoadingBalance(null);
+            }
+          }
+          
+          console.log("✅ Todos los balances han sido cargados");
+          
+          // Calcular estadísticas si es necesario
+          if (data.length > 0 && onStatsUpdate) {
+            const balances = await fetchAccountBalances(activeAccounts, token);
+            const stats: AccountStats = {
+              totalAccounts: data.length,
+              realAccounts: data.filter((acc: SubAccount) => !acc.isDemo).length,
+              demoAccounts: data.filter((acc: SubAccount) => acc.isDemo).length,
+              totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
+              uniqueExchanges: new Set(data.map((acc: SubAccount) => acc.exchange)).size,
+              avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / (Object.values(balances).length || 1)
+            };
+            onStatsUpdate(stats);
+          }
+          
           console.log("✅ Datos iniciales cargados correctamente");
         } catch (error) {
           console.error("❌ Error al cargar datos iniciales:", error);
           setError("Error al cargar los datos iniciales. Intenta nuevamente más tarde.");
+        } finally {
+          setIsLoading(false);
         }
       } else {
         console.log("❌ No se encontró token, redirigiendo a login...");
@@ -736,10 +798,10 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                             </div>
                           )
                         ) : (
-                          <span className="text-blue-500 dark:text-blue-400 text-sm">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
+                          <span className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
                               className="h-7 px-2 text-xs"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -755,7 +817,14 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                 }
                               }}
                             >
-                              Cargar balance
+                              {loadingBalance === sub.id ? (
+                                <div className="flex items-center gap-1">
+                                  <RefreshCw className="h-3 w-3 animate-spin" />
+                                  <span>Cargando...</span>
+                                </div>
+                              ) : (
+                                "Actualizar"
+                              )}
                             </Button>
                           </span>
                         )}
