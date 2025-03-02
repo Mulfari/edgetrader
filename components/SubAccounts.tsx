@@ -90,7 +90,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const [loadingBalance, setLoadingBalance] = useState<string | null>(null);
   const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const fetchAccountDetails = async (userId: string, accountId: string, token: string): Promise<AccountDetails> => {
     try {
@@ -313,9 +312,14 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       
       let balances: Record<string, AccountDetails> = {};
       if (activeAccounts.length > 0) {
-        balances = await fetchAccountBalances(activeAccounts, token);
-        setAccountBalances(balances);
-        console.log("✅ Balances obtenidos correctamente");
+        try {
+          balances = await fetchAccountBalances(activeAccounts, token);
+          setAccountBalances(balances);
+          console.log("✅ Balances obtenidos correctamente");
+        } catch (balanceError) {
+          console.error("❌ Error al obtener balances:", balanceError);
+          setError("Error al cargar los balances. Intenta nuevamente más tarde.");
+        }
       }
       
       // Calcular estadísticas
@@ -330,8 +334,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         };
         onStatsUpdate(stats);
       }
-      
-      setInitialLoadComplete(true);
     } catch (error) {
       console.error("❌ Error al obtener subcuentas:", error);
       setError("Error al cargar las subcuentas. Intenta nuevamente más tarde.");
@@ -363,17 +365,27 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
 
   // Cargar datos al iniciar el componente
   useEffect(() => {
-    console.log("🔄 Iniciando carga automática de datos...");
+    const loadInitialData = async () => {
+      console.log("🔄 Iniciando carga automática de datos...");
+      
+      // Verificar si hay un token antes de intentar cargar los datos
+      const token = localStorage.getItem("token");
+      if (token) {
+        console.log("🔑 Token encontrado, cargando datos...");
+        try {
+          await fetchSubAccounts();
+          console.log("✅ Datos iniciales cargados correctamente");
+        } catch (error) {
+          console.error("❌ Error al cargar datos iniciales:", error);
+          setError("Error al cargar los datos iniciales. Intenta nuevamente más tarde.");
+        }
+      } else {
+        console.log("❌ No se encontró token, redirigiendo a login...");
+        router.push("/login");
+      }
+    };
     
-    // Verificar si hay un token antes de intentar cargar los datos
-    const token = localStorage.getItem("token");
-    if (token) {
-      console.log("🔑 Token encontrado, cargando datos...");
-      fetchSubAccounts();
-    } else {
-      console.log("❌ No se encontró token, redirigiendo a login...");
-      router.push("/login");
-    }
+    loadInitialData();
     
     // Este useEffect solo debe ejecutarse una vez al montar el componente
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -596,12 +608,29 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                   <TableCell colSpan={6} className="h-[300px]">
                     <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
                       <AlertCircle className="h-16 w-16 mb-4 text-blue-300/50 animate-in fade-in-50 zoom-in-95 duration-300" />
-                      <p className="text-lg font-medium mb-2 text-blue-800 dark:text-blue-300 animate-in fade-in-50 slide-in-from-bottom-5 duration-300 delay-100">No se encontraron subcuentas</p>
-                      <p className="text-sm text-blue-600/70 dark:text-blue-400/70 max-w-md mx-auto animate-in fade-in-50 slide-in-from-bottom-5 duration-300 delay-200">
-                        {searchTerm || selectedType !== "all" 
-                          ? "Intenta ajustar los filtros o el término de búsqueda" 
-                          : "Añade una nueva subcuenta para comenzar a monitorear tus inversiones"}
+                      <p className="text-lg font-medium mb-2 text-blue-800 dark:text-blue-300 animate-in fade-in-50 slide-in-from-bottom-5 duration-300 delay-100">
+                        {isLoading 
+                          ? "Cargando subcuentas..." 
+                          : "No se encontraron subcuentas"}
                       </p>
+                      <p className="text-sm text-blue-600/70 dark:text-blue-400/70 max-w-md mx-auto animate-in fade-in-50 slide-in-from-bottom-5 duration-300 delay-200">
+                        {isLoading 
+                          ? "Espera un momento mientras obtenemos tus datos..." 
+                          : searchTerm || selectedType !== "all" 
+                            ? "Intenta ajustar los filtros o el término de búsqueda" 
+                            : "Añade una nueva subcuenta para comenzar a monitorear tus inversiones"}
+                      </p>
+                      {!isLoading && (
+                        <Button
+                          onClick={fetchSubAccounts}
+                          variant="outline"
+                          size="sm"
+                          className="mt-4 animate-in fade-in-50 slide-in-from-bottom-5 duration-300 delay-300"
+                        >
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Recargar datos
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
