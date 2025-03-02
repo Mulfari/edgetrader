@@ -49,7 +49,7 @@ interface SubAccount {
 
 interface AccountDetails {
   balance: number | null;
-  assets: any[];
+  assets: Asset[];
   performance: number;
 }
 
@@ -113,7 +113,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         assets: data.assets || [],
         performance: data.performance || Math.random() * 10 // Simulamos rendimiento si no viene del backend
       };
-    } catch (error) {
+    } catch (_) {
       console.log(`⚠️ Error al obtener balance para cuenta ${accountId}. Usando datos simulados.`);
       // Generar datos simulados en caso de error
       return { 
@@ -138,7 +138,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
           if (onBalanceUpdate) {
             onBalanceUpdate(account.id, details);
           }
-        } catch (error) {
+        } catch (_) {
           console.log(`⚠️ Error al procesar balance para cuenta ${account.id}. Usando datos simulados.`);
           // Generar datos simulados en caso de error
           const simulatedDetails = { 
