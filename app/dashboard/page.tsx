@@ -38,6 +38,11 @@ export default function DashboardPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userName, setUserName] = useState<string>("Usuario");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [subAccountsCount, setSubAccountsCount] = useState(0);
+  const [realAccountsCount, setRealAccountsCount] = useState(0);
+  const [demoAccountsCount, setDemoAccountsCount] = useState(0);
+  const [exchangesCount, setExchangesCount] = useState(0);
+  const [averagePerformance, setAveragePerformance] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -56,6 +61,21 @@ export default function DashboardPage() {
 
   const handleBalanceUpdate = (balance: number) => {
     setTotalBalance(balance);
+  };
+
+  // Función para recibir datos de estadísticas desde SubAccounts
+  const handleStatsUpdate = (stats: { 
+    total: number; 
+    real: number; 
+    demo: number; 
+    exchanges: number; 
+    performance: number 
+  }) => {
+    setSubAccountsCount(stats.total);
+    setRealAccountsCount(stats.real);
+    setDemoAccountsCount(stats.demo);
+    setExchangesCount(stats.exchanges);
+    setAveragePerformance(stats.performance);
   };
 
   const handleLogout = () => {
@@ -319,49 +339,47 @@ export default function DashboardPage() {
               <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-300">Subcuentas Activas</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">5</div>
+              <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{subAccountsCount}</div>
               <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-1 flex items-center">
-                <ArrowUpRight className="h-3 w-3 mr-1" />
-                <span>+2 desde el mes pasado</span>
+                <span>{realAccountsCount} reales, {demoAccountsCount} demo</span>
               </p>
             </CardContent>
           </Card>
           
           <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 border-green-200 dark:border-green-800/30 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-green-800 dark:text-green-300">Rendimiento Total</CardTitle>
+              <CardTitle className="text-sm font-medium text-green-800 dark:text-green-300">Balance Total</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-700 dark:text-green-300">+12.5%</div>
+              <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                {totalBalance !== null ? `${totalBalance.toFixed(2)} USDT` : "0.00 USDT"}
+              </div>
               <p className="text-xs text-green-600/70 dark:text-green-400/70 mt-1 flex items-center">
-                <ArrowUpRight className="h-3 w-3 mr-1" />
-                <span>+2.3% desde la semana pasada</span>
+                <span>En todas las cuentas activas</span>
               </p>
             </CardContent>
           </Card>
           
           <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 border-purple-200 dark:border-purple-800/30 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-purple-800 dark:text-purple-300">Operaciones Abiertas</CardTitle>
+              <CardTitle className="text-sm font-medium text-purple-800 dark:text-purple-300">Exchanges</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">12</div>
+              <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{exchangesCount}</div>
               <p className="text-xs text-purple-600/70 dark:text-purple-400/70 mt-1 flex items-center">
-                <ArrowUpRight className="h-3 w-3 mr-1" />
-                <span>3 operaciones nuevas hoy</span>
+                <span>Plataformas conectadas</span>
               </p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/20 dark:to-amber-900/20 border-amber-200 dark:border-amber-800/30 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-amber-800 dark:text-amber-300">Alertas Activas</CardTitle>
+              <CardTitle className="text-sm font-medium text-amber-800 dark:text-amber-300">Rendimiento Promedio</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">7</div>
+              <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">{averagePerformance.toFixed(2)}%</div>
               <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-1 flex items-center">
-                <Clock className="h-3 w-3 mr-1" />
-                <span>2 alertas próximas a activarse</span>
+                <span>Basado en todas las cuentas</span>
               </p>
             </CardContent>
           </Card>
@@ -397,7 +415,7 @@ export default function DashboardPage() {
           </div>
           
           <div>
-            <SubAccounts onBalanceUpdate={handleBalanceUpdate} />
+            <SubAccounts onBalanceUpdate={handleBalanceUpdate} onStatsUpdate={handleStatsUpdate} />
           </div>
         </div>
       </main>

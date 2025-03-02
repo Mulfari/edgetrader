@@ -62,9 +62,16 @@ type SortConfig = {
 
 interface SubAccountsProps {
   onBalanceUpdate?: (totalBalance: number) => void;
+  onStatsUpdate?: (stats: { 
+    total: number; 
+    real: number; 
+    demo: number; 
+    exchanges: number; 
+    performance: number 
+  }) => void;
 }
 
-export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
+export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccountsProps) {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null);
   const [accountBalances, setAccountBalances] = useState<Record<string, number | null>>({});
@@ -167,6 +174,25 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
       if (onBalanceUpdate) {
         onBalanceUpdate(totalBalance);
       }
+      
+      // Enviar estadísticas al dashboard
+      if (onStatsUpdate) {
+        const realAccounts = updatedSubAccounts.filter((acc: SubAccount) => !acc.isDemo).length;
+        const demoAccounts = updatedSubAccounts.filter((acc: SubAccount) => acc.isDemo).length;
+        const uniqueExchanges = new Set(updatedSubAccounts.map((acc: SubAccount) => acc.exchange)).size;
+        const avgPerformance = updatedSubAccounts.length > 0 
+          ? updatedSubAccounts.reduce((sum: number, acc: SubAccount) => sum + (acc.performance || 0), 0) / updatedSubAccounts.length
+          : 0;
+          
+        onStatsUpdate({
+          total: updatedSubAccounts.length,
+          real: realAccounts,
+          demo: demoAccounts,
+          exchanges: uniqueExchanges,
+          performance: avgPerformance
+        });
+      }
+      
       localStorage.setItem("subAccounts", JSON.stringify(updatedSubAccounts));
       localStorage.setItem("accountBalances", JSON.stringify(balances));
     } catch (error) {
@@ -175,20 +201,39 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchAccountDetails, router, onBalanceUpdate]);
+  }, [fetchAccountDetails, router, onBalanceUpdate, onStatsUpdate]);
 
   useEffect(() => {
     const storedSubAccounts = localStorage.getItem("subAccounts");
     const storedAccountBalances = localStorage.getItem("accountBalances");
 
     if (storedSubAccounts && storedAccountBalances) {
-      setSubAccounts(JSON.parse(storedSubAccounts));
+      const parsedSubAccounts = JSON.parse(storedSubAccounts);
+      setSubAccounts(parsedSubAccounts);
       setAccountBalances(JSON.parse(storedAccountBalances));
       setIsLoading(false);
+      
+      // Enviar estadísticas al dashboard
+      if (onStatsUpdate) {
+        const realAccounts = parsedSubAccounts.filter((acc: SubAccount) => !acc.isDemo).length;
+        const demoAccounts = parsedSubAccounts.filter((acc: SubAccount) => acc.isDemo).length;
+        const uniqueExchanges = new Set(parsedSubAccounts.map((acc: SubAccount) => acc.exchange)).size;
+        const avgPerformance = parsedSubAccounts.length > 0 
+          ? parsedSubAccounts.reduce((sum: number, acc: SubAccount) => sum + (acc.performance || 0), 0) / parsedSubAccounts.length
+          : 0;
+          
+        onStatsUpdate({
+          total: parsedSubAccounts.length,
+          real: realAccounts,
+          demo: demoAccounts,
+          exchanges: uniqueExchanges,
+          performance: avgPerformance
+        });
+      }
     } else {
       fetchSubAccounts();
     }
-  }, [fetchSubAccounts]);
+  }, [fetchSubAccounts, onStatsUpdate]);
 
   useEffect(() => {
     const handleRefresh = () => {
@@ -263,9 +308,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Subcuentas</h2>
-            <p className="text-muted-foreground mt-1">
-              Gestiona y monitorea todas tus cuentas de trading en un solo lugar
-            </p>
           </div>
           <Button 
             onClick={fetchSubAccounts} 
@@ -276,70 +318,6 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
             Actualizar Datos
           </Button>
-        </div>
-
-        {/* Stats Overview Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 border-blue-200 dark:border-blue-800/30">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-300">Total Subcuentas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
-                {subAccounts.length}
-              </div>
-              <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-1">
-                {subAccounts.filter(a => !a.isDemo).length} reales, {subAccounts.filter(a => a.isDemo).length} demo
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 border-green-200 dark:border-green-800/30">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-green-800 dark:text-green-300">Balance Total</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-700 dark:text-green-300">
-                {Object.values(accountBalances)
-                  .filter(val => val !== null && val !== undefined)
-                  .reduce((sum, val) => sum + (val || 0), 0)
-                  .toFixed(2)} USDT
-              </div>
-              <p className="text-xs text-green-600/70 dark:text-green-400/70 mt-1">
-                En todas las cuentas activas
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 border-purple-200 dark:border-purple-800/30">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-purple-800 dark:text-purple-300">Exchanges</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
-                {new Set(subAccounts.map(a => a.exchange)).size}
-              </div>
-              <p className="text-xs text-purple-600/70 dark:text-purple-400/70 mt-1">
-                Plataformas conectadas
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/20 dark:to-amber-900/20 border-amber-200 dark:border-amber-800/30">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-amber-800 dark:text-amber-300">Rendimiento Promedio</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">
-                {subAccounts.length > 0 
-                  ? (subAccounts.reduce((sum, acc) => sum + (acc.performance || 0), 0) / subAccounts.length).toFixed(2)
-                  : "0.00"}%
-              </div>
-              <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-1">
-                Basado en todas las cuentas
-              </p>
-            </CardContent>
-          </Card>
         </div>
       </div>
 
