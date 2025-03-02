@@ -517,7 +517,7 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700"
               >
                 {isSubmitting ? (
                   <>
@@ -542,7 +542,7 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
                   No se encontraron subcuentas para eliminar. Primero debes crear una subcuenta.
                 </p>
                 <Button 
-                  className="mt-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                  className="mt-6 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700"
                   onClick={() => {
                     onCancel()
                     // Aquí podrías añadir lógica para abrir el modal de creación
@@ -591,7 +591,7 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
                             filteredAccounts.map((account) => (
                               <TableRow 
                                 key={account.id} 
-                                className={`cursor-pointer transition-colors hover:bg-muted/50 ${
+                                className={`cursor-pointer transition-colors hover:bg-purple-50/50 dark:hover:bg-purple-900/20 ${
                                   selectedAccountId === account.id ? "bg-destructive/10 hover:bg-destructive/20" : ""
                                 }`}
                                 onClick={() => setSelectedAccountId(account.id)}
