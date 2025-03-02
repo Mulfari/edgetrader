@@ -12,7 +12,8 @@ import {
   Sparkles,
   Briefcase,
   PieChart,
-  LayoutDashboard
+  LayoutDashboard,
+  Plus
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -89,6 +90,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const [selectedType, setSelectedType] = useState<string>("all");
   const [loadingBalance, setLoadingBalance] = useState<string | null>(null);
   const [isLoadingAllBalances, setIsLoadingAllBalances] = useState(false);
+  const [balancesInitiallyLoaded, setBalancesInitiallyLoaded] = useState(false);
   const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -238,12 +240,14 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       });
       
       setAccountBalances(newBalances);
+      setBalancesInitiallyLoaded(true);
     } catch (error) {
       console.error("Error al cargar todos los balances:", error);
     } finally {
       setIsLoadingAllBalances(false);
     }
-  }, [subAccounts, fetchAccountDetails, accountBalances, onBalanceUpdate]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subAccounts, fetchAccountDetails, onBalanceUpdate]);
 
   const fetchAccountBalances = useCallback(async (accounts: SubAccount[], token: string) => {
     console.log(`🔄 Obteniendo balances para ${accounts.length} subcuentas...`);
@@ -357,7 +361,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       setIsLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, onStatsUpdate]);
+  }, [router, onStatsUpdate, fetchAccountBalances]);
 
   useEffect(() => {
     const handleRefresh = () => {
@@ -380,18 +384,25 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }
   }, [fetchSubAccounts]);
 
-  // Modificar el useEffect para cargar los balances automáticamente
+  // Modificar el useEffect para cargar las subcuentas automáticamente
   useEffect(() => {
-    console.log("🔄 Cargando subcuentas y balances automáticamente al iniciar el componente");
+    console.log("🔄 Cargando subcuentas automáticamente al iniciar el componente");
     fetchSubAccounts();
-  }, [fetchSubAccounts]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Nuevo useEffect para cargar los balances cuando cambian las subcuentas
   useEffect(() => {
-    if (subAccounts.length > 0) {
-      loadAllBalances();
+    if (subAccounts.length > 0 && !isLoading && !balancesInitiallyLoaded) {
+      console.log("🔄 Subcuentas cargadas, actualizando balances...");
+      // Usamos un pequeño retraso para evitar ciclos
+      const timer = setTimeout(() => {
+        loadAllBalances();
+      }, 500);
+      return () => clearTimeout(timer);
     }
-  }, [subAccounts, loadAllBalances]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subAccounts.length, isLoading, balancesInitiallyLoaded]);
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
@@ -476,6 +487,19 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <h2 className="text-2xl font-bold tracking-tight">Subcuentas</h2>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setBalancesInitiallyLoaded(false);
+                loadAllBalances();
+              }}
+              disabled={isLoadingAllBalances}
+              className="flex items-center h-9"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingAllBalances ? "animate-spin" : ""}`} />
+              {isLoadingAllBalances ? "Actualizando..." : "Actualizar todos"}
+            </Button>
             <div className="relative w-full md:w-64">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
