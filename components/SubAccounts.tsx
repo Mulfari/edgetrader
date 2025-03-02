@@ -90,6 +90,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const [loadingBalance, setLoadingBalance] = useState<string | null>(null);
   const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const fetchAccountDetails = async (userId: string, accountId: string, token: string): Promise<AccountDetails> => {
     try {
@@ -209,13 +210,17 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const fetchAccountBalances = useCallback(async (accounts: SubAccount[], token: string) => {
     const balances: Record<string, AccountDetails> = {};
     
+    console.log(`🔄 Iniciando carga de balances para ${accounts.length} cuentas...`);
+    
     // Procesar las cuentas en paralelo
     await Promise.all(accounts.map(async (account) => {
       if (account.active) {
         try {
-          console.log(`🔄 Obteniendo balance para cuenta ${account.id} (${account.isDemo ? 'Demo' : 'Real'})`);
+          console.log(`🔍 Obteniendo balance para cuenta ${account.id} (${account.name}) - ${account.isDemo ? 'Demo' : 'Real'}`);
           const details = await fetchAccountDetails(account.userId, account.id, token);
           balances[account.id] = details;
+          
+          console.log(`✅ Balance obtenido para cuenta ${account.id}: $${details.balance?.toLocaleString('es-ES') || 'N/A'}`);
           
           // Actualizar el balance en tiempo real si hay un callback
           if (onBalanceUpdate) {
@@ -241,6 +246,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
             };
             balances[account.id] = simulatedDetails;
             
+            console.log(`⚠️ Usando datos simulados para cuenta demo ${account.id}`);
+            
             if (onBalanceUpdate) {
               onBalanceUpdate(account.id, simulatedDetails);
             }
@@ -258,6 +265,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
             };
             balances[account.id] = errorDetails;
             
+            console.log(`❌ Error en cuenta real ${account.id}: ${errorMessage}`);
+            
             if (onBalanceUpdate) {
               onBalanceUpdate(account.id, errorDetails);
             }
@@ -266,6 +275,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       }
     }));
     
+    console.log(`✅ Proceso de carga de balances completado para ${Object.keys(balances).length} cuentas`);
     return balances;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onBalanceUpdate]);
@@ -281,6 +291,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         return;
       }
       
+      console.log("🔍 Obteniendo subcuentas...");
       const res = await fetch(`${API_URL}/subaccounts`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -292,11 +303,20 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       }
       
       const data = await res.json();
+      console.log(`✅ ${data.length} subcuentas obtenidas`);
       setSubAccounts(data);
       
       // Obtener balances para todas las subcuentas activas
-      const balances = await fetchAccountBalances(data.filter((acc: SubAccount) => acc.active), token);
-      setAccountBalances(balances);
+      console.log("🔍 Obteniendo balances para todas las subcuentas activas...");
+      const activeAccounts = data.filter((acc: SubAccount) => acc.active);
+      console.log(`✅ ${activeAccounts.length} subcuentas activas encontradas`);
+      
+      let balances: Record<string, AccountDetails> = {};
+      if (activeAccounts.length > 0) {
+        balances = await fetchAccountBalances(activeAccounts, token);
+        setAccountBalances(balances);
+        console.log("✅ Balances obtenidos correctamente");
+      }
       
       // Calcular estadísticas
       if (data.length > 0 && onStatsUpdate) {
@@ -306,18 +326,19 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
           demoAccounts: data.filter((acc: SubAccount) => acc.isDemo).length,
           totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
           uniqueExchanges: new Set(data.map((acc: SubAccount) => acc.exchange)).size,
-          avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
+          avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / (Object.values(balances).length || 1)
         };
         onStatsUpdate(stats);
       }
+      
+      setInitialLoadComplete(true);
     } catch (error) {
       console.error("❌ Error al obtener subcuentas:", error);
       setError("Error al cargar las subcuentas. Intenta nuevamente más tarde.");
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, onStatsUpdate]);
+  }, [router, onStatsUpdate, fetchAccountBalances]);
 
   useEffect(() => {
     const handleRefresh = () => {
@@ -340,11 +361,23 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }
   }, [fetchSubAccounts]);
 
-  // Nuevo useEffect para cargar los balances automáticamente al iniciar el componente
+  // Cargar datos al iniciar el componente
   useEffect(() => {
-    console.log("🔄 Cargando balances automáticamente al iniciar el componente");
-    fetchSubAccounts();
-  }, [fetchSubAccounts]);
+    console.log("🔄 Iniciando carga automática de datos...");
+    
+    // Verificar si hay un token antes de intentar cargar los datos
+    const token = localStorage.getItem("token");
+    if (token) {
+      console.log("🔑 Token encontrado, cargando datos...");
+      fetchSubAccounts();
+    } else {
+      console.log("❌ No se encontró token, redirigiendo a login...");
+      router.push("/login");
+    }
+    
+    // Este useEffect solo debe ejecutarse una vez al montar el componente
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
@@ -427,7 +460,15 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       {/* Header Section */}
       <div className="flex flex-col space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <h2 className="text-2xl font-bold tracking-tight">Subcuentas</h2>
+          <h2 className="text-2xl font-bold tracking-tight">
+            Subcuentas
+            {isLoading && (
+              <span className="ml-3 inline-flex items-center">
+                <RefreshCw className="h-4 w-4 animate-spin text-blue-500" />
+                <span className="ml-2 text-sm font-normal text-blue-500">Cargando datos...</span>
+              </span>
+            )}
+          </h2>
           <div className="flex items-center gap-2">
             <div className="relative w-full md:w-64">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
