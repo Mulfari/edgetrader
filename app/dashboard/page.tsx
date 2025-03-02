@@ -96,9 +96,9 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-blue-950/30">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+      <header className="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-blue-100 dark:border-blue-900/30">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button 
@@ -304,99 +304,75 @@ export default function DashboardPage() {
       <main className="container mx-auto px-4 py-6">
         {/* Encabezado de página */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-blue-800 dark:text-blue-300">
             Bienvenido, {userName}
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-blue-600/70 dark:text-blue-400/70 mt-1">
             Gestiona tus operaciones y monitorea el rendimiento de tus cuentas
           </p>
         </div>
         
         {/* Tarjetas de resumen */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card className="border-0 shadow-lg shadow-blue-100/40 dark:shadow-none bg-white dark:bg-slate-800 overflow-hidden">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-bl-full"></div>
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 border-blue-200 dark:border-blue-800/30 shadow-sm">
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">Subcuentas Activas</CardTitle>
-                <div className="p-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                  <LayoutDashboard className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
+              <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-300">Subcuentas Activas</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-slate-900 dark:text-white">5</div>
-              <div className="flex items-center mt-1 text-xs text-green-600 dark:text-green-400">
+              <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">5</div>
+              <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-1 flex items-center">
                 <ArrowUpRight className="h-3 w-3 mr-1" />
                 <span>+2 desde el mes pasado</span>
-              </div>
+              </p>
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-lg shadow-green-100/40 dark:shadow-none bg-white dark:bg-slate-800 overflow-hidden">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/10 rounded-bl-full"></div>
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 border-green-200 dark:border-green-800/30 shadow-sm">
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">Rendimiento Total</CardTitle>
-                <div className="p-1.5 rounded-full bg-green-100 dark:bg-green-900/30">
-                  <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-                </div>
-              </div>
+              <CardTitle className="text-sm font-medium text-green-800 dark:text-green-300">Rendimiento Total</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-slate-900 dark:text-white">+12.5%</div>
-              <div className="flex items-center mt-1 text-xs text-green-600 dark:text-green-400">
+              <div className="text-2xl font-bold text-green-700 dark:text-green-300">+12.5%</div>
+              <p className="text-xs text-green-600/70 dark:text-green-400/70 mt-1 flex items-center">
                 <ArrowUpRight className="h-3 w-3 mr-1" />
                 <span>+2.3% desde la semana pasada</span>
-              </div>
+              </p>
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-lg shadow-purple-100/40 dark:shadow-none bg-white dark:bg-slate-800 overflow-hidden">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-bl-full"></div>
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 border-purple-200 dark:border-purple-800/30 shadow-sm">
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">Operaciones Abiertas</CardTitle>
-                <div className="p-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30">
-                  <LineChart className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                </div>
-              </div>
-                </CardHeader>
-                <CardContent>
-              <div className="text-3xl font-bold text-slate-900 dark:text-white">12</div>
-              <div className="flex items-center mt-1 text-xs text-green-600 dark:text-green-400">
+              <CardTitle className="text-sm font-medium text-purple-800 dark:text-purple-300">Operaciones Abiertas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">12</div>
+              <p className="text-xs text-purple-600/70 dark:text-purple-400/70 mt-1 flex items-center">
                 <ArrowUpRight className="h-3 w-3 mr-1" />
                 <span>3 operaciones nuevas hoy</span>
-              </div>
-                </CardContent>
-              </Card>
+              </p>
+            </CardContent>
+          </Card>
 
-          <Card className="border-0 shadow-lg shadow-amber-100/40 dark:shadow-none bg-white dark:bg-slate-800 overflow-hidden">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-bl-full"></div>
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/20 dark:to-amber-900/20 border-amber-200 dark:border-amber-800/30 shadow-sm">
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">Alertas Activas</CardTitle>
-                <div className="p-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30">
-                  <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                </div>
-              </div>
-                </CardHeader>
-                <CardContent>
-              <div className="text-3xl font-bold text-slate-900 dark:text-white">7</div>
-              <div className="flex items-center mt-1 text-xs text-amber-600 dark:text-amber-400">
+              <CardTitle className="text-sm font-medium text-amber-800 dark:text-amber-300">Alertas Activas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">7</div>
+              <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-1 flex items-center">
                 <Clock className="h-3 w-3 mr-1" />
                 <span>2 alertas próximas a activarse</span>
-              </div>
-                </CardContent>
-              </Card>
-            </div>
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Gestión de subcuentas */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg shadow-slate-200/50 dark:shadow-none overflow-hidden mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between p-4 md:p-6 border-b border-slate-200 dark:border-slate-700">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between p-4 md:p-6 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
             <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Gestión de Subcuentas</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              <h2 className="text-xl font-bold text-blue-800 dark:text-blue-300">Gestión de Subcuentas</h2>
+              <p className="text-sm text-blue-600/70 dark:text-blue-400/70 mt-1">
                 Monitorea y administra tus subcuentas de trading
               </p>
             </div>
@@ -404,7 +380,7 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row gap-3 mt-4 md:mt-0">
               <Button 
                 onClick={() => setShowCreateModal(true)}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/20"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md"
               >
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Nueva Subcuenta
@@ -412,9 +388,9 @@ export default function DashboardPage() {
               <Button 
                 variant="outline" 
                 onClick={() => setShowDeleteModal(true)}
-                className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                className="border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
               >
-                <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                <Trash2 className="mr-2 h-4 w-4" />
                 Eliminar Subcuenta
               </Button>
             </div>
@@ -423,12 +399,12 @@ export default function DashboardPage() {
           <div>
             <SubAccounts onBalanceUpdate={handleBalanceUpdate} />
           </div>
-                </div>
+        </div>
       </main>
       
       {/* Modales */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in-0 duration-200">
+        <div className="fixed inset-0 bg-blue-950/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in-0 duration-200">
           <div className="w-full max-w-md p-4 animate-in slide-in-from-bottom-10 duration-300">
             <SubAccountManager 
               mode="create" 
@@ -440,7 +416,7 @@ export default function DashboardPage() {
       )}
 
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in-0 duration-200">
+        <div className="fixed inset-0 bg-red-950/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in-0 duration-200">
           <div className="w-full max-w-md p-4 animate-in slide-in-from-bottom-10 duration-300">
             <SubAccountManager 
               mode="delete" 
