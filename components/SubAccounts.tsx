@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Search,
   RefreshCw,
@@ -68,6 +68,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const [selectedExchange, setSelectedExchange] = useState<string>("all");
+  const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   const exchanges = ["all", ...new Set(subAccounts.map((account) => account.exchange))];
@@ -182,6 +183,22 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
     }
   }, [fetchSubAccounts]);
 
+  // Añadir un event listener para actualizar las subcuentas cuando se dispare el evento 'refresh'
+  useEffect(() => {
+    const handleRefresh = () => {
+      console.log("Actualizando subcuentas desde evento refresh");
+      fetchSubAccounts();
+    };
+
+    const element = componentRef.current;
+    if (element) {
+      element.addEventListener('refresh', handleRefresh);
+      return () => {
+        element.removeEventListener('refresh', handleRefresh);
+      };
+    }
+  }, [fetchSubAccounts]);
+
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
       setSelectedSubAccountId(null);
@@ -225,7 +242,7 @@ export default function SubAccounts({ onBalanceUpdate }: SubAccountsProps) {
   );
 
   return (
-    <Card className="w-full">
+    <Card className="w-full" ref={componentRef}>
       <CardHeader>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>

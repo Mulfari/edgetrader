@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import SubAccounts from "@/components/SubAccounts";
 import Operations from "@/components/Operations";
+import SubAccountManager from "@/components/SubAccountManager";
 
 // Definir el tipo de operación
 interface Trade {
@@ -33,6 +34,8 @@ interface Trade {
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [totalBalance, setTotalBalance] = useState<number>(0);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const router = useRouter();
 
   // Ejemplo de operaciones
@@ -108,6 +111,15 @@ export default function Dashboard() {
     router.push("/login");
   };
 
+  const handleSubAccountSuccess = () => {
+    // Actualizar la lista de subcuentas
+    const subAccountsComponent = document.getElementById('subaccounts-component');
+    if (subAccountsComponent) {
+      // Forzar actualización del componente SubAccounts
+      subAccountsComponent.dispatchEvent(new Event('refresh'));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-card shadow-sm sticky top-0 z-10">
@@ -167,20 +179,22 @@ export default function Dashboard() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => router.push("/accounts")}
+                      onClick={() => setIsDeleteModalOpen(true)}
                     >
                       <Trash className="mr-2 h-4 w-4" />
                       Eliminar Subcuentas
                     </Button>
                     <Button 
-                      onClick={() => router.push("/accounts")}
+                      onClick={() => setIsCreateModalOpen(true)}
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       Agregar Subcuenta
                     </Button>
                   </div>
                 </div>
-                <SubAccounts onBalanceUpdate={updateTotalBalance} />
+                <div id="subaccounts-component">
+                  <SubAccounts onBalanceUpdate={updateTotalBalance} />
+                </div>
               </TabsContent>
 
               <TabsContent value="trades" className="space-y-4">
@@ -192,6 +206,21 @@ export default function Dashboard() {
           </>
         )}
       </main>
+
+      {/* Modales para gestión de subcuentas */}
+      <SubAccountManager 
+        mode="create" 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={handleSubAccountSuccess}
+      />
+      
+      <SubAccountManager 
+        mode="delete" 
+        isOpen={isDeleteModalOpen} 
+        onClose={() => setIsDeleteModalOpen(false)}
+        onSuccess={handleSubAccountSuccess}
+      />
     </div>
   );
 }
