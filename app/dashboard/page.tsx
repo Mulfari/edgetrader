@@ -270,116 +270,82 @@ export default function DashboardPage() {
         </header>
 
         <main className="py-6 px-4 sm:px-6 lg:px-8">
-          {/* Stats cards */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-            <div className="bg-white dark:bg-slate-900/20 overflow-hidden shadow-sm rounded-xl border border-blue-100 dark:border-slate-800/30 transition-all duration-200 hover:shadow-md animate-in slide-in-from-bottom-3 duration-500 delay-100">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-gradient-to-r from-blue-200 to-purple-200 rounded-lg p-3 shadow-md">
-                    <User className="h-6 w-6 text-slate-700" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-blue-300/70 truncate">Subcuentas Activas</dt>
-                      <dd>
-                        <div className="text-lg font-semibold text-gray-900 dark:text-white">{activeSubAccounts}</div>
-                        <div className="mt-1 flex items-baseline text-sm text-gray-500 dark:text-blue-300/70">
-                          <span>{realAccounts} reales</span>
-                          <span className="mx-1.5">•</span>
-                          <span>{demoAccounts} demo</span>
-                        </div>
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
+          {/* Stats Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 sm:p-6 lg:p-8">
+            {/* Balance Total Card */}
+            <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-white/90">Balance Total</h3>
+                <DollarSign className="h-6 w-6 text-white/70" />
               </div>
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 px-5 py-3">
-                <div className="text-sm">
-                  <a href="#" className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 flex items-center justify-between transition-colors duration-200">
-                    Ver todas
-                    <ChevronRight className="h-4 w-4" />
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl p-6 text-white shadow-lg relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Balance Total</h3>
-                  <DollarSign className="h-6 w-6 text-white/70" />
-                </div>
-                <div className="text-3xl font-bold mb-4">
+              <div className="space-y-4">
+                <div className="text-3xl font-bold tracking-tight">
                   ${totalBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
                 </div>
-                <div className="space-y-2 text-sm text-white/80">
-                  <div className="flex justify-between items-center">
+                <div className="space-y-1 text-sm text-white/80">
+                  <div className="flex justify-between">
                     <span>Balance Real:</span>
-                    <span className="font-medium">${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                    <span>${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
                   </div>
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between">
                     <span>Balance Demo:</span>
-                    <span className="font-medium">${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                    <span>${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900/20 overflow-hidden shadow-sm rounded-xl border border-blue-100 dark:border-slate-800/30 transition-all duration-200 hover:shadow-md animate-in slide-in-from-bottom-3 duration-500 delay-300">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-gradient-to-r from-purple-200 to-lavender-200 rounded-lg p-3 shadow-md">
-                    <PlusCircle className="h-6 w-6 text-slate-700" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-blue-300/70 truncate">Exchanges</dt>
-                      <dd>
-                        <div className="text-lg font-semibold text-gray-900 dark:text-white">{exchanges}</div>
-                        <div className="mt-1 flex items-baseline text-sm text-gray-500 dark:text-blue-300/70">
-                          <span>Plataformas conectadas</span>
-                        </div>
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
+            {/* Subcuentas Activas Card */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 border border-blue-100 dark:border-slate-700">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Subcuentas Activas</h3>
+                <User className="h-6 w-6 text-blue-500 dark:text-blue-400" />
               </div>
-              <div className="bg-gradient-to-r from-purple-50 to-lavender-50 dark:from-purple-900/20 dark:to-lavender-900/20 px-5 py-3">
-                <div className="text-sm">
-                  <a href="#" className="font-medium text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 flex items-center justify-between transition-colors duration-200">
-                    Conectar más
-                    <ChevronRight className="h-4 w-4" />
-                  </a>
+              <div className="space-y-4">
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {activeSubAccounts}
+                </div>
+                <div className="space-y-1 text-sm text-gray-500 dark:text-gray-400">
+                  <div className="flex justify-between">
+                    <span>Reales:</span>
+                    <span>{realAccounts}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Demo:</span>
+                    <span>{demoAccounts}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900/20 overflow-hidden shadow-sm rounded-xl border border-blue-100 dark:border-slate-800/30 transition-all duration-200 hover:shadow-md animate-in slide-in-from-bottom-3 duration-500 delay-400">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-gradient-to-r from-yellow-200 to-orange-200 rounded-lg p-3 shadow-md">
-                    <TrendingUp className="h-6 w-6 text-slate-700" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-blue-300/70 truncate">Rendimiento Promedio</dt>
-                      <dd>
-                        <div className="text-lg font-semibold text-gray-900 dark:text-white">{avgPerformance.toFixed(2)}%</div>
-                        <div className="mt-1 flex items-baseline text-sm text-gray-500 dark:text-blue-300/70">
-                          <span>Basado en todas las cuentas</span>
-                        </div>
-                      </dd>
-                    </dl>
-                  </div>
+            {/* Exchanges Card */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 border border-blue-100 dark:border-slate-700">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Exchanges</h3>
+                <BarChart3 className="h-6 w-6 text-blue-500 dark:text-blue-400" />
+              </div>
+              <div className="space-y-4">
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {exchanges}
+                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Plataformas conectadas
                 </div>
               </div>
-              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 px-5 py-3">
-                <div className="text-sm">
-                  <a href="#" className="font-medium text-yellow-600 dark:text-yellow-400 hover:text-yellow-500 dark:hover:text-yellow-300 flex items-center justify-between transition-colors duration-200">
-                    Ver análisis
-                    <ChevronRight className="h-4 w-4" />
-                  </a>
+            </div>
+
+            {/* Rendimiento Promedio Card */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 border border-blue-100 dark:border-slate-700">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Rendimiento Promedio</h3>
+                <TrendingUp className="h-6 w-6 text-blue-500 dark:text-blue-400" />
+              </div>
+              <div className="space-y-4">
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {avgPerformance.toFixed(2)}%
+                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Basado en todas las cuentas
                 </div>
               </div>
             </div>
