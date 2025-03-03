@@ -300,58 +300,99 @@ export default function DashboardPage() {
       {/* Main content */}
       <div className="lg:pl-64 transition-all duration-300">
         {/* Top navigation */}
-        <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-blue-100 dark:border-slate-800/30 shadow-sm backdrop-blur-md bg-white/90 dark:bg-slate-900/90">
+        <header className="sticky top-0 z-30 bg-gradient-to-b from-white via-white to-white/80 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-900/80 border-b border-zinc-200 dark:border-zinc-800 shadow-sm backdrop-blur-md">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center flex-1">
+            <div className="flex items-center flex-1 gap-4">
               <button
                 type="button"
-                className="lg:hidden -ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50 focus:outline-none transition-colors duration-200"
+                className="lg:hidden -ml-0.5 -mt-0.5 h-10 w-10 inline-flex items-center justify-center rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
                 onClick={() => setIsMobileMenuOpen(true)}
               >
                 <span className="sr-only">Abrir menú</span>
-                <Menu className="h-6 w-6" />
+                <Menu className="h-5 w-5" />
               </button>
-              <div className="ml-2 lg:ml-0 relative">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-                <p className="text-sm text-gray-500 dark:text-blue-300/70">
-                  Bienvenido a tu panel de control
-                  {lastUpdate && (
-                    <span className="ml-2 text-xs text-gray-400 dark:text-blue-400/50">
-                      · Actualizado a las {lastUpdate}
-                    </span>
-                  )}
-                </p>
+              
+              <div className="flex items-center gap-2">
+                <nav className="flex" aria-label="Breadcrumb">
+                  <ol className="flex items-center space-x-2">
+                    <li>
+                      <div className="flex items-center text-sm">
+                        <a href="#" className="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50">
+                          Inicio
+                        </a>
+                      </div>
+                    </li>
+                    <li>
+                      <div className="flex items-center text-sm">
+                        <svg className="h-4 w-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                        <span className="ml-2 text-zinc-900 dark:text-white font-medium">Dashboard</span>
+                      </div>
+                    </li>
+                  </ol>
+                </nav>
               </div>
             </div>
-            <div className="ml-4 flex items-center md:ml-6 space-x-3">
-              <button
-                onClick={toggleTheme}
-                className="p-1 rounded-full text-gray-400 hover:text-gray-500 dark:text-gray-300 dark:hover:text-white focus:outline-none transition-colors duration-200"
-              >
-                <span className="sr-only">Cambiar tema</span>
-                {theme === 'light' ? (
-                  <Moon className="h-6 w-6" />
-                ) : (
-                  <Sun className="h-6 w-6" />
-                )}
-              </button>
-              <button
-                type="button"
-                className="p-1 rounded-full text-gray-400 hover:text-gray-500 dark:text-gray-300 dark:hover:text-white focus:outline-none transition-colors duration-200"
-              >
-                <span className="sr-only">Ver notificaciones</span>
-                <Bell className="h-6 w-6" />
-              </button>
-              <div className="relative">
-                <button
-                  type="button"
-                  className="flex items-center max-w-xs rounded-full focus:outline-none"
-                >
-                  <span className="sr-only">Abrir menú de usuario</span>
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-200 to-purple-200 flex items-center justify-center shadow-md">
-                    <User className="h-5 w-5 text-slate-700" />
+
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:block">
+                <div className="flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400">
+                  <div className="flex items-center gap-1">
+                    <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                    <span>En línea</span>
                   </div>
+                  {lastUpdate && (
+                    <>
+                      <span className="text-zinc-300 dark:text-zinc-600">•</span>
+                      <span>Actualizado {lastUpdate}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleTheme}
+                  className="group p-2 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
+                >
+                  <span className="sr-only">Cambiar tema</span>
+                  {theme === 'light' ? (
+                    <Moon className="h-5 w-5" />
+                  ) : (
+                    <Sun className="h-5 w-5" />
+                  )}
                 </button>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="group p-2 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
+                  >
+                    <span className="sr-only">Ver notificaciones</span>
+                    <div className="relative">
+                      <Bell className="h-5 w-5" />
+                      <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-rose-500"></div>
+                    </div>
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
+                  >
+                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 p-0.5">
+                      <div className="h-full w-full rounded-[7px] bg-white dark:bg-zinc-900 flex items-center justify-center">
+                        <User className="h-4 w-4 text-violet-500 dark:text-violet-400" />
+                      </div>
+                    </div>
+                    <div className="hidden sm:block text-left">
+                      <div className="text-sm font-medium text-zinc-900 dark:text-white">Usuario</div>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400">Administrador</div>
+                    </div>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
