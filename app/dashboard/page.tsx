@@ -39,6 +39,7 @@ export default function DashboardPage() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [balanceDisplay, setBalanceDisplay] = useState<BalanceDisplayType>('detailed');
   const [isLoading, setIsLoading] = useState(true);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
   const router = useRouter();
 
   // Efecto para inicializar el tema desde localStorage o preferencias del sistema
@@ -106,13 +107,15 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    // Simular tiempo de carga mínimo para evitar parpadeos
-    const minLoadingTime = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    // Solo desactivar la carga cuando tengamos datos reales y haya pasado el tiempo mínimo
+    if (hasLoadedData) {
+      const minLoadingTime = setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
 
-    return () => clearTimeout(minLoadingTime);
-  }, []);
+      return () => clearTimeout(minLoadingTime);
+    }
+  }, [hasLoadedData]);
 
   const handleStatsUpdate = (stats: {
     totalAccounts: number
@@ -133,6 +136,7 @@ export default function DashboardPage() {
     setExchanges(stats.uniqueExchanges);
     setAvgPerformance(stats.avgPerformance);
     setLastUpdate(new Date().toLocaleTimeString());
+    setHasLoadedData(true);
   };
 
   const handleLogout = () => {
@@ -180,7 +184,10 @@ export default function DashboardPage() {
   const getDisplayBalance = () => {
     if (isLoading) {
       return (
-        <div className="h-10 w-32 bg-white/20 animate-pulse rounded"></div>
+        <div className="flex flex-col space-y-2">
+          <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
+          <div className="h-4 w-24 bg-white/10 animate-pulse rounded"></div>
+        </div>
       );
     }
     
@@ -197,7 +204,10 @@ export default function DashboardPage() {
   const getSkeletonOrValue = (value: number | string, size: 'sm' | 'lg' = 'lg') => {
     if (isLoading) {
       return (
-        <div className={`${size === 'lg' ? 'h-9 w-20' : 'h-5 w-12'} bg-zinc-200 dark:bg-zinc-700 animate-pulse rounded`}></div>
+        <div className="flex flex-col space-y-2">
+          <div className={`${size === 'lg' ? 'h-9 w-24' : 'h-5 w-16'} bg-zinc-200 dark:bg-zinc-700 animate-pulse rounded`}></div>
+          <div className={`${size === 'lg' ? 'h-4 w-16' : 'h-3 w-12'} bg-zinc-100 dark:bg-zinc-600 animate-pulse rounded`}></div>
+        </div>
       );
     }
     return value;
