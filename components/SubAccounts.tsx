@@ -644,35 +644,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     });
   };
 
-  const calculateTotalBalances = () => {
-    if (!selectedSubAccountId || !accountBalances[selectedSubAccountId]) {
-      return {
-        total: 0,
-        real: 0,
-        demo: 0
-      };
-    }
-
-    const details = accountBalances[selectedSubAccountId];
-    const account = subAccounts.find(acc => acc.id === selectedSubAccountId);
-    
-    if (!account) {
-      return {
-        total: 0,
-        real: 0,
-        demo: 0
-      };
-    }
-
-    const balance = details.balance || 0;
-    
-    return {
-      total: balance,
-      real: account.isDemo ? 0 : balance,
-      demo: account.isDemo ? balance : 0
-    };
-  };
-
   return (
     <div className="space-y-4" ref={componentRef}>
       <div className="space-y-6 animate-in fade-in-50 duration-300" ref={componentRef} id="subaccounts-component">
