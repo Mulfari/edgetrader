@@ -190,28 +190,29 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-blue-50 dark:bg-slate-900 animate-in fade-in-50 duration-500">
+    <div className="min-h-screen bg-gray-50/50 dark:bg-slate-950 animate-in fade-in-50 duration-500">
       {/* Mobile menu overlay */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden animate-in fade-in-50 duration-300"
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-40 lg:hidden animate-in fade-in-50 duration-300"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div className={`
-        fixed top-0 left-0 z-50 h-full w-64 bg-white dark:bg-slate-900 border-r border-blue-100 dark:border-slate-800/30
+        fixed top-0 left-0 z-50 h-full w-64 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl
+        border-r border-gray-200 dark:border-slate-800
         transform transition-transform duration-300 ease-in-out
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">
-          <div className="p-4 border-b border-blue-100 dark:border-slate-800/30">
+          <div className="p-4 border-b border-gray-200 dark:border-slate-800">
             <div className="flex items-center space-x-2">
-              <div className="bg-gradient-to-r from-blue-200 to-purple-200 w-8 h-8 rounded-md flex items-center justify-center shadow-md">
-                <BarChart3 className="h-5 w-5 text-slate-700 animate-in fade-in-50 duration-500" />
+              <div className="bg-gradient-to-r from-blue-500 to-purple-500 w-8 h-8 rounded-md flex items-center justify-center shadow-lg">
+                <BarChart3 className="h-5 w-5 text-white animate-in fade-in-50 duration-500" />
               </div>
-              <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-300 dark:from-blue-300 dark:to-purple-200">TradingDash</h1>
+              <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500">TradingDash</h1>
             </div>
           </div>
           
@@ -236,7 +237,7 @@ export default function DashboardPage() {
             </nav>
           </div>
           
-          <div className="p-4 border-t border-blue-100 dark:border-slate-800/30">
+          <div className="p-4 border-t border-gray-200 dark:border-slate-800">
             <button 
               onClick={toggleTheme}
               className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-blue-300/70 hover:bg-blue-100 dark:hover:bg-blue-900/20 group transition-all duration-200 mb-2"
@@ -325,141 +326,150 @@ export default function DashboardPage() {
           {/* Stats Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 sm:p-6 lg:p-8">
             {/* Balance Card */}
-            <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-medium text-white/90">{getBalanceTitle()}</h3>
-                  <div className="relative">
-                    <button
-                      id="balance-menu-button"
-                      onClick={() => {
-                        const menu = document.getElementById('balance-menu');
-                        menu?.classList.toggle('hidden');
-                      }}
-                      className="flex items-center text-white/70 hover:text-white transition-colors"
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </button>
-                    <div
-                      id="balance-menu"
-                      className="hidden absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-slate-800 ring-1 ring-black ring-opacity-5 z-50"
-                    >
-                      <div className="py-1" role="menu" aria-orientation="vertical">
-                        <button
-                          className={`block px-4 py-2 text-sm w-full text-left ${
-                            balanceDisplay === 'detailed'
-                              ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
-                          }`}
-                          onClick={() => handleBalanceDisplayChange('detailed')}
-                        >
-                          Mostrar Desglose
-                        </button>
-                        <button
-                          className={`block px-4 py-2 text-sm w-full text-left ${
-                            balanceDisplay === 'total'
-                              ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
-                          }`}
-                          onClick={() => handleBalanceDisplayChange('total')}
-                        >
-                          Balance Total
-                        </button>
-                        <button
-                          className={`block px-4 py-2 text-sm w-full text-left ${
-                            balanceDisplay === 'real'
-                              ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
-                          }`}
-                          onClick={() => handleBalanceDisplayChange('real')}
-                        >
-                          Solo Balance Real
-                        </button>
-                        <button
-                          className={`block px-4 py-2 text-sm w-full text-left ${
-                            balanceDisplay === 'demo'
-                              ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
-                          }`}
-                          onClick={() => handleBalanceDisplayChange('demo')}
-                        >
-                          Solo Balance Demo
-                        </button>
+            <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-200 relative overflow-hidden">
+              <div className="absolute inset-0 bg-white/5 backdrop-blur-xl"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-medium text-white">{getBalanceTitle()}</h3>
+                    <div className="relative">
+                      <button
+                        id="balance-menu-button"
+                        onClick={() => {
+                          const menu = document.getElementById('balance-menu');
+                          menu?.classList.toggle('hidden');
+                        }}
+                        className="flex items-center text-white/80 hover:text-white transition-colors"
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </button>
+                      <div
+                        id="balance-menu"
+                        className="hidden absolute right-0 mt-2 w-48 rounded-xl shadow-xl bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl ring-1 ring-black/5 z-50"
+                      >
+                        <div className="py-1" role="menu" aria-orientation="vertical">
+                          <button
+                            className={`block px-4 py-2 text-sm w-full text-left ${
+                              balanceDisplay === 'detailed'
+                                ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
+                            }`}
+                            onClick={() => handleBalanceDisplayChange('detailed')}
+                          >
+                            Mostrar Desglose
+                          </button>
+                          <button
+                            className={`block px-4 py-2 text-sm w-full text-left ${
+                              balanceDisplay === 'total'
+                                ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
+                            }`}
+                            onClick={() => handleBalanceDisplayChange('total')}
+                          >
+                            Balance Total
+                          </button>
+                          <button
+                            className={`block px-4 py-2 text-sm w-full text-left ${
+                              balanceDisplay === 'real'
+                                ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
+                            }`}
+                            onClick={() => handleBalanceDisplayChange('real')}
+                          >
+                            Solo Balance Real
+                          </button>
+                          <button
+                            className={`block px-4 py-2 text-sm w-full text-left ${
+                              balanceDisplay === 'demo'
+                                ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
+                            }`}
+                            onClick={() => handleBalanceDisplayChange('demo')}
+                          >
+                            Solo Balance Demo
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
+                  <DollarSign className="h-6 w-6 text-white/80" />
                 </div>
-                <DollarSign className="h-6 w-6 text-white/70" />
-              </div>
-              <div className="space-y-4">
-                <div className="text-3xl font-bold tracking-tight">
-                  ${getDisplayBalance()}
-                </div>
-                {balanceDisplay === 'detailed' && (
-                  <div className="space-y-1 text-sm text-white/80">
-                    <div className="flex justify-between">
-                      <span>Balance Real:</span>
-                      <span>${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Balance Demo:</span>
-                      <span>${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
-                    </div>
+                <div className="space-y-4">
+                  <div className="text-4xl font-bold tracking-tight">
+                    ${getDisplayBalance()}
                   </div>
-                )}
+                  {balanceDisplay === 'detailed' && (
+                    <div className="space-y-2 text-sm text-white/90 bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+                      <div className="flex justify-between">
+                        <span>Balance Real:</span>
+                        <span>${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Balance Demo:</span>
+                        <span>${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Subcuentas Activas Card */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 border border-blue-100 dark:border-slate-700">
+            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-200/50 dark:border-slate-700/50">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Subcuentas Activas</h3>
-                <User className="h-6 w-6 text-blue-500 dark:text-blue-400" />
+                <h3 className="text-lg font-medium text-gray-800 dark:text-white">Subcuentas Activas</h3>
+                <div className="p-2 bg-blue-500/10 dark:bg-blue-400/10 rounded-lg">
+                  <User className="h-6 w-6 text-blue-500 dark:text-blue-400" />
+                </div>
               </div>
               <div className="space-y-4">
                 <div className="text-3xl font-bold text-gray-900 dark:text-white">
                   {activeSubAccounts}
                 </div>
-                <div className="space-y-1 text-sm text-gray-500 dark:text-gray-400">
+                <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100/50 dark:bg-slate-700/50 rounded-lg p-3">
                   <div className="flex justify-between">
                     <span>Reales:</span>
-                    <span>{realAccounts}</span>
+                    <span className="font-medium">{realAccounts}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Demo:</span>
-                    <span>{demoAccounts}</span>
+                    <span className="font-medium">{demoAccounts}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Exchanges Card */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 border border-blue-100 dark:border-slate-700">
+            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-200/50 dark:border-slate-700/50">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Exchanges</h3>
-                <BarChart3 className="h-6 w-6 text-blue-500 dark:text-blue-400" />
+                <h3 className="text-lg font-medium text-gray-800 dark:text-white">Exchanges</h3>
+                <div className="p-2 bg-purple-500/10 dark:bg-purple-400/10 rounded-lg">
+                  <BarChart3 className="h-6 w-6 text-purple-500 dark:text-purple-400" />
+                </div>
               </div>
               <div className="space-y-4">
                 <div className="text-3xl font-bold text-gray-900 dark:text-white">
                   {exchanges}
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-sm text-gray-600 dark:text-gray-300 bg-gray-100/50 dark:bg-slate-700/50 rounded-lg p-3">
                   Plataformas conectadas
                 </div>
               </div>
             </div>
 
             {/* Rendimiento Promedio Card */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 border border-blue-100 dark:border-slate-700">
+            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-200/50 dark:border-slate-700/50">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Rendimiento Promedio</h3>
-                <TrendingUp className="h-6 w-6 text-blue-500 dark:text-blue-400" />
+                <h3 className="text-lg font-medium text-gray-800 dark:text-white">Rendimiento Promedio</h3>
+                <div className="p-2 bg-green-500/10 dark:bg-green-400/10 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-green-500 dark:text-green-400" />
+                </div>
               </div>
               <div className="space-y-4">
                 <div className="text-3xl font-bold text-gray-900 dark:text-white">
                   {avgPerformance.toFixed(2)}%
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-sm text-gray-600 dark:text-gray-300 bg-gray-100/50 dark:bg-slate-700/50 rounded-lg p-3">
                   Basado en todas las cuentas
                 </div>
               </div>
@@ -467,7 +477,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Subaccounts section */}
-          <div className="bg-white dark:bg-slate-900/20 shadow-sm rounded-xl border border-blue-100 dark:border-slate-800/30 overflow-hidden transition-all duration-200 hover:shadow-md animate-in slide-in-from-bottom-5 duration-500 delay-500">
+          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl shadow-lg rounded-xl border border-gray-200/50 dark:border-slate-700/50 overflow-hidden transition-all duration-200 hover:shadow-xl animate-in slide-in-from-bottom-5 duration-500 delay-500">
             <div className="p-6">
               <SubAccounts onStatsUpdate={handleStatsUpdate} />
             </div>
