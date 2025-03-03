@@ -232,44 +232,65 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }
   };
 
-  // Función para generar historial simulado
-  const generateSimulatedHistory = (currentBalance: number) => {
-    const history = [];
-    const now = Date.now();
-    const dayInMs = 24 * 60 * 60 * 1000;
-    
-    // Generar datos para los últimos 30 días
-    for (let i = 30; i >= 0; i--) {
-      const timestamp = now - (i * dayInMs);
-      // Generar una variación aleatoria entre -5% y +5% del balance actual
-      const variation = (Math.random() * 0.1 - 0.05);
-      const balance = currentBalance * (1 + variation);
-      
-      history.push({
-        timestamp,
-        balance
-      });
+  const updateStats = (accounts: SubAccount[], balances: Record<string, AccountDetails>) => {
+    if (onStatsUpdate) {
+      const stats: AccountStats = {
+        totalAccounts: accounts.length,
+        realAccounts: accounts.filter((acc: SubAccount) => !acc.isDemo).length,
+        demoAccounts: accounts.filter((acc: SubAccount) => acc.isDemo).length,
+        totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
+        realBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
+          const account = accounts.find((a: SubAccount) => a.id === accountId);
+          return sum + (!account?.isDemo ? (acc.balance || 0) : 0);
+        }, 0),
+        demoBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
+          const account = accounts.find((a: SubAccount) => a.id === accountId);
+          return sum + (account?.isDemo ? (acc.balance || 0) : 0);
+        }, 0),
+        uniqueExchanges: new Set(accounts.map((acc: SubAccount) => acc.exchange)).size,
+        avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
+      };
+      onStatsUpdate(stats);
     }
-    
-    return history;
   };
 
-  // Función para calcular el rendimiento
-  const calculatePerformance = (history: { timestamp: number; balance: number }[]) => {
-    if (!history || history.length < 2) return 0;
-    
-    // Ordenar el historial por timestamp
-    const sortedHistory = [...history].sort((a, b) => a.timestamp - b.timestamp);
-    
-    // Obtener el primer y último balance
-    const firstBalance = sortedHistory[0].balance;
-    const lastBalance = sortedHistory[sortedHistory.length - 1].balance;
-    
-    // Calcular el rendimiento porcentual
-    const performance = ((lastBalance - firstBalance) / firstBalance) * 100;
-    
-    return Number(performance.toFixed(2));
-  };
+  const loadAllBalances = useCallback(async (accounts: SubAccount[], token: string) => {
+    try {
+      setLoadingAllBalances(true);
+      console.log('🔄 Cargando balances de todas las subcuentas...');
+      
+      const balancePromises = accounts.map(account => 
+        fetchAccountDetails(account.userId, account.id, token)
+          .then(details => ({ id: account.id, details }))
+      );
+
+      const results = await Promise.allSettled(balancePromises);
+      
+      const newBalances: Record<string, AccountDetails> = {};
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          newBalances[result.value.id] = result.value.details;
+        } else {
+          console.error(`❌ Error al cargar balance para cuenta ${accounts[index].id}:`, result.reason);
+          newBalances[accounts[index].id] = {
+            balance: null,
+            assets: [],
+            performance: 0,
+            isError: true,
+            error: result.reason?.message || 'Error al cargar balance'
+          };
+        }
+      });
+
+      setAccountBalances(newBalances);
+      updateStats(accounts, newBalances);
+    } catch (error) {
+      console.error('❌ Error al cargar todos los balances:', error);
+      setError('Error al cargar balances de las subcuentas');
+    } finally {
+      setLoadingAllBalances(false);
+    }
+  }, [fetchAccountDetails, updateStats]);
 
   const loadSubAccounts = useCallback(async () => {
     try {
@@ -318,45 +339,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     } finally {
       setIsLoading(false);
     }
-  }, [router, retryCount]);
-
-  const loadAllBalances = async (accounts: SubAccount[], token: string) => {
-    try {
-      setLoadingAllBalances(true);
-      console.log('🔄 Cargando balances de todas las subcuentas...');
-      
-      const balancePromises = accounts.map(account => 
-        fetchAccountDetails(account.userId, account.id, token)
-          .then(details => ({ id: account.id, details }))
-      );
-
-      const results = await Promise.allSettled(balancePromises);
-      
-      const newBalances: Record<string, AccountDetails> = {};
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          newBalances[result.value.id] = result.value.details;
-        } else {
-          console.error(`❌ Error al cargar balance para cuenta ${accounts[index].id}:`, result.reason);
-          newBalances[accounts[index].id] = {
-            balance: null,
-            assets: [],
-            performance: 0,
-            isError: true,
-            error: result.reason?.message || 'Error al cargar balance'
-          };
-        }
-      });
-
-      setAccountBalances(newBalances);
-      updateStats(accounts, newBalances);
-    } catch (error) {
-      console.error('❌ Error al cargar todos los balances:', error);
-      setError('Error al cargar balances de las subcuentas');
-    } finally {
-      setLoadingAllBalances(false);
-    }
-  };
+  }, [router, retryCount, loadAllBalances]);
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
@@ -571,28 +554,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         return [...prev, accountId];
       }
     });
-  };
-
-  const updateStats = (accounts: SubAccount[], balances: Record<string, AccountDetails>) => {
-    if (onStatsUpdate) {
-      const stats: AccountStats = {
-        totalAccounts: accounts.length,
-        realAccounts: accounts.filter((acc: SubAccount) => !acc.isDemo).length,
-        demoAccounts: accounts.filter((acc: SubAccount) => acc.isDemo).length,
-        totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
-        realBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
-          const account = accounts.find((a: SubAccount) => a.id === accountId);
-          return sum + (!account?.isDemo ? (acc.balance || 0) : 0);
-        }, 0),
-        demoBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
-          const account = accounts.find((a: SubAccount) => a.id === accountId);
-          return sum + (account?.isDemo ? (acc.balance || 0) : 0);
-        }, 0),
-        uniqueExchanges: new Set(accounts.map((acc: SubAccount) => acc.exchange)).size,
-        avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
-      };
-      onStatsUpdate(stats);
-    }
   };
 
   useEffect(() => {
