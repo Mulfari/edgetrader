@@ -324,11 +324,11 @@ export default function DashboardPage() {
 
         <main className="py-6 px-4 sm:px-6 lg:px-8">
           {/* Stats Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 sm:p-6 lg:p-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-4 sm:p-6 lg:p-8">
             {/* Balance Card */}
-            <div className="relative group">
+            <div className="relative group min-h-[240px]">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl blur opacity-50 group-hover:opacity-75 transition duration-200"></div>
-              <div className="relative bg-gradient-to-br from-violet-500 via-violet-600 to-indigo-600 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-200">
+              <div className="relative h-full bg-gradient-to-br from-violet-500 via-violet-600 to-indigo-600 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-200 flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <h3 className="text-lg font-medium text-white">{getBalanceTitle()}</h3>
@@ -415,9 +415,9 @@ export default function DashboardPage() {
             </div>
 
             {/* Subcuentas Activas Card */}
-            <div className="relative group">
+            <div className="relative group min-h-[240px]">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-600 rounded-xl blur opacity-50 group-hover:opacity-75 transition duration-200"></div>
-              <div className="relative bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200">
+              <div className="relative h-full bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-medium text-zinc-800 dark:text-zinc-100">Subcuentas Activas</h3>
                   <div className="p-2 bg-violet-500/10 dark:bg-violet-400/10 rounded-lg">
@@ -443,9 +443,9 @@ export default function DashboardPage() {
             </div>
 
             {/* Exchanges Card */}
-            <div className="relative group">
+            <div className="relative group min-h-[240px]">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-600 rounded-xl blur opacity-50 group-hover:opacity-75 transition duration-200"></div>
-              <div className="relative bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200">
+              <div className="relative h-full bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-medium text-zinc-800 dark:text-zinc-100">Exchanges</h3>
                   <div className="p-2 bg-indigo-500/10 dark:bg-indigo-400/10 rounded-lg">
@@ -464,9 +464,9 @@ export default function DashboardPage() {
             </div>
 
             {/* Rendimiento Promedio Card */}
-            <div className="relative group">
+            <div className="relative group min-h-[240px]">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-600 rounded-xl blur opacity-50 group-hover:opacity-75 transition duration-200"></div>
-              <div className="relative bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200">
+              <div className="relative h-full bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-medium text-zinc-800 dark:text-zinc-100">Rendimiento Promedio</h3>
                   <div className="p-2 bg-teal-500/10 dark:bg-teal-400/10 rounded-lg">
