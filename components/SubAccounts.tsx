@@ -120,17 +120,25 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     
     try {
       setLoadingBalance(accountId);
+      console.log(`🔍 Solicitando balance para cuenta ${accountId}...`);
+      
       const res = await fetch(`${API_URL}/subaccounts/${accountId}/balance`, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        method: 'GET'
       });
       
       if (!res.ok) {
-        throw new Error(`Error ${res.status}: ${res.statusText}`);
+        const errorData = await res.json().catch(() => ({}));
+        console.error(`❌ Error al obtener balance para cuenta ${accountId}:`, errorData);
+        throw new Error(errorData.message || `Error ${res.status}: ${res.statusText}`);
       }
       
       const data = await res.json();
+      console.log(`✅ Balance recibido para cuenta ${accountId}:`, data);
+      
       return {
         balance: data.balance || 0,
         assets: data.assets || [],
@@ -140,13 +148,13 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         isError: false
       };
     } catch (error) {
-      console.error(`Error fetching account details for ${accountId}:`, error);
+      console.error(`❌ Error en fetchAccountDetails para ${accountId}:`, error);
       return {
         balance: null,
         assets: [],
         performance: 0,
         isError: true,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Error desconocido'
       };
     } finally {
       if (isSubscribed.current) {
@@ -161,26 +169,38 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     const balances: Record<string, AccountDetails> = {};
     const activeAccounts = accounts.filter(acc => acc.active);
     
+    console.log(`🔄 Cargando balances para ${activeAccounts.length} cuentas activas...`);
+    
     try {
-      await Promise.all(
+      const results = await Promise.all(
         activeAccounts.map(async (account) => {
           try {
             const details = await fetchAccountDetails(account.userId, account.id, token);
             if (isSubscribed.current) {
               balances[account.id] = details;
-              if (onBalanceUpdate) {
+              
+              // Actualizar el balance en tiempo real
+              if (onBalanceUpdate && !details.isError) {
                 onBalanceUpdate(account.id, details);
               }
             }
           } catch (error) {
             console.error(`Error loading balance for account ${account.id}:`, error);
+            balances[account.id] = {
+              balance: null,
+              assets: [],
+              performance: 0,
+              isError: true,
+              error: 'Error al cargar balance'
+            };
           }
         })
       );
       
+      console.log(`✅ Balances cargados exitosamente:`, balances);
       return balances;
     } catch (error) {
-      console.error('Error loading balances:', error);
+      console.error('❌ Error en fetchAccountBalances:', error);
       return {};
     }
   }, [onBalanceUpdate]);
