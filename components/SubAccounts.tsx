@@ -546,132 +546,130 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
 
   return (
     <div className="space-y-4" ref={componentRef}>
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center space-x-4">
-          <Button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-md hover:shadow-lg transition-all duration-200"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Agregar Subcuenta
-          </Button>
-          <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-            <DialogTrigger asChild>
-              <Button
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Eliminar Subcuentas
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Eliminar Subcuentas</DialogTitle>
-                <DialogDescription>
-                  Selecciona las subcuentas que deseas eliminar. Esta acción no se puede deshacer.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="max-h-[400px] overflow-y-auto">
-                <div className="space-y-2">
-                  {subAccounts.map((account) => (
-                    <div
-                      key={account.id}
-                      className={`p-4 rounded-lg border transition-all cursor-pointer ${
-                        selectedAccountsToDelete.includes(account.id)
-                          ? 'border-red-500 bg-red-50 dark:bg-red-950/20'
-                          : 'border-gray-200 hover:border-red-300 dark:border-gray-800'
-                      }`}
-                      onClick={() => handleSelectAccountToDelete(account.id)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{account.name}</p>
-                          <p className="text-sm text-gray-500">
-                            {account.exchange} • {account.isDemo ? 'Demo' : 'Real'}
-                          </p>
-                        </div>
-                        {selectedAccountsToDelete.includes(account.id) && (
-                          <div className="text-red-500">
-                            <X className="h-5 w-5" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="flex justify-end space-x-2 mt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedAccountsToDelete([]);
-                    setIsDeleteModalOpen(false);
-                  }}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                  onClick={handleDeleteSubAccounts}
-                  disabled={selectedAccountsToDelete.length === 0}
-                >
-                  Eliminar ({selectedAccountsToDelete.length})
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-          <Button
-            onClick={refreshAllBalances}
-            disabled={loadingAllBalances}
-            variant="outline"
-            size="icon"
-          >
-            <RefreshCw className={`h-4 w-4 ${loadingAllBalances ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar subcuentas..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Filter className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setSelectedType("all")}>
-                Todas las cuentas
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSelectedType("real")}>
-                Cuentas reales
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSelectedType("demo")}>
-                Cuentas demo
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
       <div className="space-y-6 animate-in fade-in-50 duration-300" ref={componentRef} id="subaccounts-component">
         {/* Header Section */}
         <div className="flex flex-col space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <h2 className="text-2xl font-bold tracking-tight">
-              Subcuentas
-              {loadingAllBalances && (
-                <span className="ml-2 inline-flex items-center text-sm font-normal text-blue-600 dark:text-blue-400">
-                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                  Cargando balances...
-                </span>
-              )}
-            </h2>
+            <div className="flex items-center space-x-4">
+              <h2 className="text-2xl font-bold tracking-tight">
+                Subcuentas
+                {loadingAllBalances && (
+                  <span className="ml-2 inline-flex items-center text-sm font-normal text-blue-600 dark:text-blue-400">
+                    <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                    Cargando balances...
+                  </span>
+                )}
+              </h2>
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar subcuentas..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setSelectedType("all")}>
+                    Todas las cuentas
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSelectedType("real")}>
+                    Cuentas reales
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSelectedType("demo")}>
+                    Cuentas demo
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                onClick={refreshAllBalances}
+                disabled={loadingAllBalances}
+                variant="outline"
+                size="icon"
+              >
+                <RefreshCw className={`h-4 w-4 ${loadingAllBalances ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar Subcuenta
+              </Button>
+              <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar Subcuentas
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>Eliminar Subcuentas</DialogTitle>
+                    <DialogDescription>
+                      Selecciona las subcuentas que deseas eliminar. Esta acción no se puede deshacer.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="max-h-[400px] overflow-y-auto">
+                    <div className="space-y-2">
+                      {subAccounts.map((account) => (
+                        <div
+                          key={account.id}
+                          className={`p-4 rounded-lg border transition-all cursor-pointer ${
+                            selectedAccountsToDelete.includes(account.id)
+                              ? 'border-red-500 bg-red-50 dark:bg-red-950/20'
+                              : 'border-gray-200 hover:border-red-300 dark:border-gray-800'
+                          }`}
+                          onClick={() => handleSelectAccountToDelete(account.id)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium">{account.name}</p>
+                              <p className="text-sm text-gray-500">
+                                {account.exchange} • {account.isDemo ? 'Demo' : 'Real'}
+                              </p>
+                            </div>
+                            {selectedAccountsToDelete.includes(account.id) && (
+                              <div className="text-red-500">
+                                <X className="h-5 w-5" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-2 mt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedAccountsToDelete([]);
+                        setIsDeleteModalOpen(false);
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                      onClick={handleDeleteSubAccounts}
+                      disabled={selectedAccountsToDelete.length === 0}
+                    >
+                      Eliminar ({selectedAccountsToDelete.length})
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </div>
 
