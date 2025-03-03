@@ -122,13 +122,17 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       console.log(`🔍 Iniciando solicitud de balance para cuenta ${accountId}...`);
       
       const account = subAccounts.find(acc => acc.id === accountId);
-      const isDemo = account?.isDemo === true;
+      if (!account) {
+        throw new Error('Cuenta no encontrada');
+      }
+
+      const isDemo = account.isDemo === true;
       
       console.log(`📊 Detalles de la cuenta:`, {
         id: accountId,
         tipo: isDemo ? 'Demo' : 'Real',
-        exchange: account?.exchange,
-        nombre: account?.name
+        exchange: account.exchange,
+        nombre: account.name
       });
       
       // Si es una cuenta demo y la solicitud anterior falló, evitamos hacer múltiples intentos
@@ -157,21 +161,21 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         }
       });
 
-      console.log(`📡 Respuesta del servidor para cuenta ${isDemo ? 'demo' : 'real'}:`, {
+      console.log(`📡 Respuesta del servidor para cuenta ${account.name} (${isDemo ? 'demo' : 'real'}):`, {
         status: balanceRes.status,
         statusText: balanceRes.statusText
       });
 
       if (!balanceRes.ok) {
         const errorData = await balanceRes.json().catch(() => ({}));
-        console.error(`❌ Error en la respuesta del servidor para cuenta ${isDemo ? 'demo' : 'real'}:`, {
+        console.error(`❌ Error en la respuesta del servidor para cuenta ${account.name}:`, {
           status: balanceRes.status,
           statusText: balanceRes.statusText,
           errorData
         });
         
         if (isDemo) {
-          console.log(`🔄 Generando datos simulados para cuenta demo ${accountId}`);
+          console.log(`🔄 Generando datos simulados para cuenta demo ${account.name}`);
           return {
             balance: Math.random() * 10000,
             assets: [
@@ -190,14 +194,14 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       }
       
       const balanceData = await balanceRes.json();
-      console.log(`✅ Datos recibidos del servidor para cuenta ${isDemo ? 'demo' : 'real'}:`, {
+      console.log(`✅ Datos recibidos del servidor para cuenta ${account.name}:`, {
         balance: balanceData.balance,
         assetsCount: balanceData.assets?.length || 0,
         performance: balanceData.performance
       });
 
       if (balanceData.balance === undefined) {
-        console.error(`❌ La respuesta no contiene un balance válido para cuenta ${isDemo ? 'demo' : 'real'}:`, balanceData);
+        console.error(`❌ La respuesta no contiene un balance válido para cuenta ${account.name}:`, balanceData);
         if (isDemo) {
           return {
             balance: Math.random() * 10000,
@@ -227,7 +231,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         isError: false
       };
 
-      console.log(`✅ Datos procesados y listos para actualizar UI para cuenta ${isDemo ? 'demo' : 'real'}:`, processedData);
+      console.log(`✅ Datos procesados y listos para actualizar UI para cuenta ${account.name}:`, processedData);
       
       if (onBalanceUpdate) {
         onBalanceUpdate(accountId, processedData);
@@ -243,7 +247,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       const isDemo = account?.isDemo === true;
       
       if (isDemo) {
-        console.log(`⚠️ Error en cuenta demo ${accountId}, retornando datos simulados`);
+        console.log(`⚠️ Error en cuenta demo ${account?.name || accountId}, retornando datos simulados`);
         return {
           balance: Math.random() * 10000,
           assets: [
@@ -303,31 +307,40 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       console.log('📊 Cuentas a procesar:', accounts.map(acc => ({
         id: acc.id,
         nombre: acc.name,
-        exchange: acc.exchange
+        exchange: acc.exchange,
+        tipo: acc.isDemo ? 'Demo' : 'Real'
       })));
       
       const balancePromises = accounts.map(account => {
-        console.log(`📡 Solicitando balance para cuenta ${account.id} (${account.name})`);
+        console.log(`📡 Solicitando balance para cuenta ${account.id} (${account.name}) - ${account.exchange}`);
         return fetchAccountDetails(account.userId, account.id, token)
           .then(details => {
             console.log(`✅ Balance recibido para cuenta ${account.id}:`, {
               balance: details.balance,
               assets: details.assets?.length || 0,
-              isError: details.isError
+              isError: details.isError,
+              tipo: account.isDemo ? 'Demo' : 'Real'
             });
             return { id: account.id, details };
+          })
+          .catch(error => {
+            console.error(`❌ Error al cargar balance para cuenta ${account.id}:`, error);
+            return {
+              id: account.id,
+              details: {
+                balance: null,
+                assets: [],
+                performance: 0,
+                isError: true,
+                error: error instanceof Error ? error.message : 'Error desconocido',
+                isSimulated: false,
+                isDemo: account.isDemo || false
+              }
+            };
           });
       });
 
       const results = await Promise.allSettled(balancePromises);
-      console.log('📥 Resultados de balances:', results.map(result => ({
-        status: result.status,
-        valor: result.status === 'fulfilled' ? {
-          id: result.value.id,
-          balance: result.value.details.balance,
-          isError: result.value.details.isError
-        } : 'rejected'
-      })));
       
       const newBalances: Record<string, AccountDetails> = {};
       results.forEach((result, index) => {
@@ -340,7 +353,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
             assets: [],
             performance: 0,
             isError: true,
-            error: result.reason?.message || 'Error al cargar balance'
+            error: result.reason?.message || 'Error al cargar balance',
+            isDemo: accounts[index].isDemo || false
           };
         }
       });
@@ -428,8 +442,28 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
 
   // Modificar useEffect para cargar datos iniciales
   useEffect(() => {
-    console.log('🔄 Efecto de carga inicial activado');
-    loadSubAccounts();
+    const loadInitialData = async () => {
+      console.log('🔄 Efecto de carga inicial activado');
+      await loadSubAccounts();
+    };
+
+    loadInitialData();
+    
+    // Configurar el event listener para refresh
+    const element = componentRef.current || document.getElementById('subaccounts-component');
+    if (element) {
+      console.log("Agregando event listener para refresh en SubAccounts");
+      const handleRefresh = () => {
+        console.log("Evento refresh recibido en SubAccounts");
+        loadSubAccounts();
+      };
+      
+      element.addEventListener('refresh', handleRefresh);
+      return () => {
+        console.log("Eliminando event listener para refresh en SubAccounts");
+        element.removeEventListener('refresh', handleRefresh);
+      };
+    }
   }, [loadSubAccounts]);
 
   const handleRowClick = (sub: SubAccount) => {
@@ -646,27 +680,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       }
     });
   };
-
-  useEffect(() => {
-    const handleRefresh = () => {
-      console.log("Evento refresh recibido en SubAccounts");
-      loadSubAccounts();
-    };
-
-    // Usar el elemento actual o el elemento padre
-    const element = componentRef.current || document.getElementById('subaccounts-component');
-    if (element) {
-      console.log("Agregando event listener para refresh en SubAccounts");
-      element.addEventListener('refresh', handleRefresh);
-      
-      return () => {
-        console.log("Eliminando event listener para refresh en SubAccounts");
-        element.removeEventListener('refresh', handleRefresh);
-      };
-    } else {
-      console.error("No se pudo encontrar el elemento para agregar el event listener en SubAccounts");
-    }
-  }, [loadSubAccounts]);
 
   return (
     <div className="space-y-4" ref={componentRef}>
