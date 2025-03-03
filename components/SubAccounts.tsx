@@ -257,14 +257,35 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const loadAllBalances = useCallback(async (accounts: SubAccount[], token: string) => {
     try {
       setLoadingAllBalances(true);
-      console.log('🔄 Cargando balances de todas las subcuentas...');
+      console.log('🔄 Iniciando carga de balances...');
+      console.log('📊 Cuentas a procesar:', accounts.map(acc => ({
+        id: acc.id,
+        nombre: acc.name,
+        exchange: acc.exchange
+      })));
       
-      const balancePromises = accounts.map(account => 
-        fetchAccountDetails(account.userId, account.id, token)
-          .then(details => ({ id: account.id, details }))
-      );
+      const balancePromises = accounts.map(account => {
+        console.log(`📡 Solicitando balance para cuenta ${account.id} (${account.name})`);
+        return fetchAccountDetails(account.userId, account.id, token)
+          .then(details => {
+            console.log(`✅ Balance recibido para cuenta ${account.id}:`, {
+              balance: details.balance,
+              assets: details.assets?.length || 0,
+              isError: details.isError
+            });
+            return { id: account.id, details };
+          });
+      });
 
       const results = await Promise.allSettled(balancePromises);
+      console.log('📥 Resultados de balances:', results.map(result => ({
+        status: result.status,
+        valor: result.status === 'fulfilled' ? {
+          id: result.value.id,
+          balance: result.value.details.balance,
+          isError: result.value.details.isError
+        } : 'rejected'
+      })));
       
       const newBalances: Record<string, AccountDetails> = {};
       results.forEach((result, index) => {
@@ -282,6 +303,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         }
       });
 
+      console.log('💾 Actualizando estado con nuevos balances:', Object.keys(newBalances).length);
       setAccountBalances(newBalances);
       updateStats(accounts, newBalances);
     } catch (error) {
@@ -294,7 +316,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
 
   const loadSubAccounts = useCallback(async () => {
     try {
-      console.log('🔄 Cargando subcuentas...');
+      console.log('🔄 Iniciando carga de subcuentas...');
       const token = localStorage.getItem('token');
       
       if (!token) {
@@ -303,10 +325,20 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         return;
       }
 
+      console.log('📡 Realizando petición a:', `${API_URL}/subaccounts`);
+      console.log('🔑 Token presente:', !!token, 'Primeros 10 caracteres:', token.substring(0, 10));
+
       const response = await fetch(`${API_URL}/subaccounts`, {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
+      });
+
+      console.log('📥 Respuesta recibida:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
       });
 
       if (!response.ok) {
@@ -316,19 +348,30 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       }
 
       const data = await response.json();
-      console.log(`✅ Subcuentas cargadas: ${data.length}`);
+      console.log(`✅ Subcuentas cargadas:`, {
+        cantidad: data.length,
+        subcuentas: data.map((acc: SubAccount) => ({
+          id: acc.id,
+          nombre: acc.name,
+          exchange: acc.exchange,
+          isDemo: acc.isDemo
+        }))
+      });
+      
       setSubAccounts(data);
       setError(null);
       
       // Cargar balances solo si hay subcuentas
       if (data.length > 0) {
+        console.log(`🔄 Iniciando carga de balances para ${data.length} subcuentas...`);
         await loadAllBalances(data, token);
+      } else {
+        console.log('ℹ️ No hay subcuentas para cargar balances');
       }
     } catch (error) {
       console.error('❌ Error en loadSubAccounts:', error);
       setError(error instanceof Error ? error.message : 'Error al cargar subcuentas');
       
-      // Implementar reintentos si es un error de red
       if (retryCount < maxRetries) {
         console.log(`⏳ Reintentando carga (${retryCount + 1}/${maxRetries})...`);
         setTimeout(() => {
@@ -340,6 +383,12 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       setIsLoading(false);
     }
   }, [router, retryCount, loadAllBalances]);
+
+  // Modificar useEffect para cargar datos iniciales
+  useEffect(() => {
+    console.log('🔄 Efecto de carga inicial activado');
+    loadSubAccounts();
+  }, [loadSubAccounts]);
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
