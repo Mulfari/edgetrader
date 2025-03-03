@@ -693,7 +693,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
               <p className="text-xs text-yellow-600/90 dark:text-yellow-400/90 mt-1">
                 Las cuentas demo de Bybit ahora muestran datos reales desde el endpoint <code className="bg-yellow-100 dark:bg-yellow-900/30 px-1 py-0.5 rounded text-xs">api-demo.bybit.com</code>. 
                 Para ver balances y activos, asegúrate de tener fondos virtuales en tu cuenta demo de Bybit.
-                Si no ves datos, es posible que necesites depositar fondos virtuales en tu cuenta demo.
+                Si no ves datos es posible que necesites depositar fondos virtuales en tu cuenta demo.
               </p>
             </div>
           </div>
