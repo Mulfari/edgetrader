@@ -316,22 +316,20 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
 
   return (
     <Dialog.Root open={open} onOpenChange={(open) => {
-      setOpen(open);
       if (!open) {
         onCancel();
       }
+      setOpen(open);
     }}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 animate-fade-in" />
-        <Dialog.Content className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full max-w-2xl">
-          <Dialog.Title className="sr-only">
-            {mode === "create" ? "Agregar Nueva Subcuenta" : "Eliminar Subcuenta"}
-          </Dialog.Title>
-          <Dialog.Description className="sr-only">
-            {mode === "create" ? "Formulario para agregar una nueva subcuenta" : "Formulario para eliminar una subcuenta existente"}
-          </Dialog.Description>
-          
-          <Card className="mx-4 bg-white dark:bg-slate-900 border-0 shadow-lg overflow-hidden animate-in fade-in-50 zoom-in-95 duration-300">
+        <Dialog.Content 
+          className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full max-w-2xl bg-white dark:bg-slate-900 rounded-lg shadow-lg"
+          onPointerDownOutside={(e) => {
+            e.preventDefault();
+          }}
+        >
+          <Card className="border-0 shadow-none">
             <CardContent className="p-0">
               <div className="p-6 space-y-6">
                 <div className="flex items-center justify-between">
@@ -342,10 +340,6 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => {
-                        setOpen(false);
-                        onCancel();
-                      }}
                       className="rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20"
                     >
                       <X className="h-5 w-5 text-slate-500 dark:text-slate-400" />
@@ -617,17 +611,15 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
                     </Card>
 
                     <div className="flex justify-end gap-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setOpen(false);
-                          onCancel();
-                        }}
-                        className="border-blue-200 dark:border-blue-800/30 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-700 dark:text-slate-300"
-                      >
-                        Cancelar
-                      </Button>
+                      <Dialog.Close asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="border-blue-200 dark:border-blue-800/30 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-700 dark:text-slate-300"
+                        >
+                          Cancelar
+                        </Button>
+                      </Dialog.Close>
                       <Button 
                         type="submit" 
                         disabled={isSubmitting}
@@ -711,17 +703,15 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
                     </Card>
 
                     <div className="flex justify-end gap-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setOpen(false);
-                          onCancel();
-                        }}
-                        className="border-blue-200 dark:border-blue-800/30 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-700 dark:text-slate-300"
-                      >
-                        Cancelar
-                      </Button>
+                      <Dialog.Close asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="border-blue-200 dark:border-blue-800/30 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-700 dark:text-slate-300"
+                        >
+                          Cancelar
+                        </Button>
+                      </Dialog.Close>
                       <Button 
                         type="button" 
                         onClick={handleDeleteAccount}
