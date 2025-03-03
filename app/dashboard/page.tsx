@@ -19,6 +19,7 @@ import {
 import SubAccounts from "@/components/SubAccounts";
 import SubAccountManager from "@/components/SubAccountManager";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 // Tipo para las opciones de balance
 type BalanceDisplayType = 'total' | 'real' | 'demo' | 'detailed';
@@ -261,10 +262,10 @@ export default function DashboardPage() {
                 <LineChart className="mr-3 h-5 w-5 text-gray-400 dark:text-blue-400/50 group-hover:text-gray-500 dark:group-hover:text-blue-400" />
                 Análisis
               </a>
-              <a href="#" className="flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-700 dark:text-blue-300/70 hover:bg-blue-100 dark:hover:bg-blue-900/20 group transition-all duration-200">
+              <Link href="/operations" className="flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-700 dark:text-blue-300/70 hover:bg-blue-100 dark:hover:bg-blue-900/20 group transition-all duration-200">
                 <TrendingUp className="mr-3 h-5 w-5 text-gray-400 dark:text-blue-400/50 group-hover:text-gray-500 dark:group-hover:text-blue-400" />
                 Operaciones
-              </a>
+              </Link>
               <a href="#" className="flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-700 dark:text-blue-300/70 hover:bg-blue-100 dark:hover:bg-blue-900/20 group transition-all duration-200">
                 <Settings className="mr-3 h-5 w-5 text-gray-400 dark:text-blue-400/50 group-hover:text-gray-500 dark:group-hover:text-blue-400" />
                 Configuración

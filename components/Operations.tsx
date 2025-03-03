@@ -1,236 +1,218 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronUp, ChevronDown, Search, Plus } from 'lucide-react';
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useState, useEffect } from "react";
+import {
+  LineChart,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  Clock,
+  DollarSign,
+  TrendingUp,
+  TrendingDown
+} from "lucide-react";
 
-interface Trade {
+interface Operation {
   id: string;
-  userId: string;
-  pair: string;
-  type: "buy" | "sell";
-  entryPrice: number;
-  exitPrice?: number;
+  type: 'buy' | 'sell';
+  symbol: string;
   amount: number;
-  status: "open" | "closed";
-  openDate: string;
-  closeDate?: string;
-  pnl?: number;
-  market: "spot" | "futures";
-  leverage?: number;
-  stopLoss?: number;
-  takeProfit?: number;
+  price: number;
+  timestamp: string;
+  status: 'completed' | 'pending' | 'cancelled';
+  profit?: number;
 }
 
-interface OperationsProps {
-  trades: Trade[];
-}
+export default function Operations() {
+  const [operations, setOperations] = useState<Operation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState('all'); // all, completed, pending, cancelled
+  const [sortBy, setSortBy] = useState('date'); // date, amount, profit
+  const [sortOrder, setSortOrder] = useState('desc'); // asc, desc
 
-export default function Operations({ trades }: OperationsProps) {
-  const [tradeMarketFilter, setTradeMarketFilter] = useState<"all" | "spot" | "futures">("all");
-  const [activeTab, setActiveTab] = useState<"open" | "closed">("open");
-  const [searchTerm, setSearchTerm] = useState("");
+  useEffect(() => {
+    // Aquí irá la lógica para cargar las operaciones
+    // Por ahora usaremos datos de ejemplo
+    const mockOperations: Operation[] = [
+      {
+        id: '1',
+        type: 'buy',
+        symbol: 'BTC/USDT',
+        amount: 0.5,
+        price: 45000,
+        timestamp: '2024-03-20T10:30:00',
+        status: 'completed',
+        profit: 1200
+      },
+      // Añadir más operaciones de ejemplo...
+    ];
 
-  const filteredTrades = useMemo(() => {
-    return trades
-      .filter((trade) => tradeMarketFilter === "all" || trade.market === tradeMarketFilter)
-      .filter((trade) => trade.status === activeTab)
-      .filter(
-        (trade) =>
-          trade.pair.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          trade.market.toLowerCase().includes(searchTerm.toLowerCase()),
-      );
-  }, [trades, tradeMarketFilter, activeTab, searchTerm]);
-
-  const totalPnL = useMemo(() => {
-    return filteredTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
-  }, [filteredTrades]);
-
-  if (!trades || trades.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 text-center">
-        <h2 className="text-2xl font-bold mb-4">No hay operaciones disponibles</h2>
-        <p className="text-muted-foreground">No se encontraron operaciones para mostrar.</p>
-      </div>
-    );
-  }
+    setTimeout(() => {
+      setOperations(mockOperations);
+      setIsLoading(false);
+    }, 1000);
+  }, []);
 
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-primary">Operaciones</h2>
-        <Button className="bg-primary hover:bg-primary/90">
-          <Plus className="mr-2 h-4 w-4" /> Nueva Operación
-        </Button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
+            Operaciones
+          </h2>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Gestiona y monitorea tus operaciones de trading
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="px-4 py-2 text-sm font-medium text-white bg-violet-500 rounded-lg hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors">
+            Nueva Operación
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <Tabs
-          value={tradeMarketFilter}
-          onValueChange={(value) => setTradeMarketFilter(value as "all" | "spot" | "futures")}
-          className="w-full sm:w-auto"
-        >
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="all">Todas</TabsTrigger>
-            <TabsTrigger value="spot">Spot</TabsTrigger>
-            <TabsTrigger value="futures">Futuros</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as "open" | "closed")}
-          className="w-full sm:w-auto"
-        >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="open">Abiertas</TabsTrigger>
-            <TabsTrigger value="closed">Cerradas</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-
-      <Card>
-        <CardHeader className="bg-secondary">
-          <CardTitle className="flex items-center justify-between text-2xl">
-            <span>{activeTab === "open" ? "Operaciones Abiertas" : "Operaciones Cerradas"}</span>
-            <Badge variant="outline" className="text-lg px-3 py-1">
-              {filteredTrades.length}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          {activeTab === "closed" && (
-            <div className="mb-6 p-6 bg-secondary rounded-lg shadow-inner">
-              <div className="flex items-center justify-between">
-                <span className="text-xl font-medium">PnL Total</span>
-                <span className={`text-3xl font-bold ${totalPnL >= 0 ? "text-green-500" : "text-red-500"}`}>
-                  {totalPnL.toFixed(2)} USDT
-                </span>
-              </div>
+      {/* Filters and Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Total Operaciones</p>
+              <p className="text-2xl font-bold text-zinc-900 dark:text-white">
+                {isLoading ? '-' : operations.length}
+              </p>
             </div>
-          )}
-          <div className="mb-6 relative">
-            <Input
-              placeholder="Buscar por par o mercado..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full max-w-md"
-            />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <div className="p-2 bg-violet-500/10 rounded-lg">
+              <LineChart className="w-6 h-6 text-violet-500" />
+            </div>
           </div>
-          
-          <Accordion type="single" collapsible className="w-full">
-            {filteredTrades.map((trade) => (
-              <AccordionItem value={trade.id} key={trade.id} className="border-b">
-                <AccordionTrigger className="hover:bg-secondary/50 transition-colors">
-                  <div className="grid grid-cols-6 w-full gap-4 items-center">
-                    <span className="font-medium text-primary">{trade.pair}</span>
-                    <Badge
-                      variant={trade.type === "buy" ? "default" : "destructive"}
-                      className="flex items-center gap-1 w-fit"
-                    >
-                      {trade.type === "buy" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                      {trade.type.toUpperCase()}
-                    </Badge>
-                    <span className="text-muted-foreground">{trade.entryPrice.toFixed(2)}</span>
-                    <span className="text-muted-foreground">{trade.amount}</span>
-                    <Badge variant={trade.market === "spot" ? "secondary" : "outline"} className="w-fit">
-                      {trade.market.toUpperCase()}
-                    </Badge>
-                    {activeTab === "open" ? (
-                      <span className="text-muted-foreground">{new Date(trade.openDate).toLocaleString()}</span>
-                    ) : (
-                      <span className={`font-medium ${trade.pnl && trade.pnl >= 0 ? "text-green-500" : "text-red-500"}`}>
-                        {trade.pnl?.toFixed(2)} USDT
+        </div>
+        {/* Añadir más stats... */}
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-4 p-4 bg-white dark:bg-zinc-800 rounded-xl shadow-sm">
+        <select
+          className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+        >
+          <option value="all">Todas las operaciones</option>
+          <option value="completed">Completadas</option>
+          <option value="pending">Pendientes</option>
+          <option value="cancelled">Canceladas</option>
+        </select>
+        
+        <select
+          className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0"
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+        >
+          <option value="date">Ordenar por fecha</option>
+          <option value="amount">Ordenar por monto</option>
+          <option value="profit">Ordenar por beneficio</option>
+        </select>
+      </div>
+
+      {/* Operations Table */}
+      <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
+            <thead className="bg-zinc-50 dark:bg-zinc-800">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                  Fecha
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                  Tipo
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                  Par
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                  Precio
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                  Cantidad
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                  Beneficio
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                    Cargando operaciones...
+                  </td>
+                </tr>
+              ) : operations.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                    No hay operaciones para mostrar
+                  </td>
+                </tr>
+              ) : (
+                operations.map((operation) => (
+                  <tr key={operation.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
+                      {new Date(operation.timestamp).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        operation.type === 'buy' 
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                          : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
+                      }`}>
+                        {operation.type === 'buy' ? 'Compra' : 'Venta'}
                       </span>
-                    )}
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="bg-secondary/30 rounded-lg mt-4 overflow-hidden">
-                    <div className="grid md:grid-cols-2 gap-6 p-6">
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-lg text-primary">Detalles de la Operación</h4>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <p className="font-medium">ID:</p>
-                          <p>{trade.id}</p>
-                          <p className="font-medium">Usuario ID:</p>
-                          <p>{trade.userId}</p>
-                          <p className="font-medium">Estado:</p>
-                          <p>{trade.status === "open" ? "Abierta" : "Cerrada"}</p>
-                          <p className="font-medium">Fecha de Apertura:</p>
-                          <p>{new Date(trade.openDate).toLocaleString()}</p>
-                          {trade.closeDate && (
-                            <>
-                              <p className="font-medium">Fecha de Cierre:</p>
-                              <p>{new Date(trade.closeDate).toLocaleString()}</p>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-lg text-primary">Información Financiera</h4>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <p className="font-medium">Precio de Entrada:</p>
-                          <p>{trade.entryPrice.toFixed(2)}</p>
-                          {trade.exitPrice && (
-                            <>
-                              <p className="font-medium">Precio de Salida:</p>
-                              <p>{trade.exitPrice.toFixed(2)}</p>
-                            </>
-                          )}
-                          <p className="font-medium">Cantidad:</p>
-                          <p>{trade.amount}</p>
-                          {trade.pnl !== undefined && (
-                            <>
-                              <p className="font-medium">PnL:</p>
-                              <p className={trade.pnl >= 0 ? "text-green-500 font-semibold" : "text-red-500 font-semibold"}>
-                                {trade.pnl.toFixed(2)} USDT
-                              </p>
-                            </>
-                          )}
-                          {trade.market === "futures" && (
-                            <>
-                              {trade.leverage && (
-                                <>
-                                  <p className="font-medium">Apalancamiento:</p>
-                                  <p>{trade.leverage}x</p>
-                                </>
-                              )}
-                              {trade.stopLoss && (
-                                <>
-                                  <p className="font-medium">Stop Loss:</p>
-                                  <p>{trade.stopLoss}</p>
-                                </>
-                              )}
-                              {trade.takeProfit && (
-                                <>
-                                  <p className="font-medium">Take Profit:</p>
-                                  <p>{trade.takeProfit}</p>
-                                </>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {trade.status === "open" && (
-                      <div className="bg-primary/5 p-4 flex justify-end space-x-2">
-                        <Button variant="outline" className="w-32">Editar</Button>
-                        <Button variant="destructive" className="w-32">Cerrar</Button>
-                      </div>
-                    )}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </CardContent>
-      </Card>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
+                      {operation.symbol}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
+                      ${operation.price.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
+                      {operation.amount}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        operation.status === 'completed'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                          : operation.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                      }`}>
+                        {operation.status === 'completed' ? 'Completada' : 
+                         operation.status === 'pending' ? 'Pendiente' : 'Cancelada'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {operation.profit !== undefined && (
+                        <span className={`flex items-center ${
+                          operation.profit >= 0
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-rose-600 dark:text-rose-400'
+                        }`}>
+                          {operation.profit >= 0 ? '+' : '-'}${Math.abs(operation.profit).toLocaleString()}
+                          {operation.profit >= 0 
+                            ? <TrendingUp className="ml-1 h-4 w-4" />
+                            : <TrendingDown className="ml-1 h-4 w-4" />
+                          }
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
