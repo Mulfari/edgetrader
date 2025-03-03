@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { 
   LayoutDashboard, 
-  LineChart, 
   Settings, 
   LogOut, 
   BarChart3,
@@ -25,7 +24,7 @@ export default function RootLayout({
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+  const [lastUpdate] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
