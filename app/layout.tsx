@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { 
   LayoutDashboard, 
   Settings, 
@@ -9,9 +9,7 @@ import {
   TrendingUp,
   Bell,
   Menu,
-  User,
-  Sun,
-  Moon
+  User
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
