@@ -34,6 +34,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import SubAccountManager from "@/components/SubAccountManager";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -100,9 +101,10 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const [selectedType, setSelectedType] = useState<string>("all");
   const [loadingBalance, setLoadingBalance] = useState<string | null>(null);
   const [loadingAllBalances, setLoadingAllBalances] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedAccountsToDelete, setSelectedAccountsToDelete] = useState<string[]>([]);
 
   const fetchAccountDetails = async (userId: string, accountId: string, token: string): Promise<AccountDetails> => {
@@ -486,9 +488,9 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }
   };
 
-  // Función para crear una nueva subcuenta
-  const handleCreateSubAccount = () => {
-    router.push('/create-subaccount');
+  const handleCreateSuccess = () => {
+    setIsCreateModalOpen(false);
+    fetchSubAccounts();
   };
 
   // Función para eliminar subcuentas seleccionadas
@@ -547,11 +549,11 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center space-x-4">
           <Button
-            onClick={handleCreateSubAccount}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-md hover:shadow-lg transition-all duration-200"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Crear Subcuenta
+            Agregar Subcuenta
           </Button>
           <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
             <DialogTrigger asChild>
@@ -1205,6 +1207,31 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de Crear Subcuenta */}
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-2xl">
+          <SubAccountManager
+            mode="create"
+            onSuccess={handleCreateSuccess}
+            onCancel={() => setIsCreateModalOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Eliminar Subcuenta */}
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-2xl">
+          <SubAccountManager
+            mode="delete"
+            onSuccess={() => {
+              setIsDeleteModalOpen(false);
+              fetchSubAccounts();
+            }}
+            onCancel={() => setIsDeleteModalOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
