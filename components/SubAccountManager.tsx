@@ -73,7 +73,6 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
     isDemo: false
   })
   const [showSecretKey, setShowSecretKey] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -91,7 +90,6 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
       return
     }
 
-    setIsLoading(true)
     setError(null)
     console.log("Intentando cargar subcuentas desde:", `${API_URL}/subaccounts`)
 
@@ -126,8 +124,6 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
       console.error("❌ Error al cargar subcuentas:", error)
       const errorMessage = error instanceof Error ? error.message : "Error al cargar las subcuentas. Intenta nuevamente más tarde."
       setError(errorMessage)
-    } finally {
-      setIsLoading(false)
     }
   }, [API_URL, router])
 
