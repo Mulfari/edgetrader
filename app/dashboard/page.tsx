@@ -13,11 +13,15 @@ import {
   User,
   DollarSign,
   Sun,
-  Moon
+  Moon,
+  ChevronDown
 } from "lucide-react";
 import SubAccounts from "@/components/SubAccounts";
 import SubAccountManager from "@/components/SubAccountManager";
 import { useRouter } from "next/navigation";
+
+// Tipo para las opciones de balance
+type BalanceDisplayType = 'total' | 'real' | 'demo' | 'detailed';
 
 export default function DashboardPage() {
   const [totalBalance, setTotalBalance] = useState<number | null>(null);
@@ -33,6 +37,7 @@ export default function DashboardPage() {
   const [avgPerformance, setAvgPerformance] = useState(0);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [balanceDisplay, setBalanceDisplay] = useState<BalanceDisplayType>('total');
   const router = useRouter();
 
   // Efecto para inicializar el tema desde localStorage o preferencias del sistema
@@ -75,6 +80,28 @@ export default function DashboardPage() {
       const refreshEvent = new CustomEvent('refresh', { bubbles: true });
       subaccountsComponent.dispatchEvent(refreshEvent);
     }
+  }, []);
+
+  useEffect(() => {
+    // Cargar preferencia de visualización de balance
+    const savedBalanceDisplay = localStorage.getItem('balanceDisplayPreference');
+    if (savedBalanceDisplay) {
+      setBalanceDisplay(savedBalanceDisplay as BalanceDisplayType);
+    }
+
+    // Cerrar menú al hacer clic fuera
+    const handleClickOutside = (event: MouseEvent) => {
+      const menu = document.getElementById('balance-menu');
+      const button = document.getElementById('balance-menu-button');
+      if (menu && !menu.contains(event.target as Node) && !button?.contains(event.target as Node)) {
+        menu.classList.add('hidden');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const handleStatsUpdate = (stats: {
@@ -133,6 +160,33 @@ export default function DashboardPage() {
         console.error("Error al intentar actualizar subcuentas:", error);
       }
     }, 500);
+  };
+
+  const handleBalanceDisplayChange = (type: BalanceDisplayType) => {
+    setBalanceDisplay(type);
+    localStorage.setItem('balanceDisplayPreference', type);
+  };
+
+  const getDisplayBalance = () => {
+    switch (balanceDisplay) {
+      case 'real':
+        return realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00";
+      case 'demo':
+        return demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00";
+      default:
+        return totalBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00";
+    }
+  };
+
+  const getBalanceTitle = () => {
+    switch (balanceDisplay) {
+      case 'real':
+        return 'Balance Real';
+      case 'demo':
+        return 'Balance Demo';
+      default:
+        return 'Balance Total';
+    }
   };
 
   return (
@@ -270,26 +324,89 @@ export default function DashboardPage() {
         <main className="py-6 px-4 sm:px-6 lg:px-8">
           {/* Stats Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 sm:p-6 lg:p-8">
-            {/* Balance Total Card */}
+            {/* Balance Card */}
             <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-200">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-white/90">Balance Total</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-medium text-white/90">{getBalanceTitle()}</h3>
+                  <div className="relative">
+                    <button
+                      id="balance-menu-button"
+                      onClick={() => {
+                        const menu = document.getElementById('balance-menu');
+                        menu?.classList.toggle('hidden');
+                      }}
+                      className="flex items-center text-white/70 hover:text-white transition-colors"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                    <div
+                      id="balance-menu"
+                      className="hidden absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-slate-800 ring-1 ring-black ring-opacity-5 z-50"
+                    >
+                      <div className="py-1" role="menu" aria-orientation="vertical">
+                        <button
+                          className={`block px-4 py-2 text-sm w-full text-left ${
+                            balanceDisplay === 'total'
+                              ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
+                          }`}
+                          onClick={() => handleBalanceDisplayChange('total')}
+                        >
+                          Balance Total
+                        </button>
+                        <button
+                          className={`block px-4 py-2 text-sm w-full text-left ${
+                            balanceDisplay === 'real'
+                              ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
+                          }`}
+                          onClick={() => handleBalanceDisplayChange('real')}
+                        >
+                          Solo Balance Real
+                        </button>
+                        <button
+                          className={`block px-4 py-2 text-sm w-full text-left ${
+                            balanceDisplay === 'demo'
+                              ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
+                          }`}
+                          onClick={() => handleBalanceDisplayChange('demo')}
+                        >
+                          Solo Balance Demo
+                        </button>
+                        <button
+                          className={`block px-4 py-2 text-sm w-full text-left ${
+                            balanceDisplay === 'detailed'
+                              ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
+                          }`}
+                          onClick={() => handleBalanceDisplayChange('detailed')}
+                        >
+                          Mostrar Desglose
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <DollarSign className="h-6 w-6 text-white/70" />
               </div>
               <div className="space-y-4">
                 <div className="text-3xl font-bold tracking-tight">
-                  ${totalBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+                  ${getDisplayBalance()}
                 </div>
-                <div className="space-y-1 text-sm text-white/80">
-                  <div className="flex justify-between">
-                    <span>Balance Real:</span>
-                    <span>${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                {balanceDisplay === 'detailed' && (
+                  <div className="space-y-1 text-sm text-white/80">
+                    <div className="flex justify-between">
+                      <span>Balance Real:</span>
+                      <span>${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Balance Demo:</span>
+                      <span>${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Balance Demo:</span>
-                    <span>${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
