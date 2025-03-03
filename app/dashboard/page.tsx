@@ -25,7 +25,6 @@ export default function DashboardPage() {
   const [exchanges, setExchanges] = useState(0);
   const [balanceDisplay, setBalanceDisplay] = useState<BalanceDisplayType>('detailed');
   const [isLoading, setIsLoading] = useState(true);
-  const [hasLoadedData, setHasLoadedData] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -44,6 +43,13 @@ export default function DashboardPage() {
       const refreshEvent = new CustomEvent('refresh', { bubbles: true });
       subaccountsComponent.dispatchEvent(refreshEvent);
     }
+
+    // Establecer un tiempo máximo de carga
+    const loadingTimeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 5000); // 5 segundos máximo de carga
+
+    return () => clearTimeout(loadingTimeout);
   }, []);
 
   useEffect(() => {
@@ -68,16 +74,6 @@ export default function DashboardPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (hasLoadedData) {
-      const minLoadingTime = setTimeout(() => {
-        setIsLoading(false);
-      }, 1000);
-
-      return () => clearTimeout(minLoadingTime);
-    }
-  }, [hasLoadedData]);
-
   const handleStatsUpdate = (stats: {
     totalAccounts: number
     realAccounts: number
@@ -95,7 +91,7 @@ export default function DashboardPage() {
     setRealBalance(stats.realBalance);
     setDemoBalance(stats.demoBalance);
     setExchanges(stats.uniqueExchanges);
-    setHasLoadedData(true);
+    setIsLoading(false); // Desactivar la carga cuando recibimos los datos
   };
 
   const handleSubAccountSuccess = () => {
