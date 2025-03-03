@@ -316,12 +316,6 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
     }
   }
 
-  // Función para manejar el cambio en el checkbox de Demo
-  const handleDemoCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("Checkbox Demo cambiado a:", e.target.checked)
-    setNewAccount({ ...newAccount, isDemo: e.target.checked })
-  }
-
   return (
     <Dialog>
       <DialogTitle className="sr-only">
