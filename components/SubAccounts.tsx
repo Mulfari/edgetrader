@@ -120,7 +120,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     try {
       setLoadingBalance(accountId);
       console.log(`🔍 Iniciando solicitud de balance para cuenta ${accountId}...`);
-      console.log(`�� Token presente: ${!!token}`);
       
       const account = subAccounts.find(acc => acc.id === accountId);
       const isDemo = account?.isDemo === true;
@@ -132,76 +131,10 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         nombre: account?.name
       });
       
-      // Obtener el balance actual
-      const balanceRes = await fetch(`${API_URL}/subaccounts/${accountId}/balance`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log(`📡 Respuesta del servidor:`, {
-        status: balanceRes.status,
-        statusText: balanceRes.statusText,
-        headers: Object.fromEntries(balanceRes.headers.entries())
-      });
-
-      if (!balanceRes.ok) {
-        const errorData = await balanceRes.json().catch(() => ({}));
-        console.error(`❌ Error en la respuesta del servidor:`, {
-          status: balanceRes.status,
-          statusText: balanceRes.statusText,
-          errorData
-        });
-        throw new Error(errorData.message || 'Error al obtener balance');
-      }
-      
-      const balanceData = await balanceRes.json();
-      console.log(`✅ Datos recibidos del servidor:`, {
-        balance: balanceData.balance,
-        assetsCount: balanceData.assets?.length || 0,
-        performance: balanceData.performance,
-        isDemo: balanceData.isDemo,
-        isSimulated: balanceData.isSimulated
-      });
-
-      // Verificar la estructura de la respuesta
-      if (balanceData.balance === undefined) {
-        console.error('❌ La respuesta no contiene un balance válido:', balanceData);
-        throw new Error('Respuesta del servidor no contiene un balance válido');
-      }
-
-      // Procesar y retornar los datos
-      const processedData: AccountDetails = {
-        balance: balanceData.balance || 0,
-        assets: balanceData.assets || [],
-        performance: balanceData.performance || 0,
-        balanceHistory: balanceData.balanceHistory || [],
-        lastUpdate: Date.now(),
-        isSimulated: balanceData.isSimulated || false,
-        isDemo: isDemo,
-        isError: false
-      };
-
-      console.log(`✅ Datos procesados y listos para actualizar UI:`, processedData);
-      
-      // Actualizar el estado global si existe el callback
-      if (onBalanceUpdate) {
-        onBalanceUpdate(accountId, processedData);
-      }
-
-      return processedData;
-      
-    } catch (error) {
-      console.error(`❌ Error en fetchAccountDetails para cuenta ${accountId}:`, error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      
-      const account = subAccounts.find(acc => acc.id === accountId);
-      const isDemo = account?.isDemo === true;
-      
-      if (isDemo) {
-        console.log(`⚠️ Generando datos simulados para cuenta demo ${accountId}`);
-        return { 
+      // Si es una cuenta demo y la solicitud anterior falló, evitamos hacer múltiples intentos
+      if (isDemo && accountBalances[accountId]?.isError) {
+        console.log(`⚠️ Cuenta demo ${accountId} con error previo, retornando datos simulados`);
+        return {
           balance: Math.random() * 10000,
           assets: [
             { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
@@ -216,7 +149,116 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         };
       }
       
-      setError(`Error al obtener balance: ${errorMessage}`);
+      // Obtener el balance actual
+      const balanceRes = await fetch(`${API_URL}/subaccounts/${accountId}/balance`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log(`📡 Respuesta del servidor para cuenta ${isDemo ? 'demo' : 'real'}:`, {
+        status: balanceRes.status,
+        statusText: balanceRes.statusText
+      });
+
+      if (!balanceRes.ok) {
+        const errorData = await balanceRes.json().catch(() => ({}));
+        console.error(`❌ Error en la respuesta del servidor para cuenta ${isDemo ? 'demo' : 'real'}:`, {
+          status: balanceRes.status,
+          statusText: balanceRes.statusText,
+          errorData
+        });
+        
+        if (isDemo) {
+          console.log(`🔄 Generando datos simulados para cuenta demo ${accountId}`);
+          return {
+            balance: Math.random() * 10000,
+            assets: [
+              { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
+              { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
+              { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
+            ],
+            performance: (Math.random() * 20) - 10,
+            lastUpdate: Date.now(),
+            isSimulated: true,
+            isDemo: true,
+            isError: false
+          };
+        }
+        throw new Error(errorData.message || 'Error al obtener balance');
+      }
+      
+      const balanceData = await balanceRes.json();
+      console.log(`✅ Datos recibidos del servidor para cuenta ${isDemo ? 'demo' : 'real'}:`, {
+        balance: balanceData.balance,
+        assetsCount: balanceData.assets?.length || 0,
+        performance: balanceData.performance
+      });
+
+      if (balanceData.balance === undefined) {
+        console.error(`❌ La respuesta no contiene un balance válido para cuenta ${isDemo ? 'demo' : 'real'}:`, balanceData);
+        if (isDemo) {
+          return {
+            balance: Math.random() * 10000,
+            assets: [
+              { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
+              { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
+              { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
+            ],
+            performance: (Math.random() * 20) - 10,
+            lastUpdate: Date.now(),
+            isSimulated: true,
+            isDemo: true,
+            isError: false
+          };
+        }
+        throw new Error('Respuesta del servidor no contiene un balance válido');
+      }
+
+      const processedData: AccountDetails = {
+        balance: balanceData.balance || 0,
+        assets: balanceData.assets || [],
+        performance: balanceData.performance || 0,
+        balanceHistory: balanceData.balanceHistory || [],
+        lastUpdate: Date.now(),
+        isSimulated: false,
+        isDemo: isDemo,
+        isError: false
+      };
+
+      console.log(`✅ Datos procesados y listos para actualizar UI para cuenta ${isDemo ? 'demo' : 'real'}:`, processedData);
+      
+      if (onBalanceUpdate) {
+        onBalanceUpdate(accountId, processedData);
+      }
+
+      return processedData;
+      
+    } catch (error) {
+      console.error(`❌ Error en fetchAccountDetails para cuenta ${accountId}:`, error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      
+      const account = subAccounts.find(acc => acc.id === accountId);
+      const isDemo = account?.isDemo === true;
+      
+      if (isDemo) {
+        console.log(`⚠️ Error en cuenta demo ${accountId}, retornando datos simulados`);
+        return {
+          balance: Math.random() * 10000,
+          assets: [
+            { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
+            { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
+            { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
+          ],
+          performance: (Math.random() * 20) - 10,
+          lastUpdate: Date.now(),
+          isSimulated: true,
+          isDemo: true,
+          isError: false
+        };
+      }
+      
       return {
         balance: null,
         assets: [],
