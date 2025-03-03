@@ -172,7 +172,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     console.log(`🔄 Cargando balances para ${activeAccounts.length} cuentas activas...`);
     
     try {
-      const results = await Promise.all(
+      await Promise.all(
         activeAccounts.map(async (account) => {
           try {
             const details = await fetchAccountDetails(account.userId, account.id, token);
