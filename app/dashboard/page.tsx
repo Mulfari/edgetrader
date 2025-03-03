@@ -38,6 +38,7 @@ export default function DashboardPage() {
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [balanceDisplay, setBalanceDisplay] = useState<BalanceDisplayType>('detailed');
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   // Efecto para inicializar el tema desde localStorage o preferencias del sistema
@@ -104,6 +105,15 @@ export default function DashboardPage() {
     };
   }, []);
 
+  useEffect(() => {
+    // Simular tiempo de carga mínimo para evitar parpadeos
+    const minLoadingTime = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+
+    return () => clearTimeout(minLoadingTime);
+  }, []);
+
   const handleStatsUpdate = (stats: {
     totalAccounts: number
     realAccounts: number
@@ -168,14 +178,29 @@ export default function DashboardPage() {
   };
 
   const getDisplayBalance = () => {
+    if (isLoading) {
+      return (
+        <div className="h-10 w-32 bg-white/20 animate-pulse rounded"></div>
+      );
+    }
+    
     switch (balanceDisplay) {
       case 'real':
-        return realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00";
+        return `$${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`;
       case 'demo':
-        return demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00";
+        return `$${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`;
       default:
-        return totalBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00";
+        return `$${totalBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`;
     }
+  };
+
+  const getSkeletonOrValue = (value: number | string, size: 'sm' | 'lg' = 'lg') => {
+    if (isLoading) {
+      return (
+        <div className={`${size === 'lg' ? 'h-9 w-20' : 'h-5 w-12'} bg-zinc-200 dark:bg-zinc-700 animate-pulse rounded`}></div>
+      );
+    }
+    return value;
   };
 
   const getBalanceTitle = () => {
@@ -396,17 +421,25 @@ export default function DashboardPage() {
                 </div>
                 <div className="space-y-4">
                   <div className="text-4xl font-bold tracking-tight">
-                    ${getDisplayBalance()}
+                    {getDisplayBalance()}
                   </div>
                   {balanceDisplay === 'detailed' && (
                     <div className="space-y-2 text-sm bg-white/10 rounded-lg p-3 backdrop-blur-sm">
                       <div className="flex justify-between font-medium">
                         <span>Balance Real:</span>
-                        <span>${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                        {isLoading ? (
+                          <div className="h-5 w-20 bg-white/20 animate-pulse rounded"></div>
+                        ) : (
+                          <span>${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                        )}
                       </div>
                       <div className="flex justify-between font-medium">
                         <span>Balance Demo:</span>
-                        <span>${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                        {isLoading ? (
+                          <div className="h-5 w-20 bg-white/20 animate-pulse rounded"></div>
+                        ) : (
+                          <span>${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                        )}
                       </div>
                     </div>
                   )}
@@ -426,16 +459,16 @@ export default function DashboardPage() {
                 </div>
                 <div className="space-y-4">
                   <div className="text-3xl font-bold text-zinc-900 dark:text-white">
-                    {activeSubAccounts}
+                    {getSkeletonOrValue(activeSubAccounts)}
                   </div>
                   <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-700/50 rounded-lg p-3">
                     <div className="flex justify-between">
                       <span>Reales:</span>
-                      <span className="font-medium">{realAccounts}</span>
+                      <span className="font-medium">{getSkeletonOrValue(realAccounts, 'sm')}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Demo:</span>
-                      <span className="font-medium">{demoAccounts}</span>
+                      <span className="font-medium">{getSkeletonOrValue(demoAccounts, 'sm')}</span>
                     </div>
                   </div>
                 </div>
@@ -454,7 +487,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="space-y-4">
                   <div className="text-3xl font-bold text-zinc-900 dark:text-white">
-                    {exchanges}
+                    {getSkeletonOrValue(exchanges)}
                   </div>
                   <div className="text-sm text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-700/50 rounded-lg p-3">
                     Plataformas conectadas
@@ -475,7 +508,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="space-y-4">
                   <div className="text-3xl font-bold text-zinc-900 dark:text-white">
-                    {avgPerformance.toFixed(2)}%
+                    {getSkeletonOrValue(`${avgPerformance.toFixed(2)}%`)}
                   </div>
                   <div className="text-sm text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-700/50 rounded-lg p-3">
                     Basado en todas las cuentas
