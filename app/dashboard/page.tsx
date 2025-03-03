@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { 
-  PlusCircle, 
   LayoutDashboard, 
   LineChart, 
   Settings, 
@@ -11,7 +10,6 @@ import {
   TrendingUp,
   Bell,
   Menu,
-  ChevronRight,
   User,
   DollarSign,
   Sun,
