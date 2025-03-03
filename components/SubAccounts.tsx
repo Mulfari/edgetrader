@@ -102,7 +102,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const [loadingAllBalances, setLoadingAllBalances] = useState(false);
   const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedAccountsToDelete, setSelectedAccountsToDelete] = useState<string[]>([]);
 
