@@ -113,6 +113,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [selectedAccountsToDelete, setSelectedAccountsToDelete] = useState<string[]>([]);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
 
   const fetchAccountDetails = async (userId: string, accountId: string, token: string): Promise<AccountDetails> => {
     try {
@@ -285,149 +287,92 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     return Number(performance.toFixed(2));
   };
 
-  const fetchSubAccounts = useCallback(async () => {
+  const loadSubAccounts = useCallback(async () => {
     try {
-      setIsLoading(true);
-      setError(null);
+      console.log('🔄 Cargando subcuentas...');
+      const token = localStorage.getItem('token');
       
-      const token = localStorage.getItem("token");
       if (!token) {
-        router.push("/login");
+        console.error('❌ No hay token de autenticación');
+        router.push('/login');
         return;
       }
-      
-      const res = await fetch(`${API_URL}/subaccounts`, {
+
+      const response = await fetch(`${API_URL}/subaccounts`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.error(`❌ Error del servidor al obtener subcuentas:`, {
-          status: res.status,
-          statusText: res.statusText,
-          errorData
-        });
-        
-        let errorMessage = 'Error al obtener subcuentas';
-        if (res.status === 401) {
-          errorMessage = 'Sesión expirada. Por favor, inicia sesión nuevamente.';
-          router.push("/login");
-        } else if (res.status === 403) {
-          errorMessage = 'No tienes permisos para acceder a las subcuentas.';
-        } else if (res.status === 500) {
-          errorMessage = 'Error interno del servidor. Por favor, intenta nuevamente más tarde.';
-        }
-        
-        if (errorData.message) {
-          errorMessage = `${errorMessage}: ${errorData.message}`;
-        }
-        
-        throw new Error(errorMessage);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Error al cargar subcuentas:', errorData);
+        throw new Error(errorData.message || 'Error al cargar subcuentas');
       }
-      
-      const data = await res.json();
+
+      const data = await response.json();
+      console.log(`✅ Subcuentas cargadas: ${data.length}`);
       setSubAccounts(data);
+      setError(null);
       
-      // Obtener balances para todas las subcuentas, no solo las activas
+      // Cargar balances solo si hay subcuentas
       if (data.length > 0) {
-        console.log(`🔄 Cargando balances para ${data.length} subcuentas automáticamente...`);
-        setLoadingAllBalances(true);
-        
-        // Crear un array de promesas para todas las subcuentas
-        const balancePromises = data.map(async (account: SubAccount) => {
-          try {
-            const details = await fetchAccountDetails(account.userId, account.id, token);
-            return { accountId: account.id, details };
-          } catch (error) {
-            console.error(`Error al cargar balance para cuenta ${account.id}:`, error);
-            return { 
-              accountId: account.id, 
-              details: { 
-                balance: null, 
-                assets: [], 
-                performance: 0,
-                isError: true,
-                error: error instanceof Error ? error.message : 'Error desconocido',
-                isSimulated: false,
-                isDemo: account.isDemo || false
-              } 
-            };
-          }
-        });
-        
-        // Procesar las promesas a medida que se completan
-        const balances: Record<string, AccountDetails> = {};
-        for (const promise of balancePromises) {
-          const result = await promise;
-          balances[result.accountId] = result.details;
-          
-          // Actualizar el estado de balances incrementalmente
-          setAccountBalances(prev => ({
-            ...prev,
-            [result.accountId]: result.details
-          }));
-          
-          // Notificar al componente padre si existe el callback
-          if (onBalanceUpdate) {
-            onBalanceUpdate(result.accountId, result.details);
-          }
-        }
-        
-        // Calcular estadísticas
-        if (onStatsUpdate) {
-          const stats: AccountStats = {
-            totalAccounts: data.length,
-            realAccounts: data.filter((acc: SubAccount) => !acc.isDemo).length,
-            demoAccounts: data.filter((acc: SubAccount) => acc.isDemo).length,
-            totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
-            realBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
-              const account = data.find((a: SubAccount) => a.id === accountId);
-              return sum + (!account?.isDemo ? (acc.balance || 0) : 0);
-            }, 0),
-            demoBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
-              const account = data.find((a: SubAccount) => a.id === accountId);
-              return sum + (account?.isDemo ? (acc.balance || 0) : 0);
-            }, 0),
-            uniqueExchanges: new Set(data.map((acc: SubAccount) => acc.exchange)).size,
-            avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
-          };
-          onStatsUpdate(stats);
-        }
-        
-        setLoadingAllBalances(false);
+        await loadAllBalances(data, token);
       }
     } catch (error) {
-      console.error("❌ Error al obtener subcuentas:", error);
-      setError("Error al cargar las subcuentas. Intenta nuevamente más tarde.");
-      setLoadingAllBalances(false);
+      console.error('❌ Error en loadSubAccounts:', error);
+      setError(error instanceof Error ? error.message : 'Error al cargar subcuentas');
+      
+      // Implementar reintentos si es un error de red
+      if (retryCount < maxRetries) {
+        console.log(`⏳ Reintentando carga (${retryCount + 1}/${maxRetries})...`);
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          loadSubAccounts();
+        }, 2000);
+      }
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, onStatsUpdate]);
+  }, [router, retryCount]);
 
-  useEffect(() => {
-    const handleRefresh = () => {
-      console.log("Evento refresh recibido en SubAccounts");
-      fetchSubAccounts();
-    };
-
-    // Usar el elemento actual o el elemento padre
-    const element = componentRef.current || document.getElementById('subaccounts-component');
-    if (element) {
-      console.log("Agregando event listener para refresh en SubAccounts");
-      element.addEventListener('refresh', handleRefresh);
+  const loadAllBalances = async (accounts: SubAccount[], token: string) => {
+    try {
+      setLoadingAllBalances(true);
+      console.log('🔄 Cargando balances de todas las subcuentas...');
       
-      return () => {
-        console.log("Eliminando event listener para refresh en SubAccounts");
-        element.removeEventListener('refresh', handleRefresh);
-      };
-    } else {
-      console.error("No se pudo encontrar el elemento para agregar el event listener en SubAccounts");
+      const balancePromises = accounts.map(account => 
+        fetchAccountDetails(account.userId, account.id, token)
+          .then(details => ({ id: account.id, details }))
+      );
+
+      const results = await Promise.allSettled(balancePromises);
+      
+      const newBalances: Record<string, AccountDetails> = {};
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          newBalances[result.value.id] = result.value.details;
+        } else {
+          console.error(`❌ Error al cargar balance para cuenta ${accounts[index].id}:`, result.reason);
+          newBalances[accounts[index].id] = {
+            balance: null,
+            assets: [],
+            performance: 0,
+            isError: true,
+            error: result.reason?.message || 'Error al cargar balance'
+          };
+        }
+      });
+
+      setAccountBalances(newBalances);
+      updateStats(accounts, newBalances);
+    } catch (error) {
+      console.error('❌ Error al cargar todos los balances:', error);
+      setError('Error al cargar balances de las subcuentas');
+    } finally {
+      setLoadingAllBalances(false);
     }
-  }, [fetchSubAccounts]);
+  };
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
@@ -590,7 +535,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
 
   const handleCreateSuccess = () => {
     setIsCreateModalOpen(false);
-    fetchSubAccounts();
+    loadSubAccounts();
   };
 
   // Función para eliminar subcuentas seleccionadas
@@ -643,6 +588,49 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       }
     });
   };
+
+  const updateStats = (accounts: SubAccount[], balances: Record<string, AccountDetails>) => {
+    if (onStatsUpdate) {
+      const stats: AccountStats = {
+        totalAccounts: accounts.length,
+        realAccounts: accounts.filter((acc: SubAccount) => !acc.isDemo).length,
+        demoAccounts: accounts.filter((acc: SubAccount) => acc.isDemo).length,
+        totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
+        realBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
+          const account = accounts.find((a: SubAccount) => a.id === accountId);
+          return sum + (!account?.isDemo ? (acc.balance || 0) : 0);
+        }, 0),
+        demoBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
+          const account = accounts.find((a: SubAccount) => a.id === accountId);
+          return sum + (account?.isDemo ? (acc.balance || 0) : 0);
+        }, 0),
+        uniqueExchanges: new Set(accounts.map((acc: SubAccount) => acc.exchange)).size,
+        avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
+      };
+      onStatsUpdate(stats);
+    }
+  };
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      console.log("Evento refresh recibido en SubAccounts");
+      loadSubAccounts();
+    };
+
+    // Usar el elemento actual o el elemento padre
+    const element = componentRef.current || document.getElementById('subaccounts-component');
+    if (element) {
+      console.log("Agregando event listener para refresh en SubAccounts");
+      element.addEventListener('refresh', handleRefresh);
+      
+      return () => {
+        console.log("Eliminando event listener para refresh en SubAccounts");
+        element.removeEventListener('refresh', handleRefresh);
+      };
+    } else {
+      console.error("No se pudo encontrar el elemento para agregar el event listener en SubAccounts");
+    }
+  }, [loadSubAccounts]);
 
   return (
     <div className="space-y-4" ref={componentRef}>
@@ -789,7 +777,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                     className="h-8 text-xs border-red-200 dark:border-red-800/30 hover:bg-red-100/50 dark:hover:bg-red-900/30"
                     onClick={() => {
                       setError(null);
-                      fetchSubAccounts();
+                      loadSubAccounts();
                     }}
                   >
                     <RefreshCw className="mr-2 h-3 w-3" />
@@ -1288,7 +1276,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
             mode="delete"
             onSuccess={() => {
               setIsDeleteModalOpen(false);
-              fetchSubAccounts();
+              loadSubAccounts();
             }}
             onCancel={() => setIsDeleteModalOpen(false)}
           />
