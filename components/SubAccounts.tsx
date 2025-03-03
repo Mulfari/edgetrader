@@ -288,6 +288,9 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   // Función para cargar las subcuentas
   const loadSubAccounts = useCallback(async () => {
     try {
+      // Evitar múltiples llamadas mientras está cargando
+      if (isLoading) return;
+      
       setIsLoading(true);
       const token = localStorage.getItem("token");
       if (!token) {
@@ -332,6 +335,16 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       const balancePromises = data.map((account: SubAccount) => 
         fetchAccountDetails(account.userId, account.id, token)
           .then(details => [account.id, details] as [string, AccountDetails])
+          .catch(error => {
+            console.error(`Error al cargar balance para cuenta ${account.id}:`, error);
+            return [account.id, {
+              balance: null,
+              assets: [],
+              performance: 0,
+              isError: true,
+              error: error instanceof Error ? error.message : 'Error desconocido'
+            }] as [string, AccountDetails];
+          })
       );
 
       const balances = await Promise.all(balancePromises);
@@ -362,16 +375,26 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     } finally {
       setIsLoading(false);
     }
-  }, [router, onStatsUpdate]);
+  }, [router, onStatsUpdate, isLoading]);
 
   // Efecto para cargar datos iniciales
   useEffect(() => {
-    loadSubAccounts();
+    let isSubscribed = true;
+    
+    const loadData = async () => {
+      if (isSubscribed) {
+        await loadSubAccounts();
+      }
+    };
+    
+    loadData();
 
     // Configurar el evento de actualización
     const handleRefresh = () => {
-      console.log("Evento refresh recibido en SubAccounts");
-      loadSubAccounts();
+      if (isSubscribed) {
+        console.log("Evento refresh recibido en SubAccounts");
+        loadSubAccounts();
+      }
     };
 
     if (componentRef.current) {
@@ -379,9 +402,14 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }
 
     // Establecer un intervalo de actualización cada 30 segundos
-    const intervalId = setInterval(loadSubAccounts, 30000);
+    const intervalId = setInterval(() => {
+      if (isSubscribed) {
+        loadSubAccounts();
+      }
+    }, 30000);
 
     return () => {
+      isSubscribed = false;
       if (componentRef.current) {
         componentRef.current.removeEventListener('refresh', handleRefresh);
       }
