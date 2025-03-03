@@ -288,7 +288,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   // Función para cargar las subcuentas
   const loadSubAccounts = useCallback(async () => {
     try {
-      // No verificamos isLoading aquí para permitir la carga inicial
       setIsLoading(true);
       const token = localStorage.getItem("token");
       if (!token) {
@@ -373,12 +372,12 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     } finally {
       setIsLoading(false);
     }
-  }, [router, onStatsUpdate]);
+  }, [router, onStatsUpdate, fetchAccountDetails]);
 
   // Efecto para cargar datos iniciales
   useEffect(() => {
     let isSubscribed = true;
-    let intervalId: NodeJS.Timeout;
+    const currentRef = componentRef.current;
     
     const loadData = async () => {
       if (isSubscribed) {
@@ -396,12 +395,12 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       }
     };
 
-    if (componentRef.current) {
-      componentRef.current.addEventListener('refresh', handleRefresh);
+    if (currentRef) {
+      currentRef.addEventListener('refresh', handleRefresh);
     }
 
     // Establecer un intervalo de actualización cada 30 segundos
-    intervalId = setInterval(() => {
+    const intervalId = setInterval(() => {
       if (isSubscribed) {
         loadSubAccounts();
       }
@@ -409,12 +408,10 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
 
     return () => {
       isSubscribed = false;
-      if (componentRef.current) {
-        componentRef.current.removeEventListener('refresh', handleRefresh);
+      if (currentRef) {
+        currentRef.removeEventListener('refresh', handleRefresh);
       }
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
+      clearInterval(intervalId);
     };
   }, [loadSubAccounts]);
 
