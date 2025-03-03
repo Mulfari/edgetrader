@@ -119,130 +119,114 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const fetchAccountDetails = async (userId: string, accountId: string, token: string): Promise<AccountDetails> => {
     try {
       setLoadingBalance(accountId);
-      console.log(`🔍 Solicitando balance para cuenta ${accountId}...`);
+      console.log(`🔍 Iniciando solicitud de balance para cuenta ${accountId}...`);
+      console.log(`�� Token presente: ${!!token}`);
       
       const account = subAccounts.find(acc => acc.id === accountId);
       const isDemo = account?.isDemo === true;
       
-      console.log(`📊 Tipo de cuenta: ${isDemo ? 'Demo' : 'Real'}, Exchange: ${account?.exchange}`);
+      console.log(`📊 Detalles de la cuenta:`, {
+        id: accountId,
+        tipo: isDemo ? 'Demo' : 'Real',
+        exchange: account?.exchange,
+        nombre: account?.name
+      });
       
       // Obtener el balance actual
       const balanceRes = await fetch(`${API_URL}/subaccounts/${accountId}/balance`, {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
+      });
+
+      console.log(`📡 Respuesta del servidor:`, {
+        status: balanceRes.status,
+        statusText: balanceRes.statusText,
+        headers: Object.fromEntries(balanceRes.headers.entries())
       });
 
       if (!balanceRes.ok) {
         const errorData = await balanceRes.json().catch(() => ({}));
-        console.error(`❌ Error al obtener balance para cuenta ${accountId}:`, errorData);
-        console.error(`   Status: ${balanceRes.status} ${balanceRes.statusText}`);
-        
-        const isGeoRestriction = 
-          errorData.message?.includes('ubicación geográfica') || 
-          errorData.message?.includes('CloudFront') ||
-          errorData.statusCode === 403;
-        
-        if (isDemo) {
-          // Generar datos simulados para cuentas demo
-          const simulatedBalance = Math.random() * 10000;
-          const simulatedHistory = generateSimulatedHistory(simulatedBalance);
-          const simulatedPerformance = calculatePerformance(simulatedHistory);
-          
-          return { 
-            balance: simulatedBalance,
-            assets: [
-              { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
-              { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
-              { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
-            ],
-            performance: simulatedPerformance,
-            balanceHistory: simulatedHistory,
-            lastUpdate: Date.now(),
-            isSimulated: true,
-            isDemo: true,
-            isError: false
-          };
-        } else {
-          let errorMessage = errorData.message || errorData.error || 'Error al obtener balance real';
-          if (isGeoRestriction) {
-            errorMessage = 'La API de Bybit no está disponible en tu ubicación geográfica. Considera usar una VPN o contactar con soporte.';
-          }
-          throw new Error(errorMessage);
-        }
+        console.error(`❌ Error en la respuesta del servidor:`, {
+          status: balanceRes.status,
+          statusText: balanceRes.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || 'Error al obtener balance');
       }
       
-      // Obtener el historial de balances
-      const historyRes = await fetch(`${API_URL}/subaccounts/${accountId}/balance/history`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
       const balanceData = await balanceRes.json();
-      const historyData = historyRes.ok ? await historyRes.json() : { history: [] };
-      
-      // Calcular el rendimiento basado en el historial
-      const performance = calculatePerformance(historyData.history);
-      
-      console.log(`✅ Datos recibidos para cuenta ${accountId}:`, {
+      console.log(`✅ Datos recibidos del servidor:`, {
         balance: balanceData.balance,
         assetsCount: balanceData.assets?.length || 0,
-        performance: performance,
-        historyLength: historyData.history?.length || 0
+        performance: balanceData.performance,
+        isDemo: balanceData.isDemo,
+        isSimulated: balanceData.isSimulated
       });
-      
-      return {
+
+      // Verificar la estructura de la respuesta
+      if (balanceData.balance === undefined) {
+        console.error('❌ La respuesta no contiene un balance válido:', balanceData);
+        throw new Error('Respuesta del servidor no contiene un balance válido');
+      }
+
+      // Procesar y retornar los datos
+      const processedData: AccountDetails = {
         balance: balanceData.balance || 0,
         assets: balanceData.assets || [],
-        performance: performance,
-        balanceHistory: historyData.history || [],
+        performance: balanceData.performance || 0,
+        balanceHistory: balanceData.balanceHistory || [],
         lastUpdate: Date.now(),
-        isSimulated: false,
+        isSimulated: balanceData.isSimulated || false,
         isDemo: isDemo,
         isError: false
       };
+
+      console.log(`✅ Datos procesados y listos para actualizar UI:`, processedData);
       
-    } catch (error: unknown) {
-      console.error(`❌ Error al obtener balance para cuenta ${accountId}:`, error);
+      // Actualizar el estado global si existe el callback
+      if (onBalanceUpdate) {
+        onBalanceUpdate(accountId, processedData);
+      }
+
+      return processedData;
+      
+    } catch (error) {
+      console.error(`❌ Error en fetchAccountDetails para cuenta ${accountId}:`, error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       
       const account = subAccounts.find(acc => acc.id === accountId);
       const isDemo = account?.isDemo === true;
       
       if (isDemo) {
-        const simulatedBalance = Math.random() * 10000;
-        const simulatedHistory = generateSimulatedHistory(simulatedBalance);
-        const simulatedPerformance = calculatePerformance(simulatedHistory);
-        
+        console.log(`⚠️ Generando datos simulados para cuenta demo ${accountId}`);
         return { 
-          balance: simulatedBalance,
+          balance: Math.random() * 10000,
           assets: [
             { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
             { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
             { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
           ],
-          performance: simulatedPerformance,
-          balanceHistory: simulatedHistory,
+          performance: (Math.random() * 20) - 10,
           lastUpdate: Date.now(),
           isSimulated: true,
           isDemo: true,
           isError: false
         };
-      } else {
-        const errorMessage = error instanceof Error ? error.message : 'Error desconocido al obtener balance';
-        setError(`Error al obtener balance de la cuenta real: ${errorMessage}`);
-        return { 
-          balance: null, 
-          assets: [], 
-          performance: 0,
-          balanceHistory: [],
-          lastUpdate: Date.now(),
-          error: errorMessage,
-          isError: true,
-          isSimulated: false,
-          isDemo: false
-        };
       }
+      
+      setError(`Error al obtener balance: ${errorMessage}`);
+      return {
+        balance: null,
+        assets: [],
+        performance: 0,
+        lastUpdate: Date.now(),
+        error: errorMessage,
+        isError: true,
+        isSimulated: false,
+        isDemo: isDemo
+      };
     } finally {
       setLoadingBalance(null);
     }
