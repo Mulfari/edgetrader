@@ -287,6 +287,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
 
   // Función para cargar las subcuentas
   const loadSubAccounts = useCallback(async () => {
+    if (isLoading) return; // Evitar llamadas mientras está cargando
+    
     try {
       setIsLoading(true);
       const token = localStorage.getItem("token");
@@ -306,6 +308,14 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       }
 
       const data = await response.json();
+      
+      // Verificar si los datos han cambiado antes de actualizar
+      const hasDataChanged = JSON.stringify(data) !== JSON.stringify(subAccounts);
+      if (!hasDataChanged) {
+        setIsLoading(false);
+        return;
+      }
+      
       setSubAccounts(data);
 
       // Actualizar estadísticas incluso si no hay subcuentas
@@ -380,19 +390,17 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     const currentRef = componentRef.current;
     
     const loadData = async () => {
-      if (isSubscribed) {
-        await loadSubAccounts();
-      }
+      if (!isSubscribed || isLoading) return; // Evitar múltiples llamadas mientras está cargando
+      await loadSubAccounts();
     };
     
     loadData();
 
     // Configurar el evento de actualización
     const handleRefresh = () => {
-      if (isSubscribed) {
-        console.log("Evento refresh recibido en SubAccounts");
-        loadSubAccounts();
-      }
+      if (!isSubscribed || isLoading) return; // Evitar múltiples llamadas mientras está cargando
+      console.log("Evento refresh recibido en SubAccounts");
+      loadSubAccounts();
     };
 
     if (currentRef) {
@@ -401,9 +409,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
 
     // Establecer un intervalo de actualización cada 30 segundos
     const intervalId = setInterval(() => {
-      if (isSubscribed) {
-        loadSubAccounts();
-      }
+      if (!isSubscribed || isLoading) return; // Evitar múltiples llamadas mientras está cargando
+      loadSubAccounts();
     }, 30000);
 
     return () => {
@@ -413,7 +420,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       }
       clearInterval(intervalId);
     };
-  }, [loadSubAccounts]);
+  }, [loadSubAccounts, isLoading]); // Añadir isLoading como dependencia
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
