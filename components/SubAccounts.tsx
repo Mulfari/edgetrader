@@ -207,6 +207,70 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }
   };
 
+  const fetchAccountBalances = useCallback(async (accounts: SubAccount[], token: string) => {
+    const balances: Record<string, AccountDetails> = {};
+    
+    // Procesar las cuentas en paralelo
+    await Promise.all(accounts.map(async (account) => {
+      if (account.active) {
+        try {
+          console.log(`🔄 Obteniendo balance para cuenta ${account.id} (${account.isDemo ? 'Demo' : 'Real'})`);
+          const details = await fetchAccountDetails(account.userId, account.id, token);
+          balances[account.id] = details;
+          
+          // Actualizar el balance en tiempo real si hay un callback
+          if (onBalanceUpdate) {
+            onBalanceUpdate(account.id, details);
+          }
+        } catch (error) {
+          console.error(`❌ Error al procesar balance para cuenta ${account.id}:`, error);
+          
+          // Manejar el error según el tipo de cuenta
+          if (account.isDemo) {
+            // Para cuentas demo, generar datos simulados
+            const simulatedDetails: AccountDetails = { 
+              balance: Math.random() * 10000, 
+              assets: [
+                { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
+                { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
+                { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
+              ], 
+              performance: (Math.random() * 20) - 10, // Entre -10% y +10%
+              isSimulated: true,
+              isDemo: true,
+              isError: false
+            };
+            balances[account.id] = simulatedDetails;
+            
+            if (onBalanceUpdate) {
+              onBalanceUpdate(account.id, simulatedDetails);
+            }
+          } else {
+            // Para cuentas reales, establecer un objeto con error
+            const errorMessage = error instanceof Error ? error.message : 'Error desconocido al obtener balance';
+            const errorDetails: AccountDetails = { 
+              balance: null, 
+              assets: [], 
+              performance: 0,
+              error: errorMessage,
+              isError: true,
+              isSimulated: false,
+              isDemo: false
+            };
+            balances[account.id] = errorDetails;
+            
+            if (onBalanceUpdate) {
+              onBalanceUpdate(account.id, errorDetails);
+            }
+          }
+        }
+      }
+    }));
+    
+    return balances;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onBalanceUpdate]);
+
   const fetchSubAccounts = useCallback(async () => {
     try {
       setIsLoading(true);
