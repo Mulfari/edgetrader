@@ -549,8 +549,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       <div className="space-y-6 animate-in fade-in-50 duration-300" ref={componentRef} id="subaccounts-component">
         {/* Header Section */}
         <div className="flex flex-col space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center space-x-4">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="flex flex-col space-y-4">
               <h2 className="text-2xl font-bold tracking-tight">
                 Subcuentas
                 {loadingAllBalances && (
@@ -560,41 +560,43 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                   </span>
                 )}
               </h2>
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar subcuentas..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar subcuentas..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Filter className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setSelectedType("all")}>
+                      Todas las cuentas
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSelectedType("real")}>
+                      Cuentas reales
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSelectedType("demo")}>
+                      Cuentas demo
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button
+                  onClick={refreshAllBalances}
+                  disabled={loadingAllBalances}
+                  variant="outline"
+                  size="icon"
+                >
+                  <RefreshCw className={`h-4 w-4 ${loadingAllBalances ? 'animate-spin' : ''}`} />
+                </Button>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setSelectedType("all")}>
-                    Todas las cuentas
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSelectedType("real")}>
-                    Cuentas reales
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSelectedType("demo")}>
-                    Cuentas demo
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button
-                onClick={refreshAllBalances}
-                disabled={loadingAllBalances}
-                variant="outline"
-                size="icon"
-              >
-                <RefreshCw className={`h-4 w-4 ${loadingAllBalances ? 'animate-spin' : ''}`} />
-              </Button>
             </div>
             <div className="flex items-center space-x-4">
               <Button
