@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogTrigger, DialogPortal } from "@radix-ui/react-dialog"
+import { Dialog, DialogContent, DialogPortal } from "@radix-ui/react-dialog"
 import { useRouter } from "next/navigation"
 
 interface SubAccount {
