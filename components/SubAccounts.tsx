@@ -88,6 +88,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [selectedType, setSelectedType] = useState<string>("all");
   const [loadingBalance, setLoadingBalance] = useState<string | null>(null);
+  const [loadingAllBalances, setLoadingAllBalances] = useState(false);
   const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -294,25 +295,70 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       const data = await res.json();
       setSubAccounts(data);
       
-      // Obtener balances para todas las subcuentas activas
-      const balances = await fetchAccountBalances(data.filter((acc: SubAccount) => acc.active), token);
-      setAccountBalances(balances);
-      
-      // Calcular estadísticas
-      if (data.length > 0 && onStatsUpdate) {
-        const stats: AccountStats = {
-          totalAccounts: data.length,
-          realAccounts: data.filter((acc: SubAccount) => !acc.isDemo).length,
-          demoAccounts: data.filter((acc: SubAccount) => acc.isDemo).length,
-          totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
-          uniqueExchanges: new Set(data.map((acc: SubAccount) => acc.exchange)).size,
-          avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
-        };
-        onStatsUpdate(stats);
+      // Obtener balances para todas las subcuentas, no solo las activas
+      if (data.length > 0) {
+        console.log(`🔄 Cargando balances para ${data.length} subcuentas automáticamente...`);
+        setLoadingAllBalances(true);
+        
+        // Crear un array de promesas para todas las subcuentas
+        const balancePromises = data.map(async (account: SubAccount) => {
+          try {
+            const details = await fetchAccountDetails(account.userId, account.id, token);
+            return { accountId: account.id, details };
+          } catch (error) {
+            console.error(`Error al cargar balance para cuenta ${account.id}:`, error);
+            return { 
+              accountId: account.id, 
+              details: { 
+                balance: null, 
+                assets: [], 
+                performance: 0,
+                isError: true,
+                error: error instanceof Error ? error.message : 'Error desconocido',
+                isSimulated: false,
+                isDemo: account.isDemo || false
+              } 
+            };
+          }
+        });
+        
+        // Procesar las promesas a medida que se completan
+        const balances: Record<string, AccountDetails> = {};
+        for (const promise of balancePromises) {
+          const result = await promise;
+          balances[result.accountId] = result.details;
+          
+          // Actualizar el estado de balances incrementalmente
+          setAccountBalances(prev => ({
+            ...prev,
+            [result.accountId]: result.details
+          }));
+          
+          // Notificar al componente padre si existe el callback
+          if (onBalanceUpdate) {
+            onBalanceUpdate(result.accountId, result.details);
+          }
+        }
+        
+        // Calcular estadísticas
+        if (onStatsUpdate) {
+          const stats: AccountStats = {
+            totalAccounts: data.length,
+            realAccounts: data.filter((acc: SubAccount) => !acc.isDemo).length,
+            demoAccounts: data.filter((acc: SubAccount) => acc.isDemo).length,
+            totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
+            uniqueExchanges: new Set(data.map((acc: SubAccount) => acc.exchange)).size,
+            avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
+          };
+          onStatsUpdate(stats);
+        }
+        
+        setLoadingAllBalances(false);
       }
     } catch (error) {
       console.error("❌ Error al obtener subcuentas:", error);
       setError("Error al cargar las subcuentas. Intenta nuevamente más tarde.");
+      setLoadingAllBalances(false);
     } finally {
       setIsLoading(false);
     }
@@ -416,13 +462,106 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         account.exchange.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Función para actualizar todos los balances manualmente
+  const refreshAllBalances = async () => {
+    if (loadingAllBalances || subAccounts.length === 0) return;
+    
+    try {
+      setLoadingAllBalances(true);
+      
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+      
+      console.log(`🔄 Actualizando balances para ${subAccounts.length} subcuentas...`);
+      
+      // Crear un array de promesas para todas las subcuentas
+      const balancePromises = subAccounts.map(async (account: SubAccount) => {
+        try {
+          const details = await fetchAccountDetails(account.userId, account.id, token);
+          return { accountId: account.id, details };
+        } catch (error) {
+          console.error(`Error al actualizar balance para cuenta ${account.id}:`, error);
+          return { 
+            accountId: account.id, 
+            details: { 
+              balance: null, 
+              assets: [], 
+              performance: 0,
+              isError: true,
+              error: error instanceof Error ? error.message : 'Error desconocido',
+              isSimulated: false,
+              isDemo: account.isDemo || false
+            } 
+          };
+        }
+      });
+      
+      // Procesar las promesas a medida que se completan
+      const balances: Record<string, AccountDetails> = {};
+      for (const promise of balancePromises) {
+        const result = await promise;
+        balances[result.accountId] = result.details;
+        
+        // Actualizar el estado de balances incrementalmente
+        setAccountBalances(prev => ({
+          ...prev,
+          [result.accountId]: result.details
+        }));
+        
+        // Notificar al componente padre si existe el callback
+        if (onBalanceUpdate) {
+          onBalanceUpdate(result.accountId, result.details);
+        }
+      }
+      
+      // Calcular estadísticas
+      if (onStatsUpdate) {
+        const stats: AccountStats = {
+          totalAccounts: subAccounts.length,
+          realAccounts: subAccounts.filter((acc: SubAccount) => !acc.isDemo).length,
+          demoAccounts: subAccounts.filter((acc: SubAccount) => acc.isDemo).length,
+          totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
+          uniqueExchanges: new Set(subAccounts.map((acc: SubAccount) => acc.exchange)).size,
+          avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
+        };
+        onStatsUpdate(stats);
+      }
+    } catch (error) {
+      console.error("❌ Error al actualizar balances:", error);
+      setError("Error al actualizar los balances. Intenta nuevamente más tarde.");
+    } finally {
+      setLoadingAllBalances(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-300" ref={componentRef} id="subaccounts-component">
       {/* Header Section */}
       <div className="flex flex-col space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <h2 className="text-2xl font-bold tracking-tight">Subcuentas</h2>
+          <h2 className="text-2xl font-bold tracking-tight">
+            Subcuentas
+            {loadingAllBalances && (
+              <span className="ml-2 inline-flex items-center text-sm font-normal text-blue-600 dark:text-blue-400">
+                <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                Cargando balances...
+              </span>
+            )}
+          </h2>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-9 gap-1"
+              disabled={loadingAllBalances || isLoading}
+              onClick={refreshAllBalances}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loadingAllBalances ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Actualizar balances</span>
+            </Button>
             <div className="relative w-full md:w-64">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -582,9 +721,34 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                           <Skeleton className="h-6 w-[100px]" />
                         ) : accountBalances[sub.id] ? (
                           accountBalances[sub.id].isError ? (
-                            <div className="flex items-center text-red-500 dark:text-red-400 text-lg">
-                              <AlertCircle className="h-5 w-5 mr-2" />
-                              <span>Error al cargar datos</span>
+                            <div className="flex items-center text-red-500 dark:text-red-400 text-sm">
+                              <AlertCircle className="h-4 w-4 mr-1" />
+                              <span>Error</span>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-7 px-2 text-xs ml-2"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const token = localStorage.getItem("token");
+                                  if (token) {
+                                    setLoadingBalance(sub.id);
+                                    fetchAccountDetails(sub.userId, sub.id, token)
+                                      .then(details => {
+                                        setAccountBalances(prev => ({
+                                          ...prev,
+                                          [sub.id]: details
+                                        }));
+                                      })
+                                      .finally(() => {
+                                        setLoadingBalance(null);
+                                      });
+                                  }
+                                }}
+                              >
+                                <RefreshCw className="h-3 w-3 mr-1" />
+                                Reintentar
+                              </Button>
                             </div>
                           ) : (
                             <div className="flex items-center gap-2">
@@ -613,28 +777,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                             </div>
                           )
                         ) : (
-                          <span className="text-blue-500 dark:text-blue-400 text-sm">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-7 px-2 text-xs"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const token = localStorage.getItem("token");
-                                if (token) {
-                                  fetchAccountDetails(sub.userId, sub.id, token)
-                                    .then(details => {
-                                      setAccountBalances(prev => ({
-                                        ...prev,
-                                        [sub.id]: details
-                                      }));
-                                    });
-                                }
-                              }}
-                            >
-                              Cargar balance
-                            </Button>
-                          </span>
+                          <Skeleton className="h-6 w-[100px]" />
                         )}
                       </TableCell>
                       <TableCell onClick={() => handleRowClick(sub)}>
@@ -717,9 +860,34 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                           <Skeleton className="h-6 w-[100px]" />
                                         ) : accountBalances[sub.id] ? (
                                           accountBalances[sub.id].isError ? (
-                                            <div className="flex items-center text-red-500 dark:text-red-400 text-lg">
-                                              <AlertCircle className="h-5 w-5 mr-2" />
-                                              <span>Error al cargar datos</span>
+                                            <div className="flex items-center text-red-500 dark:text-red-400 text-sm">
+                                              <AlertCircle className="h-4 w-4 mr-1" />
+                                              <span>Error</span>
+                                              <Button 
+                                                variant="ghost" 
+                                                size="sm" 
+                                                className="h-7 px-2 text-xs ml-2"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  const token = localStorage.getItem("token");
+                                                  if (token) {
+                                                    setLoadingBalance(sub.id);
+                                                    fetchAccountDetails(sub.userId, sub.id, token)
+                                                      .then(details => {
+                                                        setAccountBalances(prev => ({
+                                                          ...prev,
+                                                          [sub.id]: details
+                                                        }));
+                                                      })
+                                                      .finally(() => {
+                                                        setLoadingBalance(null);
+                                                      });
+                                                  }
+                                                }}
+                                              >
+                                                <RefreshCw className="h-3 w-3 mr-1" />
+                                                Reintentar
+                                              </Button>
                                             </div>
                                           ) : (
                                             <div className="flex items-center gap-2">
@@ -748,28 +916,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                             </div>
                                           )
                                         ) : (
-                                          <span className="text-blue-500 dark:text-blue-400 text-sm">
-                                            <Button 
-                                              variant="ghost" 
-                                              size="sm" 
-                                              className="h-7 px-2 text-xs"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                const token = localStorage.getItem("token");
-                                                if (token) {
-                                                  fetchAccountDetails(sub.userId, sub.id, token)
-                                                    .then(details => {
-                                                      setAccountBalances(prev => ({
-                                                        ...prev,
-                                                        [sub.id]: details
-                                                      }));
-                                                    });
-                                                }
-                                              }}
-                                            >
-                                              Cargar balance
-                                            </Button>
-                                          </span>
+                                          <Skeleton className="h-6 w-[100px]" />
                                         )}
                                       </div>
                                     </CardContent>
@@ -827,28 +974,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                             {accountBalances[sub.id].performance.toFixed(2)}%
                                           </span>
                                         ) : (
-                                          <span className="text-blue-500 dark:text-blue-400 text-sm">
-                                            <Button 
-                                              variant="ghost" 
-                                              size="sm" 
-                                              className="h-7 px-2 text-xs"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                const token = localStorage.getItem("token");
-                                                if (token) {
-                                                  fetchAccountDetails(sub.userId, sub.id, token)
-                                                    .then(details => {
-                                                      setAccountBalances(prev => ({
-                                                        ...prev,
-                                                        [sub.id]: details
-                                                      }));
-                                                    });
-                                                }
-                                              }}
-                                            >
-                                              Actualizar
-                                            </Button>
-                                          </span>
+                                          <Skeleton className="h-6 w-[100px]" />
                                         )}
                                       </div>
                                     </CardContent>
@@ -865,22 +991,27 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                       variant="outline" 
                                       size="sm" 
                                       className="h-8 text-xs"
+                                      disabled={loadingBalance === sub.id}
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         const token = localStorage.getItem("token");
                                         if (token) {
+                                          setLoadingBalance(sub.id);
                                           fetchAccountDetails(sub.userId, sub.id, token)
                                             .then(details => {
                                               setAccountBalances(prev => ({
                                                 ...prev,
                                                 [sub.id]: details
                                               }));
+                                            })
+                                            .finally(() => {
+                                              setLoadingBalance(null);
                                             });
                                         }
                                       }}
                                     >
                                       <RefreshCw className={`mr-2 h-3 w-3 ${loadingBalance === sub.id ? "animate-spin" : ""}`} />
-                                      Actualizar
+                                      {loadingBalance === sub.id ? "Actualizando..." : "Actualizar"}
                                     </Button>
                                   </div>
                                   
@@ -916,6 +1047,38 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                         </TableBody>
                                       </Table>
                                     </div>
+                                  ) : accountBalances[sub.id]?.isError ? (
+                                    <div className="text-center py-8 border border-dashed border-red-200 dark:border-red-800/30 rounded-lg bg-red-50/50 dark:bg-red-950/10">
+                                      <div className="flex flex-col items-center justify-center space-y-2">
+                                        <AlertCircle className="h-12 w-12 text-red-400 dark:text-red-500 opacity-50" />
+                                        <p className="text-red-600 dark:text-red-400">Error al cargar los activos.</p>
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm" 
+                                          className="mt-2"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const token = localStorage.getItem("token");
+                                            if (token) {
+                                              setLoadingBalance(sub.id);
+                                              fetchAccountDetails(sub.userId, sub.id, token)
+                                                .then(details => {
+                                                  setAccountBalances(prev => ({
+                                                    ...prev,
+                                                    [sub.id]: details
+                                                  }));
+                                                })
+                                                .finally(() => {
+                                                  setLoadingBalance(null);
+                                                });
+                                            }
+                                          }}
+                                        >
+                                          <RefreshCw className="mr-2 h-4 w-4" />
+                                          Reintentar
+                                        </Button>
+                                      </div>
+                                    </div>
                                   ) : (
                                     <div className="text-center py-8 border border-dashed border-blue-200 dark:border-blue-800/30 rounded-lg bg-blue-50/50 dark:bg-blue-950/10">
                                       <div className="flex flex-col items-center justify-center space-y-2">
@@ -929,18 +1092,22 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                             e.stopPropagation();
                                             const token = localStorage.getItem("token");
                                             if (token) {
+                                              setLoadingBalance(sub.id);
                                               fetchAccountDetails(sub.userId, sub.id, token)
                                                 .then(details => {
                                                   setAccountBalances(prev => ({
                                                     ...prev,
                                                     [sub.id]: details
                                                   }));
+                                                })
+                                                .finally(() => {
+                                                  setLoadingBalance(null);
                                                 });
                                             }
                                           }}
                                         >
                                           <RefreshCw className="mr-2 h-4 w-4" />
-                                          Cargar activos
+                                          Actualizar
                                         </Button>
                                       </div>
                                     </div>
