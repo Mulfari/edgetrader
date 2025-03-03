@@ -23,7 +23,6 @@ export default function DashboardPage() {
   const [realAccounts, setRealAccounts] = useState(0);
   const [demoAccounts, setDemoAccounts] = useState(0);
   const [exchanges, setExchanges] = useState(0);
-  const [avgPerformance, setAvgPerformance] = useState(0);
   const [balanceDisplay, setBalanceDisplay] = useState<BalanceDisplayType>('detailed');
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedData, setHasLoadedData] = useState(false);
@@ -96,7 +95,6 @@ export default function DashboardPage() {
     setRealBalance(stats.realBalance);
     setDemoBalance(stats.demoBalance);
     setExchanges(stats.uniqueExchanges);
-    setAvgPerformance(stats.avgPerformance);
     setHasLoadedData(true);
   };
 
