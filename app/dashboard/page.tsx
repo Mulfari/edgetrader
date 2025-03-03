@@ -293,7 +293,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="bg-blue-50 dark:bg-slate-800/20 px-5 py-3">
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 px-5 py-3">
                 <div className="text-sm">
                   <a href="#" className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 flex items-center justify-between transition-colors duration-200">
                     Ver todas
@@ -303,22 +303,25 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg p-6 text-white shadow-lg">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Balance Total</h3>
-                <DollarSign className="h-6 w-6 text-white/70" />
-              </div>
-              <div className="text-3xl font-bold mb-4">
-                ${totalBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
-              </div>
-              <div className="space-y-2 text-sm text-white/80">
-                <div className="flex justify-between items-center">
-                  <span>Balance Real:</span>
-                  <span className="font-medium">${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+            <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl p-6 text-white shadow-lg relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Balance Total</h3>
+                  <DollarSign className="h-6 w-6 text-white/70" />
                 </div>
-                <div className="flex justify-between items-center">
-                  <span>Balance Demo:</span>
-                  <span className="font-medium">${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                <div className="text-3xl font-bold mb-4">
+                  ${totalBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+                </div>
+                <div className="space-y-2 text-sm text-white/80">
+                  <div className="flex justify-between items-center">
+                    <span>Balance Real:</span>
+                    <span className="font-medium">${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Balance Demo:</span>
+                    <span className="font-medium">${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -342,7 +345,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 px-5 py-3">
+              <div className="bg-gradient-to-r from-purple-50 to-lavender-50 dark:from-purple-900/20 dark:to-lavender-900/20 px-5 py-3">
                 <div className="text-sm">
                   <a href="#" className="font-medium text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 flex items-center justify-between transition-colors duration-200">
                     Conectar más
@@ -371,7 +374,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 px-5 py-3">
+              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 px-5 py-3">
                 <div className="text-sm">
                   <a href="#" className="font-medium text-yellow-600 dark:text-yellow-400 hover:text-yellow-500 dark:hover:text-yellow-300 flex items-center justify-between transition-colors duration-200">
                     Ver análisis

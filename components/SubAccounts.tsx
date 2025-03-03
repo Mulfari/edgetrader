@@ -645,22 +645,31 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   };
 
   const calculateTotalBalances = () => {
-    let totalRealBalance = 0;
-    let totalDemoBalance = 0;
+    if (!selectedSubAccountId || !accountBalances[selectedSubAccountId]) {
+      return {
+        total: 0,
+        real: 0,
+        demo: 0
+      };
+    }
 
-    Object.entries(accountBalances).forEach(([accountId, details]) => {
-      const account = subAccounts.find(acc => acc.id === accountId);
-      if (account?.isDemo) {
-        totalDemoBalance += details.balance || 0;
-      } else {
-        totalRealBalance += details.balance || 0;
-      }
-    });
+    const details = accountBalances[selectedSubAccountId];
+    const account = subAccounts.find(acc => acc.id === selectedSubAccountId);
+    
+    if (!account) {
+      return {
+        total: 0,
+        real: 0,
+        demo: 0
+      };
+    }
 
+    const balance = details.balance || 0;
+    
     return {
-      total: totalRealBalance + totalDemoBalance,
-      real: totalRealBalance,
-      demo: totalDemoBalance
+      total: balance,
+      real: account.isDemo ? 0 : balance,
+      demo: account.isDemo ? balance : 0
     };
   };
 
