@@ -526,14 +526,14 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Exchanges Card */}
+            {/* Operaciones Card */}
             <div className="relative group min-h-[240px]">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-600 rounded-xl blur opacity-50 group-hover:opacity-75 transition duration-200"></div>
               <div className="relative h-full bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 flex flex-col">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium text-zinc-800 dark:text-zinc-100">Exchanges</h3>
-                  <div className="p-2 bg-indigo-500/10 dark:bg-indigo-400/10 rounded-lg">
-                    <BarChart3 className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                  <h3 className="text-lg font-medium text-zinc-800 dark:text-zinc-100">Operaciones</h3>
+                  <div className="p-2 bg-emerald-500/10 dark:bg-emerald-400/10 rounded-lg">
+                    <LineChart className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                   </div>
                 </div>
                 <div className="space-y-4">
@@ -541,7 +541,7 @@ export default function DashboardPage() {
                     {getSkeletonOrValue(exchanges)}
                   </div>
                   <div className="text-sm text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-700/50 rounded-lg p-3">
-                    Plataformas conectadas
+                    Total de operaciones realizadas
                   </div>
                 </div>
               </div>
