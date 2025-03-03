@@ -301,7 +301,28 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       });
       
       if (!res.ok) {
-        throw new Error("Error al obtener subcuentas");
+        const errorData = await res.json().catch(() => ({}));
+        console.error(`❌ Error del servidor al obtener subcuentas:`, {
+          status: res.status,
+          statusText: res.statusText,
+          errorData
+        });
+        
+        let errorMessage = 'Error al obtener subcuentas';
+        if (res.status === 401) {
+          errorMessage = 'Sesión expirada. Por favor, inicia sesión nuevamente.';
+          router.push("/login");
+        } else if (res.status === 403) {
+          errorMessage = 'No tienes permisos para acceder a las subcuentas.';
+        } else if (res.status === 500) {
+          errorMessage = 'Error interno del servidor. Por favor, intenta nuevamente más tarde.';
+        }
+        
+        if (errorData.message) {
+          errorMessage = `${errorMessage}: ${errorData.message}`;
+        }
+        
+        throw new Error(errorMessage);
       }
       
       const data = await res.json();
@@ -741,8 +762,30 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
           <div className="p-4 border border-red-200 dark:border-red-800/30 rounded-lg bg-red-50/50 dark:bg-red-950/10">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
-              <div>
+              <div className="flex-1">
                 <p className="text-sm font-medium text-red-700 dark:text-red-300">{error}</p>
+                <div className="mt-3 flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="h-8 text-xs border-red-200 dark:border-red-800/30 hover:bg-red-100/50 dark:hover:bg-red-900/30"
+                    onClick={() => {
+                      setError(null);
+                      fetchSubAccounts();
+                    }}
+                  >
+                    <RefreshCw className="mr-2 h-3 w-3" />
+                    Reintentar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs text-red-600 dark:text-red-400 hover:bg-red-100/50 dark:hover:bg-red-900/30"
+                    onClick={() => router.push("/login")}
+                  >
+                    Iniciar sesión nuevamente
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

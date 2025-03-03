@@ -52,16 +52,24 @@ function getToken(): string | null {
   return localStorage.getItem("token") || null
 }
 
+interface NewAccount {
+  exchange: string;
+  name: string;
+  apiKey: string;
+  secretKey: string;
+  isDemo: boolean;
+}
+
 export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAccountManagerProps) {
   const [accounts, setAccounts] = useState<SubAccount[]>([])
-  const [newAccount, setNewAccount] = useState({
+  const [newAccount, setNewAccount] = useState<NewAccount>({
     exchange: "",
-    apiKey: "",
-    apiSecret: "",
     name: "",
+    apiKey: "",
+    secretKey: "",
     isDemo: false
   })
-  const [showApiSecret, setShowApiSecret] = useState(false)
+  const [showSecretKey, setShowSecretKey] = useState(false)
   const [, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -127,9 +135,9 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
       // Resetear el formulario cuando se abre el modal de creación
       setNewAccount({
         exchange: "",
-        apiKey: "",
-        apiSecret: "",
         name: "",
+        apiKey: "",
+        secretKey: "",
         isDemo: false
       })
       setError(null)
@@ -161,15 +169,15 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
     }
 
     if (!newAccount.apiKey.trim()) {
-      errors.apiKey = "La API Key es obligatoria";
+      errors.apiKey = "El API Key es obligatorio";
     } else if (newAccount.apiKey.length < 10) {
-      errors.apiKey = "La API Key parece ser demasiado corta";
+      errors.apiKey = "El API Key parece ser demasiado corto";
     }
 
-    if (!newAccount.apiSecret.trim()) {
-      errors.apiSecret = "El API Secret es obligatorio";
-    } else if (newAccount.apiSecret.length < 10) {
-      errors.apiSecret = "El API Secret parece ser demasiado corto";
+    if (!newAccount.secretKey.trim()) {
+      errors.secretKey = "El Secret Key es obligatorio";
+    } else if (newAccount.secretKey.length < 10) {
+      errors.secretKey = "El Secret Key parece ser demasiado corto";
     }
     
     if (Object.keys(errors).length > 0) {
@@ -186,7 +194,6 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
       console.log("🔄 Creando nueva subcuenta...", {
         exchange: newAccount.exchange,
         name: newAccount.name,
-        isDemo: newAccount.isDemo,
         apiKeyLength: newAccount.apiKey.length
       });
       
@@ -199,9 +206,8 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
         body: JSON.stringify({
           exchange: newAccount.exchange,
           apiKey: newAccount.apiKey.trim(),
-          apiSecret: newAccount.apiSecret.trim(),
+          secretKey: newAccount.secretKey.trim(),
           name: newAccount.name.trim(),
-          isDemo: newAccount.isDemo
         }),
       });
 
@@ -228,7 +234,6 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
         id: data.id,
         name: data.name,
         exchange: data.exchange,
-        isDemo: data.isDemo
       });
 
       // Limpiar el localStorage para forzar una recarga fresca de datos
@@ -241,9 +246,9 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
       setTimeout(() => {
         setNewAccount({
           exchange: "",
-          apiKey: "",
-          apiSecret: "",
           name: "",
+          apiKey: "",
+          secretKey: "",
           isDemo: false
         });
         if (onSuccess) onSuccess();
@@ -443,42 +448,45 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
                         )}
                       </div>
                       <div>
-                        <Label htmlFor="apiSecret" className="text-xs mb-1.5 block">
-                          API Secret
+                        <Label htmlFor="secretKey" className="text-xs mb-1.5 block">
+                          API Secret Key
+                          <span className="text-red-500 ml-1">*</span>
                         </Label>
                         <div className="relative">
                           <Input
-                            id="apiSecret"
-                            type={showApiSecret ? "text" : "password"}
-                            placeholder="Ingresa tu API Secret"
-                            value={newAccount.apiSecret}
+                            id="secretKey"
+                            type={showSecretKey ? "text" : "password"}
+                            placeholder="Ingresa tu API Secret Key"
+                            value={newAccount.secretKey}
                             onChange={(e) => {
-                              setNewAccount({ ...newAccount, apiSecret: e.target.value })
-                              if (formErrors.apiSecret) {
-                                const newErrors = { ...formErrors }
-                                delete newErrors.apiSecret
-                                setFormErrors(newErrors)
+                              setNewAccount({ ...newAccount, secretKey: e.target.value })
+                              if (formErrors.secretKey) {
+                                const newErrors = { ...formErrors };
+                                delete newErrors.secretKey;
+                                setFormErrors(newErrors);
                               }
                             }}
-                            className={formErrors.apiSecret ? "border-red-300 focus-visible:ring-red-300 pr-10" : "border-blue-200 dark:border-blue-800/30 focus-visible:ring-blue-300 pr-10"}
+                            className={formErrors.secretKey ? "border-red-300 focus-visible:ring-red-300 pr-10" : "border-blue-200 dark:border-blue-800/30 focus-visible:ring-blue-300 pr-10"}
                           />
-                          <button
+                          <Button
                             type="button"
-                            onClick={() => setShowApiSecret(!showApiSecret)}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowSecretKey(!showSecretKey)}
+                            className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:text-gray-600"
                           >
-                            {showApiSecret ? (
+                            {showSecretKey ? (
                               <EyeOff className="h-4 w-4" />
                             ) : (
                               <Eye className="h-4 w-4" />
                             )}
                             <span className="sr-only">
-                              {showApiSecret ? "Ocultar" : "Mostrar"} API Secret
+                              {showSecretKey ? "Ocultar" : "Mostrar"} Secret Key
                             </span>
-                          </button>
+                          </Button>
                         </div>
-                        {formErrors.apiSecret && (
-                          <p className="text-xs text-red-500 mt-1 animate-in fade-in-50 slide-in-from-top-1 duration-200">{formErrors.apiSecret}</p>
+                        {formErrors.secretKey && (
+                          <p className="text-xs text-red-500 mt-1 animate-in fade-in-50 slide-in-from-top-1 duration-200">{formErrors.secretKey}</p>
                         )}
                       </div>
                     </div>
