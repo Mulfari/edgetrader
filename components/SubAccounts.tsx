@@ -1053,12 +1053,12 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                 <TabsContent value="overview" className="mt-6">
                                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                     <Card className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-                                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
-                                        <Wallet className="h-4 w-4 text-white/70" />
+                                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                                        <CardTitle className="text-base font-medium text-white/90">Balance Total</CardTitle>
+                                        <Wallet className="h-5 w-5 text-white/70" />
                                       </CardHeader>
-                                      <CardContent>
-                                        <div className="text-2xl font-bold">
+                                      <CardContent className="pt-2">
+                                        <div className="text-4xl font-bold tracking-tight py-2">
                                           ${accountBalances[selectedSubAccountId]?.balance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
                                         </div>
                                       </CardContent>
