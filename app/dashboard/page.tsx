@@ -37,7 +37,7 @@ export default function DashboardPage() {
   const [avgPerformance, setAvgPerformance] = useState(0);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [balanceDisplay, setBalanceDisplay] = useState<BalanceDisplayType>('total');
+  const [balanceDisplay, setBalanceDisplay] = useState<BalanceDisplayType>('detailed');
   const router = useRouter();
 
   // Efecto para inicializar el tema desde localStorage o preferencias del sistema
@@ -347,6 +347,16 @@ export default function DashboardPage() {
                       <div className="py-1" role="menu" aria-orientation="vertical">
                         <button
                           className={`block px-4 py-2 text-sm w-full text-left ${
+                            balanceDisplay === 'detailed'
+                              ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
+                          }`}
+                          onClick={() => handleBalanceDisplayChange('detailed')}
+                        >
+                          Mostrar Desglose
+                        </button>
+                        <button
+                          className={`block px-4 py-2 text-sm w-full text-left ${
                             balanceDisplay === 'total'
                               ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
                               : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
@@ -374,16 +384,6 @@ export default function DashboardPage() {
                           onClick={() => handleBalanceDisplayChange('demo')}
                         >
                           Solo Balance Demo
-                        </button>
-                        <button
-                          className={`block px-4 py-2 text-sm w-full text-left ${
-                            balanceDisplay === 'detailed'
-                              ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
-                          }`}
-                          onClick={() => handleBalanceDisplayChange('detailed')}
-                        >
-                          Mostrar Desglose
                         </button>
                       </div>
                     </div>
