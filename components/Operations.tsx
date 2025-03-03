@@ -3,10 +3,6 @@
 import { useState, useEffect } from "react";
 import {
   LineChart,
-  ArrowUpCircle,
-  ArrowDownCircle,
-  Clock,
-  DollarSign,
   TrendingUp,
   TrendingDown
 } from "lucide-react";
@@ -27,7 +23,6 @@ export default function Operations() {
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, completed, pending, cancelled
   const [sortBy, setSortBy] = useState('date'); // date, amount, profit
-  const [sortOrder, setSortOrder] = useState('desc'); // asc, desc
 
   useEffect(() => {
     // Aquí irá la lógica para cargar las operaciones
