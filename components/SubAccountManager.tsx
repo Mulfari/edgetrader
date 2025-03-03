@@ -73,7 +73,7 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
     isDemo: false
   })
   const [showSecretKey, setShowSecretKey] = useState(false)
-  const [, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -321,7 +321,9 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
   return (
     <Dialog.Root open={open} onOpenChange={(open) => {
       setOpen(open);
-      if (!open) onCancel();
+      if (!open) {
+        onCancel();
+      }
     }}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 animate-fade-in" />
@@ -344,6 +346,10 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => {
+                        setOpen(false);
+                        onCancel();
+                      }}
                       className="rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20"
                     >
                       <X className="h-5 w-5 text-slate-500 dark:text-slate-400" />
@@ -618,7 +624,10 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={onCancel}
+                        onClick={() => {
+                          setOpen(false);
+                          onCancel();
+                        }}
                         className="border-blue-200 dark:border-blue-800/30 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-700 dark:text-slate-300"
                       >
                         Cancelar
@@ -709,7 +718,10 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={onCancel}
+                        onClick={() => {
+                          setOpen(false);
+                          onCancel();
+                        }}
                         className="border-blue-200 dark:border-blue-800/30 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-700 dark:text-slate-300"
                       >
                         Cancelar
