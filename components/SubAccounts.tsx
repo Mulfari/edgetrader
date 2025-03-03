@@ -14,7 +14,8 @@ import {
   PieChart,
   LayoutDashboard,
   Plus,
-  Trash2
+  Trash2,
+  X
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -94,6 +103,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedAccountsToDelete, setSelectedAccountsToDelete] = useState<string[]>([]);
 
   const fetchAccountDetails = async (userId: string, accountId: string, token: string): Promise<AccountDetails> => {
     try {
@@ -483,7 +494,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
 
   // Función para eliminar subcuentas seleccionadas
   const handleDeleteSubAccounts = async () => {
-    if (selectedAccounts.length === 0) {
+    if (selectedAccountsToDelete.length === 0) {
       setError("Por favor, selecciona al menos una subcuenta para eliminar");
       return;
     }
@@ -495,7 +506,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }
 
     try {
-      const deletePromises = selectedAccounts.map(async (accountId) => {
+      const deletePromises = selectedAccountsToDelete.map(async (accountId) => {
         const response = await fetch(`${API_URL}/subaccounts/${accountId}`, {
           method: 'DELETE',
           headers: {
@@ -511,8 +522,9 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       await Promise.all(deletePromises);
       
       // Actualizar la lista de subcuentas
-      setSubAccounts(subAccounts.filter(account => !selectedAccounts.includes(account.id)));
-      setSelectedAccounts([]); // Limpiar selección
+      setSubAccounts(subAccounts.filter(account => !selectedAccountsToDelete.includes(account.id)));
+      setSelectedAccountsToDelete([]); // Limpiar selección
+      setIsDeleteModalOpen(false); // Cerrar el modal
       setError(null);
     } catch (error) {
       setError("Error al eliminar las subcuentas seleccionadas");
@@ -520,9 +532,9 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }
   };
 
-  // Función para manejar la selección de subcuentas
-  const handleSelectAccount = (accountId: string) => {
-    setSelectedAccounts(prev => {
+  // Función para manejar la selección de subcuentas en el modal
+  const handleSelectAccountToDelete = (accountId: string) => {
+    setSelectedAccountsToDelete(prev => {
       if (prev.includes(accountId)) {
         return prev.filter(id => id !== accountId);
       } else {
@@ -542,14 +554,71 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
             <Plus className="h-4 w-4 mr-2" />
             Crear Subcuenta
           </Button>
-          <Button
-            onClick={handleDeleteSubAccounts}
-            className="bg-red-600 hover:bg-red-700 text-white"
-            disabled={selectedAccounts.length === 0}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Eliminar ({selectedAccounts.length})
-          </Button>
+          <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+            <DialogTrigger asChild>
+              <Button
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Eliminar Subcuentas
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Eliminar Subcuentas</DialogTitle>
+                <DialogDescription>
+                  Selecciona las subcuentas que deseas eliminar. Esta acción no se puede deshacer.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="max-h-[400px] overflow-y-auto">
+                <div className="space-y-2">
+                  {subAccounts.map((account) => (
+                    <div
+                      key={account.id}
+                      className={`p-4 rounded-lg border transition-all cursor-pointer ${
+                        selectedAccountsToDelete.includes(account.id)
+                          ? 'border-red-500 bg-red-50 dark:bg-red-950/20'
+                          : 'border-gray-200 hover:border-red-300 dark:border-gray-800'
+                      }`}
+                      onClick={() => handleSelectAccountToDelete(account.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{account.name}</p>
+                          <p className="text-sm text-gray-500">
+                            {account.exchange} • {account.isDemo ? 'Demo' : 'Real'}
+                          </p>
+                        </div>
+                        {selectedAccountsToDelete.includes(account.id) && (
+                          <div className="text-red-500">
+                            <X className="h-5 w-5" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2 mt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedAccountsToDelete([]);
+                    setIsDeleteModalOpen(false);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  onClick={handleDeleteSubAccounts}
+                  disabled={selectedAccountsToDelete.length === 0}
+                >
+                  Eliminar ({selectedAccountsToDelete.length})
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Button
             onClick={refreshAllBalances}
             disabled={loadingAllBalances}
@@ -636,19 +705,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
             <Table>
               <TableHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 sticky top-0 z-10">
                 <TableRow>
-                  <TableHead className="w-12">
-                    <input
-                      type="checkbox"
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedAccounts(subAccounts.map(acc => acc.id));
-                        } else {
-                          setSelectedAccounts([]);
-                        }
-                      }}
-                      checked={selectedAccounts.length === subAccounts.length && subAccounts.length > 0}
-                    />
-                  </TableHead>
                   <TableHead onClick={() => handleSort("name")} className="cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
                     <div className="flex items-center">
                       Nombre
@@ -728,17 +784,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                         className={`transition-all duration-200 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 cursor-pointer group animate-in fade-in-50 slide-in-from-bottom-1 duration-300 ${index % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-900/10' : ''}`}
                         style={{ animationDelay: `${index * 50}ms` }}
                       >
-                        <TableCell className="font-medium" onClick={() => handleRowClick(sub)}>
-                          <div className="flex items-center">
-                            <div className="w-2 h-10 rounded-r-md bg-gradient-to-b from-blue-500 to-purple-600 mr-3 opacity-70 group-hover:opacity-100 transition-opacity"></div>
-                            <input
-                              type="checkbox"
-                              checked={selectedAccounts.includes(sub.id)}
-                              onChange={() => handleSelectAccount(sub.id)}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          </div>
-                        </TableCell>
                         <TableCell className="font-medium" onClick={() => handleRowClick(sub)}>
                           <div className="flex items-center">
                             <div className="w-2 h-10 rounded-r-md bg-gradient-to-b from-blue-500 to-purple-600 mr-3 opacity-70 group-hover:opacity-100 transition-opacity"></div>
