@@ -324,7 +324,7 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <Dialog.Content 
-          className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-2xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-white p-0 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] dark:bg-slate-900 sm:rounded-lg"
+          className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-4xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-white p-0 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] dark:bg-slate-900 sm:rounded-lg"
           onPointerDownOutside={(e) => {
             e.preventDefault();
           }}
@@ -362,254 +362,260 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
 
             <div className="mt-4">
               {mode === "create" ? (
-                <form onSubmit={handleAddAccount} className="space-y-6">
-                  <Card className="border-blue-100 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-950/10">
-                    <CardContent className="pt-6">
-                      <div className="grid gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
-                            <Tag className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div>
-                            <Label htmlFor="name" className="text-sm font-medium">
-                              Nombre de la Subcuenta
-                            </Label>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              Un nombre descriptivo para identificar esta cuenta
-                            </p>
-                          </div>
-                        </div>
-                        <div className="pl-12">
-                          <Input
-                            id="name"
-                            placeholder="Ej: Bybit Principal"
-                            value={newAccount.name}
-                            onChange={(e) => {
-                              setNewAccount({ ...newAccount, name: e.target.value })
-                              if (formErrors.name) {
-                                const newErrors = { ...formErrors }
-                                delete newErrors.name
-                                setFormErrors(newErrors)
-                              }
-                            }}
-                            className={formErrors.name ? "border-red-300 focus-visible:ring-red-300" : "border-blue-200 dark:border-blue-800/30 focus-visible:ring-blue-300"}
-                          />
-                          {formErrors.name && (
-                            <p className="text-xs text-red-500 mt-1 animate-in fade-in-50 slide-in-from-top-1 duration-200">{formErrors.name}</p>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-blue-100 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-950/10">
-                    <CardContent className="pt-6">
-                      <div className="grid gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
-                            <KeyRound className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div>
-                            <Label htmlFor="apiKey" className="text-sm font-medium">
-                              Credenciales API
-                            </Label>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              Ingresa tus credenciales de API del exchange
-                            </p>
-                          </div>
-                        </div>
-                        <div className="pl-12 space-y-4">
-                          <div>
-                            <Label htmlFor="apiKey" className="text-xs mb-1.5 block">
-                              API Key
-                            </Label>
-                            <Input
-                              id="apiKey"
-                              placeholder="Ingresa tu API Key"
-                              value={newAccount.apiKey}
-                              onChange={(e) => {
-                                setNewAccount({ ...newAccount, apiKey: e.target.value })
-                                if (formErrors.apiKey) {
-                                  const newErrors = { ...formErrors }
-                                  delete newErrors.apiKey
-                                  setFormErrors(newErrors)
-                                }
-                              }}
-                              className={formErrors.apiKey ? "border-red-300 focus-visible:ring-red-300" : "border-blue-200 dark:border-blue-800/30 focus-visible:ring-blue-300"}
-                            />
-                            {formErrors.apiKey && (
-                              <p className="text-xs text-red-500 mt-1 animate-in fade-in-50 slide-in-from-top-1 duration-200">{formErrors.apiKey}</p>
-                            )}
-                          </div>
-                          <div>
-                            <Label htmlFor="secretKey" className="text-xs mb-1.5 block">
-                              API Secret Key
-                              <span className="text-red-500 ml-1">*</span>
-                            </Label>
-                            <div className="relative">
+                <form onSubmit={handleAddAccount}>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-6">
+                      <Card className="border-blue-100 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-950/10">
+                        <CardContent className="pt-6">
+                          <div className="grid gap-4">
+                            <div className="flex items-center gap-3">
+                              <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
+                                <Tag className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              </div>
+                              <div>
+                                <Label htmlFor="name" className="text-sm font-medium">
+                                  Nombre de la Subcuenta
+                                </Label>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                  Un nombre descriptivo para identificar esta cuenta
+                                </p>
+                              </div>
+                            </div>
+                            <div className="pl-12">
                               <Input
-                                id="secretKey"
-                                type={showSecretKey ? "text" : "password"}
-                                placeholder="Ingresa tu API Secret Key"
-                                value={newAccount.secretKey}
+                                id="name"
+                                placeholder="Ej: Bybit Principal"
+                                value={newAccount.name}
                                 onChange={(e) => {
-                                  setNewAccount({ ...newAccount, secretKey: e.target.value })
-                                  if (formErrors.secretKey) {
-                                    const newErrors = { ...formErrors };
-                                    delete newErrors.secretKey;
-                                    setFormErrors(newErrors);
+                                  setNewAccount({ ...newAccount, name: e.target.value })
+                                  if (formErrors.name) {
+                                    const newErrors = { ...formErrors }
+                                    delete newErrors.name
+                                    setFormErrors(newErrors)
                                   }
                                 }}
-                                className={formErrors.secretKey ? "border-red-300 focus-visible:ring-red-300 pr-10" : "border-blue-200 dark:border-blue-800/30 focus-visible:ring-blue-300 pr-10"}
+                                className={formErrors.name ? "border-red-300 focus-visible:ring-red-300" : "border-blue-200 dark:border-blue-800/30 focus-visible:ring-blue-300"}
                               />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setShowSecretKey(!showSecretKey)}
-                                className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:text-gray-600"
+                              {formErrors.name && (
+                                <p className="text-xs text-red-500 mt-1 animate-in fade-in-50 slide-in-from-top-1 duration-200">{formErrors.name}</p>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="border-blue-100 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-950/10">
+                        <CardContent className="pt-6">
+                          <div className="grid gap-4">
+                            <div className="flex items-center gap-3">
+                              <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
+                                <Server className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              </div>
+                              <div>
+                                <Label htmlFor="exchange" className="text-sm font-medium">
+                                  Exchange
+                                </Label>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                  Selecciona el exchange al que pertenece esta cuenta
+                                </p>
+                              </div>
+                            </div>
+                            <div className="pl-12">
+                              <Select
+                                value={newAccount.exchange}
+                                onValueChange={(value) => {
+                                  setNewAccount({ ...newAccount, exchange: value })
+                                  if (formErrors.exchange) {
+                                    const newErrors = { ...formErrors }
+                                    delete newErrors.exchange
+                                    setFormErrors(newErrors)
+                                  }
+                                }}
                               >
-                                {showSecretKey ? (
-                                  <EyeOff className="h-4 w-4" />
-                                ) : (
-                                  <Eye className="h-4 w-4" />
+                                <SelectTrigger className={formErrors.exchange ? "border-red-300 focus-visible:ring-red-300" : "border-blue-200 dark:border-blue-800/30 focus-visible:ring-blue-300"}>
+                                  <SelectValue placeholder="Selecciona un exchange" />
+                                </SelectTrigger>
+                                <SelectContent className="dark:bg-slate-900 dark:border-blue-800/30">
+                                  {exchangeOptions.map((option) => (
+                                    <SelectItem key={option.value} value={option.value} className="hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                                      {option.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              {formErrors.exchange && (
+                                <p className="text-xs text-red-500 mt-1 animate-in fade-in-50 slide-in-from-top-1 duration-200">{formErrors.exchange}</p>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="border-blue-100 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-950/10">
+                        <CardContent className="pt-6">
+                          <div className="grid gap-4">
+                            <div className="flex items-center gap-3">
+                              <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
+                                <Database className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium">
+                                  Tipo de Cuenta
+                                </Label>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                  Especifica si es una cuenta demo o real
+                                </p>
+                              </div>
+                            </div>
+                            <div className="pl-12">
+                              <div className="flex flex-col gap-4">
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="radio"
+                                    id="isReal"
+                                    name="accountType"
+                                    checked={!newAccount.isDemo}
+                                    onChange={() => {
+                                      console.log("Cambiando a cuenta REAL");
+                                      setNewAccount({ ...newAccount, isDemo: false });
+                                    }}
+                                    className="h-4 w-4 border-blue-300 text-blue-600 focus:ring-blue-500 dark:border-blue-700 dark:bg-slate-800 dark:checked:border-blue-500 dark:checked:bg-blue-500 dark:focus:ring-offset-slate-900"
+                                  />
+                                  <div className="grid gap-1.5 leading-none">
+                                    <label
+                                      htmlFor="isReal"
+                                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                                    >
+                                      <Database className="h-4 w-4 text-blue-600" />
+                                      Cuenta Real
+                                    </label>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                      Cuenta con fondos reales en el exchange
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="radio"
+                                    id="isDemo"
+                                    name="accountType"
+                                    checked={newAccount.isDemo}
+                                    onChange={() => {
+                                      console.log("Cambiando a cuenta DEMO");
+                                      setNewAccount({ ...newAccount, isDemo: true });
+                                    }}
+                                    className="h-4 w-4 border-blue-300 text-blue-600 focus:ring-blue-500 dark:border-blue-700 dark:bg-slate-800 dark:checked:border-blue-500 dark:checked:bg-blue-500 dark:focus:ring-offset-slate-900"
+                                  />
+                                  <div className="grid gap-1.5 leading-none">
+                                    <label
+                                      htmlFor="isDemo"
+                                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                                    >
+                                      <Sparkles className="h-4 w-4 text-yellow-300" />
+                                      Cuenta Demo
+                                    </label>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                      Cuenta de prueba sin fondos reales
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <div className="space-y-6">
+                      <Card className="border-blue-100 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-950/10">
+                        <CardContent className="pt-6">
+                          <div className="grid gap-4">
+                            <div className="flex items-center gap-3">
+                              <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
+                                <KeyRound className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              </div>
+                              <div>
+                                <Label htmlFor="apiKey" className="text-sm font-medium">
+                                  Credenciales API
+                                </Label>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                  Ingresa tus credenciales de API del exchange
+                                </p>
+                              </div>
+                            </div>
+                            <div className="pl-12 space-y-4">
+                              <div>
+                                <Label htmlFor="apiKey" className="text-xs mb-1.5 block">
+                                  API Key
+                                </Label>
+                                <Input
+                                  id="apiKey"
+                                  placeholder="Ingresa tu API Key"
+                                  value={newAccount.apiKey}
+                                  onChange={(e) => {
+                                    setNewAccount({ ...newAccount, apiKey: e.target.value })
+                                    if (formErrors.apiKey) {
+                                      const newErrors = { ...formErrors }
+                                      delete newErrors.apiKey
+                                      setFormErrors(newErrors)
+                                    }
+                                  }}
+                                  className={formErrors.apiKey ? "border-red-300 focus-visible:ring-red-300" : "border-blue-200 dark:border-blue-800/30 focus-visible:ring-blue-300"}
+                                />
+                                {formErrors.apiKey && (
+                                  <p className="text-xs text-red-500 mt-1 animate-in fade-in-50 slide-in-from-top-1 duration-200">{formErrors.apiKey}</p>
                                 )}
-                                <span className="sr-only">
-                                  {showSecretKey ? "Ocultar" : "Mostrar"} Secret Key
-                                </span>
-                              </Button>
-                            </div>
-                            {formErrors.secretKey && (
-                              <p className="text-xs text-red-500 mt-1 animate-in fade-in-50 slide-in-from-top-1 duration-200">{formErrors.secretKey}</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-blue-100 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-950/10">
-                    <CardContent className="pt-6">
-                      <div className="grid gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
-                            <Server className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div>
-                            <Label htmlFor="exchange" className="text-sm font-medium">
-                              Exchange
-                            </Label>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              Selecciona el exchange al que pertenece esta cuenta
-                            </p>
-                          </div>
-                        </div>
-                        <div className="pl-12">
-                          <Select
-                            value={newAccount.exchange}
-                            onValueChange={(value) => {
-                              setNewAccount({ ...newAccount, exchange: value })
-                              if (formErrors.exchange) {
-                                const newErrors = { ...formErrors }
-                                delete newErrors.exchange
-                                setFormErrors(newErrors)
-                              }
-                            }}
-                          >
-                            <SelectTrigger className={formErrors.exchange ? "border-red-300 focus-visible:ring-red-300" : "border-blue-200 dark:border-blue-800/30 focus-visible:ring-blue-300"}>
-                              <SelectValue placeholder="Selecciona un exchange" />
-                            </SelectTrigger>
-                            <SelectContent className="dark:bg-slate-900 dark:border-blue-800/30">
-                              {exchangeOptions.map((option) => (
-                                <SelectItem key={option.value} value={option.value} className="hover:bg-blue-50 dark:hover:bg-blue-900/20">
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {formErrors.exchange && (
-                            <p className="text-xs text-red-500 mt-1 animate-in fade-in-50 slide-in-from-top-1 duration-200">{formErrors.exchange}</p>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-blue-100 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-950/10">
-                    <CardContent className="pt-6">
-                      <div className="grid gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
-                            <Database className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div>
-                            <Label className="text-sm font-medium">
-                              Tipo de Cuenta
-                            </Label>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              Especifica si es una cuenta demo o real
-                            </p>
-                          </div>
-                        </div>
-                        <div className="pl-12">
-                          <div className="flex flex-col gap-4">
-                            <div className="flex items-center space-x-2">
-                              <input
-                                type="radio"
-                                id="isReal"
-                                name="accountType"
-                                checked={!newAccount.isDemo}
-                                onChange={() => {
-                                  console.log("Cambiando a cuenta REAL");
-                                  setNewAccount({ ...newAccount, isDemo: false });
-                                }}
-                                className="h-4 w-4 border-blue-300 text-blue-600 focus:ring-blue-500 dark:border-blue-700 dark:bg-slate-800 dark:checked:border-blue-500 dark:checked:bg-blue-500 dark:focus:ring-offset-slate-900"
-                              />
-                              <div className="grid gap-1.5 leading-none">
-                                <label
-                                  htmlFor="isReal"
-                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
-                                >
-                                  <Database className="h-4 w-4 text-blue-600" />
-                                  Cuenta Real
-                                </label>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">
-                                  Cuenta con fondos reales en el exchange
-                                </p>
                               </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <input
-                                type="radio"
-                                id="isDemo"
-                                name="accountType"
-                                checked={newAccount.isDemo}
-                                onChange={() => {
-                                  console.log("Cambiando a cuenta DEMO");
-                                  setNewAccount({ ...newAccount, isDemo: true });
-                                }}
-                                className="h-4 w-4 border-blue-300 text-blue-600 focus:ring-blue-500 dark:border-blue-700 dark:bg-slate-800 dark:checked:border-blue-500 dark:checked:bg-blue-500 dark:focus:ring-offset-slate-900"
-                              />
-                              <div className="grid gap-1.5 leading-none">
-                                <label
-                                  htmlFor="isDemo"
-                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
-                                >
-                                  <Sparkles className="h-4 w-4 text-yellow-300" />
-                                  Cuenta Demo
-                                </label>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">
-                                  Cuenta de prueba sin fondos reales
-                                </p>
+                              <div>
+                                <Label htmlFor="secretKey" className="text-xs mb-1.5 block">
+                                  API Secret Key
+                                  <span className="text-red-500 ml-1">*</span>
+                                </Label>
+                                <div className="relative">
+                                  <Input
+                                    id="secretKey"
+                                    type={showSecretKey ? "text" : "password"}
+                                    placeholder="Ingresa tu API Secret Key"
+                                    value={newAccount.secretKey}
+                                    onChange={(e) => {
+                                      setNewAccount({ ...newAccount, secretKey: e.target.value })
+                                      if (formErrors.secretKey) {
+                                        const newErrors = { ...formErrors };
+                                        delete newErrors.secretKey;
+                                        setFormErrors(newErrors);
+                                      }
+                                    }}
+                                    className={formErrors.secretKey ? "border-red-300 focus-visible:ring-red-300 pr-10" : "border-blue-200 dark:border-blue-800/30 focus-visible:ring-blue-300 pr-10"}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setShowSecretKey(!showSecretKey)}
+                                    className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:text-gray-600"
+                                  >
+                                    {showSecretKey ? (
+                                      <EyeOff className="h-4 w-4" />
+                                    ) : (
+                                      <Eye className="h-4 w-4" />
+                                    )}
+                                    <span className="sr-only">
+                                      {showSecretKey ? "Ocultar" : "Mostrar"} Secret Key
+                                    </span>
+                                  </Button>
+                                </div>
+                                {formErrors.secretKey && (
+                                  <p className="text-xs text-red-500 mt-1 animate-in fade-in-50 slide-in-from-top-1 duration-200">{formErrors.secretKey}</p>
+                                )}
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
 
-                  <div className="flex justify-end gap-3">
+                  <div className="flex justify-end gap-3 mt-6">
                     <Dialog.Close asChild>
                       <Button
                         type="button"
