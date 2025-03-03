@@ -1088,17 +1088,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                       </CardHeader>
                                       <CardContent>
                                         <div className="text-2xl font-bold">
-                                          ${calculateTotalBalances().total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </div>
-                                        <div className="text-xs text-white/70 mt-2 space-y-1">
-                                          <div className="flex justify-between">
-                                            <span>Real:</span>
-                                            <span>${calculateTotalBalances().real.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span>Demo:</span>
-                                            <span>${calculateTotalBalances().demo.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                          </div>
+                                          ${accountBalances[selectedSubAccountId]?.balance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
                                         </div>
                                       </CardContent>
                                     </Card>
