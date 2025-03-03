@@ -122,8 +122,10 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       console.log(`🔍 Iniciando solicitud de balance para cuenta ${accountId}...`);
       
       const account = subAccounts.find(acc => acc.id === accountId);
+      console.log(`📊 Buscando cuenta:`, { accountId, encontrada: !!account });
+      
       if (!account) {
-        throw new Error('Cuenta no encontrada');
+        throw new Error('Cuenta no encontrada en el estado local');
       }
 
       const isDemo = account.isDemo === true;
@@ -135,7 +137,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         nombre: account.name
       });
       
-      // Si es una cuenta demo y la solicitud anterior falló, evitamos hacer múltiples intentos
+      // Si es una cuenta demo y tiene error previo, retornar datos simulados
       if (isDemo && accountBalances[accountId]?.isError) {
         console.log(`⚠️ Cuenta demo ${accountId} con error previo, retornando datos simulados`);
         return {
@@ -152,8 +154,9 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
           isError: false
         };
       }
-      
+
       // Obtener el balance actual
+      console.log(`📡 Solicitando balance a: ${API_URL}/subaccounts/${accountId}/balance`);
       const balanceRes = await fetch(`${API_URL}/subaccounts/${accountId}/balance`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -161,9 +164,10 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         }
       });
 
-      console.log(`📡 Respuesta del servidor para cuenta ${account.name} (${isDemo ? 'demo' : 'real'}):`, {
+      console.log(`📥 Respuesta del servidor para cuenta ${account.name}:`, {
         status: balanceRes.status,
-        statusText: balanceRes.statusText
+        statusText: balanceRes.statusText,
+        headers: Object.fromEntries(balanceRes.headers.entries())
       });
 
       if (!balanceRes.ok) {
@@ -190,15 +194,11 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
             isError: false
           };
         }
-        throw new Error(errorData.message || 'Error al obtener balance');
+        throw new Error(errorData.message || `Error al obtener balance: ${balanceRes.status}`);
       }
       
       const balanceData = await balanceRes.json();
-      console.log(`✅ Datos recibidos del servidor para cuenta ${account.name}:`, {
-        balance: balanceData.balance,
-        assetsCount: balanceData.assets?.length || 0,
-        performance: balanceData.performance
-      });
+      console.log(`✅ Datos recibidos del servidor para cuenta ${account.name}:`, balanceData);
 
       if (balanceData.balance === undefined) {
         console.error(`❌ La respuesta no contiene un balance válido para cuenta ${account.name}:`, balanceData);
@@ -231,7 +231,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         isError: false
       };
 
-      console.log(`✅ Datos procesados y listos para actualizar UI para cuenta ${account.name}:`, processedData);
+      console.log(`✅ Datos procesados para cuenta ${account.name}:`, processedData);
       
       if (onBalanceUpdate) {
         onBalanceUpdate(accountId, processedData);
