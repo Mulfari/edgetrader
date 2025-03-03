@@ -113,314 +113,173 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [selectedAccountsToDelete, setSelectedAccountsToDelete] = useState<string[]>([]);
+  const isSubscribed = useRef(true);
 
   const fetchAccountDetails = async (userId: string, accountId: string, token: string): Promise<AccountDetails> => {
+    if (!isSubscribed.current) return Promise.reject('Component unmounted');
+    
     try {
       setLoadingBalance(accountId);
-      console.log(`🔍 Solicitando balance para cuenta ${accountId}...`);
-      
-      const account = subAccounts.find(acc => acc.id === accountId);
-      const isDemo = account?.isDemo === true;
-      
-      console.log(`📊 Tipo de cuenta: ${isDemo ? 'Demo' : 'Real'}, Exchange: ${account?.exchange}`);
-      
-      // Obtener el balance actual
-      const balanceRes = await fetch(`${API_URL}/subaccounts/${accountId}/balance`, {
+      const res = await fetch(`${API_URL}/subaccounts/${accountId}/balance`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-
-      if (!balanceRes.ok) {
-        const errorData = await balanceRes.json().catch(() => ({}));
-        console.error(`❌ Error al obtener balance para cuenta ${accountId}:`, errorData);
-        console.error(`   Status: ${balanceRes.status} ${balanceRes.statusText}`);
-        
-        const isGeoRestriction = 
-          errorData.message?.includes('ubicación geográfica') || 
-          errorData.message?.includes('CloudFront') ||
-          errorData.statusCode === 403;
-        
-        if (isDemo) {
-          // Generar datos simulados para cuentas demo
-          const simulatedBalance = Math.random() * 10000;
-          const simulatedHistory = generateSimulatedHistory(simulatedBalance);
-          const simulatedPerformance = calculatePerformance(simulatedHistory);
-          
-          return { 
-            balance: simulatedBalance,
-            assets: [
-              { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
-              { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
-              { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
-            ],
-            performance: simulatedPerformance,
-            balanceHistory: simulatedHistory,
-            lastUpdate: Date.now(),
-            isSimulated: true,
-            isDemo: true,
-            isError: false
-          };
-        } else {
-          let errorMessage = errorData.message || errorData.error || 'Error al obtener balance real';
-          if (isGeoRestriction) {
-            errorMessage = 'La API de Bybit no está disponible en tu ubicación geográfica. Considera usar una VPN o contactar con soporte.';
-          }
-          throw new Error(errorMessage);
-        }
+      
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}: ${res.statusText}`);
       }
       
-      // Obtener el historial de balances
-      const historyRes = await fetch(`${API_URL}/subaccounts/${accountId}/balance/history`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
-      const balanceData = await balanceRes.json();
-      const historyData = historyRes.ok ? await historyRes.json() : { history: [] };
-      
-      // Calcular el rendimiento basado en el historial
-      const performance = calculatePerformance(historyData.history);
-      
-      console.log(`✅ Datos recibidos para cuenta ${accountId}:`, {
-        balance: balanceData.balance,
-        assetsCount: balanceData.assets?.length || 0,
-        performance: performance,
-        historyLength: historyData.history?.length || 0
-      });
-      
+      const data = await res.json();
       return {
-        balance: balanceData.balance || 0,
-        assets: balanceData.assets || [],
-        performance: performance,
-        balanceHistory: historyData.history || [],
-        lastUpdate: Date.now(),
-        isSimulated: false,
-        isDemo: isDemo,
+        balance: data.balance || 0,
+        assets: data.assets || [],
+        performance: data.performance || 0,
+        isSimulated: data.isSimulated || false,
+        isDemo: data.isDemo || false,
         isError: false
       };
-      
-    } catch (error: unknown) {
-      console.error(`❌ Error al obtener balance para cuenta ${accountId}:`, error);
-      
-      const account = subAccounts.find(acc => acc.id === accountId);
-      const isDemo = account?.isDemo === true;
-      
-      if (isDemo) {
-        const simulatedBalance = Math.random() * 10000;
-        const simulatedHistory = generateSimulatedHistory(simulatedBalance);
-        const simulatedPerformance = calculatePerformance(simulatedHistory);
-        
-        return { 
-          balance: simulatedBalance,
-          assets: [
-            { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
-            { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
-            { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
-          ],
-          performance: simulatedPerformance,
-          balanceHistory: simulatedHistory,
-          lastUpdate: Date.now(),
-          isSimulated: true,
-          isDemo: true,
-          isError: false
-        };
-      } else {
-        const errorMessage = error instanceof Error ? error.message : 'Error desconocido al obtener balance';
-        setError(`Error al obtener balance de la cuenta real: ${errorMessage}`);
-        return { 
-          balance: null, 
-          assets: [], 
-          performance: 0,
-          balanceHistory: [],
-          lastUpdate: Date.now(),
-          error: errorMessage,
-          isError: true,
-          isSimulated: false,
-          isDemo: false
-        };
-      }
+    } catch (error) {
+      console.error(`Error fetching account details for ${accountId}:`, error);
+      return {
+        balance: null,
+        assets: [],
+        performance: 0,
+        isError: true,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     } finally {
-      setLoadingBalance(null);
+      if (isSubscribed.current) {
+        setLoadingBalance(null);
+      }
     }
   };
 
-  // Función para generar historial simulado
-  const generateSimulatedHistory = (currentBalance: number) => {
-    const history = [];
-    const now = Date.now();
-    const dayInMs = 24 * 60 * 60 * 1000;
+  const fetchAccountBalances = useCallback(async (accounts: SubAccount[], token: string) => {
+    if (!isSubscribed.current) return {};
     
-    // Generar datos para los últimos 30 días
-    for (let i = 30; i >= 0; i--) {
-      const timestamp = now - (i * dayInMs);
-      // Generar una variación aleatoria entre -5% y +5% del balance actual
-      const variation = (Math.random() * 0.1 - 0.05);
-      const balance = currentBalance * (1 + variation);
+    const balances: Record<string, AccountDetails> = {};
+    const activeAccounts = accounts.filter(acc => acc.active);
+    
+    try {
+      await Promise.all(
+        activeAccounts.map(async (account) => {
+          try {
+            const details = await fetchAccountDetails(account.userId, account.id, token);
+            if (isSubscribed.current) {
+              balances[account.id] = details;
+              if (onBalanceUpdate) {
+                onBalanceUpdate(account.id, details);
+              }
+            }
+          } catch (error) {
+            console.error(`Error loading balance for account ${account.id}:`, error);
+          }
+        })
+      );
       
-      history.push({
-        timestamp,
-        balance
-      });
+      return balances;
+    } catch (error) {
+      console.error('Error loading balances:', error);
+      return {};
     }
-    
-    return history;
-  };
+  }, [onBalanceUpdate]);
 
-  // Función para calcular el rendimiento
-  const calculatePerformance = (history: { timestamp: number; balance: number }[]) => {
-    if (!history || history.length < 2) return 0;
-    
-    // Ordenar el historial por timestamp
-    const sortedHistory = [...history].sort((a, b) => a.timestamp - b.timestamp);
-    
-    // Obtener el primer y último balance
-    const firstBalance = sortedHistory[0].balance;
-    const lastBalance = sortedHistory[sortedHistory.length - 1].balance;
-    
-    // Calcular el rendimiento porcentual
-    const performance = ((lastBalance - firstBalance) / firstBalance) * 100;
-    
-    return Number(performance.toFixed(2));
-  };
-
-  // Función para cargar las subcuentas
   const loadSubAccounts = useCallback(async () => {
-    if (isLoading) return; // Evitar llamadas mientras está cargando
+    if (!isSubscribed.current) return;
     
     try {
       setIsLoading(true);
+      setError(null);
+      
       const token = localStorage.getItem("token");
       if (!token) {
         router.push("/login");
         return;
       }
-
-      const response = await fetch(`${API_URL}/subaccounts`, {
+      
+      const res = await fetch(`${API_URL}/subaccounts`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-
-      if (!response.ok) {
-        throw new Error('Error al cargar subcuentas');
-      }
-
-      const data = await response.json();
       
-      // Verificar si los datos han cambiado antes de actualizar
-      const hasDataChanged = JSON.stringify(data) !== JSON.stringify(subAccounts);
-      if (!hasDataChanged) {
-        setIsLoading(false);
-        return;
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}: ${res.statusText}`);
       }
       
-      setSubAccounts(data);
-
-      // Actualizar estadísticas incluso si no hay subcuentas
-      if (onStatsUpdate) {
-        onStatsUpdate({
-          totalAccounts: data.length,
-          realAccounts: data.filter((acc: SubAccount) => !acc.isDemo).length,
-          demoAccounts: data.filter((acc: SubAccount) => acc.isDemo).length,
-          totalBalance: 0,
-          realBalance: 0,
-          demoBalance: 0,
-          uniqueExchanges: new Set(data.map((acc: SubAccount) => acc.exchange)).size,
-          avgPerformance: 0
-        });
-      }
-
-      // Si no hay subcuentas, desactivar la carga y retornar
-      if (data.length === 0) {
-        setIsLoading(false);
-        return;
-      }
-
-      // Cargar balances para todas las subcuentas
-      const balancePromises = data.map((account: SubAccount) => 
-        fetchAccountDetails(account.userId, account.id, token)
-          .then(details => [account.id, details] as [string, AccountDetails])
-          .catch(error => {
-            console.error(`Error al cargar balance para cuenta ${account.id}:`, error);
-            return [account.id, {
-              balance: null,
-              assets: [],
-              performance: 0,
-              isError: true,
-              error: error instanceof Error ? error.message : 'Error desconocido'
-            }] as [string, AccountDetails];
-          })
-      );
-
-      const balances = await Promise.all(balancePromises);
-      const balancesMap = Object.fromEntries(balances);
-      setAccountBalances(balancesMap);
-
-      // Calcular estadísticas con los balances
-      if (onStatsUpdate) {
-        const stats = {
-          totalAccounts: data.length,
-          realAccounts: data.filter((acc: SubAccount) => !acc.isDemo).length,
-          demoAccounts: data.filter((acc: SubAccount) => acc.isDemo).length,
-          totalBalance: Object.values(balancesMap).reduce((sum, details) => sum + (details.balance || 0), 0),
-          realBalance: Object.entries(balancesMap)
-            .filter(([id]) => !data.find((acc: SubAccount) => acc.id === id)?.isDemo)
-            .reduce((sum, [, details]) => sum + (details.balance || 0), 0),
-          demoBalance: Object.entries(balancesMap)
-            .filter(([id]) => data.find((acc: SubAccount) => acc.id === id)?.isDemo)
-            .reduce((sum, [, details]) => sum + (details.balance || 0), 0),
-          uniqueExchanges: new Set(data.map((acc: SubAccount) => acc.exchange)).size,
-          avgPerformance: Object.values(balancesMap).reduce((sum, details) => sum + (details.performance || 0), 0) / data.length
-        };
-        onStatsUpdate(stats);
+      const data = await res.json();
+      
+      if (isSubscribed.current) {
+        setSubAccounts(data);
+        
+        const balances = await fetchAccountBalances(data, token);
+        if (isSubscribed.current) {
+          setAccountBalances(balances);
+          
+          if (data.length > 0 && onStatsUpdate) {
+            const stats: AccountStats = {
+              totalAccounts: data.length,
+              realAccounts: data.filter((acc: SubAccount) => !acc.isDemo).length,
+              demoAccounts: data.filter((acc: SubAccount) => acc.isDemo).length,
+              totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
+              realBalance: Object.entries(balances).reduce((sum, [id]) => {
+                const account = data.find((acc: SubAccount) => acc.id === id);
+                return sum + (!account?.isDemo ? (balances[id].balance || 0) : 0);
+              }, 0),
+              demoBalance: Object.entries(balances).reduce((sum, [id]) => {
+                const account = data.find((acc: SubAccount) => acc.id === id);
+                return sum + (account?.isDemo ? (balances[id].balance || 0) : 0);
+              }, 0),
+              uniqueExchanges: new Set(data.map((acc: SubAccount) => acc.exchange)).size,
+              avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
+            };
+            onStatsUpdate(stats);
+          }
+        }
       }
     } catch (error) {
-      console.error('Error al cargar subcuentas:', error);
-      setError(error instanceof Error ? error.message : 'Error al cargar subcuentas');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [router, onStatsUpdate, fetchAccountDetails]);
-
-  // Efecto para cargar datos iniciales
-  useEffect(() => {
-    let isSubscribed = true;
-    const currentRef = componentRef.current;
-    
-    const loadData = async () => {
-      if (!isSubscribed || isLoading) return; // Evitar múltiples llamadas mientras está cargando
-      await loadSubAccounts();
-    };
-    
-    loadData();
-
-    // Configurar el evento de actualización
-    const handleRefresh = () => {
-      if (!isSubscribed || isLoading) return; // Evitar múltiples llamadas mientras está cargando
-      console.log("Evento refresh recibido en SubAccounts");
-      loadSubAccounts();
-    };
-
-    if (currentRef) {
-      currentRef.addEventListener('refresh', handleRefresh);
-    }
-
-    // Establecer un intervalo de actualización cada 30 segundos
-    const intervalId = setInterval(() => {
-      if (!isSubscribed || isLoading) return; // Evitar múltiples llamadas mientras está cargando
-      loadSubAccounts();
-    }, 30000);
-
-    return () => {
-      isSubscribed = false;
-      if (currentRef) {
-        currentRef.removeEventListener('refresh', handleRefresh);
+      if (isSubscribed.current) {
+        setError(error instanceof Error ? error.message : 'Error al cargar las subcuentas');
       }
-      clearInterval(intervalId);
+    } finally {
+      if (isSubscribed.current) {
+        setIsLoading(false);
+      }
+    }
+  }, [router, onStatsUpdate, fetchAccountBalances]);
+
+  useEffect(() => {
+    isSubscribed.current = true;
+    loadSubAccounts();
+    
+    const refreshInterval = setInterval(() => {
+      if (isSubscribed.current) {
+        loadSubAccounts();
+      }
+    }, 30000);
+    
+    return () => {
+      isSubscribed.current = false;
+      clearInterval(refreshInterval);
     };
-  }, [loadSubAccounts, isLoading]); // Añadir isLoading como dependencia
+  }, [loadSubAccounts]);
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      if (isSubscribed.current) {
+        loadSubAccounts();
+      }
+    };
+
+    const element = componentRef.current;
+    if (element) {
+      element.addEventListener('refresh', handleRefresh);
+      return () => {
+        element.removeEventListener('refresh', handleRefresh);
+      };
+    }
+  }, [loadSubAccounts]);
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
