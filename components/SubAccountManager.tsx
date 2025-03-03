@@ -12,7 +12,8 @@ import {
   Sparkles,
   KeyRound,
   Database,
-  Tag
+  Tag,
+  X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,7 +21,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogPortal } from "@radix-ui/react-dialog"
+import * as Dialog from "@radix-ui/react-dialog"
 import { useRouter } from "next/navigation"
 
 interface SubAccount {
@@ -317,46 +318,38 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
     }
   }
 
-  // Manejar el cierre del diálogo
-  const handleClose = () => {
-    setOpen(false)
-    onCancel()
-  }
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogPortal>
-        <DialogContent className="fixed inset-0 flex items-center justify-center bg-black/50">
-          <Card className="w-full max-w-2xl mx-4 bg-white dark:bg-slate-900 border-0 shadow-lg overflow-hidden animate-in fade-in-50 zoom-in-95 duration-300">
+    <Dialog.Root open={open} onOpenChange={(open) => {
+      setOpen(open);
+      if (!open) onCancel();
+    }}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 bg-black/50 animate-fade-in" />
+        <Dialog.Content className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full max-w-2xl">
+          <Dialog.Title className="sr-only">
+            {mode === "create" ? "Agregar Nueva Subcuenta" : "Eliminar Subcuenta"}
+          </Dialog.Title>
+          <Dialog.Description className="sr-only">
+            {mode === "create" ? "Formulario para agregar una nueva subcuenta" : "Formulario para eliminar una subcuenta existente"}
+          </Dialog.Description>
+          
+          <Card className="mx-4 bg-white dark:bg-slate-900 border-0 shadow-lg overflow-hidden animate-in fade-in-50 zoom-in-95 duration-300">
             <CardContent className="p-0">
               <div className="p-6 space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
                     {mode === "create" ? "Agregar Nueva Subcuenta" : "Eliminar Subcuenta"}
                   </h2>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleClose}
-                    className="rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-5 w-5 text-slate-500 dark:text-slate-400"
+                  <Dialog.Close asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20"
                     >
-                      <path d="M18 6 6 18" />
-                      <path d="m6 6 12 12" />
-                    </svg>
-                    <span className="sr-only">Cerrar</span>
-                  </Button>
+                      <X className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+                      <span className="sr-only">Cerrar</span>
+                    </Button>
+                  </Dialog.Close>
                 </div>
 
                 {error && (
@@ -745,8 +738,8 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
               </div>
             </CardContent>
           </Card>
-        </DialogContent>
-      </DialogPortal>
-    </Dialog>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   )
 } 
