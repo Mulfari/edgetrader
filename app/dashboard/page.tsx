@@ -23,6 +23,8 @@ import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
   const [totalBalance, setTotalBalance] = useState<number | null>(null);
+  const [realBalance, setRealBalance] = useState<number | null>(null);
+  const [demoBalance, setDemoBalance] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -82,6 +84,8 @@ export default function DashboardPage() {
     realAccounts: number
     demoAccounts: number
     totalBalance: number
+    realBalance: number
+    demoBalance: number
     uniqueExchanges: number
     avgPerformance: number
   }) => {
@@ -89,6 +93,8 @@ export default function DashboardPage() {
     setRealAccounts(stats.realAccounts);
     setDemoAccounts(stats.demoAccounts);
     setTotalBalance(stats.totalBalance);
+    setRealBalance(stats.realBalance);
+    setDemoBalance(stats.demoBalance);
     setExchanges(stats.uniqueExchanges);
     setAvgPerformance(stats.avgPerformance);
     setLastUpdate(new Date().toLocaleTimeString());
@@ -297,31 +303,22 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900/20 overflow-hidden shadow-sm rounded-xl border border-blue-100 dark:border-slate-800/30 transition-all duration-200 hover:shadow-md animate-in slide-in-from-bottom-3 duration-500 delay-200">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-gradient-to-r from-green-200 to-teal-200 rounded-lg p-3 shadow-md">
-                    <DollarSign className="h-6 w-6 text-slate-700" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-blue-300/70 truncate">Balance Total</dt>
-                      <dd>
-                        <div className="text-lg font-semibold text-gray-900 dark:text-white">${totalBalance?.toFixed(2) || "0.00"}</div>
-                        <div className="mt-1 flex items-baseline text-sm text-gray-500 dark:text-blue-300/70">
-                          <span>Todas las cuentas activas</span>
-                        </div>
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
+            <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg p-6 text-white shadow-lg">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Balance Total</h3>
+                <DollarSign className="h-6 w-6 text-white/70" />
               </div>
-              <div className="bg-green-50 dark:bg-green-900/20 px-5 py-3">
-                <div className="text-sm">
-                  <a href="#" className="font-medium text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 flex items-center justify-between transition-colors duration-200">
-                    Ver detalles
-                    <ChevronRight className="h-4 w-4" />
-                  </a>
+              <div className="text-3xl font-bold mb-4">
+                ${totalBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+              </div>
+              <div className="space-y-2 text-sm text-white/80">
+                <div className="flex justify-between items-center">
+                  <span>Balance Real:</span>
+                  <span className="font-medium">${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Balance Demo:</span>
+                  <span className="font-medium">${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
                 </div>
               </div>
             </div>

@@ -79,6 +79,8 @@ interface AccountStats {
   realAccounts: number;
   demoAccounts: number;
   totalBalance: number;
+  realBalance: number;
+  demoBalance: number;
   uniqueExchanges: number;
   avgPerformance: number;
 }
@@ -380,6 +382,14 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
             realAccounts: data.filter((acc: SubAccount) => !acc.isDemo).length,
             demoAccounts: data.filter((acc: SubAccount) => acc.isDemo).length,
             totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
+            realBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
+              const account = data.find((a: SubAccount) => a.id === accountId);
+              return sum + (!account?.isDemo ? (acc.balance || 0) : 0);
+            }, 0),
+            demoBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
+              const account = data.find((a: SubAccount) => a.id === accountId);
+              return sum + (account?.isDemo ? (acc.balance || 0) : 0);
+            }, 0),
             uniqueExchanges: new Set(data.map((acc: SubAccount) => acc.exchange)).size,
             avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
           };
@@ -557,6 +567,14 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
           realAccounts: subAccounts.filter((acc: SubAccount) => !acc.isDemo).length,
           demoAccounts: subAccounts.filter((acc: SubAccount) => acc.isDemo).length,
           totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
+          realBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
+            const account = subAccounts.find((a: SubAccount) => a.id === accountId);
+            return sum + (!account?.isDemo ? (acc.balance || 0) : 0);
+          }, 0),
+          demoBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
+            const account = subAccounts.find((a: SubAccount) => a.id === accountId);
+            return sum + (account?.isDemo ? (acc.balance || 0) : 0);
+          }, 0),
           uniqueExchanges: new Set(subAccounts.map((acc: SubAccount) => acc.exchange)).size,
           avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
         };
