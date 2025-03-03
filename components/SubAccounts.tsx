@@ -626,6 +626,26 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     });
   };
 
+  const calculateTotalBalances = () => {
+    let totalRealBalance = 0;
+    let totalDemoBalance = 0;
+
+    Object.entries(accountBalances).forEach(([accountId, details]) => {
+      const account = subAccounts.find(acc => acc.id === accountId);
+      if (account?.isDemo) {
+        totalDemoBalance += details.balance || 0;
+      } else {
+        totalRealBalance += details.balance || 0;
+      }
+    });
+
+    return {
+      total: totalRealBalance + totalDemoBalance,
+      real: totalRealBalance,
+      demo: totalDemoBalance
+    };
+  };
+
   return (
     <div className="space-y-4" ref={componentRef}>
       <div className="space-y-6 animate-in fade-in-50 duration-300" ref={componentRef} id="subaccounts-component">
@@ -1034,74 +1054,24 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                 </TabsList>
                                 <TabsContent value="overview" className="mt-6">
                                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                    <Card className="border dark:border-blue-800/30 overflow-hidden transition-all duration-200 hover:shadow-md">
-                                      <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20">
-                                        <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Balance Total</CardTitle>
+                                    <Card className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Balance Total</CardTitle>
+                                        <Wallet className="h-4 w-4 text-white/70" />
                                       </CardHeader>
-                                      <CardContent className="pt-4">
-                                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                                          {loadingBalance === sub.id ? (
-                                            <Skeleton className="h-6 w-[100px]" />
-                                          ) : accountBalances[sub.id] ? (
-                                            accountBalances[sub.id].isError ? (
-                                              <div className="flex items-center text-red-500 dark:text-red-400 text-sm">
-                                                <AlertCircle className="h-4 w-4 mr-1" />
-                                                <span>Error</span>
-                                                <Button 
-                                                  variant="ghost" 
-                                                  size="sm" 
-                                                  className="h-7 px-2 text-xs ml-2"
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    const token = localStorage.getItem("token");
-                                                    if (token) {
-                                                      setLoadingBalance(sub.id);
-                                                      fetchAccountDetails(sub.userId, sub.id, token)
-                                                        .then(details => {
-                                                          setAccountBalances(prev => ({
-                                                            ...prev,
-                                                            [sub.id]: details
-                                                          }));
-                                                        })
-                                                        .finally(() => {
-                                                          setLoadingBalance(null);
-                                                        });
-                                                    }
-                                                  }}
-                                                >
-                                                  <RefreshCw className="h-3 w-3 mr-1" />
-                                                  Reintentar
-                                                </Button>
-                                              </div>
-                                            ) : (
-                                              <div className="flex items-center gap-2">
-                                                <span className="font-medium">
-                                                  ${accountBalances[sub.id].balance?.toLocaleString('es-ES', {
-                                                    minimumFractionDigits: 2,
-                                                    maximumFractionDigits: 2
-                                                  })}
-                                                </span>
-                                                {accountBalances[sub.id].isDemo && !accountBalances[sub.id].isSimulated && (
-                                                  <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30">
-                                                    <div className="flex items-center gap-1">
-                                                      <Sparkles className="h-3 w-3" />
-                                                      <span>Demo</span>
-                                                    </div>
-                                                  </Badge>
-                                                )}
-                                                {accountBalances[sub.id].isSimulated && (
-                                                  <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500 border-blue-200 dark:border-blue-800/30">
-                                                    <div className="flex items-center gap-1">
-                                                      <PieChart className="h-3 w-3" />
-                                                      <span>Simulado</span>
-                                                    </div>
-                                                  </Badge>
-                                                )}
-                                              </div>
-                                            )
-                                          ) : (
-                                            <Skeleton className="h-6 w-[100px]" />
-                                          )}
+                                      <CardContent>
+                                        <div className="text-2xl font-bold">
+                                          ${calculateTotalBalances().total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </div>
+                                        <div className="text-xs text-white/70 mt-2 space-y-1">
+                                          <div className="flex justify-between">
+                                            <span>Real:</span>
+                                            <span>${calculateTotalBalances().real.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span>Demo:</span>
+                                            <span>${calculateTotalBalances().demo.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                          </div>
                                         </div>
                                       </CardContent>
                                     </Card>
