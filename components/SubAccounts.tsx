@@ -12,7 +12,9 @@ import {
   Sparkles,
   Briefcase,
   PieChart,
-  LayoutDashboard
+  LayoutDashboard,
+  Plus,
+  Trash2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -91,6 +93,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const [loadingAllBalances, setLoadingAllBalances] = useState(false);
   const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
 
   const fetchAccountDetails = async (userId: string, accountId: string, token: string): Promise<AccountDetails> => {
     try {
@@ -473,595 +476,691 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }
   };
 
-  return (
-    <div className="space-y-6 animate-in fade-in-50 duration-300" ref={componentRef} id="subaccounts-component">
-      {/* Header Section */}
-      <div className="flex flex-col space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <h2 className="text-2xl font-bold tracking-tight">
-            Subcuentas
-            {loadingAllBalances && (
-              <span className="ml-2 inline-flex items-center text-sm font-normal text-blue-600 dark:text-blue-400">
-                <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                Cargando balances...
-              </span>
-            )}
-          </h2>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-9 gap-1"
-              disabled={loadingAllBalances || isLoading}
-              onClick={refreshAllBalances}
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${loadingAllBalances ? "animate-spin" : ""}`} />
-              <span className="hidden sm:inline">Actualizar balances</span>
-            </Button>
-            <div className="relative w-full md:w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Buscar subcuentas..."
-                className="w-full pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 gap-1">
-                  <Filter className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Filtrar</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[200px]">
-                <DropdownMenuItem onClick={() => setSelectedType("all")}>
-                  Todas las cuentas
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSelectedType("real")}>
-                  Cuentas reales
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSelectedType("demo")}>
-                  Cuentas demo
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </div>
+  // Función para crear una nueva subcuenta
+  const handleCreateSubAccount = () => {
+    router.push('/create-subaccount');
+  };
 
-      {/* Mostrar mensaje de error si existe */}
-      {error && (
-        <div className="p-4 border border-red-200 dark:border-red-800/30 rounded-lg bg-red-50/50 dark:bg-red-950/10">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-red-700 dark:text-red-300">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
+  // Función para eliminar subcuentas seleccionadas
+  const handleDeleteSubAccounts = async () => {
+    if (selectedAccounts.length === 0) {
+      setError("Por favor, selecciona al menos una subcuenta para eliminar");
+      return;
+    }
 
-      <div className="p-4 border border-yellow-200 dark:border-yellow-800/30 rounded-lg bg-yellow-50/50 dark:bg-yellow-950/10">
-        <div className="flex items-start gap-3">
-          <Sparkles className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
-          <div>
-            <h3 className="text-sm font-medium text-yellow-700 dark:text-yellow-300">Información sobre cuentas demo</h3>
-            <p className="text-xs text-yellow-600/90 dark:text-yellow-400/90 mt-1">
-              Las cuentas demo de Bybit ahora muestran datos reales desde el endpoint <code className="bg-yellow-100 dark:bg-yellow-900/30 px-1 py-0.5 rounded text-xs">api-demo.bybit.com</code>. 
-              Para ver balances y activos, asegúrate de tener fondos virtuales en tu cuenta demo de Bybit.
-              Si no ves datos, es posible que necesites depositar fondos virtuales en tu cuenta demo.
-            </p>
-          </div>
-        </div>
-      </div>
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const deletePromises = selectedAccounts.map(async (accountId) => {
+        const response = await fetch(`${API_URL}/subaccounts/${accountId}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error al eliminar la subcuenta ${accountId}`);
+        }
+      });
+
+      await Promise.all(deletePromises);
       
-      <Card className="border shadow-sm dark:border-blue-800/30 dark:bg-blue-950/10 overflow-hidden transition-all duration-200 hover:shadow">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 sticky top-0 z-10">
-              <TableRow>
-                <TableHead onClick={() => handleSort("name")} className="cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
-                  <div className="flex items-center">
-                    Nombre
-                    <ArrowUpDown className={`ml-2 h-4 w-4 transition-opacity duration-200 ${sortConfig?.key === "name" ? "opacity-100" : "opacity-50"}`} />
-                  </div>
-                </TableHead>
-                <TableHead onClick={() => handleSort("exchange")} className="cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
-                  <div className="flex items-center">
-                    Exchange
-                    <ArrowUpDown className={`ml-2 h-4 w-4 transition-opacity duration-200 ${sortConfig?.key === "exchange" ? "opacity-100" : "opacity-50"}`} />
-                  </div>
-                </TableHead>
-                <TableHead onClick={() => handleSort("balance")} className="cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
-                  <div className="flex items-center">
-                    Balance
-                    <ArrowUpDown className={`ml-2 h-4 w-4 transition-opacity duration-200 ${sortConfig?.key === "balance" ? "opacity-100" : "opacity-50"}`} />
-                  </div>
-                </TableHead>
-                <TableHead onClick={() => handleSort("isDemo")} className="cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
-                  <div className="flex items-center">
-                    Tipo
-                    <ArrowUpDown className={`ml-2 h-4 w-4 transition-opacity duration-200 ${sortConfig?.key === "isDemo" ? "opacity-100" : "opacity-50"}`} />
-                  </div>
-                </TableHead>
-                <TableHead onClick={() => handleSort("performance")} className="cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
-                  <div className="flex items-center">
-                    Rendimiento
-                    <ArrowUpDown className={`ml-2 h-4 w-4 transition-opacity duration-200 ${sortConfig?.key === "performance" ? "opacity-100" : "opacity-50"}`} />
-                  </div>
-                </TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 3 }).map((_, index) => (
-                  <TableRow key={index} className="animate-pulse">
-                    <TableCell>
-                      <Skeleton className="h-5 w-[150px]" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-[100px]" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-[120px]" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-[80px]" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-[200px]" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-[20px] ml-auto" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : filteredAccounts.length === 0 ? (
+      // Actualizar la lista de subcuentas
+      setSubAccounts(subAccounts.filter(account => !selectedAccounts.includes(account.id)));
+      setSelectedAccounts([]); // Limpiar selección
+      setError(null);
+    } catch (error) {
+      setError("Error al eliminar las subcuentas seleccionadas");
+      console.error("Error al eliminar subcuentas:", error);
+    }
+  };
+
+  // Función para manejar la selección de subcuentas
+  const handleSelectAccount = (accountId: string) => {
+    setSelectedAccounts(prev => {
+      if (prev.includes(accountId)) {
+        return prev.filter(id => id !== accountId);
+      } else {
+        return [...prev, accountId];
+      }
+    });
+  };
+
+  return (
+    <div className="space-y-4" ref={componentRef}>
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center space-x-4">
+          <Button
+            onClick={handleCreateSubAccount}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Crear Subcuenta
+          </Button>
+          <Button
+            onClick={handleDeleteSubAccounts}
+            className="bg-red-600 hover:bg-red-700 text-white"
+            disabled={selectedAccounts.length === 0}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Eliminar ({selectedAccounts.length})
+          </Button>
+          <Button
+            onClick={refreshAllBalances}
+            disabled={loadingAllBalances}
+            variant="outline"
+            size="icon"
+          >
+            <RefreshCw className={`h-4 w-4 ${loadingAllBalances ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar subcuentas..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Filter className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setSelectedType("all")}>
+                Todas las cuentas
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedType("real")}>
+                Cuentas reales
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedType("demo")}>
+                Cuentas demo
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      <div className="space-y-6 animate-in fade-in-50 duration-300" ref={componentRef} id="subaccounts-component">
+        {/* Header Section */}
+        <div className="flex flex-col space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <h2 className="text-2xl font-bold tracking-tight">
+              Subcuentas
+              {loadingAllBalances && (
+                <span className="ml-2 inline-flex items-center text-sm font-normal text-blue-600 dark:text-blue-400">
+                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                  Cargando balances...
+                </span>
+              )}
+            </h2>
+          </div>
+        </div>
+
+        {/* Mostrar mensaje de error si existe */}
+        {error && (
+          <div className="p-4 border border-red-200 dark:border-red-800/30 rounded-lg bg-red-50/50 dark:bg-red-950/10">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-red-700 dark:text-red-300">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="p-4 border border-yellow-200 dark:border-yellow-800/30 rounded-lg bg-yellow-50/50 dark:bg-yellow-950/10">
+          <div className="flex items-start gap-3">
+            <Sparkles className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+            <div>
+              <h3 className="text-sm font-medium text-yellow-700 dark:text-yellow-300">Información sobre cuentas demo</h3>
+              <p className="text-xs text-yellow-600/90 dark:text-yellow-400/90 mt-1">
+                Las cuentas demo de Bybit ahora muestran datos reales desde el endpoint <code className="bg-yellow-100 dark:bg-yellow-900/30 px-1 py-0.5 rounded text-xs">api-demo.bybit.com</code>. 
+                Para ver balances y activos, asegúrate de tener fondos virtuales en tu cuenta demo de Bybit.
+                Si no ves datos, es posible que necesites depositar fondos virtuales en tu cuenta demo.
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <Card className="border shadow-sm dark:border-blue-800/30 dark:bg-blue-950/10 overflow-hidden transition-all duration-200 hover:shadow">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 sticky top-0 z-10">
                 <TableRow>
-                  <TableCell colSpan={6} className="h-[300px]">
-                    <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                      <AlertCircle className="h-16 w-16 mb-4 text-blue-300/50 animate-in fade-in-50 zoom-in-95 duration-300" />
-                      <p className="text-lg font-medium mb-2 text-blue-800 dark:text-blue-300 animate-in fade-in-50 slide-in-from-bottom-5 duration-300 delay-100">No se encontraron subcuentas</p>
-                      <p className="text-sm text-blue-600/70 dark:text-blue-400/70 max-w-md mx-auto animate-in fade-in-50 slide-in-from-bottom-5 duration-300 delay-200">
-                        {searchTerm || selectedType !== "all" 
-                          ? "Intenta ajustar los filtros o el término de búsqueda" 
-                          : "Añade una nueva subcuenta para comenzar a monitorear tus inversiones"}
-                      </p>
+                  <TableHead className="w-12">
+                    <input
+                      type="checkbox"
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedAccounts(subAccounts.map(acc => acc.id));
+                        } else {
+                          setSelectedAccounts([]);
+                        }
+                      }}
+                      checked={selectedAccounts.length === subAccounts.length && subAccounts.length > 0}
+                    />
+                  </TableHead>
+                  <TableHead onClick={() => handleSort("name")} className="cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
+                    <div className="flex items-center">
+                      Nombre
+                      <ArrowUpDown className={`ml-2 h-4 w-4 transition-opacity duration-200 ${sortConfig?.key === "name" ? "opacity-100" : "opacity-50"}`} />
                     </div>
-                  </TableCell>
+                  </TableHead>
+                  <TableHead onClick={() => handleSort("exchange")} className="cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
+                    <div className="flex items-center">
+                      Exchange
+                      <ArrowUpDown className={`ml-2 h-4 w-4 transition-opacity duration-200 ${sortConfig?.key === "exchange" ? "opacity-100" : "opacity-50"}`} />
+                    </div>
+                  </TableHead>
+                  <TableHead onClick={() => handleSort("balance")} className="cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
+                    <div className="flex items-center">
+                      Balance
+                      <ArrowUpDown className={`ml-2 h-4 w-4 transition-opacity duration-200 ${sortConfig?.key === "balance" ? "opacity-100" : "opacity-50"}`} />
+                    </div>
+                  </TableHead>
+                  <TableHead onClick={() => handleSort("isDemo")} className="cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
+                    <div className="flex items-center">
+                      Tipo
+                      <ArrowUpDown className={`ml-2 h-4 w-4 transition-opacity duration-200 ${sortConfig?.key === "isDemo" ? "opacity-100" : "opacity-50"}`} />
+                    </div>
+                  </TableHead>
+                  <TableHead onClick={() => handleSort("performance")} className="cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
+                    <div className="flex items-center">
+                      Rendimiento
+                      <ArrowUpDown className={`ml-2 h-4 w-4 transition-opacity duration-200 ${sortConfig?.key === "performance" ? "opacity-100" : "opacity-50"}`} />
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
-              ) : (
-                filteredAccounts.map((sub, index) => (
-                  <>
-                    <TableRow
-                      key={sub.id}
-                      className={`transition-all duration-200 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 cursor-pointer group animate-in fade-in-50 slide-in-from-bottom-1 duration-300 ${index % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-900/10' : ''}`}
-                      style={{ animationDelay: `${index * 50}ms` }}
-                    >
-                      <TableCell className="font-medium" onClick={() => handleRowClick(sub)}>
-                        <div className="flex items-center">
-                          <div className="w-2 h-10 rounded-r-md bg-gradient-to-b from-blue-500 to-purple-600 mr-3 opacity-70 group-hover:opacity-100 transition-opacity"></div>
-                          {sub.name}
-                        </div>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <TableRow key={index} className="animate-pulse">
+                      <TableCell>
+                        <Skeleton className="h-5 w-[150px]" />
                       </TableCell>
-                      <TableCell onClick={() => handleRowClick(sub)}>
-                        <Badge variant="secondary" className="uppercase bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800/30 group-hover:bg-blue-100 dark:group-hover:bg-blue-800/30 transition-colors">
-                          {sub.exchange}
-                        </Badge>
+                      <TableCell>
+                        <Skeleton className="h-5 w-[100px]" />
                       </TableCell>
-                      <TableCell onClick={() => handleRowClick(sub)}>
-                        {loadingBalance === sub.id ? (
-                          <Skeleton className="h-6 w-[100px]" />
-                        ) : accountBalances[sub.id] ? (
-                          accountBalances[sub.id].isError ? (
-                            <div className="flex items-center text-red-500 dark:text-red-400 text-sm">
-                              <AlertCircle className="h-4 w-4 mr-1" />
-                              <span>Error</span>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-7 px-2 text-xs ml-2"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const token = localStorage.getItem("token");
-                                  if (token) {
-                                    setLoadingBalance(sub.id);
-                                    fetchAccountDetails(sub.userId, sub.id, token)
-                                      .then(details => {
-                                        setAccountBalances(prev => ({
-                                          ...prev,
-                                          [sub.id]: details
-                                        }));
-                                      })
-                                      .finally(() => {
-                                        setLoadingBalance(null);
-                                      });
-                                  }
-                                }}
-                              >
-                                <RefreshCw className="h-3 w-3 mr-1" />
-                                Reintentar
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">
-                                ${accountBalances[sub.id].balance?.toLocaleString('es-ES', {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2
-                                })}
-                              </span>
-                              {accountBalances[sub.id].isDemo && !accountBalances[sub.id].isSimulated && (
-                                <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30">
-                                  <div className="flex items-center gap-1">
-                                    <Sparkles className="h-3 w-3" />
-                                    <span>Demo</span>
-                                  </div>
-                                </Badge>
-                              )}
-                              {accountBalances[sub.id].isSimulated && (
-                                <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500 border-blue-200 dark:border-blue-800/30">
-                                  <div className="flex items-center gap-1">
-                                    <PieChart className="h-3 w-3" />
-                                    <span>Simulado</span>
-                                  </div>
-                                </Badge>
-                              )}
-                            </div>
-                          )
-                        ) : (
-                          <Skeleton className="h-6 w-[100px]" />
-                        )}
+                      <TableCell>
+                        <Skeleton className="h-5 w-[120px]" />
                       </TableCell>
-                      <TableCell onClick={() => handleRowClick(sub)}>
-                        {sub.isDemo !== undefined ? (
-                          <Badge variant="outline" className={sub.isDemo ? 
-                            "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30 group-hover:bg-yellow-200/70 dark:group-hover:bg-yellow-800/30 transition-colors" : 
-                            "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500 border-green-200 dark:border-green-800/30 group-hover:bg-green-200/70 dark:group-hover:bg-green-800/30 transition-colors"}>
-                            {sub.isDemo ? (
-                              <div className="flex items-center gap-1">
-                                <Sparkles className="h-3 w-3" />
-                                <span>Demo</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1">
-                                <Briefcase className="h-3 w-3" />
-                                <span>Real</span>
-                              </div>
-                            )}
-                          </Badge>
-                        ) : (
-                          <span className="text-slate-400 dark:text-slate-500">No disponible</span>
-                        )}
+                      <TableCell>
+                        <Skeleton className="h-5 w-[80px]" />
                       </TableCell>
-                      <TableCell onClick={() => handleRowClick(sub)}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${
-                            sub.performance && sub.performance > 0 
-                              ? "bg-green-500 group-hover:bg-green-600 transition-colors" 
-                              : sub.performance && sub.performance < 0 
-                                ? "bg-red-500 group-hover:bg-red-600 transition-colors" 
-                                : "bg-yellow-500 group-hover:bg-yellow-600 transition-colors"
-                          }`} />
-                          <span className={
-                            sub.performance && sub.performance > 0 
-                              ? "text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors" 
-                              : sub.performance && sub.performance < 0 
-                                ? "text-red-600 dark:text-red-400 group-hover:text-red-700 dark:group-hover:text-red-300 transition-colors" 
-                                : "text-yellow-600 dark:text-yellow-400 group-hover:text-yellow-700 dark:group-hover:text-yellow-300 transition-colors"
-                          }>
-                            {sub.performance !== undefined ? `${sub.performance.toFixed(2)}%` : "-"}
-                          </span>
-                        </div>
+                      <TableCell>
+                        <Skeleton className="h-5 w-[200px]" />
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRowClick(sub)}
-                          className="h-8 w-8 p-0 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-                        >
-                          <ChevronDown className={`h-4 w-4 transition-transform duration-300 text-blue-500 dark:text-blue-400 ${selectedSubAccountId === sub.id ? "rotate-180" : ""}`} />
-                          <span className="sr-only">Ver detalles</span>
-                        </Button>
+                      <TableCell>
+                        <Skeleton className="h-5 w-[20px] ml-auto" />
                       </TableCell>
                     </TableRow>
-                    {selectedSubAccountId === sub.id && (
-                      <TableRow key={`${sub.id}-details`} className="bg-blue-50/30 dark:bg-blue-950/20">
-                        <TableCell colSpan={6} className="p-0 border-t-0">
-                          <div className="p-6 space-y-6 animate-in fade-in-50 slide-in-from-top-5 duration-300">
-                            <Tabs defaultValue="overview" className="w-full">
-                              <TabsList className="bg-white dark:bg-blue-950/30 border dark:border-blue-800/30 p-1">
-                                <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-200">
-                                  <LayoutDashboard className="h-4 w-4 mr-2" />
-                                  Vista General
-                                </TabsTrigger>
-                                <TabsTrigger value="assets" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-200">
-                                  <PieChart className="h-4 w-4 mr-2" />
-                                  Assets
-                                </TabsTrigger>
-                              </TabsList>
-                              <TabsContent value="overview" className="mt-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                  <Card className="border dark:border-blue-800/30 overflow-hidden transition-all duration-200 hover:shadow-md">
-                                    <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20">
-                                      <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Balance Total</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="pt-4">
-                                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                                        {loadingBalance === sub.id ? (
-                                          <Skeleton className="h-6 w-[100px]" />
-                                        ) : accountBalances[sub.id] ? (
-                                          accountBalances[sub.id].isError ? (
-                                            <div className="flex items-center text-red-500 dark:text-red-400 text-sm">
-                                              <AlertCircle className="h-4 w-4 mr-1" />
-                                              <span>Error</span>
-                                              <Button 
-                                                variant="ghost" 
-                                                size="sm" 
-                                                className="h-7 px-2 text-xs ml-2"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  const token = localStorage.getItem("token");
-                                                  if (token) {
-                                                    setLoadingBalance(sub.id);
-                                                    fetchAccountDetails(sub.userId, sub.id, token)
-                                                      .then(details => {
-                                                        setAccountBalances(prev => ({
-                                                          ...prev,
-                                                          [sub.id]: details
-                                                        }));
-                                                      })
-                                                      .finally(() => {
-                                                        setLoadingBalance(null);
-                                                      });
-                                                  }
-                                                }}
-                                              >
-                                                <RefreshCw className="h-3 w-3 mr-1" />
-                                                Reintentar
-                                              </Button>
-                                            </div>
-                                          ) : (
-                                            <div className="flex items-center gap-2">
-                                              <span className="font-medium">
-                                                ${accountBalances[sub.id].balance?.toLocaleString('es-ES', {
-                                                  minimumFractionDigits: 2,
-                                                  maximumFractionDigits: 2
-                                                })}
-                                              </span>
-                                              {accountBalances[sub.id].isDemo && !accountBalances[sub.id].isSimulated && (
-                                                <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30">
-                                                  <div className="flex items-center gap-1">
-                                                    <Sparkles className="h-3 w-3" />
-                                                    <span>Demo</span>
-                                                  </div>
-                                                </Badge>
-                                              )}
-                                              {accountBalances[sub.id].isSimulated && (
-                                                <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500 border-blue-200 dark:border-blue-800/30">
-                                                  <div className="flex items-center gap-1">
-                                                    <PieChart className="h-3 w-3" />
-                                                    <span>Simulado</span>
-                                                  </div>
-                                                </Badge>
-                                              )}
-                                            </div>
-                                          )
-                                        ) : (
-                                          <Skeleton className="h-6 w-[100px]" />
-                                        )}
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                  <Card className="border dark:border-blue-800/30 overflow-hidden transition-all duration-200 hover:shadow-md">
-                                    <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20">
-                                      <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Exchange</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="pt-4">
-                                      <div className="text-2xl font-bold uppercase text-blue-600 dark:text-blue-400">{sub.exchange}</div>
-                                    </CardContent>
-                                  </Card>
-                                  <Card className="border dark:border-blue-800/30 overflow-hidden transition-all duration-200 hover:shadow-md">
-                                    <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20">
-                                      <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Tipo de Cuenta</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="pt-4">
-                                      <div className="flex items-center gap-2">
-                                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{sub.isDemo ? "Demo" : "Real"}</div>
-                                        <Badge variant="outline" className={sub.isDemo ? 
-                                          "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30" : 
-                                          "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500 border-green-200 dark:border-green-800/30"}>
-                                          {sub.isDemo ? (
-                                            <div className="flex items-center gap-1">
-                                              <Sparkles className="h-3 w-3" />
-                                              <span>Práctica</span>
-                                            </div>
-                                          ) : (
-                                            <div className="flex items-center gap-1">
-                                              <Briefcase className="h-3 w-3" />
-                                              <span>Fondos Reales</span>
-                                            </div>
-                                          )}
-                                        </Badge>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                  <Card className="border dark:border-blue-800/30 overflow-hidden transition-all duration-200 hover:shadow-md">
-                                    <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20">
-                                      <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Rendimiento</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="pt-4">
-                                      <div className={`text-2xl font-bold ${
-                                        sub.performance && sub.performance > 0 
-                                          ? "text-green-600 dark:text-green-400" 
-                                          : sub.performance && sub.performance < 0 
-                                            ? "text-red-600 dark:text-red-400" 
-                                            : "text-yellow-600 dark:text-yellow-400"
-                                      }`}>
-                                        {loadingBalance === sub.id ? (
-                                          <Skeleton className="h-6 w-[100px]" />
-                                        ) : accountBalances[sub.id] ? (
-                                          <span className="font-medium">
-                                            {accountBalances[sub.id].performance > 0 ? "+" : ""}
-                                            {accountBalances[sub.id].performance.toFixed(2)}%
-                                          </span>
-                                        ) : (
-                                          <Skeleton className="h-6 w-[100px]" />
-                                        )}
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                </div>
-                              </TabsContent>
-                              <TabsContent value="assets" className="mt-6">
-                                <div className="space-y-4">
-                                  <div className="flex items-center justify-between">
-                                    <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300">
-                                      Activos de la cuenta
-                                    </h3>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      className="h-8 text-xs"
-                                      disabled={loadingBalance === sub.id}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const token = localStorage.getItem("token");
-                                        if (token) {
-                                          setLoadingBalance(sub.id);
-                                          fetchAccountDetails(sub.userId, sub.id, token)
-                                            .then(details => {
-                                              setAccountBalances(prev => ({
-                                                ...prev,
-                                                [sub.id]: details
-                                              }));
-                                            })
-                                            .finally(() => {
-                                              setLoadingBalance(null);
-                                            });
-                                        }
-                                      }}
-                                    >
-                                      <RefreshCw className={`mr-2 h-3 w-3 ${loadingBalance === sub.id ? "animate-spin" : ""}`} />
-                                      {loadingBalance === sub.id ? "Actualizando..." : "Actualizar"}
-                                    </Button>
-                                  </div>
-                                  
-                                  {loadingBalance === sub.id ? (
-                                    <div className="space-y-2">
-                                      <Skeleton className="h-8 w-full" />
-                                      <Skeleton className="h-20 w-full" />
-                                    </div>
-                                  ) : accountBalances[sub.id]?.assets && accountBalances[sub.id].assets.length > 0 ? (
-                                    <div className="rounded-lg border border-blue-200 dark:border-blue-800/30 overflow-hidden">
-                                      <Table>
-                                        <TableHeader className="bg-blue-50 dark:bg-blue-950/20">
-                                          <TableRow>
-                                            <TableHead className="font-medium text-blue-700 dark:text-blue-300">Moneda</TableHead>
-                                            <TableHead className="font-medium text-blue-700 dark:text-blue-300">Balance</TableHead>
-                                            <TableHead className="font-medium text-blue-700 dark:text-blue-300">Valor USD</TableHead>
-                                          </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                          {accountBalances[sub.id].assets.map((asset, index) => (
-                                            <TableRow key={index} className={index % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-900/10' : ''}>
-                                              <TableCell className="font-medium">{asset.coin}</TableCell>
-                                              <TableCell>{asset.walletBalance.toLocaleString('es-ES', {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 8
-                                              })}</TableCell>
-                                              <TableCell>${asset.usdValue.toLocaleString('es-ES', {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2
-                                              })}</TableCell>
-                                            </TableRow>
-                                          ))}
-                                        </TableBody>
-                                      </Table>
-                                    </div>
-                                  ) : accountBalances[sub.id]?.isError ? (
-                                    <div className="text-center py-8 border border-dashed border-red-200 dark:border-red-800/30 rounded-lg bg-red-50/50 dark:bg-red-950/10">
-                                      <div className="flex flex-col items-center justify-center space-y-2">
-                                        <AlertCircle className="h-12 w-12 text-red-400 dark:text-red-500 opacity-50" />
-                                        <p className="text-red-600 dark:text-red-400">Error al cargar los activos.</p>
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm" 
-                                          className="mt-2"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            const token = localStorage.getItem("token");
-                                            if (token) {
-                                              setLoadingBalance(sub.id);
-                                              fetchAccountDetails(sub.userId, sub.id, token)
-                                                .then(details => {
-                                                  setAccountBalances(prev => ({
-                                                    ...prev,
-                                                    [sub.id]: details
-                                                  }));
-                                                })
-                                                .finally(() => {
-                                                  setLoadingBalance(null);
-                                                });
-                                            }
-                                          }}
-                                        >
-                                          <RefreshCw className="mr-2 h-4 w-4" />
-                                          Reintentar
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="text-center py-8 border border-dashed border-blue-200 dark:border-blue-800/30 rounded-lg bg-blue-50/50 dark:bg-blue-950/10">
-                                      <div className="flex flex-col items-center justify-center space-y-2">
-                                        <Wallet className="h-12 w-12 text-blue-400 dark:text-blue-500 opacity-50" />
-                                        <p className="text-blue-600 dark:text-blue-400">No hay activos disponibles para mostrar.</p>
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm" 
-                                          className="mt-2"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            const token = localStorage.getItem("token");
-                                            if (token) {
-                                              setLoadingBalance(sub.id);
-                                              fetchAccountDetails(sub.userId, sub.id, token)
-                                                .then(details => {
-                                                  setAccountBalances(prev => ({
-                                                    ...prev,
-                                                    [sub.id]: details
-                                                  }));
-                                                })
-                                                .finally(() => {
-                                                  setLoadingBalance(null);
-                                                });
-                                            }
-                                          }}
-                                        >
-                                          <RefreshCw className="mr-2 h-4 w-4" />
-                                          Actualizar
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </TabsContent>
-                            </Tabs>
+                  ))
+                ) : filteredAccounts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-[300px]">
+                      <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                        <AlertCircle className="h-16 w-16 mb-4 text-blue-300/50 animate-in fade-in-50 zoom-in-95 duration-300" />
+                        <p className="text-lg font-medium mb-2 text-blue-800 dark:text-blue-300 animate-in fade-in-50 slide-in-from-bottom-5 duration-300 delay-100">No se encontraron subcuentas</p>
+                        <p className="text-sm text-blue-600/70 dark:text-blue-400/70 max-w-md mx-auto animate-in fade-in-50 slide-in-from-bottom-5 duration-300 delay-200">
+                          {searchTerm || selectedType !== "all" 
+                            ? "Intenta ajustar los filtros o el término de búsqueda" 
+                            : "Añade una nueva subcuenta para comenzar a monitorear tus inversiones"}
+                        </p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredAccounts.map((sub, index) => (
+                    <>
+                      <TableRow
+                        key={sub.id}
+                        className={`transition-all duration-200 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 cursor-pointer group animate-in fade-in-50 slide-in-from-bottom-1 duration-300 ${index % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-900/10' : ''}`}
+                        style={{ animationDelay: `${index * 50}ms` }}
+                      >
+                        <TableCell className="font-medium" onClick={() => handleRowClick(sub)}>
+                          <div className="flex items-center">
+                            <div className="w-2 h-10 rounded-r-md bg-gradient-to-b from-blue-500 to-purple-600 mr-3 opacity-70 group-hover:opacity-100 transition-opacity"></div>
+                            <input
+                              type="checkbox"
+                              checked={selectedAccounts.includes(sub.id)}
+                              onChange={() => handleSelectAccount(sub.id)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
                           </div>
                         </TableCell>
+                        <TableCell className="font-medium" onClick={() => handleRowClick(sub)}>
+                          <div className="flex items-center">
+                            <div className="w-2 h-10 rounded-r-md bg-gradient-to-b from-blue-500 to-purple-600 mr-3 opacity-70 group-hover:opacity-100 transition-opacity"></div>
+                            {sub.name}
+                          </div>
+                        </TableCell>
+                        <TableCell onClick={() => handleRowClick(sub)}>
+                          <Badge variant="secondary" className="uppercase bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800/30 group-hover:bg-blue-100 dark:group-hover:bg-blue-800/30 transition-colors">
+                            {sub.exchange}
+                          </Badge>
+                        </TableCell>
+                        <TableCell onClick={() => handleRowClick(sub)}>
+                          {loadingBalance === sub.id ? (
+                            <Skeleton className="h-6 w-[100px]" />
+                          ) : accountBalances[sub.id] ? (
+                            accountBalances[sub.id].isError ? (
+                              <div className="flex items-center text-red-500 dark:text-red-400 text-sm">
+                                <AlertCircle className="h-4 w-4 mr-1" />
+                                <span>Error</span>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-7 px-2 text-xs ml-2"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const token = localStorage.getItem("token");
+                                    if (token) {
+                                      setLoadingBalance(sub.id);
+                                      fetchAccountDetails(sub.userId, sub.id, token)
+                                        .then(details => {
+                                          setAccountBalances(prev => ({
+                                            ...prev,
+                                            [sub.id]: details
+                                          }));
+                                        })
+                                        .finally(() => {
+                                          setLoadingBalance(null);
+                                        });
+                                    }
+                                  }}
+                                >
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  Reintentar
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">
+                                  ${accountBalances[sub.id].balance?.toLocaleString('es-ES', {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                  })}
+                                </span>
+                                {accountBalances[sub.id].isDemo && !accountBalances[sub.id].isSimulated && (
+                                  <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30">
+                                    <div className="flex items-center gap-1">
+                                      <Sparkles className="h-3 w-3" />
+                                      <span>Demo</span>
+                                    </div>
+                                  </Badge>
+                                )}
+                                {accountBalances[sub.id].isSimulated && (
+                                  <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500 border-blue-200 dark:border-blue-800/30">
+                                    <div className="flex items-center gap-1">
+                                      <PieChart className="h-3 w-3" />
+                                      <span>Simulado</span>
+                                    </div>
+                                  </Badge>
+                                )}
+                              </div>
+                            )
+                          ) : (
+                            <Skeleton className="h-6 w-[100px]" />
+                          )}
+                        </TableCell>
+                        <TableCell onClick={() => handleRowClick(sub)}>
+                          {sub.isDemo !== undefined ? (
+                            <Badge variant="outline" className={sub.isDemo ? 
+                              "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30 group-hover:bg-yellow-200/70 dark:group-hover:bg-yellow-800/30 transition-colors" : 
+                              "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500 border-green-200 dark:border-green-800/30 group-hover:bg-green-200/70 dark:group-hover:bg-green-800/30 transition-colors"}>
+                              {sub.isDemo ? (
+                                <div className="flex items-center gap-1">
+                                  <Sparkles className="h-3 w-3" />
+                                  <span>Demo</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1">
+                                  <Briefcase className="h-3 w-3" />
+                                  <span>Real</span>
+                                </div>
+                              )}
+                            </Badge>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500">No disponible</span>
+                          )}
+                        </TableCell>
+                        <TableCell onClick={() => handleRowClick(sub)}>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${
+                              sub.performance && sub.performance > 0 
+                                ? "bg-green-500 group-hover:bg-green-600 transition-colors" 
+                                : sub.performance && sub.performance < 0 
+                                  ? "bg-red-500 group-hover:bg-red-600 transition-colors" 
+                                  : "bg-yellow-500 group-hover:bg-yellow-600 transition-colors"
+                            }`} />
+                            <span className={
+                              sub.performance && sub.performance > 0 
+                                ? "text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors" 
+                                : sub.performance && sub.performance < 0 
+                                  ? "text-red-600 dark:text-red-400 group-hover:text-red-700 dark:group-hover:text-red-300 transition-colors" 
+                                  : "text-yellow-600 dark:text-yellow-400 group-hover:text-yellow-700 dark:group-hover:text-yellow-300 transition-colors"
+                            }>
+                              {sub.performance !== undefined ? `${sub.performance.toFixed(2)}%` : "-"}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRowClick(sub)}
+                            className="h-8 w-8 p-0 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                          >
+                            <ChevronDown className={`h-4 w-4 transition-transform duration-300 text-blue-500 dark:text-blue-400 ${selectedSubAccountId === sub.id ? "rotate-180" : ""}`} />
+                            <span className="sr-only">Ver detalles</span>
+                          </Button>
+                        </TableCell>
                       </TableRow>
-                    )}
-                  </>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                      {selectedSubAccountId === sub.id && (
+                        <TableRow key={`${sub.id}-details`} className="bg-blue-50/30 dark:bg-blue-950/20">
+                          <TableCell colSpan={6} className="p-0 border-t-0">
+                            <div className="p-6 space-y-6 animate-in fade-in-50 slide-in-from-top-5 duration-300">
+                              <Tabs defaultValue="overview" className="w-full">
+                                <TabsList className="bg-white dark:bg-blue-950/30 border dark:border-blue-800/30 p-1">
+                                  <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-200">
+                                    <LayoutDashboard className="h-4 w-4 mr-2" />
+                                    Vista General
+                                  </TabsTrigger>
+                                  <TabsTrigger value="assets" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-200">
+                                    <PieChart className="h-4 w-4 mr-2" />
+                                    Assets
+                                  </TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="overview" className="mt-6">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <Card className="border dark:border-blue-800/30 overflow-hidden transition-all duration-200 hover:shadow-md">
+                                      <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20">
+                                        <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Balance Total</CardTitle>
+                                      </CardHeader>
+                                      <CardContent className="pt-4">
+                                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                          {loadingBalance === sub.id ? (
+                                            <Skeleton className="h-6 w-[100px]" />
+                                          ) : accountBalances[sub.id] ? (
+                                            accountBalances[sub.id].isError ? (
+                                              <div className="flex items-center text-red-500 dark:text-red-400 text-sm">
+                                                <AlertCircle className="h-4 w-4 mr-1" />
+                                                <span>Error</span>
+                                                <Button 
+                                                  variant="ghost" 
+                                                  size="sm" 
+                                                  className="h-7 px-2 text-xs ml-2"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const token = localStorage.getItem("token");
+                                                    if (token) {
+                                                      setLoadingBalance(sub.id);
+                                                      fetchAccountDetails(sub.userId, sub.id, token)
+                                                        .then(details => {
+                                                          setAccountBalances(prev => ({
+                                                            ...prev,
+                                                            [sub.id]: details
+                                                          }));
+                                                        })
+                                                        .finally(() => {
+                                                          setLoadingBalance(null);
+                                                        });
+                                                    }
+                                                  }}
+                                                >
+                                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                                  Reintentar
+                                                </Button>
+                                              </div>
+                                            ) : (
+                                              <div className="flex items-center gap-2">
+                                                <span className="font-medium">
+                                                  ${accountBalances[sub.id].balance?.toLocaleString('es-ES', {
+                                                    minimumFractionDigits: 2,
+                                                    maximumFractionDigits: 2
+                                                  })}
+                                                </span>
+                                                {accountBalances[sub.id].isDemo && !accountBalances[sub.id].isSimulated && (
+                                                  <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30">
+                                                    <div className="flex items-center gap-1">
+                                                      <Sparkles className="h-3 w-3" />
+                                                      <span>Demo</span>
+                                                    </div>
+                                                  </Badge>
+                                                )}
+                                                {accountBalances[sub.id].isSimulated && (
+                                                  <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500 border-blue-200 dark:border-blue-800/30">
+                                                    <div className="flex items-center gap-1">
+                                                      <PieChart className="h-3 w-3" />
+                                                      <span>Simulado</span>
+                                                    </div>
+                                                  </Badge>
+                                                )}
+                                              </div>
+                                            )
+                                          ) : (
+                                            <Skeleton className="h-6 w-[100px]" />
+                                          )}
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                    <Card className="border dark:border-blue-800/30 overflow-hidden transition-all duration-200 hover:shadow-md">
+                                      <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20">
+                                        <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Exchange</CardTitle>
+                                      </CardHeader>
+                                      <CardContent className="pt-4">
+                                        <div className="text-2xl font-bold uppercase text-blue-600 dark:text-blue-400">{sub.exchange}</div>
+                                      </CardContent>
+                                    </Card>
+                                    <Card className="border dark:border-blue-800/30 overflow-hidden transition-all duration-200 hover:shadow-md">
+                                      <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20">
+                                        <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Tipo de Cuenta</CardTitle>
+                                      </CardHeader>
+                                      <CardContent className="pt-4">
+                                        <div className="flex items-center gap-2">
+                                          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{sub.isDemo ? "Demo" : "Real"}</div>
+                                          <Badge variant="outline" className={sub.isDemo ? 
+                                            "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30" : 
+                                            "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500 border-green-200 dark:border-green-800/30"}>
+                                            {sub.isDemo ? (
+                                              <div className="flex items-center gap-1">
+                                                <Sparkles className="h-3 w-3" />
+                                                <span>Práctica</span>
+                                              </div>
+                                            ) : (
+                                              <div className="flex items-center gap-1">
+                                                <Briefcase className="h-3 w-3" />
+                                                <span>Fondos Reales</span>
+                                              </div>
+                                            )}
+                                          </Badge>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                    <Card className="border dark:border-blue-800/30 overflow-hidden transition-all duration-200 hover:shadow-md">
+                                      <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20">
+                                        <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Rendimiento</CardTitle>
+                                      </CardHeader>
+                                      <CardContent className="pt-4">
+                                        <div className={`text-2xl font-bold ${
+                                          sub.performance && sub.performance > 0 
+                                            ? "text-green-600 dark:text-green-400" 
+                                            : sub.performance && sub.performance < 0 
+                                              ? "text-red-600 dark:text-red-400" 
+                                              : "text-yellow-600 dark:text-yellow-400"
+                                        }`}>
+                                          {loadingBalance === sub.id ? (
+                                            <Skeleton className="h-6 w-[100px]" />
+                                          ) : accountBalances[sub.id] ? (
+                                            <span className="font-medium">
+                                              {accountBalances[sub.id].performance > 0 ? "+" : ""}
+                                              {accountBalances[sub.id].performance.toFixed(2)}%
+                                            </span>
+                                          ) : (
+                                            <Skeleton className="h-6 w-[100px]" />
+                                          )}
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                </TabsContent>
+                                <TabsContent value="assets" className="mt-6">
+                                  <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                      <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300">
+                                        Activos de la cuenta
+                                      </h3>
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="h-8 text-xs"
+                                        disabled={loadingBalance === sub.id}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const token = localStorage.getItem("token");
+                                          if (token) {
+                                            setLoadingBalance(sub.id);
+                                            fetchAccountDetails(sub.userId, sub.id, token)
+                                              .then(details => {
+                                                setAccountBalances(prev => ({
+                                                  ...prev,
+                                                  [sub.id]: details
+                                                }));
+                                              })
+                                              .finally(() => {
+                                                setLoadingBalance(null);
+                                              });
+                                          }
+                                        }}
+                                      >
+                                        <RefreshCw className={`mr-2 h-3 w-3 ${loadingBalance === sub.id ? "animate-spin" : ""}`} />
+                                        {loadingBalance === sub.id ? "Actualizando..." : "Actualizar"}
+                                      </Button>
+                                    </div>
+                                    
+                                    {loadingBalance === sub.id ? (
+                                      <div className="space-y-2">
+                                        <Skeleton className="h-8 w-full" />
+                                        <Skeleton className="h-20 w-full" />
+                                      </div>
+                                    ) : accountBalances[sub.id]?.assets && accountBalances[sub.id].assets.length > 0 ? (
+                                      <div className="rounded-lg border border-blue-200 dark:border-blue-800/30 overflow-hidden">
+                                        <Table>
+                                          <TableHeader className="bg-blue-50 dark:bg-blue-950/20">
+                                            <TableRow>
+                                              <TableHead className="font-medium text-blue-700 dark:text-blue-300">Moneda</TableHead>
+                                              <TableHead className="font-medium text-blue-700 dark:text-blue-300">Balance</TableHead>
+                                              <TableHead className="font-medium text-blue-700 dark:text-blue-300">Valor USD</TableHead>
+                                            </TableRow>
+                                          </TableHeader>
+                                          <TableBody>
+                                            {accountBalances[sub.id].assets.map((asset, index) => (
+                                              <TableRow key={index} className={index % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-900/10' : ''}>
+                                                <TableCell className="font-medium">{asset.coin}</TableCell>
+                                                <TableCell>{asset.walletBalance.toLocaleString('es-ES', {
+                                                  minimumFractionDigits: 2,
+                                                  maximumFractionDigits: 8
+                                                })}</TableCell>
+                                                <TableCell>${asset.usdValue.toLocaleString('es-ES', {
+                                                  minimumFractionDigits: 2,
+                                                  maximumFractionDigits: 2
+                                                })}</TableCell>
+                                              </TableRow>
+                                            ))}
+                                          </TableBody>
+                                        </Table>
+                                      </div>
+                                    ) : accountBalances[sub.id]?.isError ? (
+                                      <div className="text-center py-8 border border-dashed border-red-200 dark:border-red-800/30 rounded-lg bg-red-50/50 dark:bg-red-950/10">
+                                        <div className="flex flex-col items-center justify-center space-y-2">
+                                          <AlertCircle className="h-12 w-12 text-red-400 dark:text-red-500 opacity-50" />
+                                          <p className="text-red-600 dark:text-red-400">Error al cargar los activos.</p>
+                                          <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            className="mt-2"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              const token = localStorage.getItem("token");
+                                              if (token) {
+                                                setLoadingBalance(sub.id);
+                                                fetchAccountDetails(sub.userId, sub.id, token)
+                                                  .then(details => {
+                                                    setAccountBalances(prev => ({
+                                                      ...prev,
+                                                      [sub.id]: details
+                                                    }));
+                                                  })
+                                                  .finally(() => {
+                                                    setLoadingBalance(null);
+                                                  });
+                                              }
+                                            }}
+                                          >
+                                            <RefreshCw className="mr-2 h-4 w-4" />
+                                            Reintentar
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-center py-8 border border-dashed border-blue-200 dark:border-blue-800/30 rounded-lg bg-blue-50/50 dark:bg-blue-950/10">
+                                        <div className="flex flex-col items-center justify-center space-y-2">
+                                          <Wallet className="h-12 w-12 text-blue-400 dark:text-blue-500 opacity-50" />
+                                          <p className="text-blue-600 dark:text-blue-400">No hay activos disponibles para mostrar.</p>
+                                          <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            className="mt-2"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              const token = localStorage.getItem("token");
+                                              if (token) {
+                                                setLoadingBalance(sub.id);
+                                                fetchAccountDetails(sub.userId, sub.id, token)
+                                                  .then(details => {
+                                                    setAccountBalances(prev => ({
+                                                      ...prev,
+                                                      [sub.id]: details
+                                                    }));
+                                                  })
+                                                  .finally(() => {
+                                                    setLoadingBalance(null);
+                                                  });
+                                              }
+                                            }}
+                                          >
+                                            <RefreshCw className="mr-2 h-4 w-4" />
+                                            Actualizar
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </TabsContent>
+                              </Tabs>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
