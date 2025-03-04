@@ -97,17 +97,50 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <header
-        className={`sticky top-0 z-10 transition-all duration-300 ${
-          isScrolled ? "bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-md" : "bg-transparent"
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          isScrolled 
+            ? "bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg shadow-lg" 
+            : "bg-transparent"
         }`}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <Link href="/" className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
-                TradingDash
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center space-x-4">
+              <Link 
+                href="/" 
+                className="flex items-center space-x-2 group"
+              >
+                <div className="w-10 h-10 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl flex items-center justify-center transform group-hover:rotate-6 transition-all duration-300">
+                  <span className="text-2xl text-white">📈</span>
+                </div>
+                <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500 group-hover:from-violet-600 group-hover:to-indigo-600 transition-all duration-300">
+                  TradingDash
+                </span>
               </Link>
             </div>
+
+            <nav className="hidden md:flex items-center space-x-8">
+              <div className="flex items-center space-x-6">
+                <NavLinks activeSection={activeSection} />
+              </div>
+              <div className="flex items-center space-x-4">
+                <Link
+                  href="/login"
+                  className="px-4 py-2 text-gray-700 dark:text-gray-200 hover:text-violet-600 dark:hover:text-violet-400 transition-colors duration-300"
+                >
+                  Iniciar Sesión
+                </Link>
+                <Link
+                  href="/signup"
+                  className="px-4 py-2 text-white bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl hover:from-violet-600 hover:to-indigo-600 transform hover:scale-105 transition-all duration-300 shadow-md hover:shadow-lg"
+                >
+                  Registrarse
+                </Link>
+                <div className="border-l border-gray-200 dark:border-gray-700 h-6 mx-2" />
+                <ThemeToggle />
+              </div>
+            </nav>
+
             <nav className="hidden md:flex items-center space-x-6">
               <NavLinks activeSection={activeSection} />
               <Link
