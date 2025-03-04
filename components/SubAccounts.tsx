@@ -40,12 +40,6 @@ import type { SubAccount, AccountDetails } from '@/types/subaccount';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-interface Asset {
-  symbol: string;
-  quantity: number;
-  value: number;
-}
-
 interface SortConfig {
   key: keyof SubAccount;
   direction: 'asc' | 'desc';
