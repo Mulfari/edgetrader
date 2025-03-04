@@ -559,10 +559,10 @@ export default function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="fixed bottom-4 right-4 p-3 bg-gradient-to-r from-violet-500 to-indigo-500 text-white rounded-xl shadow-lg hover:from-violet-600 hover:to-indigo-600 transition-all duration-300 transform hover:scale-105"
+            className="fixed bottom-8 right-8 p-4 bg-white dark:bg-gray-800 text-violet-600 dark:text-violet-400 rounded-full shadow-lg hover:shadow-xl border border-violet-200 dark:border-violet-700 transition-all duration-300 transform hover:scale-110 group"
             aria-label="Volver arriba"
           >
-            <ArrowUp className="h-6 w-6" />
+            <ArrowUp className="h-5 w-5 group-hover:-translate-y-1 transition-transform duration-300" />
           </motion.button>
         )}
       </AnimatePresence>
