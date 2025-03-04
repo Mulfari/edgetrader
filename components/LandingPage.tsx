@@ -10,7 +10,6 @@ import Image from "next/image";
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
-  const [activeSection, setActiveSection] = useState("")
   const [showVideo, setShowVideo] = useState(false)
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
   const [showScrollTop, setShowScrollTop] = useState(false)
@@ -22,20 +21,6 @@ export default function LandingPage() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10)
       setShowScrollTop(window.scrollY > 300)
-
-      const sections = ["features", "testimonials", "pricing", "faq", "cta"]
-      const currentSection = sections.find((section) => {
-        const element = document.getElementById(section)
-        if (element) {
-          const rect = element.getBoundingClientRect()
-          return rect.top <= 100 && rect.bottom >= 100
-        }
-        return false
-      })
-
-      if (currentSection) {
-        setActiveSection(currentSection)
-      }
     }
 
     window.addEventListener("scroll", handleScroll)
@@ -106,7 +91,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-3 group">
+            <Link href="/" className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg flex items-center justify-center">
                 <span className="text-xl text-white">📈</span>
               </div>
@@ -116,7 +101,7 @@ export default function LandingPage() {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-8">
+            <div className="hidden md:flex items-center space-x-6">
               <Link href="#features" className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400">
                 Características
               </Link>
@@ -124,19 +109,13 @@ export default function LandingPage() {
                 Precios
               </Link>
               <Link
-                href="/login"
-                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400"
-              >
-                Iniciar Sesión
-              </Link>
-              <Link
                 href="/signup"
                 className="px-4 py-2 text-white bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg hover:from-violet-600 hover:to-indigo-600 transition-all duration-300"
               >
-                Registrarse
+                Comenzar
               </Link>
               <ThemeToggle />
-            </nav>
+            </div>
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center space-x-4">
@@ -145,7 +124,7 @@ export default function LandingPage() {
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </button>
             </div>
           </div>
@@ -161,7 +140,7 @@ export default function LandingPage() {
             exit={{ opacity: 0, y: -20 }}
             className="md:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
           >
-            <nav className="container mx-auto px-4 py-4 flex flex-col space-y-4">
+            <nav className="container mx-auto px-4 py-3 flex flex-col space-y-3">
               <Link
                 href="#features"
                 className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400 py-2"
@@ -177,18 +156,11 @@ export default function LandingPage() {
                 Precios
               </Link>
               <Link
-                href="/login"
-                className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400 py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Iniciar Sesión
-              </Link>
-              <Link
                 href="/signup"
                 className="w-full py-2 text-center text-white bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg hover:from-violet-600 hover:to-indigo-600 transition-all duration-300"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Registrarse
+                Comenzar
               </Link>
             </nav>
           </motion.div>
@@ -595,52 +567,5 @@ export default function LandingPage() {
         )}
       </AnimatePresence>
     </div>
-  )
-}
-
-function NavLinks({ activeSection }: { activeSection: string }) {
-  return (
-    <>
-      <Link
-        href="#features"
-        className={`text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors ${
-          activeSection === "features" ? "font-semibold" : ""
-        }`}
-      >
-        Features
-      </Link>
-      <Link
-        href="#testimonials"
-        className={`text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors ${
-          activeSection === "testimonials" ? "font-semibold" : ""
-        }`}
-      >
-        Testimonials
-      </Link>
-      <Link
-        href="#pricing"
-        className={`text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors ${
-          activeSection === "pricing" ? "font-semibold" : ""
-        }`}
-      >
-        Pricing
-      </Link>
-      <Link
-        href="#faq"
-        className={`text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors ${
-          activeSection === "faq" ? "font-semibold" : ""
-        }`}
-      >
-        FAQ
-      </Link>
-      <Link
-        href="#cta"
-        className={`text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors ${
-          activeSection === "cta" ? "font-semibold" : ""
-        }`}
-      >
-        Get Started
-      </Link>
-    </>
   )
 }
