@@ -15,26 +15,6 @@ import { useRouter } from "next/navigation";
 // Tipo para las opciones de balance
 type BalanceDisplayType = 'total' | 'real' | 'demo' | 'detailed';
 
-interface BalanceData {
-  balance: number | null;
-  isDemo: boolean;
-}
-
-interface SubAccountData {
-  isDemo: boolean;
-  exchange: string;
-}
-
-interface BalancesCache {
-  balances: Record<string, BalanceData>;
-  timestamp: number;
-}
-
-interface SubAccountsCache {
-  accounts: SubAccountData[];
-  timestamp: number;
-}
-
 export default function DashboardPage() {
   const [totalBalance, setTotalBalance] = useState<number | null>(null);
   const [realBalance, setRealBalance] = useState<number | null>(null);
@@ -46,88 +26,9 @@ export default function DashboardPage() {
   const [demoAccounts, setDemoAccounts] = useState(0);
   const [exchanges, setExchanges] = useState(0);
   const [balanceDisplay, setBalanceDisplay] = useState<BalanceDisplayType>('detailed');
+  const [isLoading, setIsLoading] = useState(true);
   const [showBalance, setShowBalance] = useState(true);
-  const [isLoadingLocalData, setIsLoadingLocalData] = useState(true);
   const router = useRouter();
-
-  // Función para obtener datos del localStorage
-  const loadLocalData = () => {
-    try {
-      setIsLoadingLocalData(true);
-      let hasData = false;
-
-      // Obtener datos de balances
-      const balancesCache = localStorage.getItem('subaccount_balances_cache');
-      if (balancesCache) {
-        const cache: BalancesCache = JSON.parse(balancesCache);
-        const isExpired = Date.now() - cache.timestamp > 5 * 60 * 1000; // 5 minutos
-
-        if (!isExpired) {
-          // Calcular totales
-          const total = Object.values(cache.balances).reduce((sum: number, acc: BalanceData) => sum + (acc.balance || 0), 0);
-          const real = Object.entries(cache.balances).reduce((sum: number, [, acc]: [string, BalanceData]) => {
-            return sum + (!acc.isDemo ? (acc.balance || 0) : 0);
-          }, 0);
-          const demo = Object.entries(cache.balances).reduce((sum: number, [, acc]: [string, BalanceData]) => {
-            return sum + (acc.isDemo ? (acc.balance || 0) : 0);
-          }, 0);
-
-          setTotalBalance(total);
-          setRealBalance(real);
-          setDemoBalance(demo);
-          hasData = true;
-        }
-      }
-
-      // Obtener datos de subcuentas
-      const subaccountsCache = localStorage.getItem('subaccounts_cache');
-      if (subaccountsCache) {
-        const cache: SubAccountsCache = JSON.parse(subaccountsCache);
-        const isExpired = Date.now() - cache.timestamp > 5 * 60 * 1000; // 5 minutos
-
-        if (!isExpired) {
-          setActiveSubAccounts(cache.accounts.length);
-          setRealAccounts(cache.accounts.filter((acc: SubAccountData) => !acc.isDemo).length);
-          setDemoAccounts(cache.accounts.filter((acc: SubAccountData) => acc.isDemo).length);
-          setExchanges(new Set(cache.accounts.map((acc: SubAccountData) => acc.exchange)).size);
-          hasData = true;
-        }
-      }
-
-      // Si no hay datos válidos en caché, mantener el estado de carga
-      if (!hasData) {
-        // Establecer valores por defecto
-        setTotalBalance(0);
-        setRealBalance(0);
-        setDemoBalance(0);
-        setActiveSubAccounts(0);
-        setRealAccounts(0);
-        setDemoAccounts(0);
-        setExchanges(0);
-      }
-
-      // Asegurar que el efecto de carga se muestre por al menos 1 segundo
-      setTimeout(() => {
-        setIsLoadingLocalData(false);
-      }, 1000);
-
-    } catch (error) {
-      console.error('Error al cargar datos locales:', error);
-      // En caso de error, establecer valores por defecto
-      setTotalBalance(0);
-      setRealBalance(0);
-      setDemoBalance(0);
-      setActiveSubAccounts(0);
-      setRealAccounts(0);
-      setDemoAccounts(0);
-      setExchanges(0);
-      
-      // Asegurar que el efecto de carga se muestre por al menos 1 segundo
-      setTimeout(() => {
-        setIsLoadingLocalData(false);
-      }, 1000);
-    }
-  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -135,13 +36,24 @@ export default function DashboardPage() {
       router.push("/login");
       return;
     }
-
-    // Cargar datos locales
-    loadLocalData();
-
-    // No necesitamos el timeout aquí ya que lo manejamos en loadLocalData
-    return () => {};
   }, [router]);
+
+  useEffect(() => {
+    // Cargar datos iniciales al montar el componente
+    const subaccountsComponent = document.getElementById('subaccounts-component');
+    if (subaccountsComponent) {
+      console.log("Enviando evento refresh inicial al componente de subcuentas");
+      const refreshEvent = new CustomEvent('refresh', { bubbles: true });
+      subaccountsComponent.dispatchEvent(refreshEvent);
+    }
+
+    // Establecer un tiempo máximo de carga
+    const loadingTimeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 5000); // 5 segundos máximo de carga
+
+    return () => clearTimeout(loadingTimeout);
+  }, []);
 
   useEffect(() => {
     // Cargar preferencia de visualización de balance
@@ -182,6 +94,7 @@ export default function DashboardPage() {
     setRealBalance(stats.realBalance);
     setDemoBalance(stats.demoBalance);
     setExchanges(stats.uniqueExchanges);
+    setIsLoading(false); // Desactivar la carga cuando recibimos los datos
   };
 
   const handleSubAccountSuccess = () => {
@@ -213,6 +126,18 @@ export default function DashboardPage() {
     // Cerrar el menú después de seleccionar
     const menu = document.getElementById('balance-menu');
     menu?.classList.add('hidden');
+  };
+
+  const getSkeletonOrValue = (value: number | string, size: 'sm' | 'lg' = 'lg') => {
+    if (isLoading) {
+      return (
+        <div className="flex flex-col space-y-2">
+          <div className={`${size === 'lg' ? 'h-9 w-24' : 'h-5 w-16'} bg-zinc-200 dark:bg-zinc-700 animate-pulse rounded`}></div>
+          <div className={`${size === 'lg' ? 'h-4 w-16' : 'h-3 w-12'} bg-zinc-100 dark:bg-zinc-600 animate-pulse rounded`}></div>
+        </div>
+      );
+    }
+    return value;
   };
 
   const getBalanceTitle = () => {
@@ -286,7 +211,7 @@ export default function DashboardPage() {
             <div className="flex items-start gap-12">
               <div className="space-y-1">
                 <div className="text-4xl font-bold">
-                  {isLoadingLocalData ? (
+                  {isLoading ? (
                     <div className="flex flex-col space-y-2">
                       <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
                       <div className="h-4 w-24 bg-white/10 animate-pulse rounded"></div>
@@ -307,17 +232,6 @@ export default function DashboardPage() {
                   <>
                     <div>Balance Real: ••••••</div>
                     <div>Balance Demo: ••••••</div>
-                  </>
-                ) : isLoadingLocalData ? (
-                  <>
-                    <div className="flex items-center space-x-2">
-                      <div className="h-4 w-24 bg-white/20 animate-pulse rounded"></div>
-                      <span className="text-white/50">Balance Real</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="h-4 w-24 bg-white/20 animate-pulse rounded"></div>
-                      <span className="text-white/50">Balance Demo</span>
-                    </div>
                   </>
                 ) : (
                   <>
@@ -341,17 +255,10 @@ export default function DashboardPage() {
               <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">Subcuentas Activas</h3>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white">
-              {isLoadingLocalData ? (
-                <div className="flex flex-col space-y-2">
-                  <div className="h-9 w-24 bg-zinc-200 dark:bg-zinc-700 animate-pulse rounded"></div>
-                  <div className="h-4 w-16 bg-zinc-100 dark:bg-zinc-600 animate-pulse rounded"></div>
-                </div>
-              ) : (
-                activeSubAccounts
-              )}
+              {getSkeletonOrValue(activeSubAccounts)}
             </div>
             <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {!isLoadingLocalData && (
+              {!isLoading && (
                 <>
                   Reales: {realAccounts} • Demo: {demoAccounts}
                 </>
@@ -367,17 +274,10 @@ export default function DashboardPage() {
               <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">Operaciones</h3>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white">
-              {isLoadingLocalData ? (
-                <div className="flex flex-col space-y-2">
-                  <div className="h-9 w-24 bg-zinc-200 dark:bg-zinc-700 animate-pulse rounded"></div>
-                  <div className="h-4 w-16 bg-zinc-100 dark:bg-zinc-600 animate-pulse rounded"></div>
-                </div>
-              ) : (
-                exchanges
-              )}
+              {getSkeletonOrValue(exchanges)}
             </div>
             <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {!isLoadingLocalData && 'Total de operaciones realizadas'}
+              {!isLoading && 'Total de operaciones realizadas'}
             </div>
           </div>
           <div className="absolute right-0 bottom-0 transform translate-x-1/4 translate-y-1/4">
