@@ -134,11 +134,17 @@ export default function DashboardPage() {
     
     switch (balanceDisplay) {
       case 'real':
-        return `$${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`;
+        return realBalance === null ? (
+          <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
+        ) : `$${realBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       case 'demo':
-        return `$${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`;
+        return demoBalance === null ? (
+          <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
+        ) : `$${demoBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       default:
-        return `$${totalBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`;
+        return totalBalance === null ? (
+          <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
+        ) : `$${totalBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
   };
 
@@ -212,10 +218,18 @@ export default function DashboardPage() {
             
             <div className="space-y-1">
               <div className="text-4xl font-bold">{getDisplayBalance()}</div>
-              {balanceDisplay === 'detailed' && !isLoading && (
+              {balanceDisplay === 'detailed' && (
                 <div className="space-y-1 text-sm text-white/80">
-                  <div>Balance Real: ${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
-                  <div>Balance Demo: ${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
+                  {isLoading || realBalance === null ? (
+                    <div className="h-4 w-32 bg-white/20 animate-pulse rounded mb-1"></div>
+                  ) : (
+                    <div>Balance Real: ${realBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                  )}
+                  {isLoading || demoBalance === null ? (
+                    <div className="h-4 w-32 bg-white/20 animate-pulse rounded"></div>
+                  ) : (
+                    <div>Balance Demo: ${demoBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                  )}
                 </div>
               )}
             </div>
