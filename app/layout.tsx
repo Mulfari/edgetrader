@@ -34,12 +34,22 @@ export default function RootLayout({
     // Limpiar datos de subcuentas
     localStorage.removeItem("subAccounts");
     
-    // Limpiar datos de balances
+    // Limpiar datos de balances y caché
     localStorage.removeItem("accountBalances");
-    localStorage.removeItem("subaccount_balances_cache");
+    
+    // Limpiar todo el caché de balances de subcuentas
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('subaccount_balance_')) {
+        localStorage.removeItem(key);
+      }
+    });
     
     // Limpiar cualquier otro dato relacionado con balances
     localStorage.removeItem("balanceDisplayPreference");
+    
+    // Limpiar datos de estado de la aplicación
+    localStorage.removeItem("selectedSubAccountId");
+    localStorage.removeItem("lastUpdate");
     
     router.push("/login");
   };
