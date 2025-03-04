@@ -301,45 +301,8 @@ export default function DashboardPage() {
 
       {/* Subcuentas Section */}
       <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Subcuentas</h2>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-            >
-              Agregar Subcuenta
-            </button>
-            <button
-              onClick={() => setShowDeleteModal(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
-            >
-              Eliminar Subcuentas
-            </button>
-          </div>
-        </div>
-
-        {/* Información sobre cuentas demo */}
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4 mb-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-amber-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                Información sobre cuentas demo
-              </h3>
-              <div className="mt-2 text-sm text-amber-700 dark:text-amber-200/80">
-                Las cuentas demo de Bybit ahora muestran datos reales desde el endpoint <code className="bg-amber-100 dark:bg-amber-900 px-1.5 py-0.5 rounded text-amber-800 dark:text-amber-200 text-xs">api-demo.bybit.com</code>. Para ver balances y activos, asegúrate de tener fondos virtuales en tu cuenta demo de Bybit. Si no ves datos es posible que necesites depositar fondos virtuales en tu cuenta demo.
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div id="subaccounts-component">
-          <SubAccounts onStatsUpdate={handleStatsUpdate} />
+          <SubAccounts onStatsUpdate={handleStatsUpdate} showBalance={showBalance} />
         </div>
       </div>
 
