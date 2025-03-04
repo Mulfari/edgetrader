@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import {
   Search,
   RefreshCw,
@@ -371,7 +371,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
     }
   };
 
-  const loadSubAccounts = async () => {
+  const loadSubAccounts = useCallback(async () => {
     try {
       console.log('🔄 Iniciando carga de subcuentas...');
       const token = localStorage.getItem('token');
@@ -411,13 +411,13 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
 
       // Ahora cargamos los balances usando la referencia
       console.log('🔄 Iniciando carga automática de balances...');
-        setLoadingAllBalances(true);
-        
+      setLoadingAllBalances(true);
+      
       const balances: Record<string, AccountDetails> = {};
       for (const account of subAccountsRef.current) {
-          try {
+        try {
           console.log(`📊 Procesando balance para cuenta ${account.name}`);
-            const details = await fetchAccountDetails(account.userId, account.id, token);
+          const details = await fetchAccountDetails(account.userId, account.id, token);
           balances[account.id] = details;
           
           // Actualizar el estado de balances incrementalmente
@@ -429,27 +429,27 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
           if (onBalanceUpdate) {
             onBalanceUpdate(account.id, details);
           }
-          } catch (error) {
-            console.error(`Error al cargar balance para cuenta ${account.id}:`, error);
+        } catch (error) {
+          console.error(`Error al cargar balance para cuenta ${account.id}:`, error);
           balances[account.id] = {
-                balance: null, 
-                assets: [], 
-                performance: 0,
-                isError: true,
-                error: error instanceof Error ? error.message : 'Error desconocido',
-                isSimulated: false,
-                isDemo: account.isDemo || false
+            balance: null, 
+            assets: [], 
+            performance: 0,
+            isError: true,
+            error: error instanceof Error ? error.message : 'Error desconocido',
+            isSimulated: false,
+            isDemo: account.isDemo || false
           };
         }
       }
 
       // Actualizar estadísticas
-        if (onStatsUpdate) {
-          const stats: AccountStats = {
+      if (onStatsUpdate) {
+        const stats: AccountStats = {
           totalAccounts: subAccountsRef.current.length,
           realAccounts: subAccountsRef.current.filter((acc: SubAccount) => !acc.isDemo).length,
           demoAccounts: subAccountsRef.current.filter((acc: SubAccount) => acc.isDemo).length,
-            totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
+          totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
           realBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
             const account = subAccountsRef.current.find((a: SubAccount) => a.id === accountId);
             return sum + (!account?.isDemo ? (acc.balance || 0) : 0);
@@ -459,11 +459,11 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
             return sum + (account?.isDemo ? (acc.balance || 0) : 0);
           }, 0),
           uniqueExchanges: new Set(subAccountsRef.current.map((acc: SubAccount) => acc.exchange)).size,
-            avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
-          };
-          onStatsUpdate(stats);
-        }
-        
+          avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
+        };
+        onStatsUpdate(stats);
+      }
+      
     } catch (error) {
       console.error('❌ Error en loadSubAccounts:', error);
       setError(error instanceof Error ? error.message : 'Error al cargar subcuentas');
@@ -471,13 +471,13 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       setIsLoading(false);
       setLoadingAllBalances(false);
     }
-  };
+  }, [onBalanceUpdate, onStatsUpdate, router]);
 
   // Efecto para cargar las subcuentas una sola vez al montar el componente
   useEffect(() => {
     console.log('🔄 Efecto de carga inicial activado - Una sola vez');
     loadSubAccounts();
-  }, []); // Sin dependencias para que solo se ejecute al montar
+  }, [loadSubAccounts]); // Agregar loadSubAccounts como dependencia
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {

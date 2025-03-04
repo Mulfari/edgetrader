@@ -130,18 +130,6 @@ export default function DashboardPage() {
     menu?.classList.add('hidden');
   };
 
-  const getSkeletonOrValue = (value: number | string, size: 'sm' | 'lg' = 'lg') => {
-    if (isLoading) {
-      return (
-        <div className="flex flex-col space-y-2">
-          <div className={`${size === 'lg' ? 'h-9 w-24' : 'h-5 w-16'} bg-zinc-200 dark:bg-zinc-700 animate-pulse rounded`}></div>
-          <div className={`${size === 'lg' ? 'h-4 w-16' : 'h-3 w-12'} bg-zinc-100 dark:bg-zinc-600 animate-pulse rounded`}></div>
-        </div>
-      );
-    }
-    return value;
-  };
-
   const getBalanceTitle = () => {
     switch (balanceDisplay) {
       case 'real':
