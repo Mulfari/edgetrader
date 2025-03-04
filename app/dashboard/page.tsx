@@ -4,11 +4,28 @@ import { useState, useEffect } from "react";
 import { 
   LineChart, 
   DollarSign,
-  ChevronDown
+  ChevronDown,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import SubAccounts from "@/components/SubAccounts";
 import SubAccountManager from "@/components/SubAccountManager";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
 
 // Tipo para las opciones de balance
 type BalanceDisplayType = 'total' | 'real' | 'demo' | 'detailed';
@@ -25,6 +42,7 @@ export default function DashboardPage() {
   const [exchanges, setExchanges] = useState(0);
   const [balanceDisplay, setBalanceDisplay] = useState<BalanceDisplayType>('detailed');
   const [isLoading, setIsLoading] = useState(true);
+  const [showBalance, setShowBalance] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -153,17 +171,29 @@ export default function DashboardPage() {
         <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl p-6 text-white relative overflow-hidden">
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-4">
-              <button
-                id="balance-menu-button"
-                className="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-white/20 transition-colors duration-200"
-                onClick={() => {
-                  const menu = document.getElementById('balance-menu');
-                  menu?.classList.toggle('hidden');
-                }}
-              >
-                <span>{getBalanceTitle()}</span>
-                <ChevronDown className="h-4 w-4" />
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  id="balance-menu-button"
+                  className="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-white/20 transition-colors duration-200"
+                  onClick={() => {
+                    const menu = document.getElementById('balance-menu');
+                    menu?.classList.toggle('hidden');
+                  }}
+                >
+                  <span>{getBalanceTitle()}</span>
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setShowBalance(!showBalance)}
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200"
+                >
+                  {showBalance ? (
+                    <EyeOff className="h-4 w-4 text-white/80" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-white/80" />
+                  )}
+                </button>
+              </div>
               
               {/* Balance Type Menu */}
               <div id="balance-menu" className="hidden absolute top-full left-0 mt-2 w-48 rounded-lg bg-white dark:bg-zinc-800 shadow-lg ring-1 ring-black ring-opacity-5 z-50">
@@ -201,6 +231,7 @@ export default function DashboardPage() {
                   );
 
                   if (isLoading) return showSkeleton();
+                  if (!showBalance) return "••••••";
 
                   switch (balanceDisplay) {
                     case 'real':
@@ -219,11 +250,15 @@ export default function DashboardPage() {
                 <div className="space-y-1 text-sm text-white/80">
                   {isLoading || realBalance === null ? (
                     <div className="h-4 w-32 bg-white/20 animate-pulse rounded mb-1"></div>
+                  ) : !showBalance ? (
+                    <div>Balance Real: ••••••</div>
                   ) : (
                     <div>Balance Real: ${realBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                   )}
                   {isLoading || demoBalance === null ? (
                     <div className="h-4 w-32 bg-white/20 animate-pulse rounded"></div>
+                  ) : !showBalance ? (
+                    <div>Balance Demo: ••••••</div>
                   ) : (
                     <div>Balance Demo: ${demoBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                   )}
@@ -292,25 +327,6 @@ export default function DashboardPage() {
             >
               Eliminar Subcuentas
             </button>
-          </div>
-        </div>
-
-        {/* Información sobre cuentas demo */}
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4 mb-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-amber-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                Información sobre cuentas demo
-              </h3>
-              <div className="mt-2 text-sm text-amber-700 dark:text-amber-200/80">
-                Las cuentas demo de Bybit ahora muestran datos reales desde el endpoint <code className="bg-amber-100 dark:bg-amber-900 px-1.5 py-0.5 rounded text-amber-800 dark:text-amber-200 text-xs">api-demo.bybit.com</code>. Para ver balances y activos, asegúrate de tener fondos virtuales en tu cuenta demo de Bybit. Si no ves datos es posible que necesites depositar fondos virtuales en tu cuenta demo.
-              </div>
-            </div>
           </div>
         </div>
 
