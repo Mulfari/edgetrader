@@ -135,14 +135,29 @@ export default function DashboardPage() {
       );
     }
     
-    switch (balanceDisplay) {
-      case 'real':
-        return `$${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`;
-      case 'demo':
-        return `$${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`;
-      default:
-        return `$${totalBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`;
+    if (!showBalance) {
+      return "••••••";
     }
+
+    const mainBalance = balanceDisplay === 'real' 
+      ? realBalance 
+      : balanceDisplay === 'demo' 
+        ? demoBalance 
+        : totalBalance;
+
+    return (
+      <div className="space-y-2">
+        <div className="text-4xl font-bold">
+          {mainBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+        </div>
+        {balanceDisplay === 'detailed' && (
+          <div className="space-y-1 text-sm text-white/80">
+            <div>Balance Real: ${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
+            <div>Balance Demo: ${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const getSkeletonOrValue = (value: number | string, size: 'sm' | 'lg' = 'lg') => {
@@ -163,6 +178,8 @@ export default function DashboardPage() {
         return 'Balance Real';
       case 'demo':
         return 'Balance Demo';
+      case 'detailed':
+        return 'Balance Detallado';
       default:
         return 'Balance Total';
     }
@@ -225,34 +242,38 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            <div className="space-y-1">
-              <div className="text-4xl font-bold">
-                {isLoading ? (
-                  <div className="flex flex-col space-y-2">
-                    <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
-                    <div className="h-4 w-24 bg-white/10 animate-pulse rounded"></div>
-                  </div>
-                ) : !showBalance ? (
-                  "••••••"
-                ) : (
-                  getDisplayBalance()
-                )}
-              </div>
-              {balanceDisplay === 'detailed' && !isLoading && (
-                <div className="space-y-1 text-sm text-white/80">
-                  {!showBalance ? (
-                    <>
-                      <div>Balance Real: ••••••</div>
-                      <div>Balance Demo: ••••••</div>
-                    </>
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <div className="text-4xl font-bold">
+                  {isLoading ? (
+                    <div className="flex flex-col space-y-2">
+                      <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
+                      <div className="h-4 w-24 bg-white/10 animate-pulse rounded"></div>
+                    </div>
+                  ) : !showBalance ? (
+                    "••••••"
                   ) : (
-                    <>
-                      <div>Balance Real: ${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
-                      <div>Balance Demo: ${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
-                    </>
+                    <div>
+                      ${(balanceDisplay === 'real' ? realBalance : balanceDisplay === 'demo' ? demoBalance : totalBalance)?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+                    </div>
                   )}
                 </div>
-              )}
+              </div>
+              
+              {/* Saldos a la derecha */}
+              <div className="text-right space-y-1 text-sm text-white/80">
+                {!showBalance ? (
+                  <>
+                    <div>Saldo Real: ••••••</div>
+                    <div>Saldo Demo: ••••••</div>
+                  </>
+                ) : (
+                  <>
+                    <div>Saldo Real: ${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
+                    <div>Saldo Demo: ${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
           
