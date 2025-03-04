@@ -233,6 +233,17 @@ export default function DashboardPage() {
                     <div>Balance Real: ••••••</div>
                     <div>Balance Demo: ••••••</div>
                   </>
+                ) : isLoading ? (
+                  <>
+                    <div className="flex items-center space-x-2">
+                      <div className="h-4 w-24 bg-white/20 animate-pulse rounded"></div>
+                      <span className="text-white/50">Balance Real</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="h-4 w-24 bg-white/20 animate-pulse rounded"></div>
+                      <span className="text-white/50">Balance Demo</span>
+                    </div>
+                  </>
                 ) : (
                   <>
                     <div>Balance Real: ${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
