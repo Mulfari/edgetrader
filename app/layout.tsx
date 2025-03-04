@@ -34,14 +34,14 @@ export default function RootLayout({
     router.push("/login");
   };
 
-  // Verificar si estamos en la página de login
-  const isLoginPage = pathname === '/login';
+  // Verificar si estamos en páginas públicas
+  const isPublicPage = pathname === '/login' || pathname === '/' || pathname === '/register';
 
   return (
     <html lang="es">
       <body className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
         <ThemeProvider>
-          {!isLoginPage && (
+          {!isPublicPage && (
             <>
               {/* Mobile menu overlay */}
               {isMobileMenuOpen && (
@@ -197,7 +197,7 @@ export default function RootLayout({
           )}
 
           {/* Render children directly without layout on login page */}
-          {isLoginPage && (
+          {isPublicPage && (
             <main>
               {children}
             </main>
