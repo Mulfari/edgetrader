@@ -125,41 +125,6 @@ export default function DashboardPage() {
     localStorage.setItem('balanceDisplayPreference', type);
   };
 
-  const getDisplayBalance = () => {
-    if (isLoading) {
-      return (
-        <div className="flex flex-col space-y-2">
-          <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
-          <div className="h-4 w-24 bg-white/10 animate-pulse rounded"></div>
-        </div>
-      );
-    }
-    
-    if (!showBalance) {
-      return "••••••";
-    }
-
-    const mainBalance = balanceDisplay === 'real' 
-      ? realBalance 
-      : balanceDisplay === 'demo' 
-        ? demoBalance 
-        : totalBalance;
-
-    return (
-      <div className="space-y-2">
-        <div className="text-4xl font-bold">
-          {mainBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
-        </div>
-        {balanceDisplay === 'detailed' && (
-          <div className="space-y-1 text-sm text-white/80">
-            <div>Balance Real: ${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
-            <div>Balance Demo: ${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   const getSkeletonOrValue = (value: number | string, size: 'sm' | 'lg' = 'lg') => {
     if (isLoading) {
       return (
@@ -178,8 +143,6 @@ export default function DashboardPage() {
         return 'Balance Real';
       case 'demo':
         return 'Balance Demo';
-      case 'detailed':
-        return 'Balance Detallado';
       default:
         return 'Balance Total';
     }
