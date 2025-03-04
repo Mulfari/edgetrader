@@ -205,7 +205,7 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            <div className="flex items-start justify-between">
+            <div className="flex items-start gap-12">
               <div className="space-y-1">
                 <div className="text-4xl font-bold">
                   {isLoading ? (
@@ -223,17 +223,17 @@ export default function DashboardPage() {
                 </div>
               </div>
               
-              {/* Saldos a la derecha */}
-              <div className="text-right space-y-1 text-sm text-white/80">
+              {/* Balances secundarios */}
+              <div className="space-y-2 text-base text-white/90">
                 {!showBalance ? (
                   <>
-                    <div>Saldo Real: ••••••</div>
-                    <div>Saldo Demo: ••••••</div>
+                    <div>Balance Real: ••••••</div>
+                    <div>Balance Demo: ••••••</div>
                   </>
                 ) : (
                   <>
-                    <div>Saldo Real: ${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
-                    <div>Saldo Demo: ${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
+                    <div>Balance Real: ${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
+                    <div>Balance Demo: ${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
                   </>
                 )}
               </div>
