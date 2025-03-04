@@ -27,10 +27,20 @@ export default function RootLayout({
   const pathname = usePathname();
 
   const handleLogout = () => {
+    // Limpiar datos de autenticación
     localStorage.removeItem("token");
-    localStorage.removeItem("subAccounts");
-    localStorage.removeItem("accountBalances");
     localStorage.removeItem("userName");
+    
+    // Limpiar datos de subcuentas
+    localStorage.removeItem("subAccounts");
+    
+    // Limpiar datos de balances
+    localStorage.removeItem("accountBalances");
+    localStorage.removeItem("subaccount_balances_cache");
+    
+    // Limpiar cualquier otro dato relacionado con balances
+    localStorage.removeItem("balanceDisplayPreference");
+    
     router.push("/login");
   };
 
