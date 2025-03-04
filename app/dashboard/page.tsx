@@ -26,7 +26,6 @@ export default function DashboardPage() {
   const [demoAccounts, setDemoAccounts] = useState(0);
   const [exchanges, setExchanges] = useState(0);
   const [balanceDisplay, setBalanceDisplay] = useState<BalanceDisplayType>('detailed');
-  const [isLoadingBalances, setIsLoadingBalances] = useState(true);
   const [showBalance, setShowBalance] = useState(true);
   const [isLoadingLocalData, setIsLoadingLocalData] = useState(true);
   const router = useRouter();
@@ -89,7 +88,6 @@ export default function DashboardPage() {
 
     // Establecer un tiempo máximo de carga
     const loadingTimeout = setTimeout(() => {
-      setIsLoadingBalances(false);
       setIsLoadingLocalData(false);
     }, 5000); // 5 segundos máximo de carga
 
@@ -135,7 +133,6 @@ export default function DashboardPage() {
     setRealBalance(stats.realBalance);
     setDemoBalance(stats.demoBalance);
     setExchanges(stats.uniqueExchanges);
-    setIsLoadingBalances(false); // Desactivar la carga de balances
   };
 
   const handleSubAccountSuccess = () => {
