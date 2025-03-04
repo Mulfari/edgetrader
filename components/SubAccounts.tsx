@@ -38,71 +38,6 @@ import SubAccountManager from "@/components/SubAccountManager";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-// Constantes para el caché
-const CACHE_KEY = 'subaccount_balances_cache';
-const SUBACCOUNTS_CACHE_KEY = 'subaccounts_cache';
-const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutos en milisegundos
-
-interface CacheData {
-  balances: Record<string, AccountDetails>;
-  timestamp: number;
-}
-
-interface SubAccountsCacheData {
-  accounts: SubAccount[];
-  timestamp: number;
-}
-
-// Función para guardar en caché
-const saveToCache = (balances: Record<string, AccountDetails>) => {
-  const cacheData: CacheData = {
-    balances,
-    timestamp: Date.now()
-  };
-  localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-};
-
-// Función para obtener del caché
-const getFromCache = (): Record<string, AccountDetails> | null => {
-  const cachedData = localStorage.getItem(CACHE_KEY);
-  if (!cachedData) return null;
-
-  const { balances, timestamp }: CacheData = JSON.parse(cachedData);
-  const isExpired = Date.now() - timestamp > CACHE_EXPIRY;
-
-  if (isExpired) {
-    localStorage.removeItem(CACHE_KEY);
-    return null;
-  }
-
-  return balances;
-};
-
-// Función para guardar subcuentas en caché
-const saveSubAccountsToCache = (accounts: SubAccount[]) => {
-  const cacheData: SubAccountsCacheData = {
-    accounts,
-    timestamp: Date.now()
-  };
-  localStorage.setItem(SUBACCOUNTS_CACHE_KEY, JSON.stringify(cacheData));
-};
-
-// Función para obtener subcuentas del caché
-const getSubAccountsFromCache = (): SubAccount[] | null => {
-  const cachedData = localStorage.getItem(SUBACCOUNTS_CACHE_KEY);
-  if (!cachedData) return null;
-
-  const { accounts, timestamp }: SubAccountsCacheData = JSON.parse(cachedData);
-  const isExpired = Date.now() - timestamp > CACHE_EXPIRY;
-
-  if (isExpired) {
-    localStorage.removeItem(SUBACCOUNTS_CACHE_KEY);
-    return null;
-  }
-
-  return accounts;
-};
-
 interface Asset {
   coin: string;
   walletBalance: number;
@@ -195,13 +130,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
 
       const isDemo = account.isDemo === true;
       
-      // Intentar obtener del caché primero
-      const cachedBalances = getFromCache();
-      if (cachedBalances && cachedBalances[accountId]) {
-        console.log(`📦 Usando datos en caché para cuenta ${accountId}`);
-        return cachedBalances[accountId];
-      }
-      
       console.log(`📊 Detalles de la cuenta:`, {
         id: accountId,
         tipo: isDemo ? 'Demo' : 'Real',
@@ -212,7 +140,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       // Si es una cuenta demo y tiene error previo, retornar datos simulados
       if (isDemo && accountBalances[accountId]?.isError) {
         console.log(`⚠️ Cuenta demo ${accountId} con error previo, retornando datos simulados`);
-        const simulatedData = {
+        return {
           balance: Math.random() * 10000,
           assets: [
             { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
@@ -225,15 +153,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
           isDemo: true,
           isError: false
         };
-
-        // Guardar datos simulados en caché
-        const currentCache = getFromCache() || {};
-        saveToCache({
-          ...currentCache,
-          [accountId]: simulatedData
-        });
-        
-        return simulatedData;
       }
       
       // Obtener el balance actual
@@ -260,8 +179,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
         });
         
         if (isDemo) {
-          console.log(`⚠️ Error en cuenta demo ${account?.name || accountId}, retornando datos simulados`);
-          const simulatedData = { 
+          console.log(`🔄 Generando datos simulados para cuenta demo ${account.name}`);
+          return { 
             balance: Math.random() * 10000,
             assets: [
               { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
@@ -274,15 +193,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
             isDemo: true,
             isError: false
           };
-
-          // Guardar datos simulados en caché
-          const currentCache = getFromCache() || {};
-          saveToCache({
-            ...currentCache,
-            [accountId]: simulatedData
-          });
-          
-          return simulatedData;
         }
         throw new Error(errorData.message || `Error al obtener balance: ${balanceRes.status}`);
       }
@@ -323,13 +233,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       
       console.log(`✅ Datos procesados para cuenta ${account.name}:`, processedData);
       
-      // Guardar en caché
-      const currentCache = getFromCache() || {};
-      saveToCache({
-        ...currentCache,
-        [accountId]: processedData
-      });
-      
       if (onBalanceUpdate) {
         onBalanceUpdate(accountId, processedData);
       }
@@ -345,7 +248,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       
       if (isDemo) {
         console.log(`⚠️ Error en cuenta demo ${account?.name || accountId}, retornando datos simulados`);
-        const simulatedData = { 
+        return { 
           balance: Math.random() * 10000,
           assets: [
             { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
@@ -358,36 +261,18 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
           isDemo: true,
           isError: false
         };
-
-        // Guardar datos simulados en caché
-        const currentCache = getFromCache() || {};
-        saveToCache({
-          ...currentCache,
-          [accountId]: simulatedData
-        });
-        
-        return simulatedData;
       }
       
-      const errorData = { 
-        balance: null, 
-        assets: [], 
-        performance: 0,
-        lastUpdate: Date.now(),
-        error: errorMessage,
-        isError: true,
-        isSimulated: false,
+        return { 
+          balance: null, 
+          assets: [], 
+          performance: 0,
+          lastUpdate: Date.now(),
+          error: errorMessage,
+          isError: true,
+          isSimulated: false,
         isDemo: isDemo
-      };
-
-      // Guardar error en caché
-      const currentCache = getFromCache() || {};
-      saveToCache({
-        ...currentCache,
-        [accountId]: errorData
-      });
-      
-      return errorData;
+        };
     } finally {
       setLoadingBalance(null);
     }
@@ -401,16 +286,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       if (!token) {
         console.error('❌ No hay token de autenticación');
         router.push('/login');
-        return;
-      }
-
-      // Intentar obtener del caché primero
-      const cachedSubAccounts = getSubAccountsFromCache();
-      if (cachedSubAccounts) {
-        console.log('📦 Usando subcuentas en caché');
-        setSubAccounts(cachedSubAccounts);
-        subAccountsRef.current = cachedSubAccounts;
-        setIsLoading(false);
         return;
       }
       
@@ -432,9 +307,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       // Actualizamos tanto el estado como la referencia
       setSubAccounts(data);
       subAccountsRef.current = data;
-
-      // Guardar en caché
-      saveSubAccountsToCache(data);
       
       // Esperamos a que el estado se actualice
       await new Promise<void>(resolve => {
@@ -446,13 +318,13 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
 
       // Ahora cargamos los balances usando la referencia
       console.log('🔄 Iniciando carga automática de balances...');
-      setLoadingAllBalances(true);
-      
+        setLoadingAllBalances(true);
+        
       const balances: Record<string, AccountDetails> = {};
       for (const account of subAccountsRef.current) {
-        try {
+          try {
           console.log(`📊 Procesando balance para cuenta ${account.name}`);
-          const details = await fetchAccountDetails(account.userId, account.id, token);
+            const details = await fetchAccountDetails(account.userId, account.id, token);
           balances[account.id] = details;
           
           // Actualizar el estado de balances incrementalmente
@@ -464,27 +336,27 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
           if (onBalanceUpdate) {
             onBalanceUpdate(account.id, details);
           }
-        } catch (error) {
-          console.error(`Error al cargar balance para cuenta ${account.id}:`, error);
+          } catch (error) {
+            console.error(`Error al cargar balance para cuenta ${account.id}:`, error);
           balances[account.id] = {
-            balance: null, 
-            assets: [], 
-            performance: 0,
-            isError: true,
-            error: error instanceof Error ? error.message : 'Error desconocido',
-            isSimulated: false,
-            isDemo: account.isDemo || false
+                balance: null, 
+                assets: [], 
+                performance: 0,
+                isError: true,
+                error: error instanceof Error ? error.message : 'Error desconocido',
+                isSimulated: false,
+                isDemo: account.isDemo || false
           };
         }
       }
 
       // Actualizar estadísticas
-      if (onStatsUpdate) {
-        const stats: AccountStats = {
+        if (onStatsUpdate) {
+          const stats: AccountStats = {
           totalAccounts: subAccountsRef.current.length,
           realAccounts: subAccountsRef.current.filter((acc: SubAccount) => !acc.isDemo).length,
           demoAccounts: subAccountsRef.current.filter((acc: SubAccount) => acc.isDemo).length,
-          totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
+            totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
           realBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
             const account = subAccountsRef.current.find((a: SubAccount) => a.id === accountId);
             return sum + (!account?.isDemo ? (acc.balance || 0) : 0);
@@ -494,11 +366,11 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
             return sum + (account?.isDemo ? (acc.balance || 0) : 0);
           }, 0),
           uniqueExchanges: new Set(subAccountsRef.current.map((acc: SubAccount) => acc.exchange)).size,
-          avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
-        };
-        onStatsUpdate(stats);
-      }
-      
+            avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
+          };
+          onStatsUpdate(stats);
+        }
+        
     } catch (error) {
       console.error('❌ Error en loadSubAccounts:', error);
       setError(error instanceof Error ? error.message : 'Error al cargar subcuentas');
@@ -712,16 +584,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       setSelectedAccountsToDelete([]); // Limpiar selección
       setIsDeleteModalOpen(false); // Cerrar el modal
       setError(null);
-
-      // Limpiar el caché de las subcuentas eliminadas
-      const currentCache = getFromCache();
-      if (currentCache) {
-        const updatedCache = { ...currentCache };
-        selectedAccountsToDelete.forEach(accountId => {
-          delete updatedCache[accountId];
-        });
-        saveToCache(updatedCache);
-      }
     } catch (error) {
       setError("Error al eliminar las subcuentas seleccionadas");
       console.error("Error al eliminar subcuentas:", error);
