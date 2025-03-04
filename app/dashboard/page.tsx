@@ -228,7 +228,18 @@ export default function DashboardPage() {
               
               {/* Balances secundarios */}
               <div className="space-y-2 text-base text-white/90">
-                {!showBalance ? (
+                {isLoading ? (
+                  <>
+                    <div className="flex items-center space-x-2">
+                      <div className="h-4 w-24 bg-white/20 animate-pulse rounded"></div>
+                      <div className="h-4 w-16 bg-white/10 animate-pulse rounded"></div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="h-4 w-24 bg-white/20 animate-pulse rounded"></div>
+                      <div className="h-4 w-16 bg-white/10 animate-pulse rounded"></div>
+                    </div>
+                  </>
+                ) : !showBalance ? (
                   <>
                     <div>Balance Real: ••••••</div>
                     <div>Balance Demo: ••••••</div>
