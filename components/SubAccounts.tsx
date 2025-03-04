@@ -99,6 +99,7 @@ export interface SubAccountsProps {
 
 export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccountsProps) {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
+  const subAccountsRef = useRef<SubAccount[]>([]);
   const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null);
   const [accountBalances, setAccountBalances] = useState<Record<string, AccountDetails>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -119,7 +120,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       setLoadingBalance(accountId);
       console.log(`🔍 Iniciando solicitud de balance para cuenta ${accountId}...`);
       
-      const account = subAccounts.find(acc => acc.id === accountId);
+      const account = subAccountsRef.current.find(acc => acc.id === accountId);
       console.log(`📊 Buscando cuenta:`, { accountId, encontrada: !!account });
       
       if (!account) {
@@ -241,7 +242,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       console.error(`❌ Error en fetchAccountDetails para cuenta ${accountId}:`, error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       
-      const account = subAccounts.find(acc => acc.id === accountId);
+      const account = subAccountsRef.current.find(acc => acc.id === accountId);
       const isDemo = account?.isDemo === true;
       
       if (isDemo) {
@@ -302,24 +303,24 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       const data = await response.json();
       console.log(`✅ Subcuentas cargadas:`, data.length);
       
-      // Primero actualizamos el estado de las subcuentas y esperamos a que se complete
+      // Actualizamos tanto el estado como la referencia
       setSubAccounts(data);
+      subAccountsRef.current = data;
       
       // Esperamos a que el estado se actualice
       await new Promise<void>(resolve => {
         setTimeout(() => {
           console.log('✅ Estado de subcuentas actualizado');
           resolve();
-        }, 500);
+        }, 1000);
       });
 
-      // Ahora cargamos los balances
+      // Ahora cargamos los balances usando la referencia
       console.log('🔄 Iniciando carga automática de balances...');
       setLoadingAllBalances(true);
       
-      // Procesamos las promesas secuencialmente para evitar condiciones de carrera
       const balances: Record<string, AccountDetails> = {};
-      for (const account of data) {
+      for (const account of subAccountsRef.current) {
         try {
           console.log(`📊 Procesando balance para cuenta ${account.name}`);
           const details = await fetchAccountDetails(account.userId, account.id, token);
@@ -331,7 +332,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
             [account.id]: details
           }));
           
-          // Notificar al componente padre si existe el callback
           if (onBalanceUpdate) {
             onBalanceUpdate(account.id, details);
           }
@@ -352,19 +352,19 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       // Actualizar estadísticas
       if (onStatsUpdate) {
         const stats: AccountStats = {
-          totalAccounts: data.length,
-          realAccounts: data.filter((acc: SubAccount) => !acc.isDemo).length,
-          demoAccounts: data.filter((acc: SubAccount) => acc.isDemo).length,
+          totalAccounts: subAccountsRef.current.length,
+          realAccounts: subAccountsRef.current.filter((acc: SubAccount) => !acc.isDemo).length,
+          demoAccounts: subAccountsRef.current.filter((acc: SubAccount) => acc.isDemo).length,
           totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
           realBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
-            const account = data.find((a: SubAccount) => a.id === accountId);
+            const account = subAccountsRef.current.find((a: SubAccount) => a.id === accountId);
             return sum + (!account?.isDemo ? (acc.balance || 0) : 0);
           }, 0),
           demoBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
-            const account = data.find((a: SubAccount) => a.id === accountId);
+            const account = subAccountsRef.current.find((a: SubAccount) => a.id === accountId);
             return sum + (account?.isDemo ? (acc.balance || 0) : 0);
           }, 0),
-          uniqueExchanges: new Set(data.map((acc: SubAccount) => acc.exchange)).size,
+          uniqueExchanges: new Set(subAccountsRef.current.map((acc: SubAccount) => acc.exchange)).size,
           avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
         };
         onStatsUpdate(stats);
