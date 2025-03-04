@@ -276,7 +276,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }
   };
 
-  const loadSubAccounts = useMemo(() => async () => {
+  const loadSubAccounts = async () => {
     try {
       console.log('🔄 Iniciando carga de subcuentas...');
       const token = localStorage.getItem('token');
@@ -370,13 +370,13 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       setIsLoading(false);
       setLoadingAllBalances(false);
     }
-  }, [router, onStatsUpdate, fetchAccountDetails]);
+  };
 
-  // Modificar useEffect para una sola carga inicial
+  // Efecto para cargar las subcuentas una sola vez al montar el componente
   useEffect(() => {
     console.log('🔄 Efecto de carga inicial activado - Una sola vez');
     loadSubAccounts();
-  }, [loadSubAccounts]);
+  }, []); // Sin dependencias para que solo se ejecute al montar
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
