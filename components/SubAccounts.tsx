@@ -181,7 +181,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       // Si es una cuenta demo y tiene error previo, retornar datos simulados
       if (isDemo && accountBalances[accountId]?.isError) {
         console.log(`⚠️ Cuenta demo ${accountId} con error previo, retornando datos simulados`);
-        return {
+        const simulatedData = {
           balance: Math.random() * 10000,
           assets: [
             { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
@@ -194,6 +194,15 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
           isDemo: true,
           isError: false
         };
+
+        // Guardar datos simulados en caché
+        const currentCache = getFromCache() || {};
+        saveToCache({
+          ...currentCache,
+          [accountId]: simulatedData
+        });
+        
+        return simulatedData;
       }
       
       // Obtener el balance actual
@@ -220,8 +229,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
         });
         
         if (isDemo) {
-          console.log(`🔄 Generando datos simulados para cuenta demo ${account.name}`);
-          return { 
+          console.log(`⚠️ Error en cuenta demo ${account?.name || accountId}, retornando datos simulados`);
+          const simulatedData = { 
             balance: Math.random() * 10000,
             assets: [
               { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
@@ -234,6 +243,15 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
             isDemo: true,
             isError: false
           };
+
+          // Guardar datos simulados en caché
+          const currentCache = getFromCache() || {};
+          saveToCache({
+            ...currentCache,
+            [accountId]: simulatedData
+          });
+          
+          return simulatedData;
         }
         throw new Error(errorData.message || `Error al obtener balance: ${balanceRes.status}`);
       }
@@ -296,7 +314,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       
       if (isDemo) {
         console.log(`⚠️ Error en cuenta demo ${account?.name || accountId}, retornando datos simulados`);
-        return { 
+        const simulatedData = { 
           balance: Math.random() * 10000,
           assets: [
             { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
@@ -309,18 +327,36 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
           isDemo: true,
           isError: false
         };
+
+        // Guardar datos simulados en caché
+        const currentCache = getFromCache() || {};
+        saveToCache({
+          ...currentCache,
+          [accountId]: simulatedData
+        });
+        
+        return simulatedData;
       }
       
-        return { 
-          balance: null, 
-          assets: [], 
-          performance: 0,
-          lastUpdate: Date.now(),
-          error: errorMessage,
-          isError: true,
-          isSimulated: false,
+      const errorData = { 
+        balance: null, 
+        assets: [], 
+        performance: 0,
+        lastUpdate: Date.now(),
+        error: errorMessage,
+        isError: true,
+        isSimulated: false,
         isDemo: isDemo
-        };
+      };
+
+      // Guardar error en caché
+      const currentCache = getFromCache() || {};
+      saveToCache({
+        ...currentCache,
+        [accountId]: errorData
+      });
+      
+      return errorData;
     } finally {
       setLoadingBalance(null);
     }
