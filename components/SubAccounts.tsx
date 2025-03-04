@@ -302,12 +302,13 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       const data = await response.json();
       console.log(`✅ Subcuentas cargadas:`, data.length);
       
-      // Primero actualizamos el estado de las subcuentas
-      setSubAccounts(data);
+      // Actualizamos el estado de las subcuentas y esperamos a que se complete
+      await new Promise<void>(resolve => {
+        setSubAccounts(data);
+        // Usamos un setTimeout para asegurar que el estado se actualice
+        setTimeout(resolve, 100);
+      });
       setError(null);
-
-      // Esperamos a que el estado se actualice antes de cargar los balances
-      await new Promise(resolve => setTimeout(resolve, 0));
 
       // Cargar balances automáticamente
       console.log('🔄 Iniciando carga automática de balances...');
@@ -335,7 +336,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         }
       });
       
-      // Procesar las promesas a medida que se completan
+      // Procesar las promesas secuencialmente para evitar condiciones de carrera
       const balances: Record<string, AccountDetails> = {};
       for (const promise of balancePromises) {
         const result = await promise;
