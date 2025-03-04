@@ -304,17 +304,62 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       setSubAccounts(data);
       setError(null);
 
+      // Cargar balances automáticamente
+      console.log('🔄 Iniciando carga automática de balances...');
+      setLoadingAllBalances(true);
+      
+      // Crear un array de promesas para todas las subcuentas
+      const balancePromises = data.map(async (account: SubAccount) => {
+        try {
+          const details = await fetchAccountDetails(account.userId, account.id, token);
+          return { accountId: account.id, details };
+        } catch (error) {
+          console.error(`Error al cargar balance para cuenta ${account.id}:`, error);
+          return { 
+            accountId: account.id, 
+            details: { 
+              balance: null, 
+              assets: [], 
+              performance: 0,
+              isError: true,
+              error: error instanceof Error ? error.message : 'Error desconocido',
+              isSimulated: false,
+              isDemo: account.isDemo || false
+            } 
+          };
+        }
+      });
+      
+      // Procesar las promesas a medida que se completan
+      const balances: Record<string, AccountDetails> = {};
+      for (const promise of balancePromises) {
+        const result = await promise;
+        balances[result.accountId] = result.details;
+        
+        // Actualizar el estado de balances incrementalmente
+        setAccountBalances(prev => ({
+          ...prev,
+          [result.accountId]: result.details
+        }));
+      }
+
       // Actualizar estadísticas con los datos actuales
       if (onStatsUpdate) {
         onStatsUpdate({
           totalAccounts: data.length,
           realAccounts: data.filter((acc: SubAccount) => !acc.isDemo).length,
           demoAccounts: data.filter((acc: SubAccount) => acc.isDemo).length,
-          totalBalance: 0,
-          realBalance: 0,
-          demoBalance: 0,
+          totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
+          realBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
+            const account = data.find((a: SubAccount) => a.id === accountId);
+            return sum + (!account?.isDemo ? (acc.balance || 0) : 0);
+          }, 0),
+          demoBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
+            const account = data.find((a: SubAccount) => a.id === accountId);
+            return sum + (account?.isDemo ? (acc.balance || 0) : 0);
+          }, 0),
           uniqueExchanges: new Set(data.map((acc: SubAccount) => acc.exchange)).size,
-          avgPerformance: 0
+          avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
         });
       }
       
@@ -323,8 +368,9 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       setError(error instanceof Error ? error.message : 'Error al cargar subcuentas');
     } finally {
       setIsLoading(false);
+      setLoadingAllBalances(false);
     }
-  }, [router, onStatsUpdate]);
+  }, [router, onStatsUpdate, fetchAccountDetails]);
 
   // Modificar useEffect para una sola carga inicial
   useEffect(() => {
