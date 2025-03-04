@@ -47,10 +47,20 @@ interface SortConfig {
 
 export interface SubAccountsProps {
   onBalanceUpdate?: (accountId: string, details: AccountDetails) => void;
+  onStatsUpdate?: (stats: {
+    totalAccounts: number;
+    realAccounts: number;
+    demoAccounts: number;
+    totalBalance: number;
+    realBalance: number;
+    demoBalance: number;
+    uniqueExchanges: number;
+    avgPerformance: number;
+  }) => void;
   showBalance?: boolean;
 }
 
-export default function SubAccounts({ onBalanceUpdate, showBalance = true }: SubAccountsProps) {
+export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalance = true }: SubAccountsProps) {
   const { subAccounts, isLoading, refreshSubAccounts } = useSubAccounts();
   const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null);
   const [accountBalances, setAccountBalances] = useState<Record<string, AccountDetails>>({});
