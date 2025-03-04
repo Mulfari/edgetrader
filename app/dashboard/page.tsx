@@ -15,6 +15,26 @@ import { useRouter } from "next/navigation";
 // Tipo para las opciones de balance
 type BalanceDisplayType = 'total' | 'real' | 'demo' | 'detailed';
 
+interface BalanceData {
+  balance: number | null;
+  isDemo: boolean;
+}
+
+interface SubAccountData {
+  isDemo: boolean;
+  exchange: string;
+}
+
+interface BalancesCache {
+  balances: Record<string, BalanceData>;
+  timestamp: number;
+}
+
+interface SubAccountsCache {
+  accounts: SubAccountData[];
+  timestamp: number;
+}
+
 export default function DashboardPage() {
   const [totalBalance, setTotalBalance] = useState<number | null>(null);
   const [realBalance, setRealBalance] = useState<number | null>(null);
@@ -36,16 +56,16 @@ export default function DashboardPage() {
       // Obtener datos de balances
       const balancesCache = localStorage.getItem('subaccount_balances_cache');
       if (balancesCache) {
-        const { balances, timestamp } = JSON.parse(balancesCache);
-        const isExpired = Date.now() - timestamp > 5 * 60 * 1000; // 5 minutos
+        const cache: BalancesCache = JSON.parse(balancesCache);
+        const isExpired = Date.now() - cache.timestamp > 5 * 60 * 1000; // 5 minutos
 
         if (!isExpired) {
           // Calcular totales
-          const total = Object.values(balances).reduce((sum: number, acc: any) => sum + (acc.balance || 0), 0);
-          const real = Object.entries(balances).reduce((sum: number, [_, acc]: [string, any]) => {
+          const total = Object.values(cache.balances).reduce((sum: number, acc: BalanceData) => sum + (acc.balance || 0), 0);
+          const real = Object.entries(cache.balances).reduce((sum: number, [, acc]: [string, BalanceData]) => {
             return sum + (!acc.isDemo ? (acc.balance || 0) : 0);
           }, 0);
-          const demo = Object.entries(balances).reduce((sum: number, [_, acc]: [string, any]) => {
+          const demo = Object.entries(cache.balances).reduce((sum: number, [, acc]: [string, BalanceData]) => {
             return sum + (acc.isDemo ? (acc.balance || 0) : 0);
           }, 0);
 
@@ -58,14 +78,14 @@ export default function DashboardPage() {
       // Obtener datos de subcuentas
       const subaccountsCache = localStorage.getItem('subaccounts_cache');
       if (subaccountsCache) {
-        const { accounts, timestamp } = JSON.parse(subaccountsCache);
-        const isExpired = Date.now() - timestamp > 5 * 60 * 1000; // 5 minutos
+        const cache: SubAccountsCache = JSON.parse(subaccountsCache);
+        const isExpired = Date.now() - cache.timestamp > 5 * 60 * 1000; // 5 minutos
 
         if (!isExpired) {
-          setActiveSubAccounts(accounts.length);
-          setRealAccounts(accounts.filter((acc: any) => !acc.isDemo).length);
-          setDemoAccounts(accounts.filter((acc: any) => acc.isDemo).length);
-          setExchanges(new Set(accounts.map((acc: any) => acc.exchange)).size);
+          setActiveSubAccounts(cache.accounts.length);
+          setRealAccounts(cache.accounts.filter((acc: SubAccountData) => !acc.isDemo).length);
+          setDemoAccounts(cache.accounts.filter((acc: SubAccountData) => acc.isDemo).length);
+          setExchanges(new Set(cache.accounts.map((acc: SubAccountData) => acc.exchange)).size);
         }
       }
 
