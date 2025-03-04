@@ -123,6 +123,9 @@ export default function DashboardPage() {
   const handleBalanceDisplayChange = (type: BalanceDisplayType) => {
     setBalanceDisplay(type);
     localStorage.setItem('balanceDisplayPreference', type);
+    // Cerrar el menú después de seleccionar
+    const menu = document.getElementById('balance-menu');
+    menu?.classList.add('hidden');
   };
 
   const getSkeletonOrValue = (value: number | string, size: 'sm' | 'lg' = 'lg') => {
@@ -240,8 +243,8 @@ export default function DashboardPage() {
             </div>
           </div>
           
-          <div className="absolute right-0 bottom-0 transform translate-x-1/4 translate-y-1/4">
-            <DollarSign className="h-32 w-32 text-white/10" />
+          <div className="absolute right-0 bottom-0 transform translate-x-1/6 translate-y-1/6 overflow-hidden">
+            <DollarSign className="h-24 w-24 text-white/10" />
           </div>
         </div>
 
