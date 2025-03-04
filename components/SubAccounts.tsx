@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Search,
   RefreshCw,
@@ -345,6 +345,48 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       }
     });
   };
+
+  // Calcular y actualizar estadísticas
+  useEffect(() => {
+    if (!onStatsUpdate || !subAccounts) return;
+
+    const stats = {
+      totalAccounts: subAccounts.length,
+      realAccounts: subAccounts.filter(acc => !acc.isDemo).length,
+      demoAccounts: subAccounts.filter(acc => acc.isDemo).length,
+      totalBalance: 0,
+      realBalance: 0,
+      demoBalance: 0,
+      uniqueExchanges: new Set(subAccounts.map(acc => acc.exchange)).size,
+      avgPerformance: 0
+    };
+
+    // Calcular balances y rendimiento promedio
+    let totalPerformance = 0;
+    let accountsWithPerformance = 0;
+
+    subAccounts.forEach(acc => {
+      const balance = accountBalances[acc.id]?.balance || 0;
+      stats.totalBalance += balance;
+      
+      if (acc.isDemo) {
+        stats.demoBalance += balance;
+      } else {
+        stats.realBalance += balance;
+      }
+
+      if (acc.performance !== undefined) {
+        totalPerformance += acc.performance;
+        accountsWithPerformance++;
+      }
+    });
+
+    stats.avgPerformance = accountsWithPerformance > 0 
+      ? totalPerformance / accountsWithPerformance 
+      : 0;
+
+    onStatsUpdate(stats);
+  }, [subAccounts, accountBalances, onStatsUpdate]);
 
   return (
     <div className="space-y-4">
