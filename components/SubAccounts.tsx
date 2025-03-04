@@ -302,56 +302,56 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       const data = await response.json();
       console.log(`✅ Subcuentas cargadas:`, data.length);
       
-      // Actualizamos el estado de las subcuentas y esperamos a que se complete
+      // Primero actualizamos el estado de las subcuentas y esperamos a que se complete
+      setSubAccounts(data);
+      
+      // Esperamos a que el estado se actualice
       await new Promise<void>(resolve => {
-        setSubAccounts(data);
-        // Usamos un setTimeout para asegurar que el estado se actualice
-        setTimeout(resolve, 100);
+        setTimeout(() => {
+          console.log('✅ Estado de subcuentas actualizado');
+          resolve();
+        }, 500);
       });
-      setError(null);
 
-      // Cargar balances automáticamente
+      // Ahora cargamos los balances
       console.log('🔄 Iniciando carga automática de balances...');
       setLoadingAllBalances(true);
       
-      // Crear un array de promesas para todas las subcuentas
-      const balancePromises = data.map(async (account: SubAccount) => {
+      // Procesamos las promesas secuencialmente para evitar condiciones de carrera
+      const balances: Record<string, AccountDetails> = {};
+      for (const account of data) {
         try {
+          console.log(`📊 Procesando balance para cuenta ${account.name}`);
           const details = await fetchAccountDetails(account.userId, account.id, token);
-          return { accountId: account.id, details };
+          balances[account.id] = details;
+          
+          // Actualizar el estado de balances incrementalmente
+          setAccountBalances(prev => ({
+            ...prev,
+            [account.id]: details
+          }));
+          
+          // Notificar al componente padre si existe el callback
+          if (onBalanceUpdate) {
+            onBalanceUpdate(account.id, details);
+          }
         } catch (error) {
           console.error(`Error al cargar balance para cuenta ${account.id}:`, error);
-          return { 
-            accountId: account.id, 
-            details: { 
-              balance: null, 
-              assets: [], 
-              performance: 0,
-              isError: true,
-              error: error instanceof Error ? error.message : 'Error desconocido',
-              isSimulated: false,
-              isDemo: account.isDemo || false
-            } 
+          balances[account.id] = {
+            balance: null,
+            assets: [],
+            performance: 0,
+            isError: true,
+            error: error instanceof Error ? error.message : 'Error desconocido',
+            isSimulated: false,
+            isDemo: account.isDemo || false
           };
         }
-      });
-      
-      // Procesar las promesas secuencialmente para evitar condiciones de carrera
-      const balances: Record<string, AccountDetails> = {};
-      for (const promise of balancePromises) {
-        const result = await promise;
-        balances[result.accountId] = result.details;
-        
-        // Actualizar el estado de balances incrementalmente
-        setAccountBalances(prev => ({
-          ...prev,
-          [result.accountId]: result.details
-        }));
       }
 
-      // Actualizar estadísticas con los datos actuales
+      // Actualizar estadísticas
       if (onStatsUpdate) {
-        onStatsUpdate({
+        const stats: AccountStats = {
           totalAccounts: data.length,
           realAccounts: data.filter((acc: SubAccount) => !acc.isDemo).length,
           demoAccounts: data.filter((acc: SubAccount) => acc.isDemo).length,
@@ -366,7 +366,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
           }, 0),
           uniqueExchanges: new Set(data.map((acc: SubAccount) => acc.exchange)).size,
           avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
-        });
+        };
+        onStatsUpdate(stats);
       }
       
     } catch (error) {
