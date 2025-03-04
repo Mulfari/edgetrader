@@ -301,8 +301,13 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
 
       const data = await response.json();
       console.log(`✅ Subcuentas cargadas:`, data.length);
+      
+      // Primero actualizamos el estado de las subcuentas
       setSubAccounts(data);
       setError(null);
+
+      // Esperamos a que el estado se actualice antes de cargar los balances
+      await new Promise(resolve => setTimeout(resolve, 0));
 
       // Cargar balances automáticamente
       console.log('🔄 Iniciando carga automática de balances...');
