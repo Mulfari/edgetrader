@@ -113,8 +113,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
   const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [selectedAccountsToDelete, setSelectedAccountsToDelete] = useState<string[]>([]);
-  const [retryCount, setRetryCount] = useState(0);
-  const maxRetries = 3;
 
   const fetchAccountDetails = async (userId: string, accountId: string, token: string): Promise<AccountDetails> => {
     try {
@@ -278,29 +276,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }
   };
 
-  const updateStats = (accounts: SubAccount[], balances: Record<string, AccountDetails>) => {
-    if (onStatsUpdate) {
-      const stats: AccountStats = {
-        totalAccounts: accounts.length,
-        realAccounts: accounts.filter((acc: SubAccount) => !acc.isDemo).length,
-        demoAccounts: accounts.filter((acc: SubAccount) => acc.isDemo).length,
-        totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
-        realBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
-          const account = accounts.find((a: SubAccount) => a.id === accountId);
-          return sum + (!account?.isDemo ? (acc.balance || 0) : 0);
-        }, 0),
-        demoBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
-          const account = accounts.find((a: SubAccount) => a.id === accountId);
-          return sum + (account?.isDemo ? (acc.balance || 0) : 0);
-        }, 0),
-        uniqueExchanges: new Set(accounts.map((acc: SubAccount) => acc.exchange)).size,
-        avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
-      };
-      onStatsUpdate(stats);
-    }
-  };
-
-  const loadSubAccounts = async () => {
+  const loadSubAccounts = useMemo(() => async () => {
     try {
       console.log('🔄 Iniciando carga de subcuentas...');
       const token = localStorage.getItem('token');
@@ -327,6 +303,20 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
       console.log(`✅ Subcuentas cargadas:`, data.length);
       setSubAccounts(data);
       setError(null);
+
+      // Actualizar estadísticas con los datos actuales
+      if (onStatsUpdate) {
+        onStatsUpdate({
+          totalAccounts: data.length,
+          realAccounts: data.filter((acc: SubAccount) => !acc.isDemo).length,
+          demoAccounts: data.filter((acc: SubAccount) => acc.isDemo).length,
+          totalBalance: 0,
+          realBalance: 0,
+          demoBalance: 0,
+          uniqueExchanges: new Set(data.map((acc: SubAccount) => acc.exchange)).size,
+          avgPerformance: 0
+        });
+      }
       
     } catch (error) {
       console.error('❌ Error en loadSubAccounts:', error);
@@ -334,13 +324,13 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [router, onStatsUpdate]);
 
   // Modificar useEffect para una sola carga inicial
   useEffect(() => {
     console.log('🔄 Efecto de carga inicial activado - Una sola vez');
     loadSubAccounts();
-  }, []); // Solo se ejecuta una vez al montar el componente
+  }, [loadSubAccounts]);
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
