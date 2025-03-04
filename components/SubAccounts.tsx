@@ -95,9 +95,10 @@ interface SortConfig {
 export interface SubAccountsProps {
   onBalanceUpdate?: (accountId: string, details: AccountDetails) => void;
   onStatsUpdate?: (stats: AccountStats) => void;
+  showBalance?: boolean;
 }
 
-export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccountsProps) {
+export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalance = true }: SubAccountsProps) {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const subAccountsRef = useRef<SubAccount[]>([]);
   const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null);
@@ -875,43 +876,17 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                           </Badge>
                         </TableCell>
                         <TableCell onClick={() => handleRowClick(sub)}>
-                          {loadingBalance === sub.id ? (
-                            <Skeleton className="h-6 w-[100px]" />
-                          ) : accountBalances[sub.id] ? (
-                            accountBalances[sub.id].isError ? (
-                              <div className="flex items-center text-red-500 dark:text-red-400 text-sm">
-                                <AlertCircle className="h-4 w-4 mr-1" />
-                                <span>Error</span>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="h-7 px-2 text-xs ml-2"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const token = localStorage.getItem("token");
-                                    if (token) {
-                                      setLoadingBalance(sub.id);
-                                      fetchAccountDetails(sub.userId, sub.id, token)
-                                        .then(details => {
-                                          setAccountBalances(prev => ({
-                                            ...prev,
-                                            [sub.id]: details
-                                          }));
-                                        })
-                                        .finally(() => {
-                                          setLoadingBalance(null);
-                                        });
-                                    }
-                                  }}
-                                >
-                                  <RefreshCw className="h-3 w-3 mr-1" />
-                                  Reintentar
-                                </Button>
+                          {sub.id ? (
+                            loadingBalance === sub.id ? (
+                              <div className="flex flex-col space-y-2">
+                                <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 animate-pulse rounded"></div>
                               </div>
-                            ) : (
+                            ) : !showBalance ? (
+                              "••••••"
+                            ) : accountBalances[sub.id] && accountBalances[sub.id].balance !== undefined && accountBalances[sub.id].balance !== null ? (
                               <div className="flex items-center gap-2">
                                 <span className="font-medium">
-                                  ${accountBalances[sub.id].balance?.toLocaleString('es-ES', {
+                                  ${(accountBalances[sub.id]?.balance || 0).toLocaleString('es-ES', {
                                     minimumFractionDigits: 2,
                                     maximumFractionDigits: 2
                                   })}
@@ -933,9 +908,39 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
                                   </Badge>
                                 )}
                               </div>
+                            ) : (
+                              <div className="flex items-center text-red-500 dark:text-red-400 text-sm">
+                                <AlertCircle className="h-4 w-4 mr-1" />
+                                <span>Error</span>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-7 px-2 text-xs ml-2"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const token = localStorage.getItem("token");
+                                    if (token && sub.id && sub.userId) {
+                                      setLoadingBalance(sub.id);
+                                      fetchAccountDetails(sub.userId, sub.id, token)
+                                        .then(details => {
+                                          setAccountBalances(prev => ({
+                                            ...prev,
+                                            [sub.id]: details
+                                          }));
+                                        })
+                                        .finally(() => {
+                                          setLoadingBalance(null);
+                                        });
+                                    }
+                                  }}
+                                >
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  Reintentar
+                                </Button>
+                              </div>
                             )
                           ) : (
-                            <Skeleton className="h-6 w-[100px]" />
+                            "Error: ID no disponible"
                           )}
                         </TableCell>
                         <TableCell onClick={() => handleRowClick(sub)}>

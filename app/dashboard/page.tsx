@@ -125,6 +125,26 @@ export default function DashboardPage() {
     localStorage.setItem('balanceDisplayPreference', type);
   };
 
+  const getDisplayBalance = () => {
+    if (isLoading) {
+      return (
+        <div className="flex flex-col space-y-2">
+          <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
+          <div className="h-4 w-24 bg-white/10 animate-pulse rounded"></div>
+        </div>
+      );
+    }
+    
+    switch (balanceDisplay) {
+      case 'real':
+        return `$${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`;
+      case 'demo':
+        return `$${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`;
+      default:
+        return `$${totalBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`;
+    }
+  };
+
   const getSkeletonOrValue = (value: number | string, size: 'sm' | 'lg' = 'lg') => {
     if (isLoading) {
       return (
@@ -207,45 +227,29 @@ export default function DashboardPage() {
             
             <div className="space-y-1">
               <div className="text-4xl font-bold">
-                {(() => {
-                  const showSkeleton = () => (
-                    <div className="flex flex-col space-y-2">
-                      <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
-                      <div className="h-4 w-24 bg-white/10 animate-pulse rounded"></div>
-                    </div>
-                  );
-
-                  if (isLoading) return showSkeleton();
-                  if (!showBalance) return "••••••";
-
-                  switch (balanceDisplay) {
-                    case 'real':
-                      return realBalance === null ? showSkeleton() : 
-                        `$${realBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                    case 'demo':
-                      return demoBalance === null ? showSkeleton() :
-                        `$${demoBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                    default:
-                      return totalBalance === null ? showSkeleton() :
-                        `$${totalBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                  }
-                })()}
+                {isLoading ? (
+                  <div className="flex flex-col space-y-2">
+                    <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
+                    <div className="h-4 w-24 bg-white/10 animate-pulse rounded"></div>
+                  </div>
+                ) : !showBalance ? (
+                  "••••••"
+                ) : (
+                  getDisplayBalance()
+                )}
               </div>
-              {balanceDisplay === 'detailed' && (
+              {balanceDisplay === 'detailed' && !isLoading && (
                 <div className="space-y-1 text-sm text-white/80">
-                  {isLoading || realBalance === null ? (
-                    <div className="h-4 w-32 bg-white/20 animate-pulse rounded mb-1"></div>
-                  ) : !showBalance ? (
-                    <div>Balance Real: ••••••</div>
+                  {!showBalance ? (
+                    <>
+                      <div>Balance Real: ••••••</div>
+                      <div>Balance Demo: ••••••</div>
+                    </>
                   ) : (
-                    <div>Balance Real: ${realBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                  )}
-                  {isLoading || demoBalance === null ? (
-                    <div className="h-4 w-32 bg-white/20 animate-pulse rounded"></div>
-                  ) : !showBalance ? (
-                    <div>Balance Demo: ••••••</div>
-                  ) : (
-                    <div>Balance Demo: ${demoBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                    <>
+                      <div>Balance Real: ${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
+                      <div>Balance Demo: ${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
+                    </>
                   )}
                 </div>
               )}
@@ -312,6 +316,25 @@ export default function DashboardPage() {
             >
               Eliminar Subcuentas
             </button>
+          </div>
+        </div>
+
+        {/* Información sobre cuentas demo */}
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4 mb-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-amber-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                Información sobre cuentas demo
+              </h3>
+              <div className="mt-2 text-sm text-amber-700 dark:text-amber-200/80">
+                Las cuentas demo de Bybit ahora muestran datos reales desde el endpoint <code className="bg-amber-100 dark:bg-amber-900 px-1.5 py-0.5 rounded text-amber-800 dark:text-amber-200 text-xs">api-demo.bybit.com</code>. Para ver balances y activos, asegúrate de tener fondos virtuales en tu cuenta demo de Bybit. Si no ves datos es posible que necesites depositar fondos virtuales en tu cuenta demo.
+              </div>
+            </div>
           </div>
         </div>
 
