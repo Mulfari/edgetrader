@@ -28,7 +28,54 @@ export default function DashboardPage() {
   const [balanceDisplay, setBalanceDisplay] = useState<BalanceDisplayType>('detailed');
   const [isLoadingBalances, setIsLoadingBalances] = useState(true);
   const [showBalance, setShowBalance] = useState(true);
+  const [isLoadingLocalData, setIsLoadingLocalData] = useState(true);
   const router = useRouter();
+
+  // Función para obtener datos del localStorage
+  const loadLocalData = () => {
+    try {
+      // Obtener datos de balances
+      const balancesCache = localStorage.getItem('subaccount_balances_cache');
+      if (balancesCache) {
+        const { balances, timestamp } = JSON.parse(balancesCache);
+        const isExpired = Date.now() - timestamp > 5 * 60 * 1000; // 5 minutos
+
+        if (!isExpired) {
+          // Calcular totales
+          const total = Object.values(balances).reduce((sum: number, acc: any) => sum + (acc.balance || 0), 0);
+          const real = Object.entries(balances).reduce((sum: number, [_, acc]: [string, any]) => {
+            return sum + (!acc.isDemo ? (acc.balance || 0) : 0);
+          }, 0);
+          const demo = Object.entries(balances).reduce((sum: number, [_, acc]: [string, any]) => {
+            return sum + (acc.isDemo ? (acc.balance || 0) : 0);
+          }, 0);
+
+          setTotalBalance(total);
+          setRealBalance(real);
+          setDemoBalance(demo);
+        }
+      }
+
+      // Obtener datos de subcuentas
+      const subaccountsCache = localStorage.getItem('subaccounts_cache');
+      if (subaccountsCache) {
+        const { accounts, timestamp } = JSON.parse(subaccountsCache);
+        const isExpired = Date.now() - timestamp > 5 * 60 * 1000; // 5 minutos
+
+        if (!isExpired) {
+          setActiveSubAccounts(accounts.length);
+          setRealAccounts(accounts.filter((acc: any) => !acc.isDemo).length);
+          setDemoAccounts(accounts.filter((acc: any) => acc.isDemo).length);
+          setExchanges(new Set(accounts.map((acc: any) => acc.exchange)).size);
+        }
+      }
+
+      setIsLoadingLocalData(false);
+    } catch (error) {
+      console.error('Error al cargar datos locales:', error);
+      setIsLoadingLocalData(false);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -36,24 +83,18 @@ export default function DashboardPage() {
       router.push("/login");
       return;
     }
-  }, [router]);
 
-  useEffect(() => {
-    // Cargar datos iniciales al montar el componente
-    const subaccountsComponent = document.getElementById('subaccounts-component');
-    if (subaccountsComponent) {
-      console.log("Enviando evento refresh inicial al componente de subcuentas");
-      const refreshEvent = new CustomEvent('refresh', { bubbles: true });
-      subaccountsComponent.dispatchEvent(refreshEvent);
-    }
+    // Cargar datos locales
+    loadLocalData();
 
     // Establecer un tiempo máximo de carga
     const loadingTimeout = setTimeout(() => {
       setIsLoadingBalances(false);
+      setIsLoadingLocalData(false);
     }, 5000); // 5 segundos máximo de carga
 
     return () => clearTimeout(loadingTimeout);
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     // Cargar preferencia de visualización de balance
@@ -199,7 +240,7 @@ export default function DashboardPage() {
             <div className="flex items-start gap-12">
               <div className="space-y-1">
                 <div className="text-4xl font-bold">
-                  {isLoadingBalances ? (
+                  {isLoadingLocalData ? (
                     <div className="flex flex-col space-y-2">
                       <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
                       <div className="h-4 w-24 bg-white/10 animate-pulse rounded"></div>
@@ -221,7 +262,7 @@ export default function DashboardPage() {
                     <div>Balance Real: ••••••</div>
                     <div>Balance Demo: ••••••</div>
                   </>
-                ) : isLoadingBalances ? (
+                ) : isLoadingLocalData ? (
                   <>
                     <div className="flex items-center space-x-2">
                       <div className="h-4 w-24 bg-white/20 animate-pulse rounded"></div>
@@ -254,7 +295,7 @@ export default function DashboardPage() {
               <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">Subcuentas Activas</h3>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white">
-              {isLoadingBalances ? (
+              {isLoadingLocalData ? (
                 <div className="flex flex-col space-y-2">
                   <div className="h-9 w-24 bg-zinc-200 dark:bg-zinc-700 animate-pulse rounded"></div>
                   <div className="h-4 w-16 bg-zinc-100 dark:bg-zinc-600 animate-pulse rounded"></div>
@@ -264,7 +305,7 @@ export default function DashboardPage() {
               )}
             </div>
             <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {!isLoadingBalances && (
+              {!isLoadingLocalData && (
                 <>
                   Reales: {realAccounts} • Demo: {demoAccounts}
                 </>
@@ -280,7 +321,7 @@ export default function DashboardPage() {
               <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">Operaciones</h3>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white">
-              {isLoadingBalances ? (
+              {isLoadingLocalData ? (
                 <div className="flex flex-col space-y-2">
                   <div className="h-9 w-24 bg-zinc-200 dark:bg-zinc-700 animate-pulse rounded"></div>
                   <div className="h-4 w-16 bg-zinc-100 dark:bg-zinc-600 animate-pulse rounded"></div>
@@ -290,7 +331,7 @@ export default function DashboardPage() {
               )}
             </div>
             <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {!isLoadingBalances && 'Total de operaciones realizadas'}
+              {!isLoadingLocalData && 'Total de operaciones realizadas'}
             </div>
           </div>
           <div className="absolute right-0 bottom-0 transform translate-x-1/4 translate-y-1/4">
