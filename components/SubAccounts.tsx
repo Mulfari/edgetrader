@@ -1255,5 +1255,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
           />
         </DialogContent>
       </Dialog>
+    </div>
   );
 }
