@@ -20,7 +20,7 @@ export interface AccountDetails {
     value: number;
   }>;
   performance: number;
-  isError: boolean;
+  isError: boolean | string | null;
   error?: string;
   isSimulated: boolean;
   isDemo: boolean;

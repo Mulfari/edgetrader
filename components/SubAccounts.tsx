@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Search,
   RefreshCw,
@@ -36,64 +36,33 @@ import {
 } from "@/components/ui/dialog";
 import SubAccountManager from "@/components/SubAccountManager";
 import { useSubAccounts } from '@/hooks/useSubAccounts';
-import type { SubAccount } from '@/types/subaccount';
+import type { SubAccount, AccountDetails } from '@/types/subaccount';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface Asset {
-  coin: string;
-  walletBalance: number;
-  usdValue: number;
+  symbol: string;
+  quantity: number;
+  value: number;
 }
-
-interface AccountDetails {
-  balance: number | null;
-  assets: Asset[];
-  performance: number;
-  isSimulated?: boolean;
-  isDemo?: boolean;
-  isError?: boolean;
-  error?: string;
-  balanceHistory?: {
-    timestamp: number;
-    balance: number;
-  }[];
-  lastUpdate?: number;
-}
-
-interface AccountStats {
-  totalAccounts: number;
-  realAccounts: number;
-  demoAccounts: number;
-  totalBalance: number;
-  realBalance: number;
-  demoBalance: number;
-  uniqueExchanges: number;
-  avgPerformance: number;
-}
-
-type SortDirection = 'asc' | 'desc';
 
 interface SortConfig {
   key: keyof SubAccount;
-  direction: SortDirection;
+  direction: 'asc' | 'desc';
 }
 
 export interface SubAccountsProps {
   onBalanceUpdate?: (accountId: string, details: AccountDetails) => void;
-  onStatsUpdate?: (stats: AccountStats) => void;
   showBalance?: boolean;
 }
 
-export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalance = true }: SubAccountsProps) {
-  const { subAccounts, isLoading, error, refreshSubAccounts } = useSubAccounts();
+export default function SubAccounts({ onBalanceUpdate, showBalance = true }: SubAccountsProps) {
+  const { subAccounts, isLoading, refreshSubAccounts } = useSubAccounts();
   const [selectedSubAccountId, setSelectedSubAccountId] = useState<string | null>(null);
   const [accountBalances, setAccountBalances] = useState<Record<string, AccountDetails>>({});
   const [loadingBalance, setLoadingBalance] = useState<string | null>(null);
-  const [loadingAllBalances, setLoadingAllBalances] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const componentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [selectedAccountsToDelete, setSelectedAccountsToDelete] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -128,15 +97,14 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
         return {
           balance: Math.random() * 10000,
           assets: [
-            { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
-            { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
-            { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
+            { symbol: 'BTC', quantity: Math.random() * 0.5, value: Math.random() * 5000 },
+            { symbol: 'ETH', quantity: Math.random() * 5, value: Math.random() * 3000 },
+            { symbol: 'USDT', quantity: Math.random() * 5000, value: Math.random() * 5000 }
           ],
           performance: (Math.random() * 20) - 10,
-          lastUpdate: Date.now(),
+          isError: false,
           isSimulated: true,
-          isDemo: true,
-          isError: false
+          isDemo: true
         };
       }
       
@@ -165,41 +133,38 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
         
         if (isDemo) {
           console.log(`🔄 Generando datos simulados para cuenta demo ${account.name}`);
-          return { 
+          return {
             balance: Math.random() * 10000,
             assets: [
-              { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
-              { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
-              { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
+              { symbol: 'BTC', quantity: Math.random() * 0.5, value: Math.random() * 5000 },
+              { symbol: 'ETH', quantity: Math.random() * 5, value: Math.random() * 3000 },
+              { symbol: 'USDT', quantity: Math.random() * 5000, value: Math.random() * 5000 }
             ],
             performance: (Math.random() * 20) - 10,
-            lastUpdate: Date.now(),
+            isError: false,
             isSimulated: true,
-            isDemo: true,
-            isError: false
+            isDemo: true
           };
         }
-        throw new Error(errorData.message || `Error al obtener balance: ${balanceRes.status}`);
+        throw new Error('Error al obtener balance');
       }
       
       const balanceData = await balanceRes.json();
       console.log(`✅ Datos recibidos del servidor para cuenta ${account.name}:`, balanceData);
 
       if (balanceData.balance === undefined) {
-        console.error(`❌ La respuesta no contiene un balance válido para cuenta ${account.name}:`, balanceData);
         if (isDemo) {
-      return {
+          return {
             balance: Math.random() * 10000,
             assets: [
-              { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
-              { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
-              { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
+              { symbol: 'BTC', quantity: Math.random() * 0.5, value: Math.random() * 5000 },
+              { symbol: 'ETH', quantity: Math.random() * 5, value: Math.random() * 3000 },
+              { symbol: 'USDT', quantity: Math.random() * 5000, value: Math.random() * 5000 }
             ],
             performance: (Math.random() * 20) - 10,
-            lastUpdate: Date.now(),
+            isError: false,
             isSimulated: true,
-            isDemo: true,
-            isError: false
+            isDemo: true
           };
         }
         throw new Error('Respuesta del servidor no contiene un balance válido');
@@ -209,11 +174,9 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
         balance: balanceData.balance || 0,
         assets: balanceData.assets || [],
         performance: balanceData.performance || 0,
-        balanceHistory: balanceData.balanceHistory || [],
-        lastUpdate: Date.now(),
+        isError: false,
         isSimulated: false,
-        isDemo: isDemo,
-        isError: false
+        isDemo: isDemo
       };
       
       console.log(`✅ Datos procesados para cuenta ${account.name}:`, processedData);
@@ -233,31 +196,29 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       
       if (isDemo) {
         console.log(`⚠️ Error en cuenta demo ${account?.name || accountId}, retornando datos simulados`);
-        return { 
+        return {
           balance: Math.random() * 10000,
           assets: [
-            { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
-            { coin: 'ETH', walletBalance: Math.random() * 5, usdValue: Math.random() * 3000 },
-            { coin: 'USDT', walletBalance: Math.random() * 5000, usdValue: Math.random() * 5000 }
+            { symbol: 'BTC', quantity: Math.random() * 0.5, value: Math.random() * 5000 },
+            { symbol: 'ETH', quantity: Math.random() * 5, value: Math.random() * 3000 },
+            { symbol: 'USDT', quantity: Math.random() * 5000, value: Math.random() * 5000 }
           ],
           performance: (Math.random() * 20) - 10,
-          lastUpdate: Date.now(),
+          isError: false,
           isSimulated: true,
-          isDemo: true,
-          isError: false
+          isDemo: true
         };
       }
       
-        return { 
-          balance: null, 
-          assets: [], 
-          performance: 0,
-          lastUpdate: Date.now(),
-          error: errorMessage,
-          isError: true,
-          isSimulated: false,
+      return {
+        balance: null,
+        assets: [],
+        performance: 0,
+        isError: true,
+        error: errorMessage,
+        isSimulated: false,
         isDemo: isDemo
-        };
+      };
     } finally {
       setLoadingBalance(null);
     }
@@ -382,15 +343,15 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
   };
 
   return (
-    <div className="space-y-4" ref={componentRef}>
-      <div className="space-y-6 animate-in fade-in-50 duration-300" ref={componentRef} id="subaccounts-component">
+    <div className="space-y-4">
+      <div className="space-y-6 animate-in fade-in-50 duration-300" id="subaccounts-component">
         {/* Header Section */}
         <div className="flex flex-col space-y-4">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="flex flex-col space-y-4">
               <h2 className="text-2xl font-bold tracking-tight">
                 Subcuentas
-                {loadingAllBalances && (
+                {loadingBalance && (
                   <span className="ml-2 inline-flex items-center text-sm font-normal text-blue-600 dark:text-blue-400">
                     <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
                     Cargando balances...
@@ -427,11 +388,11 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
                 </DropdownMenu>
                 <Button
                   onClick={refreshSubAccounts}
-                  disabled={loadingAllBalances}
+                  disabled={!!loadingBalance}
                   variant="outline"
                   size="icon"
                 >
-                  <RefreshCw className={`h-4 w-4 ${loadingAllBalances ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-4 w-4 ${loadingBalance ? 'animate-spin' : ''}`} />
                 </Button>
               </div>
             </div>
@@ -758,7 +719,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
                                 ? "text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors" 
                                 : sub.performance && sub.performance < 0 
                                   ? "text-red-600 dark:text-red-400 group-hover:text-red-700 dark:group-hover:text-red-300 transition-colors" 
-                                  : "text-yellow-600 dark:text-yellow-400 group-hover:text-yellow-700 dark:group-hover:text-yellow-300 transition-colors"
+                                : "text-yellow-600 dark:text-yellow-400 group-hover:text-yellow-700 dark:group-hover:text-yellow-300 transition-colors"
                             }>
                               {sub.performance !== undefined ? `${sub.performance.toFixed(2)}%` : "-"}
                             </span>
@@ -916,12 +877,12 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
                                           <TableBody>
                                             {accountBalances[sub.id].assets.map((asset, index) => (
                                               <TableRow key={index} className={index % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-900/10' : ''}>
-                                                <TableCell className="font-medium">{asset.coin}</TableCell>
-                                                <TableCell>{asset.walletBalance.toLocaleString('es-ES', {
+                                                <TableCell className="font-medium">{asset.symbol}</TableCell>
+                                                <TableCell>{asset.quantity.toLocaleString('es-ES', {
                                                   minimumFractionDigits: 2,
                                                   maximumFractionDigits: 8
                                                 })}</TableCell>
-                                                <TableCell>${asset.usdValue.toLocaleString('es-ES', {
+                                                <TableCell>${asset.value.toLocaleString('es-ES', {
                                                   minimumFractionDigits: 2,
                                                   maximumFractionDigits: 2
                                                 })}</TableCell>
