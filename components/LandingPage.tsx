@@ -103,84 +103,92 @@ export default function LandingPage() {
             : "bg-transparent"
         }`}
       >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center space-x-4">
-              <Link 
-                href="/" 
-                className="flex items-center space-x-2 group"
-              >
-                <div className="w-10 h-10 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl flex items-center justify-center transform group-hover:rotate-6 transition-all duration-300">
-                  <span className="text-2xl text-white">📈</span>
-                </div>
-                <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500 group-hover:from-violet-600 group-hover:to-indigo-600 transition-all duration-300">
-                  TradingDash
-                </span>
-              </Link>
-            </div>
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <Link href="/" className="flex items-center space-x-3 group">
+              <div className="w-8 h-8 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                <span className="text-xl text-white">📈</span>
+              </div>
+              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
+                TradingDash
+              </span>
+            </Link>
 
+            {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              <div className="flex items-center space-x-6">
-                <NavLinks activeSection={activeSection} />
-              </div>
-              <div className="flex items-center space-x-4">
-                <Link
-                  href="/login"
-                  className="px-4 py-2 text-gray-700 dark:text-gray-200 hover:text-violet-600 dark:hover:text-violet-400 transition-colors duration-300"
-                >
-                  Iniciar Sesión
-                </Link>
-                <Link
-                  href="/signup"
-                  className="px-4 py-2 text-white bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl hover:from-violet-600 hover:to-indigo-600 transform hover:scale-105 transition-all duration-300 shadow-md hover:shadow-lg"
-                >
-                  Registrarse
-                </Link>
-                <div className="border-l border-gray-200 dark:border-gray-700 h-6 mx-2" />
-                <ThemeToggle />
-              </div>
-            </nav>
-
-            <nav className="hidden md:flex items-center space-x-6">
-              <NavLinks activeSection={activeSection} />
+              <Link href="#features" className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400">
+                Características
+              </Link>
+              <Link href="#pricing" className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400">
+                Precios
+              </Link>
               <Link
                 href="/login"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-300 hover:scale-105"
+                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400"
               >
                 Iniciar Sesión
               </Link>
+              <Link
+                href="/signup"
+                className="px-4 py-2 text-white bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg hover:from-violet-600 hover:to-indigo-600 transition-all duration-300"
+              >
+                Registrarse
+              </Link>
               <ThemeToggle />
             </nav>
-            <div className="md:hidden flex items-center">
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden flex items-center space-x-4">
               <ThemeToggle />
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="ml-2 p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
-                aria-label="Toggle menu"
+                className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                {isMenuOpen ? <X /> : <Menu />}
+                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
             </div>
           </div>
         </div>
       </header>
 
+      {/* Mobile Menu */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden bg-white dark:bg-gray-800 py-2"
+            className="md:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
           >
-            <nav className="flex flex-col items-center space-y-2">
-              <NavLinks activeSection={activeSection} />
+            <nav className="container mx-auto px-4 py-4 flex flex-col space-y-4">
+              <Link
+                href="#features"
+                className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400 py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Características
+              </Link>
+              <Link
+                href="#pricing"
+                className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400 py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Precios
+              </Link>
               <Link
                 href="/login"
-                className="w-full text-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
+                className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400 py-2"
+                onClick={() => setIsMenuOpen(false)}
               >
-                Log In
+                Iniciar Sesión
+              </Link>
+              <Link
+                href="/signup"
+                className="w-full py-2 text-center text-white bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg hover:from-violet-600 hover:to-indigo-600 transition-all duration-300"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Registrarse
               </Link>
             </nav>
           </motion.div>
