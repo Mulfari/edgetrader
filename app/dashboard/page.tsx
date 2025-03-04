@@ -201,23 +201,23 @@ export default function DashboardPage() {
               </div>
               
               {/* Balance Type Menu */}
-              <div id="balance-menu" className="hidden absolute top-full left-0 mt-2 w-48 rounded-lg bg-white dark:bg-zinc-800 shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+              <div id="balance-menu" className="hidden absolute top-12 left-0 mt-1 w-48 rounded-xl bg-white/10 backdrop-blur-lg shadow-lg border border-white/20 z-50">
                 <div className="py-1">
                   <button
                     onClick={() => handleBalanceDisplayChange('total')}
-                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-700"
+                    className="block w-full px-4 py-2 text-sm text-left text-white hover:bg-white/10 transition-colors duration-200"
                   >
                     Balance Total
                   </button>
                   <button
                     onClick={() => handleBalanceDisplayChange('real')}
-                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-700"
+                    className="block w-full px-4 py-2 text-sm text-left text-white hover:bg-white/10 transition-colors duration-200"
                   >
                     Balance Real
                   </button>
                   <button
                     onClick={() => handleBalanceDisplayChange('demo')}
-                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-700"
+                    className="block w-full px-4 py-2 text-sm text-left text-white hover:bg-white/10 transition-colors duration-200"
                   >
                     Balance Demo
                   </button>
