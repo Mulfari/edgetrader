@@ -300,77 +300,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
     }
   };
 
-  const loadAllBalances = useCallback(async (accounts: SubAccount[], token: string) => {
-    try {
-      setLoadingAllBalances(true);
-      console.log('🔄 Iniciando carga de balances...');
-      console.log('📊 Cuentas a procesar:', accounts.map(acc => ({
-        id: acc.id,
-        nombre: acc.name,
-        exchange: acc.exchange,
-        tipo: acc.isDemo ? 'Demo' : 'Real'
-      })));
-      
-      const balancePromises = accounts.map(account => {
-        console.log(`📡 Solicitando balance para cuenta ${account.id} (${account.name}) - ${account.exchange}`);
-        return fetchAccountDetails(account.userId, account.id, token)
-          .then(details => {
-            console.log(`✅ Balance recibido para cuenta ${account.id}:`, {
-              balance: details.balance,
-              assets: details.assets?.length || 0,
-              isError: details.isError,
-              tipo: account.isDemo ? 'Demo' : 'Real'
-            });
-            return { id: account.id, details };
-          })
-          .catch(error => {
-            console.error(`❌ Error al cargar balance para cuenta ${account.id}:`, error);
-            return {
-              id: account.id,
-              details: {
-                balance: null,
-                assets: [],
-                performance: 0,
-                isError: true,
-                error: error instanceof Error ? error.message : 'Error desconocido',
-                isSimulated: false,
-                isDemo: account.isDemo || false
-              }
-            };
-          });
-      });
-
-      const results = await Promise.allSettled(balancePromises);
-      
-      const newBalances: Record<string, AccountDetails> = {};
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          newBalances[result.value.id] = result.value.details;
-        } else {
-          console.error(`❌ Error al cargar balance para cuenta ${accounts[index].id}:`, result.reason);
-          newBalances[accounts[index].id] = {
-            balance: null,
-            assets: [],
-            performance: 0,
-            isError: true,
-            error: result.reason?.message || 'Error al cargar balance',
-            isDemo: accounts[index].isDemo || false
-          };
-        }
-      });
-
-      console.log('💾 Actualizando estado con nuevos balances:', Object.keys(newBalances).length);
-      setAccountBalances(newBalances);
-      updateStats(accounts, newBalances);
-    } catch (error) {
-      console.error('❌ Error al cargar todos los balances:', error);
-      setError('Error al cargar balances de las subcuentas');
-    } finally {
-      setLoadingAllBalances(false);
-    }
-  }, [fetchAccountDetails, updateStats]);
-
-  const loadSubAccounts = useCallback(async () => {
+  const loadSubAccounts = async () => {
     try {
       console.log('🔄 Iniciando carga de subcuentas...');
       const token = localStorage.getItem('token');
@@ -381,9 +311,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         return;
       }
 
-      console.log('📡 Realizando petición a:', `${API_URL}/subaccounts`);
-      console.log('🔑 Token presente:', !!token, 'Primeros 10 caracteres:', token.substring(0, 10));
-
+      setIsLoading(true);
       const response = await fetch(`${API_URL}/subaccounts`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -391,80 +319,28 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate }: SubAccou
         }
       });
 
-      console.log('📥 Respuesta recibida:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('❌ Error al cargar subcuentas:', errorData);
-        throw new Error(errorData.message || 'Error al cargar subcuentas');
+        throw new Error('Error al cargar subcuentas');
       }
 
       const data = await response.json();
-      console.log(`✅ Subcuentas cargadas:`, {
-        cantidad: data.length,
-        subcuentas: data.map((acc: SubAccount) => ({
-          id: acc.id,
-          nombre: acc.name,
-          exchange: acc.exchange,
-          isDemo: acc.isDemo
-        }))
-      });
-      
+      console.log(`✅ Subcuentas cargadas:`, data.length);
       setSubAccounts(data);
       setError(null);
       
-      // Cargar balances solo si hay subcuentas
-      if (data.length > 0) {
-        console.log(`🔄 Iniciando carga de balances para ${data.length} subcuentas...`);
-        await loadAllBalances(data, token);
-      } else {
-        console.log('ℹ️ No hay subcuentas para cargar balances');
-      }
     } catch (error) {
       console.error('❌ Error en loadSubAccounts:', error);
       setError(error instanceof Error ? error.message : 'Error al cargar subcuentas');
-      
-      if (retryCount < maxRetries) {
-        console.log(`⏳ Reintentando carga (${retryCount + 1}/${maxRetries})...`);
-        setTimeout(() => {
-          setRetryCount(prev => prev + 1);
-          loadSubAccounts();
-        }, 2000);
-      }
     } finally {
       setIsLoading(false);
     }
-  }, [router, retryCount, loadAllBalances]);
+  };
 
-  // Modificar useEffect para cargar datos iniciales
+  // Modificar useEffect para una sola carga inicial
   useEffect(() => {
-    const loadInitialData = async () => {
-      console.log('🔄 Efecto de carga inicial activado');
-      await loadSubAccounts();
-    };
-
-    loadInitialData();
-    
-    // Configurar el event listener para refresh
-    const element = componentRef.current || document.getElementById('subaccounts-component');
-    if (element) {
-      console.log("Agregando event listener para refresh en SubAccounts");
-      const handleRefresh = () => {
-        console.log("Evento refresh recibido en SubAccounts");
-        loadSubAccounts();
-      };
-      
-      element.addEventListener('refresh', handleRefresh);
-      return () => {
-        console.log("Eliminando event listener para refresh en SubAccounts");
-        element.removeEventListener('refresh', handleRefresh);
-      };
-    }
-  }, [loadSubAccounts]);
+    console.log('🔄 Efecto de carga inicial activado - Una sola vez');
+    loadSubAccounts();
+  }, []); // Solo se ejecuta una vez al montar el componente
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
