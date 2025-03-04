@@ -471,7 +471,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       setIsLoading(false);
       setLoadingAllBalances(false);
     }
-  }, [onBalanceUpdate, onStatsUpdate, router]);
+  }, [onBalanceUpdate, onStatsUpdate, router, fetchAccountDetails]);
 
   // Efecto para cargar las subcuentas una sola vez al montar el componente
   useEffect(() => {
