@@ -53,6 +53,9 @@ export default function DashboardPage() {
   // Función para obtener datos del localStorage
   const loadLocalData = () => {
     try {
+      setIsLoadingLocalData(true);
+      let hasData = false;
+
       // Obtener datos de balances
       const balancesCache = localStorage.getItem('subaccount_balances_cache');
       if (balancesCache) {
@@ -72,6 +75,7 @@ export default function DashboardPage() {
           setTotalBalance(total);
           setRealBalance(real);
           setDemoBalance(demo);
+          hasData = true;
         }
       }
 
@@ -86,13 +90,42 @@ export default function DashboardPage() {
           setRealAccounts(cache.accounts.filter((acc: SubAccountData) => !acc.isDemo).length);
           setDemoAccounts(cache.accounts.filter((acc: SubAccountData) => acc.isDemo).length);
           setExchanges(new Set(cache.accounts.map((acc: SubAccountData) => acc.exchange)).size);
+          hasData = true;
         }
       }
 
-      setIsLoadingLocalData(false);
+      // Si no hay datos válidos en caché, mantener el estado de carga
+      if (!hasData) {
+        // Establecer valores por defecto
+        setTotalBalance(0);
+        setRealBalance(0);
+        setDemoBalance(0);
+        setActiveSubAccounts(0);
+        setRealAccounts(0);
+        setDemoAccounts(0);
+        setExchanges(0);
+      }
+
+      // Asegurar que el efecto de carga se muestre por al menos 1 segundo
+      setTimeout(() => {
+        setIsLoadingLocalData(false);
+      }, 1000);
+
     } catch (error) {
       console.error('Error al cargar datos locales:', error);
-      setIsLoadingLocalData(false);
+      // En caso de error, establecer valores por defecto
+      setTotalBalance(0);
+      setRealBalance(0);
+      setDemoBalance(0);
+      setActiveSubAccounts(0);
+      setRealAccounts(0);
+      setDemoAccounts(0);
+      setExchanges(0);
+      
+      // Asegurar que el efecto de carga se muestre por al menos 1 segundo
+      setTimeout(() => {
+        setIsLoadingLocalData(false);
+      }, 1000);
     }
   };
 
@@ -106,12 +139,8 @@ export default function DashboardPage() {
     // Cargar datos locales
     loadLocalData();
 
-    // Establecer un tiempo máximo de carga
-    const loadingTimeout = setTimeout(() => {
-      setIsLoadingLocalData(false);
-    }, 5000); // 5 segundos máximo de carga
-
-    return () => clearTimeout(loadingTimeout);
+    // No necesitamos el timeout aquí ya que lo manejamos en loadLocalData
+    return () => {};
   }, [router]);
 
   useEffect(() => {
