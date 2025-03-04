@@ -44,24 +44,24 @@ export default function LandingPage() {
   
   const testimonials = [
     {
-      name: "John Doe",
-      role: "CEO, Company A",
-      quote: "YourBrand has completely transformed our workflow. Highly recommended!",
-      avatar: "/placeholder.svg?height=100&width=100",
+      name: "Juan Pérez",
+      role: "Trader Profesional",
+      quote: "TradingDash ha revolucionado completamente mi forma de operar. ¡Altamente recomendado!",
+      avatar: "/placeholder.svg",
       rating: 5,
     },
     {
-      name: "Jane Smith",
-      role: "CTO, Company B",
-      quote: "The features offered by YourBrand are unparalleled. It's a game-changer for our team.",
-      avatar: "/placeholder.svg?height=100&width=100",
+      name: "María García",
+      role: "Gestora de Fondos",
+      quote: "Las características que ofrece TradingDash son incomparables. Es un cambio radical para nuestro equipo.",
+      avatar: "/placeholder.svg",
       rating: 5,
     },
     {
-      name: "Alice Johnson",
-      role: "Product Manager, Company C",
-      quote: "I can't imagine managing our projects without YourBrand. It's intuitive and powerful.",
-      avatar: "/placeholder.svg?height=100&width=100",
+      name: "Carlos Rodríguez",
+      role: "Analista de Mercados",
+      quote: "No puedo imaginar gestionar mis operaciones sin TradingDash. Es intuitivo y potente.",
+      avatar: "/placeholder.svg",
       rating: 4,
     },
   ]
@@ -77,22 +77,20 @@ export default function LandingPage() {
 
   const faqItems = [
     {
-      question: "What is YourBrand?",
-      answer:
-        "YourBrand is a comprehensive project management and collaboration platform designed to streamline your workflow and boost productivity.",
+      question: "¿Qué es TradingDash?",
+      answer: "TradingDash es una plataforma integral de trading que combina análisis técnico avanzado, señales en tiempo real y gestión de riesgo automatizada para optimizar tus operaciones.",
     },
     {
-      question: "How does pricing work?",
-      answer:
-        "We offer flexible pricing plans to suit businesses of all sizes. Our plans start from $9/month for basic features, with custom enterprise solutions available.",
+      question: "¿Cómo funciona el sistema de precios?",
+      answer: "Ofrecemos planes flexibles que se adaptan a diferentes niveles de trading. Los planes comienzan desde 29€/mes para funciones básicas, con soluciones personalizadas para enterprise.",
     },
     {
-      question: "Is there a free trial?",
-      answer: "Yes, we offer a 14-day free trial on all our plans. No credit card required to start your trial.",
+      question: "¿Hay periodo de prueba gratuito?",
+      answer: "Sí, ofrecemos 14 días de prueba gratuita en todos nuestros planes. No se requiere tarjeta de crédito para comenzar.",
     },
     {
-      question: "Can I cancel my subscription anytime?",
-      answer: "You can cancel your subscription at any time. We don't believe in long-term contracts or hidden fees.",
+      question: "¿Puedo cancelar mi suscripción en cualquier momento?",
+      answer: "Puedes cancelar tu suscripción cuando quieras. No creemos en contratos a largo plazo ni en cargos ocultos.",
     },
   ]
 
@@ -226,9 +224,9 @@ export default function LandingPage() {
                 </div>
                 <button
                   onClick={() => setShowVideo(false)}
-                  className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
+                  className="mt-4 px-4 py-2 bg-gradient-to-r from-violet-500 to-indigo-500 text-white rounded-xl hover:from-violet-600 hover:to-indigo-600 transition-all duration-300"
                 >
-                  Close
+                  Cerrar
                 </button>
               </motion.div>
             </motion.div>
@@ -341,7 +339,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <p className="text-xl text-gray-600 dark:text-gray-300 mb-6 italic">
-                  "{testimonials[currentTestimonial].quote}"
+                  &ldquo;{testimonials[currentTestimonial].quote}&rdquo;
                 </p>
                 <div className="font-medium text-gray-900 dark:text-white text-lg">
                   {testimonials[currentTestimonial].name}
