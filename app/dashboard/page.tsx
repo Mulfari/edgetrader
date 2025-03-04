@@ -213,7 +213,7 @@ export default function DashboardPage() {
             <div className="flex items-start gap-12">
               <div className="space-y-1">
                 <div className="text-4xl font-bold">
-                  {isLoading ? (
+                  {isLoadingBalances ? (
                     <div className="flex flex-col space-y-2">
                       <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
                       <div className="h-4 w-24 bg-white/10 animate-pulse rounded"></div>
