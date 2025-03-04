@@ -27,6 +27,7 @@ export default function DashboardPage() {
   const [exchanges, setExchanges] = useState(0);
   const [balanceDisplay, setBalanceDisplay] = useState<BalanceDisplayType>('detailed');
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingBalances, setIsLoadingBalances] = useState(true);
   const [showBalance, setShowBalance] = useState(true);
   const router = useRouter();
 
@@ -94,7 +95,8 @@ export default function DashboardPage() {
     setRealBalance(stats.realBalance);
     setDemoBalance(stats.demoBalance);
     setExchanges(stats.uniqueExchanges);
-    setIsLoading(false); // Desactivar la carga cuando recibimos los datos
+    setIsLoading(false); // Desactivar la carga de subcuentas
+    setIsLoadingBalances(false); // Desactivar la carga de balances
   };
 
   const handleSubAccountSuccess = () => {
@@ -233,7 +235,7 @@ export default function DashboardPage() {
                     <div>Balance Real: ••••••</div>
                     <div>Balance Demo: ••••••</div>
                   </>
-                ) : isLoading ? (
+                ) : isLoadingBalances ? (
                   <>
                     <div className="flex items-center space-x-2">
                       <div className="h-4 w-24 bg-white/20 animate-pulse rounded"></div>
