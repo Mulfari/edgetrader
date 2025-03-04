@@ -63,19 +63,19 @@ export default function Operations() {
           <button className="px-4 py-2 text-sm font-medium text-white bg-violet-500 rounded-lg hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors">
             Nueva Operación
           </button>
-        </div>
+      </div>
       </div>
 
       {/* Filters and Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Total Operaciones</p>
               <p className="text-2xl font-bold text-zinc-900 dark:text-white">
                 {isLoading ? '-' : operations.length}
               </p>
-            </div>
+              </div>
             <div className="p-2 bg-violet-500/10 rounded-lg">
               <LineChart className="w-6 h-6 text-violet-500" />
             </div>
@@ -198,16 +198,16 @@ export default function Operations() {
                             ? <TrendingUp className="ml-1 h-4 w-4" />
                             : <TrendingDown className="ml-1 h-4 w-4" />
                           }
-                        </span>
-                      )}
+                      </span>
+                    )}
                     </td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
-        </div>
-      </div>
+                      </div>
+                    </div>
     </div>
   );
 }

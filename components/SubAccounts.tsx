@@ -154,7 +154,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
           isError: false
         };
       }
-
+      
       // Obtener el balance actual
       console.log(`📡 Solicitando balance a: ${API_URL}/subaccounts/${accountId}/balance`);
       const balanceRes = await fetch(`${API_URL}/subaccounts/${accountId}/balance`, {
@@ -180,7 +180,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
         
         if (isDemo) {
           console.log(`🔄 Generando datos simulados para cuenta demo ${account.name}`);
-          return {
+          return { 
             balance: Math.random() * 10000,
             assets: [
               { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
@@ -203,7 +203,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       if (balanceData.balance === undefined) {
         console.error(`❌ La respuesta no contiene un balance válido para cuenta ${account.name}:`, balanceData);
         if (isDemo) {
-          return {
+      return {
             balance: Math.random() * 10000,
             assets: [
               { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
@@ -230,7 +230,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
         isDemo: isDemo,
         isError: false
       };
-
+      
       console.log(`✅ Datos procesados para cuenta ${account.name}:`, processedData);
       
       if (onBalanceUpdate) {
@@ -248,7 +248,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       
       if (isDemo) {
         console.log(`⚠️ Error en cuenta demo ${account?.name || accountId}, retornando datos simulados`);
-        return {
+        return { 
           balance: Math.random() * 10000,
           assets: [
             { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
@@ -263,16 +263,16 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
         };
       }
       
-      return {
-        balance: null,
-        assets: [],
-        performance: 0,
-        lastUpdate: Date.now(),
-        error: errorMessage,
-        isError: true,
-        isSimulated: false,
+        return { 
+          balance: null, 
+          assets: [], 
+          performance: 0,
+          lastUpdate: Date.now(),
+          error: errorMessage,
+          isError: true,
+          isSimulated: false,
         isDemo: isDemo
-      };
+        };
     } finally {
       setLoadingBalance(null);
     }
@@ -288,7 +288,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
         router.push('/login');
         return;
       }
-
+      
       setIsLoading(true);
       const response = await fetch(`${API_URL}/subaccounts`, {
         headers: {
@@ -296,11 +296,11 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
           'Content-Type': 'application/json'
         }
       });
-
+      
       if (!response.ok) {
         throw new Error('Error al cargar subcuentas');
       }
-
+      
       const data = await response.json();
       console.log(`✅ Subcuentas cargadas:`, data.length);
       
@@ -318,13 +318,13 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
 
       // Ahora cargamos los balances usando la referencia
       console.log('🔄 Iniciando carga automática de balances...');
-      setLoadingAllBalances(true);
-      
+        setLoadingAllBalances(true);
+        
       const balances: Record<string, AccountDetails> = {};
       for (const account of subAccountsRef.current) {
-        try {
+          try {
           console.log(`📊 Procesando balance para cuenta ${account.name}`);
-          const details = await fetchAccountDetails(account.userId, account.id, token);
+            const details = await fetchAccountDetails(account.userId, account.id, token);
           balances[account.id] = details;
           
           // Actualizar el estado de balances incrementalmente
@@ -336,27 +336,27 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
           if (onBalanceUpdate) {
             onBalanceUpdate(account.id, details);
           }
-        } catch (error) {
-          console.error(`Error al cargar balance para cuenta ${account.id}:`, error);
+          } catch (error) {
+            console.error(`Error al cargar balance para cuenta ${account.id}:`, error);
           balances[account.id] = {
-            balance: null,
-            assets: [],
-            performance: 0,
-            isError: true,
-            error: error instanceof Error ? error.message : 'Error desconocido',
-            isSimulated: false,
-            isDemo: account.isDemo || false
+                balance: null, 
+                assets: [], 
+                performance: 0,
+                isError: true,
+                error: error instanceof Error ? error.message : 'Error desconocido',
+                isSimulated: false,
+                isDemo: account.isDemo || false
           };
         }
       }
 
       // Actualizar estadísticas
-      if (onStatsUpdate) {
-        const stats: AccountStats = {
+        if (onStatsUpdate) {
+          const stats: AccountStats = {
           totalAccounts: subAccountsRef.current.length,
           realAccounts: subAccountsRef.current.filter((acc: SubAccount) => !acc.isDemo).length,
           demoAccounts: subAccountsRef.current.filter((acc: SubAccount) => acc.isDemo).length,
-          totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
+            totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
           realBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
             const account = subAccountsRef.current.find((a: SubAccount) => a.id === accountId);
             return sum + (!account?.isDemo ? (acc.balance || 0) : 0);
@@ -366,11 +366,11 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
             return sum + (account?.isDemo ? (acc.balance || 0) : 0);
           }, 0),
           uniqueExchanges: new Set(subAccountsRef.current.map((acc: SubAccount) => acc.exchange)).size,
-          avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
-        };
-        onStatsUpdate(stats);
-      }
-      
+            avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
+          };
+          onStatsUpdate(stats);
+        }
+        
     } catch (error) {
       console.error('❌ Error en loadSubAccounts:', error);
       setError(error instanceof Error ? error.message : 'Error al cargar subcuentas');
