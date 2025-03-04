@@ -35,7 +35,8 @@ export default function RootLayout({
   };
 
   // Verificar si estamos en páginas públicas
-  const isPublicPage = pathname === '/login' || pathname === '/' || pathname === '/register';
+  const publicRoutes = ['/', '/login', '/register', '/signup'];
+  const isPublicPage = publicRoutes.includes(pathname);
 
   return (
     <html lang="es">
