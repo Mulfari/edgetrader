@@ -173,10 +173,10 @@ export default function DashboardPage() {
       {/* Dashboard Content */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Balance Card */}
-        <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl p-6 text-white relative overflow-hidden">
-          <div className="relative z-10">
+        <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl p-6 text-white relative">
+          <div className="relative">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 relative">
                 <button
                   id="balance-menu-button"
                   className="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-white/20 transition-colors duration-200"
@@ -198,29 +198,29 @@ export default function DashboardPage() {
                     <Eye className="h-4 w-4 text-white/80" />
                   )}
                 </button>
-              </div>
-              
-              {/* Balance Type Menu */}
-              <div id="balance-menu" className="hidden absolute top-12 left-0 mt-1 w-48 rounded-xl bg-white/10 backdrop-blur-lg shadow-lg border border-white/20 z-50">
-                <div className="py-1">
-                  <button
-                    onClick={() => handleBalanceDisplayChange('total')}
-                    className="block w-full px-4 py-2 text-sm text-left text-white hover:bg-white/10 transition-colors duration-200"
-                  >
-                    Balance Total
-                  </button>
-                  <button
-                    onClick={() => handleBalanceDisplayChange('real')}
-                    className="block w-full px-4 py-2 text-sm text-left text-white hover:bg-white/10 transition-colors duration-200"
-                  >
-                    Balance Real
-                  </button>
-                  <button
-                    onClick={() => handleBalanceDisplayChange('demo')}
-                    className="block w-full px-4 py-2 text-sm text-left text-white hover:bg-white/10 transition-colors duration-200"
-                  >
-                    Balance Demo
-                  </button>
+                
+                {/* Balance Type Menu */}
+                <div id="balance-menu" className="hidden absolute top-full left-0 mt-2 w-48 rounded-xl bg-white/10 backdrop-blur-lg shadow-lg border border-white/20 z-[100]">
+                  <div className="py-1">
+                    <button
+                      onClick={() => handleBalanceDisplayChange('total')}
+                      className="block w-full px-4 py-2 text-sm text-left text-white hover:bg-white/10 transition-colors duration-200"
+                    >
+                      Balance Total
+                    </button>
+                    <button
+                      onClick={() => handleBalanceDisplayChange('real')}
+                      className="block w-full px-4 py-2 text-sm text-left text-white hover:bg-white/10 transition-colors duration-200"
+                    >
+                      Balance Real
+                    </button>
+                    <button
+                      onClick={() => handleBalanceDisplayChange('demo')}
+                      className="block w-full px-4 py-2 text-sm text-left text-white hover:bg-white/10 transition-colors duration-200"
+                    >
+                      Balance Demo
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
