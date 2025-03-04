@@ -38,6 +38,40 @@ import SubAccountManager from "@/components/SubAccountManager";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+// Constantes para el caché
+const CACHE_KEY = 'subaccount_balances_cache';
+const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutos en milisegundos
+
+interface CacheData {
+  balances: Record<string, AccountDetails>;
+  timestamp: number;
+}
+
+// Función para guardar en caché
+const saveToCache = (balances: Record<string, AccountDetails>) => {
+  const cacheData: CacheData = {
+    balances,
+    timestamp: Date.now()
+  };
+  localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+};
+
+// Función para obtener del caché
+const getFromCache = (): Record<string, AccountDetails> | null => {
+  const cachedData = localStorage.getItem(CACHE_KEY);
+  if (!cachedData) return null;
+
+  const { balances, timestamp }: CacheData = JSON.parse(cachedData);
+  const isExpired = Date.now() - timestamp > CACHE_EXPIRY;
+
+  if (isExpired) {
+    localStorage.removeItem(CACHE_KEY);
+    return null;
+  }
+
+  return balances;
+};
+
 interface Asset {
   coin: string;
   walletBalance: number;
@@ -129,6 +163,13 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       }
 
       const isDemo = account.isDemo === true;
+      
+      // Intentar obtener del caché primero
+      const cachedBalances = getFromCache();
+      if (cachedBalances && cachedBalances[accountId]) {
+        console.log(`📦 Usando datos en caché para cuenta ${accountId}`);
+        return cachedBalances[accountId];
+      }
       
       console.log(`📊 Detalles de la cuenta:`, {
         id: accountId,
@@ -232,6 +273,13 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       };
       
       console.log(`✅ Datos procesados para cuenta ${account.name}:`, processedData);
+      
+      // Guardar en caché
+      const currentCache = getFromCache() || {};
+      saveToCache({
+        ...currentCache,
+        [accountId]: processedData
+      });
       
       if (onBalanceUpdate) {
         onBalanceUpdate(accountId, processedData);
@@ -584,6 +632,16 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       setSelectedAccountsToDelete([]); // Limpiar selección
       setIsDeleteModalOpen(false); // Cerrar el modal
       setError(null);
+
+      // Limpiar el caché de las subcuentas eliminadas
+      const currentCache = getFromCache();
+      if (currentCache) {
+        const updatedCache = { ...currentCache };
+        selectedAccountsToDelete.forEach(accountId => {
+          delete updatedCache[accountId];
+        });
+        saveToCache(updatedCache);
+      }
     } catch (error) {
       setError("Error al eliminar las subcuentas seleccionadas");
       console.error("Error al eliminar subcuentas:", error);
