@@ -379,7 +379,7 @@ export default function DashboardPage() {
           onCancel={() => setShowDeleteModal(false)}
           onSuccess={handleSubAccountSuccess}
         />
-      )}sd
+      )}
     </div>
   );
 }
