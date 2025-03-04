@@ -122,32 +122,6 @@ export default function DashboardPage() {
     localStorage.setItem('balanceDisplayPreference', type);
   };
 
-  const getDisplayBalance = () => {
-    if (isLoading) {
-      return (
-        <div className="flex flex-col space-y-2">
-          <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
-          <div className="h-4 w-24 bg-white/10 animate-pulse rounded"></div>
-        </div>
-      );
-    }
-    
-    switch (balanceDisplay) {
-      case 'real':
-        return realBalance === null ? (
-          <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
-        ) : `$${realBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      case 'demo':
-        return demoBalance === null ? (
-          <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
-        ) : `$${demoBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      default:
-        return totalBalance === null ? (
-          <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
-        ) : `$${totalBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-  };
-
   const getSkeletonOrValue = (value: number | string, size: 'sm' | 'lg' = 'lg') => {
     if (isLoading) {
       return (
@@ -217,7 +191,30 @@ export default function DashboardPage() {
             </div>
             
             <div className="space-y-1">
-              <div className="text-4xl font-bold">{getDisplayBalance()}</div>
+              <div className="text-4xl font-bold">
+                {(() => {
+                  const showSkeleton = () => (
+                    <div className="flex flex-col space-y-2">
+                      <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
+                      <div className="h-4 w-24 bg-white/10 animate-pulse rounded"></div>
+                    </div>
+                  );
+
+                  if (isLoading) return showSkeleton();
+
+                  switch (balanceDisplay) {
+                    case 'real':
+                      return realBalance === null ? showSkeleton() : 
+                        `$${realBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    case 'demo':
+                      return demoBalance === null ? showSkeleton() :
+                        `$${demoBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    default:
+                      return totalBalance === null ? showSkeleton() :
+                        `$${totalBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                  }
+                })()}
+              </div>
               {balanceDisplay === 'detailed' && (
                 <div className="space-y-1 text-sm text-white/80">
                   {isLoading || realBalance === null ? (
