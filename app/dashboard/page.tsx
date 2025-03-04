@@ -268,10 +268,17 @@ export default function DashboardPage() {
               <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">Subcuentas Activas</h3>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white">
-              {getSkeletonOrValue(activeSubAccounts)}
+              {isLoadingBalances ? (
+                <div className="flex flex-col space-y-2">
+                  <div className="h-9 w-24 bg-zinc-200 dark:bg-zinc-700 animate-pulse rounded"></div>
+                  <div className="h-4 w-16 bg-zinc-100 dark:bg-zinc-600 animate-pulse rounded"></div>
+                </div>
+              ) : (
+                activeSubAccounts
+              )}
             </div>
             <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {!isLoading && (
+              {!isLoadingBalances && (
                 <>
                   Reales: {realAccounts} • Demo: {demoAccounts}
                 </>
@@ -287,10 +294,17 @@ export default function DashboardPage() {
               <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">Operaciones</h3>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white">
-              {getSkeletonOrValue(exchanges)}
+              {isLoadingBalances ? (
+                <div className="flex flex-col space-y-2">
+                  <div className="h-9 w-24 bg-zinc-200 dark:bg-zinc-700 animate-pulse rounded"></div>
+                  <div className="h-4 w-16 bg-zinc-100 dark:bg-zinc-600 animate-pulse rounded"></div>
+                </div>
+              ) : (
+                exchanges
+              )}
             </div>
             <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {!isLoading && 'Total de operaciones realizadas'}
+              {!isLoadingBalances && 'Total de operaciones realizadas'}
             </div>
           </div>
           <div className="absolute right-0 bottom-0 transform translate-x-1/4 translate-y-1/4">
