@@ -98,6 +98,61 @@ export interface SubAccountsProps {
   showBalance?: boolean;
 }
 
+// Constantes para el caché
+const CACHE_PREFIX = 'subaccount_balance_';
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos en milisegundos
+
+// Funciones de caché
+const getCachedBalance = (accountId: string): AccountDetails | null => {
+  try {
+    const cachedData = localStorage.getItem(`${CACHE_PREFIX}${accountId}`);
+    if (!cachedData) return null;
+
+    const { data, timestamp } = JSON.parse(cachedData);
+    const now = Date.now();
+    
+    // Verificar si el caché ha expirado
+    if (now - timestamp > CACHE_DURATION) {
+      localStorage.removeItem(`${CACHE_PREFIX}${accountId}`);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error al leer el caché:', error);
+    return null;
+  }
+};
+
+const setCachedBalance = (accountId: string, data: AccountDetails) => {
+  try {
+    const cacheData = {
+      data,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(`${CACHE_PREFIX}${accountId}`, JSON.stringify(cacheData));
+  } catch (error) {
+    console.error('Error al guardar en caché:', error);
+  }
+};
+
+const clearCache = (accountId?: string) => {
+  try {
+    if (accountId) {
+      localStorage.removeItem(`${CACHE_PREFIX}${accountId}`);
+    } else {
+      // Limpiar todo el caché de balances
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith(CACHE_PREFIX)) {
+          localStorage.removeItem(key);
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error al limpiar el caché:', error);
+  }
+};
+
 export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalance = true }: SubAccountsProps) {
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const subAccountsRef = useRef<SubAccount[]>([]);
@@ -130,6 +185,13 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
 
       const isDemo = account.isDemo === true;
       
+      // Intentar obtener datos del caché primero
+      const cachedData = getCachedBalance(accountId);
+      if (cachedData) {
+        console.log(`✅ Datos recuperados del caché para cuenta ${account.name}`);
+        return cachedData;
+      }
+      
       console.log(`📊 Detalles de la cuenta:`, {
         id: accountId,
         tipo: isDemo ? 'Demo' : 'Real',
@@ -140,7 +202,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       // Si es una cuenta demo y tiene error previo, retornar datos simulados
       if (isDemo && accountBalances[accountId]?.isError) {
         console.log(`⚠️ Cuenta demo ${accountId} con error previo, retornando datos simulados`);
-        return {
+        const simulatedData = {
           balance: Math.random() * 10000,
           assets: [
             { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
@@ -153,6 +215,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
           isDemo: true,
           isError: false
         };
+        setCachedBalance(accountId, simulatedData);
+        return simulatedData;
       }
       
       // Obtener el balance actual
@@ -180,7 +244,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
         
         if (isDemo) {
           console.log(`🔄 Generando datos simulados para cuenta demo ${account.name}`);
-          return { 
+          const simulatedData = { 
             balance: Math.random() * 10000,
             assets: [
               { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
@@ -193,6 +257,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
             isDemo: true,
             isError: false
           };
+          setCachedBalance(accountId, simulatedData);
+          return simulatedData;
         }
         throw new Error(errorData.message || `Error al obtener balance: ${balanceRes.status}`);
       }
@@ -203,7 +269,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       if (balanceData.balance === undefined) {
         console.error(`❌ La respuesta no contiene un balance válido para cuenta ${account.name}:`, balanceData);
         if (isDemo) {
-      return {
+          const simulatedData = {
             balance: Math.random() * 10000,
             assets: [
               { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
@@ -216,6 +282,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
             isDemo: true,
             isError: false
           };
+          setCachedBalance(accountId, simulatedData);
+          return simulatedData;
         }
         throw new Error('Respuesta del servidor no contiene un balance válido');
       }
@@ -233,6 +301,9 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       
       console.log(`✅ Datos procesados para cuenta ${account.name}:`, processedData);
       
+      // Guardar en caché
+      setCachedBalance(accountId, processedData);
+      
       if (onBalanceUpdate) {
         onBalanceUpdate(accountId, processedData);
       }
@@ -248,7 +319,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       
       if (isDemo) {
         console.log(`⚠️ Error en cuenta demo ${account?.name || accountId}, retornando datos simulados`);
-        return { 
+        const simulatedData = { 
           balance: Math.random() * 10000,
           assets: [
             { coin: 'BTC', walletBalance: Math.random() * 0.5, usdValue: Math.random() * 5000 },
@@ -261,18 +332,22 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
           isDemo: true,
           isError: false
         };
+        setCachedBalance(accountId, simulatedData);
+        return simulatedData;
       }
       
-        return { 
-          balance: null, 
-          assets: [], 
-          performance: 0,
-          lastUpdate: Date.now(),
-          error: errorMessage,
-          isError: true,
-          isSimulated: false,
+      const errorData = { 
+        balance: null, 
+        assets: [], 
+        performance: 0,
+        lastUpdate: Date.now(),
+        error: errorMessage,
+        isError: true,
+        isSimulated: false,
         isDemo: isDemo
-        };
+      };
+      setCachedBalance(accountId, errorData);
+      return errorData;
     } finally {
       setLoadingBalance(null);
     }
@@ -462,12 +537,15 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
         account.exchange.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Función para actualizar todos los balances manualmente
+  // Modificar la función refreshAllBalances para limpiar el caché
   const refreshAllBalances = async () => {
     if (loadingAllBalances || subAccounts.length === 0) return;
     
     try {
       setLoadingAllBalances(true);
+      
+      // Limpiar el caché antes de actualizar
+      clearCache();
       
       const token = localStorage.getItem("token");
       if (!token) {
