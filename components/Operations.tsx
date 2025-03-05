@@ -7,7 +7,6 @@ import {
   TrendingDown,
   PieChart,
   BarChart,
-  Calendar,
   Clock,
   Tag,
   Filter,
