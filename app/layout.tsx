@@ -10,7 +10,9 @@ import {
   User,
   Home,
   LineChart,
-  Wallet
+  Wallet,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -145,16 +147,13 @@ export default function RootLayout({
                     </div>
                     <button
                       onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                      className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                      className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group"
                     >
-                      <svg
-                        className={`w-5 h-5 text-zinc-500 dark:text-zinc-400 transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : ''}`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-                      </svg>
+                      {isSidebarCollapsed ? (
+                        <ChevronRight className="w-5 h-5 text-zinc-500 dark:text-zinc-400 transition-all duration-300 transform group-hover:text-violet-500 dark:group-hover:text-violet-400 group-hover:scale-110" />
+                      ) : (
+                        <ChevronLeft className="w-5 h-5 text-zinc-500 dark:text-zinc-400 transition-all duration-300 transform group-hover:text-violet-500 dark:group-hover:text-violet-400 group-hover:scale-110" />
+                      )}
                     </button>
                   </div>
                   
