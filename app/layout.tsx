@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { 
-  LayoutDashboard, 
   Settings, 
   LogOut, 
   BarChart3,
-  TrendingUp,
   Bell,
   Menu,
   User,
