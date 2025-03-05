@@ -18,6 +18,13 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Verificar si hay una sesión activa
+    const token = localStorage.getItem("token");
+    if (token) {
+      router.push("/dashboard");
+      return;
+    }
+
     // Rellena los campos de correo electrónico y contraseña si hay datos almacenados en localStorage
     const storedEmail = localStorage.getItem("email");
     const storedPassword = localStorage.getItem("password");
@@ -26,7 +33,7 @@ export default function LoginPage() {
       setPassword(storedPassword);
       setRememberMe(true);
     }
-  }, []);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
