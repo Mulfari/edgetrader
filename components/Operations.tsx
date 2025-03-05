@@ -29,7 +29,11 @@ import {
   Title,
   Tooltip as ChartTooltip,
   Legend,
-  Filler
+  Filler,
+  ChartArea,
+  Chart,
+  TooltipItem,
+  ScriptableContext
 } from 'chart.js';
 import { Line, Pie } from 'react-chartjs-2';
 
@@ -78,12 +82,18 @@ interface DashboardStats {
 const PerformanceChart = ({ data }: { data: Operation[] }) => {
   const gradientFill = {
     id: 'gradientFill',
-    beforeDatasetsDraw(chart: any) {
-      const {ctx, chartArea: {top, bottom, left, width, height}} = chart;
-      const gradientBg = ctx.createLinearGradient(0, top, 0, bottom);
+    beforeDatasetsDraw(chart: Chart): void {
+      const {ctx, chartArea} = chart;
+      if (!chartArea) return;
+      
+      const gradientBg = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
       gradientBg.addColorStop(0, 'rgba(99, 102, 241, 0.5)');
       gradientBg.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
-      return gradientBg;
+      
+      const dataset = chart.data.datasets[0];
+      if (dataset) {
+        dataset.backgroundColor = gradientBg;
+      }
     }
   };
 
@@ -93,12 +103,7 @@ const PerformanceChart = ({ data }: { data: Operation[] }) => {
       label: 'Beneficio',
       data: data.map(op => op.profit || 0),
       borderColor: 'rgb(99, 102, 241)',
-      backgroundColor: function(context: any) {
-        const chart = context.chart;
-        const {ctx, chartArea} = chart;
-        if (!chartArea) return null;
-        return gradientFill.beforeDatasetsDraw(chart);
-      },
+      backgroundColor: 'rgba(99, 102, 241, 0.5)',
       fill: true,
       tension: 0.4,
       borderWidth: 2,
@@ -150,7 +155,7 @@ const PerformanceChart = ({ data }: { data: Operation[] }) => {
         borderWidth: 1,
         displayColors: false,
         callbacks: {
-          label: function(context: any) {
+          label: function(context: TooltipItem<"line">) {
             const value = context.parsed.y;
             return `Beneficio: ${value >= 0 ? '+' : ''}$${value.toLocaleString()}`;
           }
@@ -159,6 +164,7 @@ const PerformanceChart = ({ data }: { data: Operation[] }) => {
     },
     scales: {
       x: {
+        type: 'category' as const,
         grid: {
           display: false
         },
@@ -175,6 +181,7 @@ const PerformanceChart = ({ data }: { data: Operation[] }) => {
         }
       },
       y: {
+        type: 'linear' as const,
         grid: {
           color: 'rgba(161, 161, 170, 0.1)',
           drawBorder: false
@@ -184,8 +191,8 @@ const PerformanceChart = ({ data }: { data: Operation[] }) => {
           font: {
             size: 11
           },
-          callback: function(value: any) {
-            return '$' + value.toLocaleString();
+          callback: function(value: number | string) {
+            return '$' + Number(value).toLocaleString();
           }
         },
         border: {
@@ -193,7 +200,7 @@ const PerformanceChart = ({ data }: { data: Operation[] }) => {
         }
       }
     }
-  };
+  } as const;
 
   return (
     <div className="h-[300px] w-full">
@@ -282,9 +289,9 @@ const DistributionChart = ({ data }: { data: Operation[] }) => {
         borderColor: 'rgb(63, 63, 70)',
         borderWidth: 1,
         callbacks: {
-          label: function(context: any) {
+          label: function(context: TooltipItem<"pie">) {
             const label = context.label || '';
-            const value = context.parsed || 0;
+            const value = context.parsed;
             const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
             const percentage = ((value * 100) / total).toFixed(1);
             return `${label}: ${value} (${percentage}%)`;
