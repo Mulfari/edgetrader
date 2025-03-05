@@ -16,8 +16,41 @@ import {
   Grid,
   Info,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Star,
+  Bell,
+  HelpCircle
 } from "lucide-react";
+import { Tooltip } from "./ui/tooltip";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip as ChartTooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+import { Line, Bar, Pie } from 'react-chartjs-2';
+
+// Registrar componentes de Chart.js
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  ChartTooltip,
+  Legend,
+  Filler
+);
 
 interface Operation {
   id: string;
@@ -46,6 +79,97 @@ interface DashboardStats {
   totalFees: number;
   profitableSymbols: { symbol: string; profit: number }[];
 }
+
+// Componente para el gráfico de rendimiento
+const PerformanceChart = ({ data }: { data: Operation[] }) => {
+  const chartData = {
+    labels: data.map(op => new Date(op.timestamp).toLocaleDateString()),
+    datasets: [{
+      label: 'Beneficio',
+      data: data.map(op => op.profit || 0),
+      borderColor: 'rgb(99, 102, 241)',
+      backgroundColor: 'rgba(99, 102, 241, 0.1)',
+      fill: true,
+      tension: 0.4
+    }]
+  };
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top' as const },
+      title: { 
+        display: true, 
+        text: 'Rendimiento Histórico',
+        color: 'rgb(161, 161, 170)'
+      }
+    },
+    scales: {
+      y: {
+        grid: {
+          color: 'rgba(161, 161, 170, 0.1)'
+        },
+        ticks: {
+          color: 'rgb(161, 161, 170)'
+        }
+      },
+      x: {
+        grid: {
+          color: 'rgba(161, 161, 170, 0.1)'
+        },
+        ticks: {
+          color: 'rgb(161, 161, 170)'
+        }
+      }
+    }
+  };
+
+  return (
+    <div className="h-[300px] w-full">
+      <Line data={chartData} options={options} />
+    </div>
+  );
+};
+
+// Componente para el gráfico de distribución
+const DistributionChart = ({ data }: { data: Operation[] }) => {
+  const symbolCounts = data.reduce((acc, op) => {
+    acc[op.symbol] = (acc[op.symbol] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const chartData = {
+    labels: Object.keys(symbolCounts),
+    datasets: [{
+      data: Object.values(symbolCounts),
+      backgroundColor: [
+        'rgba(99, 102, 241, 0.8)',
+        'rgba(34, 197, 94, 0.8)',
+        'rgba(234, 179, 8, 0.8)',
+        'rgba(239, 68, 68, 0.8)',
+        'rgba(168, 85, 247, 0.8)'
+      ]
+    }]
+  };
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top' as const },
+      title: {
+        display: true,
+        text: 'Distribución por Par',
+        color: 'rgb(161, 161, 170)'
+      }
+    }
+  };
+
+  return (
+    <div className="h-[300px] w-full">
+      <Pie data={chartData} options={options} />
+    </div>
+  );
+};
 
 export default function Operations() {
   const [operations, setOperations] = useState<Operation[]>([]);
@@ -162,7 +286,15 @@ export default function Operations() {
   }, []);
 
   const renderOperationCard = (operation: Operation) => (
-    <div key={operation.id} className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer">
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.2 }}
+      key={operation.id}
+      className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
+    >
       <div className="flex items-start justify-between mb-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -255,7 +387,7 @@ export default function Operations() {
         Ver detalles
         <ChevronRight className="w-4 h-4 ml-1" />
       </button>
-    </div>
+    </motion.div>
   );
 
   return (
@@ -315,7 +447,11 @@ export default function Operations() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300 }}
+          className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Total Operaciones</p>
@@ -330,9 +466,13 @@ export default function Operations() {
               <LineChart className="w-6 h-6 text-violet-500" />
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300 }}
+          className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Beneficio Total</p>
@@ -347,9 +487,13 @@ export default function Operations() {
               <TrendingUp className="w-6 h-6 text-emerald-500" />
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300 }}
+          className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Tasa de Éxito</p>
@@ -364,9 +508,13 @@ export default function Operations() {
               <PieChart className="w-6 h-6 text-blue-500" />
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300 }}
+          className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Volumen Mensual</p>
@@ -381,28 +529,34 @@ export default function Operations() {
               <BarChart className="w-6 h-6 text-yellow-500" />
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Gráficos y Análisis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm"
+        >
           <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">
             Distribución por Par
           </h3>
-          <div className="h-64 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
-            Gráfico de distribución por par (próximamente)
-          </div>
-        </div>
+          <DistributionChart data={operations} />
+        </motion.div>
 
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm"
+        >
           <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">
             Rendimiento Histórico
           </h3>
-          <div className="h-64 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
-            Gráfico de rendimiento (próximamente)
-          </div>
-        </div>
+          <PerformanceChart data={operations} />
+        </motion.div>
       </div>
 
       {/* Filters mejorados */}
@@ -493,144 +647,170 @@ export default function Operations() {
           </div>
         </div>
 
-        {/* Vista condicional: Tabla o Tarjetas */}
-        {view === 'table' ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
-              <thead className="bg-zinc-50 dark:bg-zinc-800">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Fecha
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Par
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Exchange
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Precio
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Cantidad
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Beneficio
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Etiquetas
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
+        {/* Vista de operaciones con animaciones mejoradas */}
+        <AnimatePresence mode="wait">
+          {view === 'cards' ? (
+            <motion.div
+              key="cards"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+            >
+              <AnimatePresence>
                 {isLoading ? (
-                  <tr>
-                    <td colSpan={9} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                      <div className="flex items-center justify-center gap-2">
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        Cargando operaciones...
-                      </div>
-                    </td>
-                  </tr>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="col-span-full flex items-center justify-center py-12"
+                  >
+                    <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                      Cargando operaciones...
+                    </div>
+                  </motion.div>
                 ) : operations.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                      No hay operaciones para mostrar
-                    </td>
-                  </tr>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="col-span-full flex items-center justify-center py-12 text-zinc-500 dark:text-zinc-400"
+                  >
+                    No hay operaciones para mostrar
+                  </motion.div>
                 ) : (
-                  operations.map((operation) => (
-                    <tr key={operation.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
-                        {new Date(operation.timestamp).toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          operation.type === 'buy' 
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                            : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
-                        }`}>
-                          {operation.type === 'buy' ? 'Compra' : 'Venta'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
-                        {operation.symbol}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
-                        {operation.exchange}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
-                        ${operation.price.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
-                        {operation.amount}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          operation.status === 'completed'
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                            : operation.status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                        }`}>
-                          {operation.status === 'completed' ? 'Completada' : 
-                           operation.status === 'pending' ? 'Pendiente' : 'Cancelada'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {operation.profit !== undefined && (
-                          <span className={`flex items-center ${
-                            operation.profit >= 0
-                              ? 'text-emerald-600 dark:text-emerald-400'
-                              : 'text-rose-600 dark:text-rose-400'
-                          }`}>
-                            {operation.profit >= 0 ? '+' : '-'}${Math.abs(operation.profit).toLocaleString()}
-                            {operation.profit >= 0 
-                              ? <TrendingUp className="ml-1 h-4 w-4" />
-                              : <TrendingDown className="ml-1 h-4 w-4" />
-                            }
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="flex gap-1">
-                          {operation.tags?.map((tag) => (
-                            <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300">
-                              {tag}
-                            </span>
-                          ))}
+                  operations.map(renderOperationCard)
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="table"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="overflow-x-auto"
+            >
+              <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
+                <thead className="bg-zinc-50 dark:bg-zinc-800">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                      Fecha
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                      Tipo
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                      Par
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                      Exchange
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                      Precio
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                      Cantidad
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                      Beneficio
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                      Etiquetas
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={9} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                        <div className="flex items-center justify-center gap-2">
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Cargando operaciones...
                         </div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {isLoading ? (
-              <div className="col-span-full flex items-center justify-center py-12">
-                <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-                  <RefreshCw className="w-5 h-5 animate-spin" />
-                  Cargando operaciones...
-                </div>
-              </div>
-            ) : operations.length === 0 ? (
-              <div className="col-span-full flex items-center justify-center py-12 text-zinc-500 dark:text-zinc-400">
-                No hay operaciones para mostrar
-              </div>
-            ) : (
-              operations.map(renderOperationCard)
-            )}
-          </div>
-        )}
+                  ) : operations.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                        No hay operaciones para mostrar
+                      </td>
+                    </tr>
+                  ) : (
+                    operations.map((operation) => (
+                      <tr key={operation.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
+                          {new Date(operation.timestamp).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            operation.type === 'buy' 
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                              : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
+                          }`}>
+                            {operation.type === 'buy' ? 'Compra' : 'Venta'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
+                          {operation.symbol}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
+                          {operation.exchange}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
+                          ${operation.price.toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
+                          {operation.amount}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            operation.status === 'completed'
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                              : operation.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                              : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                          }`}>
+                            {operation.status === 'completed' ? 'Completada' : 
+                             operation.status === 'pending' ? 'Pendiente' : 'Cancelada'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {operation.profit !== undefined && (
+                            <span className={`flex items-center ${
+                              operation.profit >= 0
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-rose-600 dark:text-rose-400'
+                            }`}>
+                              {operation.profit >= 0 ? '+' : '-'}${Math.abs(operation.profit).toLocaleString()}
+                              {operation.profit >= 0 
+                                ? <TrendingUp className="ml-1 h-4 w-4" />
+                                : <TrendingDown className="ml-1 h-4 w-4" />
+                              }
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <div className="flex gap-1">
+                            {operation.tags?.map((tag) => (
+                              <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
         {/* Paginación mejorada */}
         <div className="px-6 py-3 flex items-center justify-between border-t border-zinc-200 dark:border-zinc-700">
