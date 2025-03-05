@@ -125,14 +125,14 @@ export default function RootLayout({
               `}>
                 <div className="flex flex-col h-full w-full">
                   <div className="h-20 flex items-center justify-center group-hover:justify-start border-b border-zinc-200/50 dark:border-zinc-800/40 px-4 group-hover:px-6">
-                    <div className="flex items-center gap-3">
-                      <div className="relative shrink-0">
+                    <div className="flex items-center gap-3 transition-all duration-300 ease-in-out">
+                      <div className="relative shrink-0 flex items-center justify-center w-[5.5rem] group-hover:w-auto -ml-4 group-hover:ml-0">
                         <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
                         <div className="relative bg-gradient-to-br from-violet-500 to-indigo-500 w-11 h-11 rounded-xl flex items-center justify-center shadow-lg transform transition-transform duration-300 hover:scale-105">
                           <BarChart3 className="h-6 w-6 text-white" />
                         </div>
                       </div>
-                      <div className="transition-all duration-300 transform translate-x-0 opacity-0 group-hover:opacity-100 whitespace-nowrap">
+                      <div className="transition-all duration-300 transform opacity-0 group-hover:opacity-100 whitespace-nowrap">
                         <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
                           TradingDash
                         </h1>
