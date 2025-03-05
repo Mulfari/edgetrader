@@ -19,11 +19,10 @@ import {
   ChevronRight,
   Star,
   Bell,
-  AlertCircle,
   HelpCircle
 } from "lucide-react";
 import { Tooltip } from "./ui/tooltip";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface Operation {
   id: string;
