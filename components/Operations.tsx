@@ -553,51 +553,6 @@ export default function Operations() {
 
   return (
     <div className="space-y-6">
-      {/* Header mejorado */}
-      <div className="flex items-center justify-end">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-xl p-1">
-            <button
-              onClick={() => setView('table')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 inline-flex items-center gap-2 ${
-                view === 'table'
-                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-              }`}
-            >
-              <Table className="w-4 h-4" />
-              Tabla
-            </button>
-            <button
-              onClick={() => setView('cards')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 inline-flex items-center gap-2 ${
-                view === 'cards'
-                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-              }`}
-            >
-              <Grid className="w-4 h-4" />
-              Tarjetas
-            </button>
-          </div>
-          <select
-            className="px-4 py-2.5 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-xl text-sm text-zinc-900 dark:text-white border border-zinc-200/50 dark:border-zinc-700/50 focus:border-violet-500 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:focus:ring-violet-500/20 transition-all duration-200"
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-          >
-            <option value="7d">Últimos 7 días</option>
-            <option value="30d">Últimos 30 días</option>
-            <option value="90d">Últimos 90 días</option>
-            <option value="1y">Último año</option>
-            <option value="all">Todo</option>
-          </select>
-          <button className="px-4 py-2.5 text-sm font-medium text-white bg-violet-500 rounded-xl hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-lg hover:shadow-violet-500/10">
-            <PieChart className="w-4 h-4" />
-            Nueva Operación
-          </button>
-        </div>
-      </div>
-
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white/95 dark:bg-[#12121A]/95 backdrop-blur-xl rounded-xl p-6 shadow-sm border border-zinc-200/50 dark:border-zinc-700/50 hover:shadow-lg hover:shadow-violet-100/20 dark:hover:shadow-violet-900/20 transition-all duration-300">
@@ -689,6 +644,51 @@ export default function Operations() {
           <div className="h-64 flex items-center justify-center text-zinc-500 dark:text-zinc-400 bg-zinc-50/50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200/50 dark:border-zinc-700/50">
             Gráfico de rendimiento (próximamente)
           </div>
+        </div>
+      </div>
+
+      {/* Controles principales */}
+      <div className="flex items-center justify-end mb-4">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-xl p-1">
+            <button
+              onClick={() => setView('table')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 inline-flex items-center gap-2 ${
+                view === 'table'
+                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              <Table className="w-4 h-4" />
+              Tabla
+            </button>
+            <button
+              onClick={() => setView('cards')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 inline-flex items-center gap-2 ${
+                view === 'cards'
+                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              <Grid className="w-4 h-4" />
+              Tarjetas
+            </button>
+          </div>
+          <select
+            className="px-4 py-2.5 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-xl text-sm text-zinc-900 dark:text-white border border-zinc-200/50 dark:border-zinc-700/50 focus:border-violet-500 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:focus:ring-violet-500/20 transition-all duration-200"
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+          >
+            <option value="7d">Últimos 7 días</option>
+            <option value="30d">Últimos 30 días</option>
+            <option value="90d">Últimos 90 días</option>
+            <option value="1y">Último año</option>
+            <option value="all">Todo</option>
+          </select>
+          <button className="px-4 py-2.5 text-sm font-medium text-white bg-violet-500 rounded-xl hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-lg hover:shadow-violet-500/10">
+            <PieChart className="w-4 h-4" />
+            Nueva Operación
+          </button>
         </div>
       </div>
 
