@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   ChevronDown,
@@ -19,7 +19,13 @@ export default function NewOperation() {
   const [selectedPair, setSelectedPair] = useState('BTC/USDT');
   const [marketType, setMarketType] = useState<'spot' | 'futures'>('spot');
   const [selectedSubAccounts, setSelectedSubAccounts] = useState<string[]>([]);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   
+  // Detectar el tema cuando el componente se monta (client-side)
+  useEffect(() => {
+    setTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+  }, []);
+
   // Datos de ejemplo - En producción vendrían de una API
   const availablePairs = [
     'BTC/USDT',
@@ -152,7 +158,7 @@ export default function NewOperation() {
           <div className="lg:col-span-3 bg-white dark:bg-zinc-800 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-700 p-4">
             <TradingViewChart 
               symbol={selectedPair.replace('/', '')} 
-              theme={document.documentElement.classList.contains('dark') ? 'dark' : 'light'} 
+              theme={theme}
             />
           </div>
 
