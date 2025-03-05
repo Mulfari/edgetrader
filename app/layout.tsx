@@ -100,32 +100,33 @@ export default function RootLayout({
 
   return (
     <html lang="es">
-      <body className="min-h-screen bg-zinc-50/50 dark:bg-[#0A0A0F]">
+      <body className="min-h-screen bg-gradient-to-br from-zinc-50/50 via-white/50 to-zinc-100/50 dark:from-[#0A0A0F] dark:via-[#12121A] dark:to-[#0A0A0F]">
         <ThemeProvider>
           {!isPublicPage && (
             <>
               {/* Mobile menu overlay */}
               {isMobileMenuOpen && (
                 <div 
-                  className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden animate-in fade-in-50 duration-300"
+                  className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden animate-in fade-in-50 duration-300"
                   onClick={() => setIsMobileMenuOpen(false)}
                 />
               )}
 
               {/* Sidebar */}
               <div className={`
-                fixed top-0 left-0 z-50 h-full w-64 bg-white/95 dark:bg-[#12121A]
-                border-r border-zinc-200 dark:border-zinc-800/60
+                fixed top-0 left-0 z-50 h-full w-64
+                bg-white/95 dark:bg-[#12121A]/95
+                border-r border-zinc-200/50 dark:border-zinc-800/40
                 transform transition-all duration-500 ease-in-out backdrop-blur-xl
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-                shadow-xl shadow-zinc-200/50 dark:shadow-zinc-900/50
+                shadow-[0_0_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)]
               `}>
                 <div className="flex flex-col h-full">
-                  <div className="h-20 px-6 flex items-center border-b border-zinc-200 dark:border-zinc-800/60">
+                  <div className="h-20 px-6 flex items-center border-b border-zinc-200/50 dark:border-zinc-800/40">
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl blur-lg opacity-50"></div>
-                        <div className="relative bg-gradient-to-r from-violet-500 to-indigo-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg">
+                        <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
+                        <div className="relative bg-gradient-to-br from-violet-500 to-indigo-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg">
                           <BarChart3 className="h-6 w-6 text-white" />
                         </div>
                       </div>
@@ -150,8 +151,8 @@ export default function RootLayout({
                             flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
                             transition-all duration-300 transform hover:scale-[1.02]
                             ${pathname === item.href
-                              ? 'bg-gradient-to-r from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300'
-                              : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-r hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
+                              ? 'bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300 shadow-[0_2px_8px_-3px_rgba(139,92,246,0.3)] dark:shadow-[0_2px_8px_-3px_rgba(139,92,246,0.2)]'
+                              : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-br hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
                             }
                           `}
                         >
@@ -191,10 +192,10 @@ export default function RootLayout({
                 {/* Top navigation */}
                 <header className={`
                   sticky top-0 z-30 
-                  bg-white/95 dark:bg-[#12121A]
-                  border-b border-zinc-200 dark:border-zinc-800/60
+                  bg-white/95 dark:bg-[#12121A]/95
+                  border-b border-zinc-200/50 dark:border-zinc-800/40
                   backdrop-blur-xl transition-all duration-300
-                  ${isScrolled ? 'shadow-lg shadow-zinc-200/20 dark:shadow-zinc-900/30' : ''}
+                  ${isScrolled ? 'shadow-[0_8px_30px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_8px_30px_-15px_rgba(0,0,0,0.5)]' : ''}
                 `}>
                   <div className="flex items-center justify-between h-20 px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center flex-1 gap-4">
