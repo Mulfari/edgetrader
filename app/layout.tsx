@@ -8,8 +8,6 @@ import {
   Bell,
   Menu,
   User,
-  ChevronLeft,
-  ChevronRight,
   Home,
   LineChart,
   Wallet
@@ -54,7 +52,6 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [lastUpdate] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const router = useRouter();
