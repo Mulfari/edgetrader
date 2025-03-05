@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import {
   LineChart,
   TrendingUp,
@@ -10,7 +9,9 @@ import {
   BarChart,
   Clock,
   Tag,
+  Filter,
   Search,
+  RefreshCw,
   Table,
   Grid,
   Info,
@@ -524,12 +525,12 @@ export default function Operations() {
   );
 
   const ActionBar = () => (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-4 bg-white/95 dark:bg-[#12121A]/95 rounded-xl shadow-[0_8px_30px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_8px_30px_-15px_rgba(0,0,0,0.5)] border border-zinc-200/50 dark:border-zinc-800/40 backdrop-blur-xl flex items-center gap-4 z-50 transition-all duration-300 transform hover:scale-[1.02]">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-4 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-700 flex items-center gap-4 z-50 transition-all duration-300 transform">
       <span className="text-sm font-medium text-zinc-900 dark:text-white flex items-center gap-2">
         <div className="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></div>
         {selectedOperations.length} {selectedOperations.length === 1 ? 'operación' : 'operaciones'} seleccionada{selectedOperations.length === 1 ? '' : 's'}
       </span>
-      <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800"></div>
+      <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-700"></div>
       <button className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors flex items-center gap-2">
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -549,63 +550,6 @@ export default function Operations() {
     </div>
   );
 
-  // Filtrar operaciones basado en los filtros actuales
-  const filteredOperations = useMemo(() => {
-    return operations
-      .filter(op => {
-        // Filtrar por estado
-        if (filter !== 'all' && op.status !== filter) return false;
-        
-        // Filtrar por mercado
-        if (marketFilter !== 'all' && op.market !== marketFilter) return false;
-        
-        // Filtrar por búsqueda
-        if (searchTerm && !op.symbol.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-        
-        // Filtrar por etiquetas seleccionadas
-        if (selectedTags.length > 0 && !op.tags?.some(tag => selectedTags.includes(tag))) return false;
-        
-        return true;
-      })
-      .sort((a, b) => {
-        switch (sortBy) {
-          case 'date':
-            return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-          case 'profit':
-            return (b.profit || 0) - (a.profit || 0);
-          case 'amount':
-            return b.amount - a.amount;
-          default:
-            return 0;
-        }
-      });
-  }, [operations, filter, marketFilter, searchTerm, selectedTags, sortBy]);
-
-  // Filtrar operaciones por rango de fecha
-  const dateFilteredOperations = useMemo(() => {
-    const now = new Date();
-    const ranges = {
-      '7d': new Date(now.setDate(now.getDate() - 7)),
-      '30d': new Date(now.setDate(now.getDate() - 30)),
-      '90d': new Date(now.setDate(now.getDate() - 90)),
-      '1y': new Date(now.setFullYear(now.getFullYear() - 1)),
-      'all': new Date(0)
-    };
-
-    return filteredOperations.filter(op => 
-      new Date(op.timestamp) >= ranges[dateRange as keyof typeof ranges]
-    );
-  }, [filteredOperations, dateRange]);
-
-  // Manejar selección de etiquetas
-  const handleTagSelect = (tag: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) 
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
-    );
-  };
-
   return (
     <div className="space-y-6">
       {/* Header mejorado */}
@@ -621,82 +565,6 @@ export default function Operations() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* Filtros y búsqueda */}
-          <div className="flex items-center gap-2">
-            <select
-              className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            >
-              <option value="all">Todos los estados</option>
-              <option value="completed">Completadas</option>
-              <option value="pending">Pendientes</option>
-              <option value="cancelled">Canceladas</option>
-            </select>
-            <select
-              className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500"
-              value={marketFilter}
-              onChange={(e) => setMarketFilter(e.target.value as 'all' | 'spot' | 'futures')}
-            >
-              <option value="all">Todos los mercados</option>
-              <option value="spot">Spot</option>
-              <option value="futures">Futuros</option>
-            </select>
-            <select
-              className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="date">Fecha</option>
-              <option value="profit">Beneficio</option>
-              <option value="amount">Cantidad</option>
-            </select>
-          </div>
-          
-          {/* Búsqueda */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Buscar operaciones..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500 w-64"
-            />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-          </div>
-
-          {/* Selector de rango de fecha */}
-          <select
-            className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500"
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-          >
-            <option value="7d">Últimos 7 días</option>
-            <option value="30d">Últimos 30 días</option>
-            <option value="90d">Últimos 90 días</option>
-            <option value="1y">Último año</option>
-            <option value="all">Todo</option>
-          </select>
-
-          {/* Filtro de etiquetas */}
-          <div className="flex flex-wrap gap-2">
-            {Array.from(new Set(operations.flatMap(op => op.tags || []))).map(tag => (
-              <button
-                key={tag}
-                onClick={() => handleTagSelect(tag)}
-                className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
-                  selectedTags.includes(tag)
-                    ? 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400'
-                    : 'bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300'
-                }`}
-              >
-                <Tag className="w-3 h-3 mr-2" />
-                {tag}
-              </button>
-            ))}
-          </div>
-
-          {/* Vista y nueva operación */}
           <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1">
             <button
               onClick={() => setView('table')}
@@ -721,20 +589,27 @@ export default function Operations() {
               Tarjetas
             </button>
           </div>
-
-          <Link
-            href="/operations/new"
-            className="px-4 py-2 text-sm font-medium text-white bg-violet-500 rounded-lg hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors flex items-center gap-2"
+          <select
+            className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500"
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
           >
+            <option value="7d">Últimos 7 días</option>
+            <option value="30d">Últimos 30 días</option>
+            <option value="90d">Últimos 90 días</option>
+            <option value="1y">Último año</option>
+            <option value="all">Todo</option>
+          </select>
+          <button className="px-4 py-2 text-sm font-medium text-white bg-violet-500 rounded-lg hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors flex items-center gap-2">
             <PieChart className="w-4 h-4" />
             Nueva Operación
-          </Link>
+          </button>
         </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-[#12121A] rounded-xl p-4 shadow-sm border border-zinc-200/50 dark:border-zinc-800/60">
+        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Total Operaciones</p>
@@ -751,7 +626,7 @@ export default function Operations() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#12121A] rounded-xl p-4 shadow-sm border border-zinc-200/50 dark:border-zinc-800/60">
+        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Beneficio Total</p>
@@ -768,7 +643,7 @@ export default function Operations() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#12121A] rounded-xl p-4 shadow-sm border border-zinc-200/50 dark:border-zinc-800/60">
+        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Tasa de Éxito</p>
@@ -785,7 +660,7 @@ export default function Operations() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#12121A] rounded-xl p-4 shadow-sm border border-zinc-200/50 dark:border-zinc-800/60">
+        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Volumen Mensual</p>
@@ -805,7 +680,7 @@ export default function Operations() {
 
       {/* Gráficos y Análisis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-[#12121A] rounded-xl p-4 shadow-sm border border-zinc-200/50 dark:border-zinc-800/60">
+        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
           <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">
             Distribución por Par
           </h3>
@@ -814,7 +689,7 @@ export default function Operations() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#12121A] rounded-xl p-4 shadow-sm border border-zinc-200/50 dark:border-zinc-800/60">
+        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
           <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">
             Rendimiento Histórico
           </h3>
@@ -824,17 +699,113 @@ export default function Operations() {
         </div>
       </div>
 
-      {/* Renderizado condicional de vista */}
-      {view === 'cards' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {dateFilteredOperations.map(operation => renderOperationCard(operation))}
+      {/* Filters mejorados */}
+      <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm">
+        <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+          <h3 className="text-lg font-medium text-zinc-900 dark:text-white">
+            Operaciones
+          </h3>
         </div>
-      ) : (
-        <div className="bg-white/95 dark:bg-[#12121A]/95 rounded-xl shadow-[0_4px_20px_-5px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-5px_rgba(0,0,0,0.3)] border border-zinc-200/50 dark:border-zinc-800/40 backdrop-blur-sm">
+        <div className="p-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex-1 min-w-[200px]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar por símbolo, tipo, estado..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0 focus:ring-2 focus:ring-violet-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+              <select
+                className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0 focus:ring-2 focus:ring-violet-500"
+                value={marketFilter}
+                onChange={(e) => setMarketFilter(e.target.value as 'all' | 'spot' | 'futures')}
+              >
+                <option value="all">Todos los mercados</option>
+                <option value="spot">Solo Spot</option>
+                <option value="futures">Solo Futuros</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+              <select
+                className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0 focus:ring-2 focus:ring-violet-500"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              >
+                <option value="all">Todas las operaciones</option>
+                <option value="completed">Completadas</option>
+                <option value="pending">Pendientes</option>
+                <option value="cancelled">Canceladas</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+              <select
+                className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0 focus:ring-2 focus:ring-violet-500"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="date">Ordenar por fecha</option>
+                <option value="amount">Ordenar por monto</option>
+                <option value="profit">Ordenar por beneficio</option>
+              </select>
+            </div>
+
+            <button 
+              onClick={() => {
+                setFilter('all');
+                setSortBy('date');
+                setSearchTerm('');
+                setSelectedTags([]);
+              }}
+              className="px-3 py-2 text-sm text-violet-500 hover:text-violet-600 font-medium flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Limpiar filtros
+            </button>
+          </div>
+
+          {/* Tags populares */}
+          <div className="mt-4 flex flex-wrap gap-2">
+            {['swing', 'scalping', 'position', 'day-trade', 'spot'].map((tag) => (
+              <button
+                key={tag}
+                onClick={() => {
+                  if (selectedTags.includes(tag)) {
+                    setSelectedTags(selectedTags.filter(t => t !== tag));
+                  } else {
+                    setSelectedTags([...selectedTags, tag]);
+                  }
+                }}
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                  selectedTags.includes(tag)
+                    ? 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400'
+                    : 'bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600'
+                }`}
+              >
+                <Tag className="w-3 h-3" />
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Vista condicional: Tabla o Tarjetas */}
+        {view === 'table' ? (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-zinc-200/50 dark:divide-zinc-800/40">
+            <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
               <thead>
-                <tr className="bg-gradient-to-br from-zinc-50/80 via-white/80 to-zinc-100/80 dark:from-[#12121A]/80 dark:via-[#1A1A23]/80 dark:to-[#12121A]/80 backdrop-blur-sm">
+                <tr className="bg-gradient-to-r from-zinc-50/80 to-zinc-100/80 dark:from-zinc-800/80 dark:to-zinc-900/80 backdrop-blur-sm sticky top-0 z-10">
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider w-8">
                     <input
                       type="checkbox"
@@ -885,7 +856,7 @@ export default function Operations() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white/95 dark:bg-[#12121A]/95 divide-y divide-zinc-200/50 dark:divide-zinc-800/40">
+              <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, index) => (
                     <tr key={index} className="animate-pulse">
@@ -894,7 +865,7 @@ export default function Operations() {
                       </td>
                     </tr>
                   ))
-                ) : dateFilteredOperations.length === 0 ? (
+                ) : operations.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center justify-center gap-3">
@@ -911,17 +882,49 @@ export default function Operations() {
                     </td>
                   </tr>
                 ) : (
-                  dateFilteredOperations.map(renderTableRow)
+                  operations.map(renderTableRow)
                 )}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
-
-      {selectedOperations.length > 0 && (
-        <ActionBar />
-      )}
+        ) : (
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="animate-pulse bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-sm">
+                  <div className="h-6 bg-zinc-200 dark:bg-zinc-700 rounded w-1/3 mb-4"></div>
+                  <div className="h-8 bg-zinc-200 dark:bg-zinc-700 rounded w-2/3 mb-6"></div>
+                  <div className="space-y-3">
+                    <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-full"></div>
+                    <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-5/6"></div>
+                  </div>
+                </div>
+              ))
+            ) : operations.length === 0 ? (
+              <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
+                <div className="p-4 bg-zinc-100 dark:bg-zinc-700 rounded-full">
+                  <Search className="w-8 h-8 text-zinc-400 dark:text-zinc-500" />
+                </div>
+                <h3 className="text-lg font-medium text-zinc-900 dark:text-white">
+                  No hay operaciones para mostrar
+                </h3>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center max-w-md">
+                  Intenta ajustar los filtros o crea una nueva operación para empezar
+                </p>
+                <button className="mt-2 px-4 py-2 text-sm font-medium text-violet-500 hover:text-violet-600 bg-violet-50 dark:bg-violet-900/10 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/20 transition-colors">
+                  Crear nueva operación
+                </button>
+              </div>
+            ) : (
+              operations.map(renderOperationCard)
+            )}
+          </div>
+        )}
+        
+        {selectedOperations.length > 0 && (
+          <ActionBar />
+        )}
+      </div>
     </div>
   );
 }
