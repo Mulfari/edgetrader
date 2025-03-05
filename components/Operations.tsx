@@ -162,18 +162,30 @@ export default function Operations() {
   }, []);
 
   const renderOperationCard = (operation: Operation) => (
-    <div key={operation.id} className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+    <div 
+      key={operation.id} 
+      className="group bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 border border-transparent hover:border-violet-200 dark:hover:border-violet-800/30 relative overflow-hidden"
+    >
+      {/* Indicador de borde izquierdo */}
+      <div className={`absolute left-0 top-0 w-1 h-full ${
+        operation.profit && operation.profit > 0
+          ? 'bg-emerald-500'
+          : operation.profit && operation.profit < 0
+          ? 'bg-rose-500'
+          : 'bg-yellow-500'
+      } opacity-70 group-hover:opacity-100 transition-opacity`} />
+
+      <div className="flex items-start justify-between mb-6">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
               operation.type === 'buy' 
                 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
                 : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
             }`}>
               {operation.type === 'buy' ? 'Compra' : 'Venta'}
             </span>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
               operation.status === 'completed'
                 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
                 : operation.status === 'pending'
@@ -184,77 +196,100 @@ export default function Operations() {
                operation.status === 'pending' ? 'Pendiente' : 'Cancelada'}
             </span>
           </div>
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
-            {operation.symbol}
-          </h3>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
+              {operation.symbol}
+            </h3>
+            <div className="flex items-center gap-1 text-sm text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-700/50 px-2 py-0.5 rounded">
+              <ExternalLink className="w-3.5 h-3.5" />
+              {operation.exchange}
+            </div>
+          </div>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5" />
             {new Date(operation.timestamp).toLocaleString()}
           </p>
         </div>
-        <div className="flex flex-col items-end">
-          <div className="flex items-center gap-1 text-sm text-zinc-600 dark:text-zinc-300">
-            <ExternalLink className="w-4 h-4" />
-            {operation.exchange}
-          </div>
-          {operation.profit !== undefined && (
-            <span className={`flex items-center mt-2 text-lg font-semibold ${
-              operation.profit >= 0
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : 'text-rose-600 dark:text-rose-400'
-            }`}>
+        {operation.profit !== undefined && (
+          <div className={`flex items-center gap-1 px-3 py-2 rounded-lg ${
+            operation.profit >= 0
+              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+              : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
+          }`}>
+            <span className="text-lg font-semibold">
               {operation.profit >= 0 ? '+' : '-'}${Math.abs(operation.profit).toLocaleString()}
-              {operation.profit >= 0 
-                ? <TrendingUp className="ml-1 h-4 w-4" />
-                : <TrendingDown className="ml-1 h-4 w-4" />
-              }
             </span>
-          )}
-        </div>
+            {operation.profit >= 0 
+              ? <TrendingUp className="h-5 w-5" />
+              : <TrendingDown className="h-5 w-5" />
+            }
+          </div>
+        )}
       </div>
       
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-2 gap-4 p-4 mb-4 bg-zinc-50 dark:bg-zinc-900/30 rounded-lg">
         <div>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Precio</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-1 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-500"></span>
+            Precio
+          </p>
           <p className="text-base font-medium text-zinc-900 dark:text-white">
             ${operation.price.toLocaleString()}
           </p>
         </div>
         <div>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Cantidad</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-1 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-500"></span>
+            Cantidad
+          </p>
           <p className="text-base font-medium text-zinc-900 dark:text-white">
             {operation.amount}
           </p>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="space-y-3">
         {operation.notes && (
-          <div className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+          <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm text-blue-800 dark:text-blue-300">
             <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
             <p>{operation.notes}</p>
           </div>
         )}
         {operation.tags && operation.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1.5">
             {operation.tags.map((tag) => (
-              <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300">
-                <Tag className="w-3 h-3 mr-1" />
+              <span 
+                key={tag} 
+                className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors cursor-pointer"
+              >
+                <Tag className="w-3 h-3 mr-1.5" />
                 {tag}
               </span>
             ))}
           </div>
         )}
         {operation.fee !== undefined && (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
             Comisión: ${operation.fee.toLocaleString()}
           </p>
         )}
       </div>
       
-      <button className="mt-4 w-full flex items-center justify-center px-4 py-2 text-sm font-medium text-violet-500 hover:text-violet-600 bg-violet-50 dark:bg-violet-900/10 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/20 transition-colors">
-        Ver detalles
-        <ChevronRight className="w-4 h-4 ml-1" />
-      </button>
+      <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-700/50 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button className="text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
+            Editar
+          </button>
+          <span className="text-zinc-300 dark:text-zinc-600">•</span>
+          <button className="text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
+            Duplicar
+          </button>
+        </div>
+        <button className="inline-flex items-center justify-center p-2 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-all group-hover:scale-105">
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 
