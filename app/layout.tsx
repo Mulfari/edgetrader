@@ -150,7 +150,7 @@ export default function RootLayout({
                   <div className="flex-1 overflow-y-auto py-4">
                     <nav className="px-2 space-y-1">
                       {menuItems.map((item) => (
-                        <Link 
+                      <Link 
                           key={item.href}
                           href={item.href} 
                           className={`
@@ -178,7 +178,7 @@ export default function RootLayout({
                           {!isSidebarCollapsed && (
                             <span className="transition-colors duration-200">{item.name}</span>
                           )}
-                        </Link>
+                      </Link>
                       ))}
                     </nav>
                   </div>
@@ -205,7 +205,7 @@ export default function RootLayout({
                       `} />
                       {!isSidebarCollapsed && (
                         <span className="group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-200">
-                          Cerrar Sesión
+                      Cerrar Sesión
                         </span>
                       )}
                     </button>
@@ -257,14 +257,14 @@ export default function RootLayout({
                                   <div className="absolute inset-0 h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping"></div>
                                 </div>
                                 <span className="font-medium text-emerald-700 dark:text-emerald-400">En línea</span>
-                              </div>
-                              {lastUpdate && (
-                                <>
+                          </div>
+                          {lastUpdate && (
+                            <>
                                   <span className="text-emerald-400/30 dark:text-emerald-600">•</span>
                                   <span className="text-emerald-600/70 dark:text-emerald-400/70">Actualizado {lastUpdate}</span>
-                                </>
-                              )}
-                            </div>
+                            </>
+                          )}
+                        </div>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-72">
                             <div className="p-4 space-y-4">
@@ -307,19 +307,19 @@ export default function RootLayout({
                       <div className="flex items-center gap-2">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
+                          <button
+                            type="button"
                               className="group relative p-2 rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
-                            >
-                              <span className="sr-only">Ver notificaciones</span>
-                              <div className="relative">
+                          >
+                            <span className="sr-only">Ver notificaciones</span>
+                            <div className="relative">
                                 <Bell className="h-5 w-5 transition-all duration-300 transform group-hover:scale-110" />
                                 <div className="absolute -top-1 -right-1 h-3 w-3">
                                   <div className="absolute inset-0 rounded-full bg-rose-500 animate-ping opacity-75"></div>
                                   <div className="relative rounded-full h-3 w-3 bg-rose-500 ring-2 ring-white dark:ring-zinc-900"></div>
                                 </div>
-                              </div>
-                            </button>
+                            </div>
+                          </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-96">
                             <div className="p-4 space-y-4">
@@ -331,8 +331,8 @@ export default function RootLayout({
                                 <Badge variant="outline" className="bg-gradient-to-r from-rose-500/10 to-pink-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20">
                                   3 nuevas
                                 </Badge>
-                              </div>
-                              
+                        </div>
+
                               <div className="space-y-3">
                                 <div className="group p-3 rounded-xl bg-gradient-to-r from-blue-500/5 to-violet-500/5 hover:from-blue-500/10 hover:to-violet-500/10 dark:from-blue-500/10 dark:to-violet-500/10 dark:hover:from-blue-500/20 dark:hover:to-violet-500/20 border border-blue-500/20 dark:border-blue-400/20 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer">
                                   <div className="flex items-start gap-3">
@@ -394,9 +394,9 @@ export default function RootLayout({
                                   <div className="h-full w-full rounded-[10px] bg-white dark:bg-zinc-900 flex items-center justify-center overflow-hidden">
                                     <User className="h-5 w-5 text-violet-500 dark:text-violet-400 transform transition-transform duration-300 group-hover:scale-110" />
                                   </div>
-                                </div>
                               </div>
-                              <div className="hidden sm:block text-left">
+                            </div>
+                            <div className="hidden sm:block text-left">
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm font-medium text-zinc-900 dark:text-white">John Doe</span>
                                   <Badge variant="outline" className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20">
