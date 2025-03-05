@@ -16,8 +16,14 @@ import {
   Grid,
   Info,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Star,
+  Bell,
+  AlertCircle,
+  HelpCircle
 } from "lucide-react";
+import { Tooltip } from "./ui/tooltip";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Operation {
   id: string;
@@ -32,6 +38,8 @@ interface Operation {
   notes?: string;
   exchange?: string;
   fee?: number;
+  isFavorite?: boolean;
+  hasNotification?: boolean;
 }
 
 interface DashboardStats {
@@ -45,6 +53,9 @@ interface DashboardStats {
   averageProfit: number;
   totalFees: number;
   profitableSymbols: { symbol: string; profit: number }[];
+  winningStreak: number;
+  bestDay: { date: string; profit: number };
+  riskRewardRatio: number;
 }
 
 export default function Operations() {
@@ -57,6 +68,7 @@ export default function Operations() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [view, setView] = useState<'table' | 'cards'>('table');
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     // Datos de ejemplo mejorados
@@ -151,7 +163,10 @@ export default function Operations() {
         { symbol: 'BTC/USDT', profit: 2500 },
         { symbol: 'ETH/USDT', profit: 1200 },
         { symbol: 'SOL/USDT', profit: 800 }
-      ]
+      ],
+      winningStreak: 5,
+      bestDay: { date: '2024-03-20', profit: 1200 },
+      riskRewardRatio: 1.5
     };
 
     setTimeout(() => {
@@ -161,53 +176,87 @@ export default function Operations() {
     }, 1000);
   }, []);
 
+  const toggleFavorite = (operationId: string) => {
+    setOperations(operations.map(op => 
+      op.id === operationId ? { ...op, isFavorite: !op.isFavorite } : op
+    ));
+  };
+
   const renderOperationCard = (operation: Operation) => (
-    <div key={operation.id} className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      key={operation.id}
+      className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
+    >
       <div className="flex items-start justify-between mb-4">
-        <div>
+        <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              operation.type === 'buy' 
-                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
-            }`}>
-              {operation.type === 'buy' ? 'Compra' : 'Venta'}
-            </span>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              operation.status === 'completed'
-                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                : operation.status === 'pending'
-                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-            }`}>
-              {operation.status === 'completed' ? 'Completada' : 
-               operation.status === 'pending' ? 'Pendiente' : 'Cancelada'}
-            </span>
+            <Tooltip content={`Operación de ${operation.type === 'buy' ? 'compra' : 'venta'}`}>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                operation.type === 'buy' 
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                  : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
+              }`}>
+                {operation.type === 'buy' ? 'Compra' : 'Venta'}
+              </span>
+            </Tooltip>
+            <Tooltip content={`Estado: ${operation.status}`}>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                operation.status === 'completed'
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                  : operation.status === 'pending'
+                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                  : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+              }`}>
+                {operation.status === 'completed' ? 'Completada' : 
+                 operation.status === 'pending' ? 'Pendiente' : 'Cancelada'}
+              </span>
+            </Tooltip>
           </div>
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
-            {operation.symbol}
-          </h3>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            {new Date(operation.timestamp).toLocaleString()}
-          </p>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
+              {operation.symbol}
+            </h3>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFavorite(operation.id);
+              }}
+              className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-full transition-colors"
+            >
+              <Star
+                className={`w-4 h-4 ${
+                  operation.isFavorite
+                    ? 'text-yellow-400 fill-yellow-400'
+                    : 'text-zinc-400 dark:text-zinc-500'
+                }`}
+              />
+            </button>
+          </div>
         </div>
         <div className="flex flex-col items-end">
-          <div className="flex items-center gap-1 text-sm text-zinc-600 dark:text-zinc-300">
-            <ExternalLink className="w-4 h-4" />
-            {operation.exchange}
-          </div>
+          <Tooltip content={`Exchange: ${operation.exchange}`}>
+            <div className="flex items-center gap-1 text-sm text-zinc-600 dark:text-zinc-300">
+              <ExternalLink className="w-4 h-4" />
+              {operation.exchange}
+            </div>
+          </Tooltip>
           {operation.profit !== undefined && (
-            <span className={`flex items-center mt-2 text-lg font-semibold ${
-              operation.profit >= 0
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : 'text-rose-600 dark:text-rose-400'
-            }`}>
-              {operation.profit >= 0 ? '+' : '-'}${Math.abs(operation.profit).toLocaleString()}
-              {operation.profit >= 0 
-                ? <TrendingUp className="ml-1 h-4 w-4" />
-                : <TrendingDown className="ml-1 h-4 w-4" />
-              }
-            </span>
+            <Tooltip content={`Beneficio: ${operation.profit >= 0 ? 'Ganancia' : 'Pérdida'}`}>
+              <span className={`flex items-center mt-2 text-lg font-semibold ${
+                operation.profit >= 0
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-rose-600 dark:text-rose-400'
+              }`}>
+                {operation.profit >= 0 ? '+' : '-'}${Math.abs(operation.profit).toLocaleString()}
+                {operation.profit >= 0 
+                  ? <TrendingUp className="ml-1 h-4 w-4" />
+                  : <TrendingDown className="ml-1 h-4 w-4" />
+                }
+              </span>
+            </Tooltip>
           )}
         </div>
       </div>
@@ -255,22 +304,35 @@ export default function Operations() {
         Ver detalles
         <ChevronRight className="w-4 h-4 ml-1" />
       </button>
-    </div>
+    </motion.div>
   );
 
   return (
     <div className="space-y-6">
-      {/* Header mejorado */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
             Dashboard de Operaciones
+            <Tooltip content="Vista general del rendimiento y operaciones">
+              <HelpCircle className="w-5 h-5 text-zinc-400" />
+            </Tooltip>
           </h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Vista general del rendimiento y operaciones
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Tooltip content="Notificaciones">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+            >
+              <Bell className="w-5 h-5" />
+              {operations.some(op => op.hasNotification) && (
+                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full" />
+              )}
+            </button>
+          </Tooltip>
           <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1">
             <button
               onClick={() => setView('table')}
@@ -313,12 +375,20 @@ export default function Operations() {
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid Mejorado */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm"
+        >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">Total Operaciones</p>
+              <Tooltip content="Número total de operaciones realizadas">
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                  Total Operaciones
+                  <HelpCircle className="w-4 h-4" />
+                </p>
+              </Tooltip>
               <p className="text-2xl font-bold text-zinc-900 dark:text-white">
                 {isLoading ? '-' : stats?.totalOperations}
               </p>
@@ -330,7 +400,7 @@ export default function Operations() {
               <LineChart className="w-6 h-6 text-violet-500" />
             </div>
           </div>
-        </div>
+        </motion.div>
 
         <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
@@ -384,25 +454,57 @@ export default function Operations() {
         </div>
       </div>
 
-      {/* Gráficos y Análisis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
-          <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">
-            Distribución por Par
+      {/* Nuevas estadísticas detalladas */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm"
+        >
+          <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+            Racha Ganadora
+            <Tooltip content="Número consecutivo de operaciones rentables">
+              <HelpCircle className="w-4 h-4 text-zinc-400" />
+            </Tooltip>
           </h3>
-          <div className="h-64 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
-            Gráfico de distribución por par (próximamente)
-          </div>
-        </div>
+          <p className="text-3xl font-bold text-emerald-500">
+            {stats?.winningStreak || 0}
+          </p>
+          <p className="text-sm text-zinc-500 mt-2">operaciones consecutivas</p>
+        </motion.div>
 
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
-          <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">
-            Rendimiento Histórico
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm"
+        >
+          <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+            Mejor Día
+            <Tooltip content="Día con mayor beneficio">
+              <HelpCircle className="w-4 h-4 text-zinc-400" />
+            </Tooltip>
           </h3>
-          <div className="h-64 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
-            Gráfico de rendimiento (próximamente)
-          </div>
-        </div>
+          <p className="text-3xl font-bold text-emerald-500">
+            ${stats?.bestDay?.profit.toLocaleString() || 0}
+          </p>
+          <p className="text-sm text-zinc-500 mt-2">
+            {stats?.bestDay?.date || '-'}
+          </p>
+        </motion.div>
+
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm"
+        >
+          <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+            Ratio Riesgo/Beneficio
+            <Tooltip content="Relación entre ganancias y pérdidas">
+              <HelpCircle className="w-4 h-4 text-zinc-400" />
+            </Tooltip>
+          </h3>
+          <p className="text-3xl font-bold text-blue-500">
+            {stats?.riskRewardRatio?.toFixed(2) || '0.00'}
+          </p>
+          <p className="text-sm text-zinc-500 mt-2">R/R promedio</p>
+        </motion.div>
       </div>
 
       {/* Filters mejorados */}

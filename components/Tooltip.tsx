@@ -1,5 +1,3 @@
-"use client"
-
 import { ReactNode, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -52,4 +50,4 @@ export function Tooltip({ children, content, position = 'top' }: TooltipProps) {
       </AnimatePresence>
     </div>
   );
-}
+} 
