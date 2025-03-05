@@ -114,7 +114,8 @@ export default function RootLayout({
 
               {/* Sidebar */}
               <div className={`
-                fixed top-0 left-0 z-50 h-full bg-white/80 dark:bg-zinc-800/80
+                fixed top-0 left-0 z-50 h-full 
+                bg-white/80 dark:bg-zinc-800/80
                 border-r border-zinc-200 dark:border-zinc-700/50
                 transform transition-all duration-500 ease-in-out backdrop-blur-xl
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -122,26 +123,45 @@ export default function RootLayout({
                 shadow-xl shadow-zinc-200/50 dark:shadow-zinc-900/50
               `}>
                 <div className="flex flex-col h-full">
+                  {/* Logo y botón de colapso */}
                   <div className="p-4 border-b border-zinc-200 dark:border-zinc-700/50">
                     <button
                       onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                       className="w-full flex items-center gap-3 group cursor-pointer"
                     >
-                      <div className="bg-gradient-to-r from-violet-500 to-indigo-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-violet-500/25 transition-all duration-300 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-                        <BarChart3 className={`h-6 w-6 text-white transition-all duration-500 ${isSidebarCollapsed ? 'rotate-180' : 'rotate-0'}`} />
+                      <div className="relative bg-gradient-to-r from-violet-500 to-indigo-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-violet-500/25 transition-all duration-300">
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 rounded-xl" />
+                        <BarChart3 
+                          className={`
+                            h-6 w-6 text-white 
+                            transition-all duration-500 ease-in-out
+                            transform-gpu
+                            ${isSidebarCollapsed ? 'scale-x-[-1]' : 'scale-x-1'}
+                          `} 
+                        />
                       </div>
                       {!isSidebarCollapsed && (
                         <div className="flex items-center justify-between flex-1 animate-in fade-in-50 duration-500">
                           <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
                             TradingDash
                           </h1>
-                          <ChevronLeft className={`h-5 w-5 text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-600 dark:group-hover:text-zinc-400 transition-all duration-500 transform ${isSidebarCollapsed ? 'rotate-180' : 'rotate-0'}`} />
+                          <ChevronLeft 
+                            className={`
+                              h-5 w-5 text-zinc-400 
+                              group-hover:text-zinc-600 
+                              dark:text-zinc-600 
+                              dark:group-hover:text-zinc-400 
+                              transition-all duration-500 
+                              transform-gpu
+                              ${isSidebarCollapsed ? 'rotate-180' : 'rotate-0'}
+                            `} 
+                          />
                         </div>
                       )}
                     </button>
                   </div>
                   
+                  {/* Menú de navegación */}
                   <div className="flex-1 overflow-y-auto py-4">
                     <nav className="px-2 space-y-1">
                       {menuItems.map((item) => (
@@ -149,22 +169,41 @@ export default function RootLayout({
                           key={item.href}
                           href={item.href}
                           title={isSidebarCollapsed ? item.name : undefined}
-                          className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-xl ${
-                            pathname === item.href
+                          className={`
+                            flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
+                            transition-all duration-300 relative
+                            ${pathname === item.href
                               ? 'bg-gradient-to-r from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300'
                               : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-r hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
-                          } group transition-all duration-300 relative`}
+                            }
+                            group
+                          `}
                         >
-                          <item.icon className={`${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 ${
-                            pathname === item.href
-                              ? 'text-violet-500 dark:text-violet-400'
-                              : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
-                          } transition-all duration-300 transform group-hover:scale-110`} />
+                          <item.icon 
+                            className={`
+                              ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} 
+                              h-5 w-5
+                              transition-all duration-300 transform-gpu
+                              group-hover:scale-110
+                              ${pathname === item.href
+                                ? 'text-violet-500 dark:text-violet-400'
+                                : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
+                              }
+                            `} 
+                          />
                           {!isSidebarCollapsed && (
                             <span className="transition-all duration-300">{item.name}</span>
                           )}
                           {isSidebarCollapsed && (
-                            <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap">
+                            <div className="
+                              absolute left-full ml-2 px-2 py-1 
+                              bg-zinc-800 text-white text-xs rounded-md
+                              opacity-0 group-hover:opacity-100 
+                              transition-all duration-300 
+                              pointer-events-none whitespace-nowrap
+                              translate-x-[-10px] group-hover:translate-x-0
+                              z-50
+                            ">
                               {item.name}
                             </div>
                           )}
@@ -173,20 +212,43 @@ export default function RootLayout({
                     </nav>
                   </div>
                   
+                  {/* Botón de cerrar sesión */}
                   <div className="p-4 border-t border-zinc-200 dark:border-zinc-700/50">
                     <button 
                       onClick={handleLogout}
                       title={isSidebarCollapsed ? "Cerrar Sesión" : undefined}
-                      className="flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-xl text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10 group transition-all duration-300 relative"
+                      className="
+                        flex items-center w-full px-3 py-2.5 
+                        text-sm font-medium rounded-xl 
+                        text-gray-700 dark:text-blue-300/70 
+                        hover:bg-rose-500/5 dark:hover:bg-rose-500/10 
+                        group transition-all duration-300 relative
+                      "
                     >
-                      <LogOut className={`${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 text-gray-400 dark:text-blue-400/50 group-hover:text-rose-500 dark:group-hover:text-rose-400 transition-all duration-300 transform group-hover:scale-110`} />
+                      <LogOut 
+                        className={`
+                          ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} 
+                          h-5 w-5 text-gray-400 dark:text-blue-400/50 
+                          group-hover:text-rose-500 dark:group-hover:text-rose-400 
+                          transition-all duration-300 transform-gpu
+                          group-hover:scale-110
+                        `} 
+                      />
                       {!isSidebarCollapsed && (
                         <span className="group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-300">
                           Cerrar Sesión
                         </span>
                       )}
                       {isSidebarCollapsed && (
-                        <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap">
+                        <div className="
+                          absolute left-full ml-2 px-2 py-1 
+                          bg-zinc-800 text-white text-xs rounded-md 
+                          opacity-0 group-hover:opacity-100 
+                          transition-all duration-300 
+                          pointer-events-none whitespace-nowrap
+                          translate-x-[-10px] group-hover:translate-x-0
+                          z-50
+                        ">
                           Cerrar Sesión
                         </div>
                       )}
@@ -197,7 +259,8 @@ export default function RootLayout({
 
               {/* Main content with navigation */}
               <div className={`
-                transition-all duration-300
+                min-h-screen
+                transition-all duration-500 ease-in-out
                 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}
               `}>
                 {/* Top navigation */}
@@ -205,19 +268,28 @@ export default function RootLayout({
                   sticky top-0 z-30 
                   bg-white/80 dark:bg-zinc-900/80 
                   border-b border-zinc-200 dark:border-zinc-800 
-                  backdrop-blur-xl transition-all duration-200
-                  ${isScrolled ? 'shadow-md' : ''}
+                  backdrop-blur-xl
+                  transition-all duration-300
+                  ${isScrolled ? 'shadow-lg shadow-zinc-200/20 dark:shadow-zinc-900/30' : ''}
                 `}>
                   <nav className="h-16 px-4 sm:px-6 lg:px-8">
                     <div className="flex h-full items-center justify-between">
                       <div className="flex items-center gap-4">
                         <button
                           type="button"
-                          className="lg:hidden -ml-0.5 -mt-0.5 h-10 w-10 inline-flex items-center justify-center rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
+                          className="
+                            lg:hidden -ml-0.5 -mt-0.5 h-10 w-10 
+                            inline-flex items-center justify-center 
+                            rounded-xl
+                            text-zinc-500 dark:text-zinc-400
+                            hover:bg-zinc-100 dark:hover:bg-zinc-800 
+                            focus:outline-none 
+                            transition-all duration-200
+                          "
                           onClick={() => setIsMobileMenuOpen(true)}
                         >
                           <span className="sr-only">Abrir menú</span>
-                          <Menu className="h-5 w-5 text-zinc-500 dark:text-zinc-400" />
+                          <Menu className="h-5 w-5" />
                         </button>
                         <div>
                           <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-indigo-500">
@@ -232,7 +304,13 @@ export default function RootLayout({
                       <div className="flex items-center gap-6">
                         {/* Status Badge */}
                         <div className="hidden sm:block">
-                          <div className="flex items-center gap-2 text-sm bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-lg">
+                          <div className="
+                            flex items-center gap-2 
+                            text-sm bg-zinc-100 dark:bg-zinc-800 
+                            px-3 py-1.5 rounded-lg
+                            transition-all duration-300
+                            hover:bg-zinc-200 dark:hover:bg-zinc-700
+                          ">
                             <div className="flex items-center gap-1.5">
                               <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></div>
                               <span className="text-zinc-600 dark:text-zinc-400">En línea</span>
@@ -249,27 +327,67 @@ export default function RootLayout({
                         {/* Notifications */}
                         <button
                           type="button"
-                          className="relative group p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
+                          className="
+                            relative group p-2 
+                            rounded-xl
+                            hover:bg-zinc-100 dark:hover:bg-zinc-800 
+                            focus:outline-none 
+                            transition-all duration-200
+                          "
                         >
                           <span className="sr-only">Ver notificaciones</span>
-                          <Bell className="h-5 w-5 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors" />
-                          <div className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-zinc-900"></div>
+                          <Bell className="
+                            h-5 w-5 
+                            text-zinc-500 dark:text-zinc-400
+                            group-hover:text-zinc-600 dark:group-hover:text-zinc-300 
+                            transition-colors duration-200
+                          " />
+                          <div className="
+                            absolute -top-1 -right-1 
+                            h-2.5 w-2.5 
+                            rounded-full bg-rose-500 
+                            ring-2 ring-white dark:ring-zinc-900
+                            animate-pulse
+                          "></div>
                         </button>
 
                         {/* User Menu */}
                         <div className="relative">
                           <button
                             type="button"
-                            className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
+                            className="
+                              flex items-center gap-3 p-1.5 
+                              rounded-xl
+                              hover:bg-zinc-100 dark:hover:bg-zinc-800 
+                              focus:outline-none 
+                              transition-all duration-200
+                              group
+                            "
                           >
-                            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 p-0.5 transition-transform duration-200 hover:scale-105">
-                              <div className="h-full w-full rounded-[10px] bg-white dark:bg-zinc-900 flex items-center justify-center">
+                            <div className="
+                              h-8 w-8 rounded-xl 
+                              bg-gradient-to-br from-violet-500 to-indigo-500 
+                              p-0.5 
+                              transition-all duration-300
+                              group-hover:shadow-lg group-hover:shadow-violet-500/25
+                            ">
+                              <div className="
+                                h-full w-full rounded-[10px] 
+                                bg-white dark:bg-zinc-900 
+                                flex items-center justify-center
+                                transition-transform duration-300
+                                group-hover:scale-95
+                              ">
                                 <User className="h-4 w-4 text-violet-500 dark:text-violet-400" />
                               </div>
                             </div>
                             <div className="hidden sm:block text-left">
-                              <div className="text-sm font-medium text-zinc-900 dark:text-white">Usuario</div>
-                              <div className="text-xs text-zinc-500 dark:text-zinc-400">Administrador</div>
+                              <div className="text-sm font-medium text-zinc-900 dark:text-white">
+                                Usuario
+                              </div>
+                              <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                                Administrador
+                              </div>
                             </div>
                           </button>
                         </div>
@@ -278,7 +396,12 @@ export default function RootLayout({
                   </nav>
                 </header>
 
-                <main className="py-6 px-4 sm:px-6 lg:px-8 min-h-[calc(100vh-4rem)] bg-gradient-to-b from-zinc-50/50 to-white dark:from-zinc-900 dark:to-zinc-900/50">
+                <main className="
+                  py-6 px-4 sm:px-6 lg:px-8 
+                  min-h-[calc(100vh-4rem)] 
+                  bg-gradient-to-b from-zinc-50/50 to-white dark:from-zinc-900 dark:to-zinc-900/50
+                  animate-in fade-in-50 duration-500
+                ">
                   {children}
                 </main>
               </div>
