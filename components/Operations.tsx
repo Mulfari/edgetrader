@@ -30,12 +30,12 @@ import {
   Tooltip as ChartTooltip,
   Legend,
   Filler,
+  Chart,
   TooltipItem,
   Scale,
-  CoreScaleOptions,
-  ScriptableContext
+  CoreScaleOptions
 } from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line, Pie, Bar } from 'react-chartjs-2';
 
 // Registrar componentes de Chart.js
 ChartJS.register(
@@ -360,16 +360,15 @@ const AccountPerformanceChart = ({ data }: { data: Operation[] }) => {
     return acc;
   }, {} as Record<string, { label: string; data: number[] }>);
 
-  const dates = Array.from(new Set(data.map(op => new Date(op.timestamp).toLocaleDateString())));
-
   // Agrupar operaciones por fecha y cuenta
   data.forEach(op => {
     const key = `${op.exchange}-${op.accountName}`;
+    const date = new Date(op.timestamp).toLocaleDateString();
     performanceByAccount[key].data.push(op.profit || 0);
   });
 
   const chartData = {
-    labels: dates,
+    labels: Array.from(new Set(data.map(op => new Date(op.timestamp).toLocaleDateString()))),
     datasets: Object.values(performanceByAccount).map((account, index) => ({
       label: account.label,
       data: account.data,
@@ -490,10 +489,8 @@ const AccountStatusChart = ({ stats }: { stats: DashboardStats }) => {
       {
         label: 'P&L No Realizado',
         data: stats.accountStats.map(acc => acc.unrealizedPnL),
-        backgroundColor: (context: ScriptableContext<"bar">) => 
-          Number(context.raw) > 0 ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)',
-        borderColor: (context: ScriptableContext<"bar">) => 
-          Number(context.raw) > 0 ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)',
+        backgroundColor: (context: any) => context.raw > 0 ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)',
+        borderColor: (context: any) => context.raw > 0 ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)',
         borderWidth: 2,
         borderRadius: 4,
         stack: 'combined'
@@ -1016,30 +1013,6 @@ export default function Operations() {
             Rendimiento Histórico
           </h3>
           <PerformanceChart data={operations} />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-          className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm"
-        >
-          <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">
-            Rendimiento por Cuenta
-          </h3>
-          <AccountPerformanceChart data={operations} />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-          className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm"
-        >
-          <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">
-            Estado Actual por Cuenta
-          </h3>
-          {stats && <AccountStatusChart stats={stats} />}
         </motion.div>
       </div>
 
