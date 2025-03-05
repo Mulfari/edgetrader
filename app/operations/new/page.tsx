@@ -4,12 +4,6 @@ import { useState } from 'react';
 import {
   ArrowLeft,
   ChevronDown,
-  LineChart,
-  Wallet,
-  BarChart,
-  Clock,
-  Settings,
-  Users
 } from 'lucide-react';
 import Link from 'next/link';
 import TradingViewChart from '@/components/TradingViewChart';

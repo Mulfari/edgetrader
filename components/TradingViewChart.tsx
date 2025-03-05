@@ -2,9 +2,34 @@
 
 import { useEffect, useRef } from 'react';
 
+interface TradingViewWidget {
+  widget: {
+    new (config: {
+      container_id: string;
+      symbol: string;
+      interval: string;
+      timezone: string;
+      theme: string;
+      style: string;
+      locale: string;
+      toolbar_bg: string;
+      enable_publishing: boolean;
+      hide_side_toolbar: boolean;
+      allow_symbol_change: boolean;
+      save_image: boolean;
+      studies: string[];
+      show_popup_button: boolean;
+      popup_width: string;
+      popup_height: string;
+      height: string;
+      width: string;
+    }): unknown;
+  };
+}
+
 declare global {
   interface Window {
-    TradingView: any;
+    TradingView: TradingViewWidget;
   }
 }
 
