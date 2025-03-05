@@ -121,11 +121,11 @@ export default function RootLayout({
                 shadow-xl shadow-zinc-200/50 dark:shadow-zinc-900/50
               `}>
                 <div className="flex flex-col h-full">
-                  <div className="h-[72px] p-4 border-b border-zinc-200 dark:border-zinc-700/50">
+                  <div className="h-[4.5rem] px-6 flex items-center border-b border-zinc-200 dark:border-zinc-700/50">
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-all duration-300"></div>
-                        <div className="relative bg-gradient-to-r from-violet-500 to-indigo-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-violet-500/25 transition-all duration-300">
+                        <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl blur-lg opacity-50"></div>
+                        <div className="relative bg-gradient-to-r from-violet-500 to-indigo-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg">
                           <BarChart3 className="h-6 w-6 text-white" />
                         </div>
                       </div>
@@ -173,7 +173,7 @@ export default function RootLayout({
                       onClick={handleLogout}
                       className="relative flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-xl
                         text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10
-                        transition-all duration-200 transform hover:scale-[1.02]"
+                        group transition-all duration-200 transform hover:scale-[1.02]"
                     >
                       <LogOut className="mr-3 h-5 w-5 text-gray-400 dark:text-blue-400/50 
                         group-hover:text-rose-500 dark:group-hover:text-rose-400 
@@ -196,7 +196,7 @@ export default function RootLayout({
                   backdrop-blur-xl transition-all duration-300
                   ${isScrolled ? 'shadow-lg shadow-zinc-200/20 dark:shadow-zinc-900/30' : ''}
                 `}>
-                  <div className="flex items-center justify-between h-16 px-4 sm:px-6">
+                  <div className="flex items-center justify-between h-[4.5rem] px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center flex-1 gap-4">
                       <button
                         type="button"
@@ -446,7 +446,7 @@ export default function RootLayout({
                   </div>
                 </header>
 
-                <main className="py-6 px-4 sm:px-6">
+                <main className="py-6 px-4 sm:px-6 lg:px-8">
                   {children}
                 </main>
               </div>
