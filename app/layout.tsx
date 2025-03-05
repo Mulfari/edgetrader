@@ -120,21 +120,21 @@ export default function RootLayout({
                 border-r border-zinc-200/50 dark:border-zinc-800/40
                 transform transition-all duration-500 ease-in-out backdrop-blur-xl
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-                ${isSidebarCollapsed ? 'w-20' : 'w-64'}
+                ${isSidebarCollapsed ? 'w-[5.5rem]' : 'w-72'}
                 shadow-[0_0_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)]
               `}>
                 <div className="flex flex-col h-full">
-                  <div className={`h-20 px-6 flex items-center justify-between border-b border-zinc-200/50 dark:border-zinc-800/40`}>
+                  <div className={`h-20 flex items-center justify-between border-b border-zinc-200/50 dark:border-zinc-800/40 ${isSidebarCollapsed ? 'px-4' : 'px-6'}`}>
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
-                        <div className="relative bg-gradient-to-br from-violet-500 to-indigo-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg">
+                        <div className="relative bg-gradient-to-br from-violet-500 to-indigo-500 w-11 h-11 rounded-xl flex items-center justify-center shadow-lg transform transition-transform duration-300 hover:scale-105">
                           <BarChart3 className="h-6 w-6 text-white" />
                         </div>
                       </div>
                       {!isSidebarCollapsed && (
                         <div>
-                          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
+                          <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
                             TradingDash
                           </h1>
                           <p className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -145,10 +145,10 @@ export default function RootLayout({
                     </div>
                     <button
                       onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                      className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                      className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-200 group"
                     >
                       <svg
-                        className={`w-5 h-5 text-zinc-500 dark:text-zinc-400 transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : ''}`}
+                        className={`w-5 h-5 text-zinc-500 dark:text-zinc-400 transition-all duration-300 transform group-hover:text-violet-500 dark:group-hover:text-violet-400 ${isSidebarCollapsed ? 'rotate-180' : ''}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -159,20 +159,25 @@ export default function RootLayout({
                   </div>
                   
                   <div className="flex-1 overflow-y-auto py-4">
-                    <nav className="px-2 space-y-1">
+                    <nav className={`space-y-1 ${isSidebarCollapsed ? 'px-3' : 'px-4'}`}>
                       {menuItems.map((item) => (
                       <Link 
                           key={item.href}
                           href={item.href} 
                           className={`
-                            flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
-                            transition-all duration-300 transform hover:scale-[1.02]
+                            relative flex items-center ${isSidebarCollapsed ? 'justify-center' : ''} px-3 py-2.5 text-sm font-medium rounded-xl
+                            transition-all duration-300 transform hover:scale-[1.02] group
                             ${pathname === item.href
                               ? 'bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300 shadow-[0_2px_8px_-3px_rgba(139,92,246,0.3)] dark:shadow-[0_2px_8px_-3px_rgba(139,92,246,0.2)]'
                               : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-br hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
                             }
                           `}
                         >
+                          {isSidebarCollapsed && (
+                            <div className="absolute left-full ml-3 px-2 py-1 bg-zinc-900 dark:bg-zinc-800 text-white rounded-md text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                              {item.name}
+                            </div>
+                          )}
                           <item.icon className={`
                             ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 transition-all duration-300 transform group-hover:scale-110
                             ${pathname === item.href
@@ -188,13 +193,20 @@ export default function RootLayout({
                     </nav>
                   </div>
                   
-                  <div className="p-4 border-t border-zinc-200 dark:border-zinc-800/60">
+                  <div className={`p-4 border-t border-zinc-200 dark:border-zinc-800/60 ${isSidebarCollapsed ? 'px-3' : ''}`}>
                     <button 
                       onClick={handleLogout}
-                      className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'w-full'} px-3 py-2.5 text-sm font-medium rounded-xl
+                      className={`
+                        relative flex items-center ${isSidebarCollapsed ? 'justify-center' : 'w-full'} px-3 py-2.5 text-sm font-medium rounded-xl
                         text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10
-                        group transition-all duration-200 transform hover:scale-[1.02]`}
+                        group transition-all duration-200 transform hover:scale-[1.02]
+                      `}
                     >
+                      {isSidebarCollapsed && (
+                        <div className="absolute left-full ml-3 px-2 py-1 bg-zinc-900 dark:bg-zinc-800 text-white rounded-md text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                          Cerrar Sesión
+                        </div>
+                      )}
                       <LogOut className={`${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 text-gray-400 dark:text-blue-400/50 
                         group-hover:text-rose-500 dark:group-hover:text-rose-400 
                         transition-all duration-200 transform group-hover:scale-110`} />
@@ -211,7 +223,7 @@ export default function RootLayout({
               {/* Main content with navigation */}
               <div className={`
                 transition-all duration-500 ease-in-out
-                ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}
+                ${isSidebarCollapsed ? 'lg:pl-[5.5rem]' : 'lg:pl-72'}
               `}>
                 {/* Top navigation */}
                 <header className={`
