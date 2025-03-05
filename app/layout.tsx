@@ -133,7 +133,7 @@ export default function RootLayout({
                         </div>
                       </div>
                       {!isSidebarCollapsed && (
-                        <div>
+                        <div className="transition-all duration-300 transform">
                           <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
                             TradingDash
                           </h1>
@@ -145,15 +145,15 @@ export default function RootLayout({
                     </div>
                     <button
                       onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                      className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-200 group"
+                      className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300 hover:shadow-md"
                     >
                       <svg
-                        className={`w-5 h-5 text-zinc-500 dark:text-zinc-400 transition-all duration-300 transform group-hover:text-violet-500 dark:group-hover:text-violet-400 ${isSidebarCollapsed ? 'rotate-180' : ''}`}
+                        className={`w-5 h-5 text-zinc-500 dark:text-zinc-400 transition-all duration-300 ${isSidebarCollapsed ? 'rotate-180' : ''}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
                   </div>
@@ -165,28 +165,38 @@ export default function RootLayout({
                           key={item.href}
                           href={item.href} 
                           className={`
-                            relative flex items-center ${isSidebarCollapsed ? 'justify-center' : ''} px-3 py-2.5 text-sm font-medium rounded-xl
-                            transition-all duration-300 transform hover:scale-[1.02] group
+                            relative group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
+                            transition-all duration-300 transform hover:scale-[1.02]
                             ${pathname === item.href
                               ? 'bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300 shadow-[0_2px_8px_-3px_rgba(139,92,246,0.3)] dark:shadow-[0_2px_8px_-3px_rgba(139,92,246,0.2)]'
                               : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-br hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
                             }
+                            ${isSidebarCollapsed ? 'justify-center' : ''}
                           `}
                         >
+                          {isSidebarCollapsed && pathname === item.href && (
+                            <div className="absolute left-0 w-1 h-8 bg-violet-500 rounded-r-full transform -translate-y-1/2 top-1/2" />
+                          )}
+                          <div className={`
+                            relative flex items-center ${isSidebarCollapsed ? 'justify-center' : ''}
+                            ${pathname === item.href ? 'text-violet-500 dark:text-violet-400' : ''}
+                          `}>
+                            <item.icon className={`
+                              h-5 w-5 transition-all duration-300 transform
+                              ${isSidebarCollapsed ? '' : 'mr-3'}
+                              ${pathname === item.href
+                                ? 'text-violet-500 dark:text-violet-400'
+                                : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
+                              }
+                            `} />
+                            {!isSidebarCollapsed && (
+                              <span className="transition-colors duration-200">{item.name}</span>
+                            )}
+                          </div>
                           {isSidebarCollapsed && (
-                            <div className="absolute left-full ml-3 px-2 py-1 bg-zinc-900 dark:bg-zinc-800 text-white rounded-md text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                            <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                               {item.name}
                             </div>
-                          )}
-                          <item.icon className={`
-                            ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 transition-all duration-300 transform group-hover:scale-110
-                            ${pathname === item.href
-                              ? 'text-violet-500 dark:text-violet-400'
-                              : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
-                            }
-                          `} />
-                          {!isSidebarCollapsed && (
-                            <span className="transition-colors duration-200">{item.name}</span>
                           )}
                       </Link>
                       ))}
@@ -197,23 +207,26 @@ export default function RootLayout({
                     <button 
                       onClick={handleLogout}
                       className={`
-                        relative flex items-center ${isSidebarCollapsed ? 'justify-center' : 'w-full'} px-3 py-2.5 text-sm font-medium rounded-xl
+                        relative group flex items-center ${isSidebarCollapsed ? 'justify-center' : 'w-full'} px-3 py-2.5 text-sm font-medium rounded-xl
                         text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10
-                        group transition-all duration-200 transform hover:scale-[1.02]
+                        transition-all duration-200 transform hover:scale-[1.02]
                       `}
                     >
-                      {isSidebarCollapsed && (
-                        <div className="absolute left-full ml-3 px-2 py-1 bg-zinc-900 dark:bg-zinc-800 text-white rounded-md text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                          Cerrar Sesión
-                        </div>
-                      )}
-                      <LogOut className={`${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 text-gray-400 dark:text-blue-400/50 
+                      <LogOut className={`
+                        h-5 w-5 text-gray-400 dark:text-blue-400/50 
                         group-hover:text-rose-500 dark:group-hover:text-rose-400 
-                        transition-all duration-200 transform group-hover:scale-110`} />
+                        transition-all duration-200 transform group-hover:scale-110
+                        ${isSidebarCollapsed ? '' : 'mr-3'}
+                      `} />
                       {!isSidebarCollapsed && (
                         <span className="group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-200">
                           Cerrar Sesión
                         </span>
+                      )}
+                      {isSidebarCollapsed && (
+                        <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                          Cerrar Sesión
+                        </div>
                       )}
                     </button>
                   </div>
