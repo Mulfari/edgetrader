@@ -60,7 +60,6 @@ export default function Operations() {
   const [selectedOperations, setSelectedOperations] = useState<string[]>([]);
   const [hoveredOperation, setHoveredOperation] = useState<string | null>(null);
   const [expandedOperation, setExpandedOperation] = useState<string | null>(null);
-  const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
 
   useEffect(() => {
     // Datos de ejemplo mejorados
