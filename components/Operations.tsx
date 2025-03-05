@@ -360,15 +360,16 @@ const AccountPerformanceChart = ({ data }: { data: Operation[] }) => {
     return acc;
   }, {} as Record<string, { label: string; data: number[] }>);
 
+  const dates = Array.from(new Set(data.map(op => new Date(op.timestamp).toLocaleDateString())));
+
   // Agrupar operaciones por fecha y cuenta
   data.forEach(op => {
     const key = `${op.exchange}-${op.accountName}`;
-    const date = new Date(op.timestamp).toLocaleDateString();
     performanceByAccount[key].data.push(op.profit || 0);
   });
 
   const chartData = {
-    labels: Array.from(new Set(data.map(op => new Date(op.timestamp).toLocaleDateString()))),
+    labels: dates,
     datasets: Object.values(performanceByAccount).map((account, index) => ({
       label: account.label,
       data: account.data,
