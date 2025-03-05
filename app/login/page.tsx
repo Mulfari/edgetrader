@@ -15,13 +15,14 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     // Verificar si hay una sesión activa
     const token = localStorage.getItem("token");
     if (token) {
-      router.push("/dashboard");
+      setIsCheckingSession(false);
       return;
     }
 
@@ -33,7 +34,15 @@ export default function LoginPage() {
       setPassword(storedPassword);
       setRememberMe(true);
     }
+    setIsCheckingSession(false);
   }, [router]);
+
+  // Efecto para la redirección cuando se detecta una sesión activa
+  useEffect(() => {
+    if (!isCheckingSession && localStorage.getItem("token")) {
+      setTimeout(() => router.push("/dashboard"), 2000);
+    }
+  }, [isCheckingSession, router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -106,8 +115,46 @@ export default function LoginPage() {
       >
         <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl py-8 px-4 shadow-2xl sm:rounded-xl sm:px-10 border border-gray-200 dark:border-gray-700">
           <AnimatePresence mode="wait">
-            {success ? (
-              <motion.div 
+            {isCheckingSession ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+                className="flex flex-col items-center"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ 
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 20,
+                    delay: 0.1 
+                  }}
+                  className="w-16 h-16 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full flex items-center justify-center mb-4"
+                >
+                  <Loader2 className="w-8 h-8 text-white animate-spin" />
+                </motion.div>
+                <motion.h3 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
+                >
+                  Verificando sesión...
+                </motion.h3>
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-gray-600 dark:text-gray-300"
+                >
+                  Por favor, espera un momento
+                </motion.p>
+              </motion.div>
+            ) : localStorage.getItem("token") ? (
+              <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
@@ -135,7 +182,7 @@ export default function LoginPage() {
                   transition={{ delay: 0.2 }}
                   className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
                 >
-                  ¡Inicio de sesión exitoso!
+                  ¡Sesión activa detectada!
                 </motion.h3>
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
