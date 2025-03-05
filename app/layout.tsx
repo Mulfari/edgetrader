@@ -8,6 +8,8 @@ import {
   Bell,
   Menu,
   User,
+  ChevronLeft,
+  ChevronRight,
   Home,
   LineChart,
   Wallet
@@ -52,9 +54,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [lastUpdate] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -101,14 +103,14 @@ export default function RootLayout({
 
   return (
     <html lang="es">
-      <body className="min-h-screen bg-gradient-to-br from-zinc-50/50 via-white/50 to-zinc-100/50 dark:from-[#0A0A0F] dark:via-[#12121A] dark:to-[#0A0A0F]">
+      <body className="min-h-screen bg-zinc-50/50 dark:bg-zinc-900">
         <ThemeProvider>
           {!isPublicPage && (
             <>
               {/* Mobile menu overlay */}
               {isMobileMenuOpen && (
                 <div 
-                  className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden animate-in fade-in-50 duration-300"
+                  className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden animate-in fade-in-50 duration-300"
                   onClick={() => setIsMobileMenuOpen(false)}
                 />
               )}
@@ -118,14 +120,14 @@ export default function RootLayout({
                 fixed top-0 left-0 z-50 h-full
                 bg-white/95 dark:bg-[#12121A]/95
                 border-r border-zinc-200/50 dark:border-zinc-800/40
-                transform transition-all duration-500 ease-in-out backdrop-blur-xl
+                transform transition-all duration-300 ease-in-out backdrop-blur-xl
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-                ${isSidebarCollapsed ? 'w-[5.5rem]' : 'w-72'}
+                w-[5.5rem] hover:w-72
                 shadow-[0_0_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)]
-                overflow-x-hidden
+                overflow-x-hidden group
               `}>
                 <div className="flex flex-col h-full">
-                  <div className={`h-20 flex items-center justify-between border-b border-zinc-200/50 dark:border-zinc-800/40 ${isSidebarCollapsed ? 'px-4' : 'px-6'}`}>
+                  <div className="h-20 flex items-center justify-between border-b border-zinc-200/50 dark:border-zinc-800/40 px-4 group-hover:px-6">
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
@@ -133,102 +135,79 @@ export default function RootLayout({
                           <BarChart3 className="h-6 w-6 text-white" />
                         </div>
                       </div>
-                      {!isSidebarCollapsed && (
-                        <div className="transition-all duration-300 transform">
-                          <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
-                            TradingDash
-                          </h1>
-                          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                            Panel de Control
-                          </p>
-                        </div>
-                      )}
+                      <div className="transition-all duration-300 transform opacity-0 group-hover:opacity-100">
+                        <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
+                          TradingDash
+                        </h1>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                          Panel de Control
+                        </p>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                      className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300 hover:shadow-md"
-                    >
-                      <svg
-                        className={`w-5 h-5 text-zinc-500 dark:text-zinc-400 transition-all duration-300 ${isSidebarCollapsed ? 'rotate-180' : ''}`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
                   </div>
                   
                   <div className="flex-1 overflow-y-auto py-4">
-                    <nav className={`space-y-1 ${isSidebarCollapsed ? 'px-3' : 'px-4'}`}>
+                    <nav className="space-y-1 px-3 group-hover:px-4">
                       {menuItems.map((item) => (
                       <Link 
                           key={item.href}
                           href={item.href} 
                           className={`
-                            relative group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
+                            relative group/item flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
                             transition-all duration-300 transform hover:scale-[1.02]
                             ${pathname === item.href
                               ? 'bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300 shadow-[0_2px_8px_-3px_rgba(139,92,246,0.3)] dark:shadow-[0_2px_8px_-3px_rgba(139,92,246,0.2)]'
                               : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-br hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
                             }
-                            ${isSidebarCollapsed ? 'justify-center' : ''}
+                            justify-center group-hover:justify-start
                           `}
                         >
-                          {isSidebarCollapsed && pathname === item.href && (
+                          {!isMobileMenuOpen && pathname === item.href && (
                             <div className="absolute left-0 w-1 h-8 bg-violet-500 rounded-r-full transform -translate-y-1/2 top-1/2" />
                           )}
                           <div className={`
-                            relative flex items-center ${isSidebarCollapsed ? 'justify-center' : ''}
+                            relative flex items-center justify-center group-hover:justify-start
                             ${pathname === item.href ? 'text-violet-500 dark:text-violet-400' : ''}
                           `}>
                             <item.icon className={`
                               h-5 w-5 transition-all duration-300 transform
-                              ${isSidebarCollapsed ? '' : 'mr-3'}
+                              group-hover:mr-3
                               ${pathname === item.href
                                 ? 'text-violet-500 dark:text-violet-400'
                                 : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
                               }
                             `} />
-                            {!isSidebarCollapsed && (
-                              <span className="transition-colors duration-200">{item.name}</span>
-                            )}
+                            <span className="hidden group-hover:block transition-all duration-300">{item.name}</span>
                           </div>
-                          {isSidebarCollapsed && (
-                            <div className="absolute left-full ml-6 px-2 py-1 bg-zinc-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                              {item.name}
-                            </div>
-                          )}
+                          <div className="absolute left-full ml-6 px-2 py-1 bg-zinc-900 text-white text-xs rounded-md opacity-0 group-hover/item:opacity-100 group-hover:opacity-0 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            {item.name}
+                          </div>
                       </Link>
                       ))}
                     </nav>
                   </div>
                   
-                  <div className={`p-4 border-t border-zinc-200 dark:border-zinc-800/60 ${isSidebarCollapsed ? 'px-3' : ''}`}>
+                  <div className="p-4 border-t border-zinc-200 dark:border-zinc-800/60 px-3 group-hover:px-4">
                     <button 
                       onClick={handleLogout}
                       className={`
-                        relative group flex items-center ${isSidebarCollapsed ? 'justify-center' : 'w-full'} px-3 py-2.5 text-sm font-medium rounded-xl
+                        relative group/item flex items-center justify-center group-hover:justify-start px-3 py-2.5 text-sm font-medium rounded-xl w-full
                         text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10
                         transition-all duration-200 transform hover:scale-[1.02]
                       `}
                     >
                       <LogOut className={`
                         h-5 w-5 text-gray-400 dark:text-blue-400/50 
-                        group-hover:text-rose-500 dark:group-hover:text-rose-400 
-                        transition-all duration-200 transform group-hover:scale-110
-                        ${isSidebarCollapsed ? '' : 'mr-3'}
+                        group-hover/item:text-rose-500 dark:group-hover/item:text-rose-400 
+                        transition-all duration-200 transform group-hover/item:scale-110
+                        group-hover:mr-3
                       `} />
-                      {!isSidebarCollapsed && (
-                        <span className="group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-200">
-                          Cerrar Sesión
-                        </span>
-                      )}
-                      {isSidebarCollapsed && (
-                        <div className="absolute left-full ml-6 px-2 py-1 bg-zinc-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                          Cerrar Sesión
-                        </div>
-                      )}
+                      <span className="hidden group-hover:block group-hover/item:text-rose-600 dark:group-hover/item:text-rose-400 transition-colors duration-200">
+                        Cerrar Sesión
+                      </span>
+                      <div className="absolute left-full ml-6 px-2 py-1 bg-zinc-900 text-white text-xs rounded-md opacity-0 group-hover/item:opacity-100 group-hover:opacity-0 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                        Cerrar Sesión
+                      </div>
                     </button>
                   </div>
                 </div>
@@ -236,18 +215,18 @@ export default function RootLayout({
 
               {/* Main content with navigation */}
               <div className={`
-                transition-all duration-500 ease-in-out
-                ${isSidebarCollapsed ? 'lg:pl-[5.5rem]' : 'lg:pl-72'}
+                transition-all duration-300 ease-in-out
+                lg:pl-[5.5rem] group-hover:lg:pl-72
               `}>
                 {/* Top navigation */}
                 <header className={`
                   sticky top-0 z-30 
-                  bg-white/95 dark:bg-[#12121A]/95
-                  border-b border-zinc-200/50 dark:border-zinc-800/40
+                  bg-white/80 dark:bg-zinc-900/80 
+                  border-b border-zinc-200 dark:border-zinc-800 
                   backdrop-blur-xl transition-all duration-300
-                  ${isScrolled ? 'shadow-[0_8px_30px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_8px_30px_-15px_rgba(0,0,0,0.5)]' : ''}
+                  ${isScrolled ? 'shadow-lg shadow-zinc-200/20 dark:shadow-zinc-900/30' : ''}
                 `}>
-                  <div className="flex items-center justify-between h-20 px-4 sm:px-6 lg:px-8">
+                  <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center flex-1 gap-4">
                       <button
                         type="button"
@@ -278,14 +257,14 @@ export default function RootLayout({
                                   <div className="absolute inset-0 h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping"></div>
                                 </div>
                                 <span className="font-medium text-emerald-700 dark:text-emerald-400">En línea</span>
-                          </div>
-                          {lastUpdate && (
-                            <>
+                              </div>
+                              {lastUpdate && (
+                                <>
                                   <span className="text-emerald-400/30 dark:text-emerald-600">•</span>
                                   <span className="text-emerald-600/70 dark:text-emerald-400/70">Actualizado {lastUpdate}</span>
-                            </>
-                          )}
-                        </div>
+                                </>
+                              )}
+                            </div>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-72">
                             <div className="p-4 space-y-4">
@@ -328,19 +307,19 @@ export default function RootLayout({
                       <div className="flex items-center gap-2">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
+                            <button
+                              type="button"
                               className="group relative p-2 rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
-                          >
-                            <span className="sr-only">Ver notificaciones</span>
-                            <div className="relative">
+                            >
+                              <span className="sr-only">Ver notificaciones</span>
+                              <div className="relative">
                                 <Bell className="h-5 w-5 transition-all duration-300 transform group-hover:scale-110" />
                                 <div className="absolute -top-1 -right-1 h-3 w-3">
                                   <div className="absolute inset-0 rounded-full bg-rose-500 animate-ping opacity-75"></div>
                                   <div className="relative rounded-full h-3 w-3 bg-rose-500 ring-2 ring-white dark:ring-zinc-900"></div>
                                 </div>
-                            </div>
-                          </button>
+                              </div>
+                            </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-96">
                             <div className="p-4 space-y-4">
@@ -352,8 +331,8 @@ export default function RootLayout({
                                 <Badge variant="outline" className="bg-gradient-to-r from-rose-500/10 to-pink-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20">
                                   3 nuevas
                                 </Badge>
-                        </div>
-
+                              </div>
+                              
                               <div className="space-y-3">
                                 <div className="group p-3 rounded-xl bg-gradient-to-r from-blue-500/5 to-violet-500/5 hover:from-blue-500/10 hover:to-violet-500/10 dark:from-blue-500/10 dark:to-violet-500/10 dark:hover:from-blue-500/20 dark:hover:to-violet-500/20 border border-blue-500/20 dark:border-blue-400/20 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer">
                                   <div className="flex items-start gap-3">
@@ -415,9 +394,9 @@ export default function RootLayout({
                                   <div className="h-full w-full rounded-[10px] bg-white dark:bg-zinc-900 flex items-center justify-center overflow-hidden">
                                     <User className="h-5 w-5 text-violet-500 dark:text-violet-400 transform transition-transform duration-300 group-hover:scale-110" />
                                   </div>
+                                </div>
                               </div>
-                            </div>
-                            <div className="hidden sm:block text-left">
+                              <div className="hidden sm:block text-left">
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm font-medium text-zinc-900 dark:text-white">John Doe</span>
                                   <Badge variant="outline" className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20">
