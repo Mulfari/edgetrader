@@ -157,6 +157,16 @@ export default function RootLayout({
                         <span className="sr-only">Abrir menú</span>
                         <Menu className="h-5 w-5" />
                       </button>
+                      <div>
+                        <h1 className="text-xl font-bold text-zinc-900 dark:text-white">
+                          {pathname === '/operations' ? 'Operaciones' :
+                           pathname === '/dashboard' ? 'Dashboard' : ''}
+                        </h1>
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                          {pathname === '/operations' ? 'Dashboard de Operaciones' :
+                           pathname === '/dashboard' ? 'Dashboard de Subcuentas' : ''}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2">
