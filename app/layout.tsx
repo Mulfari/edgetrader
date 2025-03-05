@@ -117,14 +117,14 @@ export default function RootLayout({
                 fixed top-0 left-0 z-50 h-full
                 bg-white/95 dark:bg-[#12121A]/95
                 border-r border-zinc-200/50 dark:border-zinc-800/40
-                transform transition-all duration-500 ease-in-out backdrop-blur-xl
+                transform transition-all duration-300 ease-in-out backdrop-blur-xl
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 w-[5.5rem] hover:w-72 group
                 shadow-[0_0_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)]
                 overflow-hidden
               `}>
                 <div className="flex flex-col h-full w-full">
-                  <div className="h-20 flex items-center justify-between border-b border-zinc-200/50 dark:border-zinc-800/40 px-4 group-hover:px-6">
+                  <div className="h-20 flex items-center justify-center group-hover:justify-start border-b border-zinc-200/50 dark:border-zinc-800/40 px-4 group-hover:px-6">
                     <div className="flex items-center gap-3">
                       <div className="relative shrink-0">
                         <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
@@ -132,7 +132,7 @@ export default function RootLayout({
                           <BarChart3 className="h-6 w-6 text-white" />
                         </div>
                       </div>
-                      <div className="transition-all duration-300 transform opacity-0 group-hover:opacity-100 whitespace-nowrap">
+                      <div className="transition-all duration-300 transform translate-x-0 opacity-0 group-hover:opacity-100 whitespace-nowrap">
                         <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
                           TradingDash
                         </h1>
@@ -150,31 +150,32 @@ export default function RootLayout({
                           key={item.href}
                           href={item.href} 
                           className={`
-                            relative group/item flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
-                            transition-all duration-300 transform hover:scale-[1.02]
+                            relative group/item flex items-center text-sm font-medium rounded-xl
+                            transition-all duration-300 ease-in-out
                             ${pathname === item.href
                               ? 'bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300 shadow-[0_2px_8px_-3px_rgba(139,92,246,0.3)] dark:shadow-[0_2px_8px_-3px_rgba(139,92,246,0.2)]'
                               : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-br hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
                             }
-                            justify-center group-hover:justify-start w-full
+                            w-full h-[2.75rem]
                           `}
                         >
                           {!isMobileMenuOpen && pathname === item.href && (
                             <div className="absolute left-0 w-1 h-8 bg-violet-500 rounded-r-full transform -translate-y-1/2 top-1/2" />
                           )}
                           <div className={`
-                            relative flex items-center justify-center group-hover:justify-start w-full
+                            relative flex items-center w-full h-full
                             ${pathname === item.href ? 'text-violet-500 dark:text-violet-400' : ''}
                           `}>
-                            <item.icon className={`
-                              h-5 w-5 transition-all duration-300 transform shrink-0
-                              group-hover:mr-3
-                              ${pathname === item.href
-                                ? 'text-violet-500 dark:text-violet-400'
-                                : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
-                              }
-                            `} />
-                            <span className="hidden group-hover:block transition-all duration-300 whitespace-nowrap">{item.name}</span>
+                            <div className="flex items-center justify-center min-w-[3rem] transition-all duration-300 ease-in-out">
+                              <item.icon className={`
+                                h-5 w-5 transition-colors duration-300
+                                ${pathname === item.href
+                                  ? 'text-violet-500 dark:text-violet-400'
+                                  : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
+                                }
+                              `} />
+                            </div>
+                            <span className="opacity-0 -translate-x-2 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 ease-in-out whitespace-nowrap">{item.name}</span>
                           </div>
                       </Link>
                       ))}
@@ -184,19 +185,12 @@ export default function RootLayout({
                   <div className="p-4 border-t border-zinc-200 dark:border-zinc-800/60 px-3 group-hover:px-4">
                     <button 
                       onClick={handleLogout}
-                      className={`
-                        relative group/item flex items-center justify-center group-hover:justify-start px-3 py-2.5 text-sm font-medium rounded-xl w-full
-                        text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10
-                        transition-all duration-200 transform hover:scale-[1.02]
-                      `}
+                      className="relative group/item flex items-center text-sm font-medium rounded-xl w-full h-[2.75rem] text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10 transition-all duration-300 ease-in-out"
                     >
-                      <LogOut className={`
-                        h-5 w-5 text-gray-400 dark:text-blue-400/50 
-                        group-hover:text-rose-500 dark:group-hover:text-rose-400 
-                        transition-all duration-200 transform group-hover:scale-110 shrink-0
-                        group-hover:mr-3
-                      `} />
-                      <span className="hidden group-hover:block group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-200 whitespace-nowrap">
+                      <div className="flex items-center justify-center min-w-[3rem] transition-all duration-300 ease-in-out">
+                        <LogOut className="h-5 w-5 transition-colors duration-300 text-gray-400 dark:text-blue-400/50 group-hover:text-rose-500 dark:group-hover:text-rose-400" />
+                      </div>
+                      <span className="opacity-0 -translate-x-2 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 ease-in-out whitespace-nowrap group-hover:text-rose-600 dark:group-hover:text-rose-400">
                         Cerrar Sesión
                       </span>
                     </button>
