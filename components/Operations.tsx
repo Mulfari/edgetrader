@@ -566,6 +566,51 @@ export default function Operations() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {/* Filtros y búsqueda */}
+          <div className="flex items-center gap-2">
+            <select
+              className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            >
+              <option value="all">Todos los estados</option>
+              <option value="completed">Completadas</option>
+              <option value="pending">Pendientes</option>
+              <option value="cancelled">Canceladas</option>
+            </select>
+            <select
+              className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500"
+              value={marketFilter}
+              onChange={(e) => setMarketFilter(e.target.value as 'all' | 'spot' | 'futures')}
+            >
+              <option value="all">Todos los mercados</option>
+              <option value="spot">Spot</option>
+              <option value="futures">Futuros</option>
+            </select>
+            <select
+              className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="date">Fecha</option>
+              <option value="profit">Beneficio</option>
+              <option value="amount">Cantidad</option>
+            </select>
+          </div>
+          
+          {/* Búsqueda */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Buscar operaciones..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500 w-64"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          </div>
+
+          {/* Vista y nueva operación */}
           <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1">
             <button
               onClick={() => setView('table')}
@@ -590,17 +635,7 @@ export default function Operations() {
               Tarjetas
             </button>
           </div>
-          <select
-            className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500"
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-          >
-            <option value="7d">Últimos 7 días</option>
-            <option value="30d">Últimos 30 días</option>
-            <option value="90d">Últimos 90 días</option>
-            <option value="1y">Último año</option>
-            <option value="all">Todo</option>
-          </select>
+
           <Link
             href="/operations/new"
             className="px-4 py-2 text-sm font-medium text-white bg-violet-500 rounded-lg hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors flex items-center gap-2"
@@ -703,94 +738,100 @@ export default function Operations() {
         </div>
       </div>
 
-      {/* Tabla de operaciones */}
-      <div className="bg-white/95 dark:bg-[#12121A]/95 rounded-xl shadow-[0_4px_20px_-5px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-5px_rgba(0,0,0,0.3)] border border-zinc-200/50 dark:border-zinc-800/40 backdrop-blur-sm">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-zinc-200/50 dark:divide-zinc-800/40">
-            <thead>
-              <tr className="bg-gradient-to-br from-zinc-50/80 via-white/80 to-zinc-100/80 dark:from-[#12121A]/80 dark:via-[#1A1A23]/80 dark:to-[#12121A]/80 backdrop-blur-sm">
-                <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider w-8">
-                  <input
-                    type="checkbox"
-                    className="rounded border-zinc-300 dark:border-zinc-600 text-violet-500 focus:ring-violet-500"
-                    checked={selectedOperations.length === operations.length}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedOperations(operations.map(op => op.id));
-                      } else {
-                        setSelectedOperations([]);
-                      }
-                    }}
-                  />
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
-                    Fecha
-                    <Clock className="h-3.5 w-3.5" />
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
-                    Tipo/Estado
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
-                    Par/Exchange
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
-                    Precio/Cantidad
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
-                    Beneficio
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
-                    Etiquetas
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white/95 dark:bg-[#12121A]/95 divide-y divide-zinc-200/50 dark:divide-zinc-800/40">
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, index) => (
-                  <tr key={index} className="animate-pulse">
-                    <td colSpan={8} className="px-6 py-6">
-                      <div className="h-12 bg-zinc-200 dark:bg-zinc-700 rounded-lg"></div>
+      {/* Renderizado condicional de vista */}
+      {view === 'cards' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {operations.map(operation => renderOperationCard(operation))}
+        </div>
+      ) : (
+        <div className="bg-white/95 dark:bg-[#12121A]/95 rounded-xl shadow-[0_4px_20px_-5px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-5px_rgba(0,0,0,0.3)] border border-zinc-200/50 dark:border-zinc-800/40 backdrop-blur-sm">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-zinc-200/50 dark:divide-zinc-800/40">
+              <thead>
+                <tr className="bg-gradient-to-br from-zinc-50/80 via-white/80 to-zinc-100/80 dark:from-[#12121A]/80 dark:via-[#1A1A23]/80 dark:to-[#12121A]/80 backdrop-blur-sm">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider w-8">
+                    <input
+                      type="checkbox"
+                      className="rounded border-zinc-300 dark:border-zinc-600 text-violet-500 focus:ring-violet-500"
+                      checked={selectedOperations.length === operations.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedOperations(operations.map(op => op.id));
+                        } else {
+                          setSelectedOperations([]);
+                        }
+                      }}
+                    />
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
+                      Fecha
+                      <Clock className="h-3.5 w-3.5" />
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
+                      Tipo/Estado
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
+                      Par/Exchange
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
+                      Precio/Cantidad
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
+                      Beneficio
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
+                      Etiquetas
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white/95 dark:bg-[#12121A]/95 divide-y divide-zinc-200/50 dark:divide-zinc-800/40">
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <tr key={index} className="animate-pulse">
+                      <td colSpan={8} className="px-6 py-6">
+                        <div className="h-12 bg-zinc-200 dark:bg-zinc-700 rounded-lg"></div>
+                      </td>
+                    </tr>
+                  ))
+                ) : operations.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <div className="p-3 bg-zinc-100 dark:bg-zinc-700 rounded-full">
+                          <Search className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
+                        </div>
+                        <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                          No hay operaciones para mostrar
+                        </p>
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                          Intenta ajustar los filtros o crear una nueva operación
+                        </p>
+                      </div>
                     </td>
                   </tr>
-                ))
-              ) : operations.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center justify-center gap-3">
-                      <div className="p-3 bg-zinc-100 dark:bg-zinc-700 rounded-full">
-                        <Search className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
-                      </div>
-                      <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                        No hay operaciones para mostrar
-                      </p>
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                        Intenta ajustar los filtros o crear una nueva operación
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                operations.map(renderTableRow)
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  operations.map(renderTableRow)
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {selectedOperations.length > 0 && (
         <ActionBar />
