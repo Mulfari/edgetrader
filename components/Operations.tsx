@@ -526,12 +526,12 @@ export default function Operations() {
   );
 
   const ActionBar = () => (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-4 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-700 flex items-center gap-4 z-50 transition-all duration-300 transform">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-4 bg-white dark:bg-[#12121A] rounded-xl shadow-xl border border-zinc-200/50 dark:border-zinc-800/60 flex items-center gap-4 z-50 transition-all duration-300 transform">
       <span className="text-sm font-medium text-zinc-900 dark:text-white flex items-center gap-2">
         <div className="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></div>
         {selectedOperations.length} {selectedOperations.length === 1 ? 'operación' : 'operaciones'} seleccionada{selectedOperations.length === 1 ? '' : 's'}
       </span>
-      <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-700"></div>
+      <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800"></div>
       <button className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors flex items-center gap-2">
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -613,7 +613,7 @@ export default function Operations() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-[#12121A] rounded-xl p-4 shadow-sm border border-zinc-200/50 dark:border-zinc-800/60">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Total Operaciones</p>
@@ -630,7 +630,7 @@ export default function Operations() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-[#12121A] rounded-xl p-4 shadow-sm border border-zinc-200/50 dark:border-zinc-800/60">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Beneficio Total</p>
@@ -647,7 +647,7 @@ export default function Operations() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-[#12121A] rounded-xl p-4 shadow-sm border border-zinc-200/50 dark:border-zinc-800/60">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Tasa de Éxito</p>
@@ -664,7 +664,7 @@ export default function Operations() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-[#12121A] rounded-xl p-4 shadow-sm border border-zinc-200/50 dark:border-zinc-800/60">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Volumen Mensual</p>
@@ -684,7 +684,7 @@ export default function Operations() {
 
       {/* Gráficos y Análisis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-[#12121A] rounded-xl p-4 shadow-sm border border-zinc-200/50 dark:border-zinc-800/60">
           <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">
             Distribución por Par
           </h3>
@@ -693,7 +693,7 @@ export default function Operations() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-[#12121A] rounded-xl p-4 shadow-sm border border-zinc-200/50 dark:border-zinc-800/60">
           <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">
             Rendimiento Histórico
           </h3>
@@ -704,8 +704,8 @@ export default function Operations() {
       </div>
 
       {/* Filters mejorados */}
-      <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm">
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+      <div className="bg-white dark:bg-[#12121A] rounded-xl shadow-sm border border-zinc-200/50 dark:border-zinc-800/60">
+        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800/60">
           <h3 className="text-lg font-medium text-zinc-900 dark:text-white">
             Operaciones
           </h3>
@@ -807,9 +807,9 @@ export default function Operations() {
         {/* Vista condicional: Tabla o Tarjetas */}
         {view === 'table' ? (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
+            <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800/60">
               <thead>
-                <tr className="bg-gradient-to-r from-zinc-50/80 to-zinc-100/80 dark:from-zinc-800/80 dark:to-zinc-900/80 backdrop-blur-sm sticky top-0 z-10">
+                <tr className="bg-gradient-to-r from-zinc-50/80 to-zinc-100/80 dark:from-[#12121A]/80 dark:to-[#1A1A23]/80 backdrop-blur-sm sticky top-0 z-10">
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider w-8">
                     <input
                       type="checkbox"
@@ -860,7 +860,7 @@ export default function Operations() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
+              <tbody className="bg-white dark:bg-[#12121A] divide-y divide-zinc-200 dark:divide-zinc-800/60">
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, index) => (
                     <tr key={index} className="animate-pulse">

@@ -100,28 +100,28 @@ export default function RootLayout({
 
   return (
     <html lang="es">
-      <body className="min-h-screen bg-zinc-100 dark:bg-zinc-950">
+      <body className="min-h-screen bg-zinc-50/50 dark:bg-[#0A0A0F]">
         <ThemeProvider>
           {!isPublicPage && (
             <>
               {/* Mobile menu overlay */}
               {isMobileMenuOpen && (
                 <div 
-                  className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden animate-in fade-in-50 duration-300"
+                  className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden animate-in fade-in-50 duration-300"
                   onClick={() => setIsMobileMenuOpen(false)}
                 />
               )}
 
               {/* Sidebar */}
               <div className={`
-                fixed top-0 left-0 z-50 h-full w-64 bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-900 dark:to-zinc-950
-                border-r border-zinc-200 dark:border-zinc-800
+                fixed top-0 left-0 z-50 h-full w-64 bg-white/95 dark:bg-[#12121A]
+                border-r border-zinc-200 dark:border-zinc-800/60
                 transform transition-all duration-500 ease-in-out backdrop-blur-xl
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 shadow-xl shadow-zinc-200/50 dark:shadow-zinc-900/50
               `}>
                 <div className="flex flex-col h-full">
-                  <div className="h-20 px-6 flex items-center border-b border-zinc-200 dark:border-zinc-800">
+                  <div className="h-20 px-6 flex items-center border-b border-zinc-200 dark:border-zinc-800/60">
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl blur-lg opacity-50"></div>
@@ -168,7 +168,7 @@ export default function RootLayout({
                     </nav>
                   </div>
                   
-                  <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
+                  <div className="p-4 border-t border-zinc-200 dark:border-zinc-800/60">
                     <button 
                       onClick={handleLogout}
                       className="flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-xl
@@ -191,8 +191,8 @@ export default function RootLayout({
                 {/* Top navigation */}
                 <header className={`
                   sticky top-0 z-30 
-                  bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-900 dark:to-zinc-950
-                  border-b border-zinc-200 dark:border-zinc-800 
+                  bg-white/95 dark:bg-[#12121A]
+                  border-b border-zinc-200 dark:border-zinc-800/60
                   backdrop-blur-xl transition-all duration-300
                   ${isScrolled ? 'shadow-lg shadow-zinc-200/20 dark:shadow-zinc-900/30' : ''}
                 `}>
