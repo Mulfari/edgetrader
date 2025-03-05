@@ -121,7 +121,7 @@ export default function RootLayout({
                 shadow-xl shadow-zinc-200/50 dark:shadow-zinc-900/50
               `}>
                 <div className="flex flex-col h-full">
-                  <div className="p-4 border-b border-zinc-200 dark:border-zinc-700/50">
+                  <div className="h-[72px] p-4 border-b border-zinc-200 dark:border-zinc-700/50">
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-all duration-300"></div>
@@ -196,7 +196,7 @@ export default function RootLayout({
                   backdrop-blur-xl transition-all duration-300
                   ${isScrolled ? 'shadow-lg shadow-zinc-200/20 dark:shadow-zinc-900/30' : ''}
                 `}>
-                  <div className="flex items-center justify-between h-[73px] px-4 sm:px-6">
+                  <div className="flex items-center justify-between h-16 px-4 sm:px-6">
                     <div className="flex items-center flex-1 gap-4">
                       <button
                         type="button"
@@ -206,22 +206,13 @@ export default function RootLayout({
                         <span className="sr-only">Abrir menú</span>
                         <Menu className="h-5 w-5" />
                       </button>
-                      <div className="flex items-center h-[73px] border-l border-zinc-200 dark:border-zinc-700/50 pl-4">
-                        <div className="flex flex-col justify-center">
-                          <div className="flex items-center gap-3">
-                            <h1 className="text-xl font-semibold text-zinc-900 dark:text-white">
-                              {menuItems.find(item => item.href === pathname)?.name || ''}
-                            </h1>
-                            <div className="hidden sm:block">
-                              <Badge variant="outline" className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20">
-                                Dashboard
-                              </Badge>
-                            </div>
-                          </div>
-                          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
-                            {menuItems.find(item => item.href === pathname)?.description || ''}
-                          </p>
-                        </div>
+                      <div className="animate-in slide-in-from-left-5 duration-500">
+                        <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-indigo-500">
+                          {menuItems.find(item => item.href === pathname)?.name || ''}
+                        </h1>
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                          {menuItems.find(item => item.href === pathname)?.description || ''}
+                        </p>
                       </div>
                     </div>
 
