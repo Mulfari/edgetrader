@@ -8,8 +8,6 @@ import {
   Bell,
   Menu,
   User,
-  ChevronLeft,
-  ChevronRight,
   Home,
   LineChart,
   Wallet
