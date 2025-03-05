@@ -57,6 +57,7 @@ export default function Operations() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [view, setView] = useState<'table' | 'cards'>('table');
+  const [selectedOperations, setSelectedOperations] = useState<string[]>([]);
 
   useEffect(() => {
     // Datos de ejemplo mejorados
@@ -161,11 +162,36 @@ export default function Operations() {
     }, 1000);
   }, []);
 
+  const handleOperationSelect = (operationId: string) => {
+    setSelectedOperations(prev => 
+      prev.includes(operationId) 
+        ? prev.filter(id => id !== operationId)
+        : [...prev, operationId]
+    );
+  };
+
   const renderOperationCard = (operation: Operation) => (
     <div 
       key={operation.id} 
-      className="group bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 border border-transparent hover:border-violet-200 dark:hover:border-violet-800/30 relative overflow-hidden"
+      onClick={() => handleOperationSelect(operation.id)}
+      className={`group bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-sm transition-all duration-200 border-2 relative overflow-hidden cursor-pointer
+        ${selectedOperations.includes(operation.id)
+          ? 'border-violet-500 dark:border-violet-400 shadow-violet-100 dark:shadow-violet-900/20'
+          : 'border-transparent hover:border-violet-200 dark:hover:border-violet-800/30'}`}
     >
+      {/* Checkbox de selección */}
+      <div className={`absolute right-4 top-4 w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center ${
+        selectedOperations.includes(operation.id)
+          ? 'border-violet-500 bg-violet-500 dark:border-violet-400 dark:bg-violet-400'
+          : 'border-zinc-300 dark:border-zinc-600 group-hover:border-violet-400'
+      }`}>
+        {selectedOperations.includes(operation.id) && (
+          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </div>
+
       {/* Indicador de borde izquierdo */}
       <div className={`absolute left-0 top-0 w-1 h-full ${
         operation.profit && operation.profit > 0
@@ -534,6 +560,20 @@ export default function Operations() {
             <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
               <thead>
                 <tr className="bg-gradient-to-r from-zinc-50/80 to-zinc-100/80 dark:from-zinc-800/80 dark:to-zinc-900/80 backdrop-blur-sm sticky top-0 z-10">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider w-8">
+                    <input
+                      type="checkbox"
+                      className="rounded border-zinc-300 dark:border-zinc-600 text-violet-500 focus:ring-violet-500"
+                      checked={selectedOperations.length === operations.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedOperations(operations.map(op => op.id));
+                        } else {
+                          setSelectedOperations([]);
+                        }
+                      }}
+                    />
+                  </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
                       Fecha
@@ -574,14 +614,14 @@ export default function Operations() {
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, index) => (
                     <tr key={index} className="animate-pulse">
-                      <td colSpan={7} className="px-6 py-6">
+                      <td colSpan={8} className="px-6 py-6">
                         <div className="h-12 bg-zinc-200 dark:bg-zinc-700 rounded-lg"></div>
                       </td>
                     </tr>
                   ))
                 ) : operations.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
+                    <td colSpan={8} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center justify-center gap-3">
                         <div className="p-3 bg-zinc-100 dark:bg-zinc-700 rounded-full">
                           <Search className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
@@ -598,9 +638,25 @@ export default function Operations() {
                 ) : (
                   operations.map((operation) => (
                     <tr 
-                      key={operation.id} 
-                      className="group hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-all duration-200 cursor-pointer"
+                      key={operation.id}
+                      onClick={() => handleOperationSelect(operation.id)}
+                      className={`group transition-all duration-200 cursor-pointer ${
+                        selectedOperations.includes(operation.id)
+                          ? 'bg-violet-50 dark:bg-violet-900/20'
+                          : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
+                      }`}
                     >
+                      <td className="px-6 py-4 w-8">
+                        <input
+                          type="checkbox"
+                          className="rounded border-zinc-300 dark:border-zinc-600 text-violet-500 focus:ring-violet-500"
+                          checked={selectedOperations.includes(operation.id)}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            handleOperationSelect(operation.id);
+                          }}
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <span className="text-sm font-medium text-zinc-900 dark:text-white">
@@ -702,15 +758,30 @@ export default function Operations() {
         ) : (
           <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {isLoading ? (
-              <div className="col-span-full flex items-center justify-center py-12">
-                <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-                  <RefreshCw className="w-5 h-5 animate-spin" />
-                  Cargando operaciones...
+              Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="animate-pulse bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-sm">
+                  <div className="h-6 bg-zinc-200 dark:bg-zinc-700 rounded w-1/3 mb-4"></div>
+                  <div className="h-8 bg-zinc-200 dark:bg-zinc-700 rounded w-2/3 mb-6"></div>
+                  <div className="space-y-3">
+                    <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-full"></div>
+                    <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-5/6"></div>
+                  </div>
                 </div>
-              </div>
+              ))
             ) : operations.length === 0 ? (
-              <div className="col-span-full flex items-center justify-center py-12 text-zinc-500 dark:text-zinc-400">
-                No hay operaciones para mostrar
+              <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
+                <div className="p-4 bg-zinc-100 dark:bg-zinc-700 rounded-full">
+                  <Search className="w-8 h-8 text-zinc-400 dark:text-zinc-500" />
+                </div>
+                <h3 className="text-lg font-medium text-zinc-900 dark:text-white">
+                  No hay operaciones para mostrar
+                </h3>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center max-w-md">
+                  Intenta ajustar los filtros o crea una nueva operación para empezar
+                </p>
+                <button className="mt-2 px-4 py-2 text-sm font-medium text-violet-500 hover:text-violet-600 bg-violet-50 dark:bg-violet-900/10 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/20 transition-colors">
+                  Crear nueva operación
+                </button>
               </div>
             ) : (
               operations.map(renderOperationCard)
@@ -718,41 +789,24 @@ export default function Operations() {
           </div>
         )}
         
-        {/* Paginación mejorada */}
-        <div className="px-6 py-3 flex items-center justify-between border-t border-zinc-200 dark:border-zinc-700">
-          <div className="flex-1 flex justify-between sm:hidden">
-            <button className="relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700">
-              Anterior
+        {/* Barra de acciones para elementos seleccionados */}
+        {selectedOperations.length > 0 && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-4 bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700 flex items-center gap-4 z-50">
+            <span className="text-sm font-medium text-zinc-900 dark:text-white">
+              {selectedOperations.length} {selectedOperations.length === 1 ? 'operación' : 'operaciones'} seleccionada{selectedOperations.length === 1 ? '' : 's'}
+            </span>
+            <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-700"></div>
+            <button className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
+              Exportar
             </button>
-            <button className="ml-3 relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700">
-              Siguiente
+            <button className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
+              Etiquetar
+            </button>
+            <button className="text-sm font-medium text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 transition-colors">
+              Eliminar
             </button>
           </div>
-          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-zinc-700 dark:text-zinc-200">
-                Mostrando <span className="font-medium">1</span> a <span className="font-medium">5</span> de{' '}
-                <span className="font-medium">20</span> resultados
-              </p>
-            </div>
-            <div>
-              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700">
-                  Anterior
-                </button>
-                <button className="relative inline-flex items-center px-4 py-2 border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700">
-                  1
-                </button>
-                <button className="relative inline-flex items-center px-4 py-2 border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700">
-                  2
-                </button>
-                <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700">
-                  Siguiente
-                </button>
-              </nav>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
