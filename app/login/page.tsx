@@ -16,12 +16,14 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [isExistingSession, setIsExistingSession] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     // Verificar si hay una sesión activa
     const token = localStorage.getItem("token");
     if (token) {
+      setIsExistingSession(true);
       setIsCheckingSession(false);
       return;
     }
@@ -39,10 +41,10 @@ export default function LoginPage() {
 
   // Efecto para la redirección cuando se detecta una sesión activa
   useEffect(() => {
-    if (!isCheckingSession && localStorage.getItem("token")) {
+    if (!isCheckingSession && isExistingSession) {
       setTimeout(() => router.push("/dashboard"), 2000);
     }
-  }, [isCheckingSession, router]);
+  }, [isCheckingSession, isExistingSession, router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -153,7 +155,7 @@ export default function LoginPage() {
                   Por favor, espera un momento
                 </motion.p>
               </motion.div>
-            ) : localStorage.getItem("token") ? (
+            ) : isExistingSession ? (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -183,6 +185,56 @@ export default function LoginPage() {
                   className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
                 >
                   ¡Sesión activa detectada!
+                </motion.h3>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-center space-y-4"
+                >
+                  <p className="text-gray-600 dark:text-gray-300">
+                    Te estamos redirigiendo al dashboard...
+                  </p>
+                  <div className="relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: "0%" }}
+                      animate={{ width: "100%" }}
+                      transition={{ duration: 2, ease: "easeInOut" }}
+                      className="absolute left-0 top-0 h-full bg-gradient-to-r from-violet-500 to-indigo-500"
+                    />
+                  </div>
+                </motion.div>
+              </motion.div>
+            ) : success ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+                className="flex flex-col items-center"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ 
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 20,
+                    delay: 0.1 
+                  }}
+                  className="w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mb-4"
+                >
+                  <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </motion.div>
+                <motion.h3 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
+                >
+                  ¡Inicio de sesión exitoso!
                 </motion.h3>
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}

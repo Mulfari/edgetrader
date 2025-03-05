@@ -384,8 +384,8 @@ export default function RootLayout({
 
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
+                          <button
+                            type="button"
                               className="group flex items-center gap-3 p-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-300"
                             >
                               <div className="relative">
