@@ -11,7 +11,12 @@ import {
   Tag,
   Filter,
   Search,
-  RefreshCw
+  RefreshCw,
+  Table,
+  Grid,
+  Info,
+  ExternalLink,
+  ChevronRight
 } from "lucide-react";
 
 interface Operation {
@@ -156,6 +161,103 @@ export default function Operations() {
     }, 1000);
   }, []);
 
+  const renderOperationCard = (operation: Operation) => (
+    <div key={operation.id} className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              operation.type === 'buy' 
+                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
+            }`}>
+              {operation.type === 'buy' ? 'Compra' : 'Venta'}
+            </span>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              operation.status === 'completed'
+                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                : operation.status === 'pending'
+                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+            }`}>
+              {operation.status === 'completed' ? 'Completada' : 
+               operation.status === 'pending' ? 'Pendiente' : 'Cancelada'}
+            </span>
+          </div>
+          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
+            {operation.symbol}
+          </h3>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            {new Date(operation.timestamp).toLocaleString()}
+          </p>
+        </div>
+        <div className="flex flex-col items-end">
+          <div className="flex items-center gap-1 text-sm text-zinc-600 dark:text-zinc-300">
+            <ExternalLink className="w-4 h-4" />
+            {operation.exchange}
+          </div>
+          {operation.profit !== undefined && (
+            <span className={`flex items-center mt-2 text-lg font-semibold ${
+              operation.profit >= 0
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-rose-600 dark:text-rose-400'
+            }`}>
+              {operation.profit >= 0 ? '+' : '-'}${Math.abs(operation.profit).toLocaleString()}
+              {operation.profit >= 0 
+                ? <TrendingUp className="ml-1 h-4 w-4" />
+                : <TrendingDown className="ml-1 h-4 w-4" />
+              }
+            </span>
+          )}
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Precio</p>
+          <p className="text-base font-medium text-zinc-900 dark:text-white">
+            ${operation.price.toLocaleString()}
+          </p>
+        </div>
+        <div>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Cantidad</p>
+          <p className="text-base font-medium text-zinc-900 dark:text-white">
+            {operation.amount}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {operation.notes && (
+          <div className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+            <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <p>{operation.notes}</p>
+          </div>
+        )}
+        {operation.tags && operation.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {operation.tags.map((tag) => (
+              <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300">
+                <Tag className="w-3 h-3 mr-1" />
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+        {operation.fee !== undefined && (
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Comisión: ${operation.fee.toLocaleString()}
+          </p>
+        )}
+      </div>
+      
+      <button className="mt-4 w-full flex items-center justify-center px-4 py-2 text-sm font-medium text-violet-500 hover:text-violet-600 bg-violet-50 dark:bg-violet-900/10 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/20 transition-colors">
+        Ver detalles
+        <ChevronRight className="w-4 h-4 ml-1" />
+      </button>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       {/* Header mejorado */}
@@ -172,22 +274,24 @@ export default function Operations() {
           <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1">
             <button
               onClick={() => setView('table')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors inline-flex items-center gap-2 ${
                 view === 'table'
                   ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
               }`}
             >
+              <Table className="w-4 h-4" />
               Tabla
             </button>
             <button
               onClick={() => setView('cards')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors inline-flex items-center gap-2 ${
                 view === 'cards'
                   ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
               }`}
             >
+              <Grid className="w-4 h-4" />
               Tarjetas
             </button>
           </div>
@@ -389,125 +493,144 @@ export default function Operations() {
           </div>
         </div>
 
-        {/* Tabla mejorada */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
-            <thead className="bg-zinc-50 dark:bg-zinc-800">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  Fecha
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  Tipo
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  Par
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  Exchange
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  Precio
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  Cantidad
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  Beneficio
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  Etiquetas
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
-              {isLoading ? (
+        {/* Vista condicional: Tabla o Tarjetas */}
+        {view === 'table' ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
+              <thead className="bg-zinc-50 dark:bg-zinc-800">
                 <tr>
-                  <td colSpan={9} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                    <div className="flex items-center justify-center gap-2">
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      Cargando operaciones...
-                    </div>
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Fecha
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Tipo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Par
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Exchange
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Precio
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Cantidad
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Beneficio
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Etiquetas
+                  </th>
                 </tr>
-              ) : operations.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                    No hay operaciones para mostrar
-                  </td>
-                </tr>
-              ) : (
-                operations.map((operation) => (
-                  <tr key={operation.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
-                      {new Date(operation.timestamp).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        operation.type === 'buy' 
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                          : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
-                      }`}>
-                        {operation.type === 'buy' ? 'Compra' : 'Venta'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
-                      {operation.symbol}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
-                      {operation.exchange}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
-                      ${operation.price.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
-                      {operation.amount}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        operation.status === 'completed'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                          : operation.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                          : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                      }`}>
-                        {operation.status === 'completed' ? 'Completada' : 
-                         operation.status === 'pending' ? 'Pendiente' : 'Cancelada'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {operation.profit !== undefined && (
-                        <span className={`flex items-center ${
-                          operation.profit >= 0
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-rose-600 dark:text-rose-400'
-                        }`}>
-                          {operation.profit >= 0 ? '+' : '-'}${Math.abs(operation.profit).toLocaleString()}
-                          {operation.profit >= 0 
-                            ? <TrendingUp className="ml-1 h-4 w-4" />
-                            : <TrendingDown className="ml-1 h-4 w-4" />
-                          }
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex gap-1">
-                        {operation.tags?.map((tag) => (
-                          <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300">
-                            {tag}
-                          </span>
-                        ))}
+              </thead>
+              <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={9} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                      <div className="flex items-center justify-center gap-2">
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Cargando operaciones...
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : operations.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                      No hay operaciones para mostrar
+                    </td>
+                  </tr>
+                ) : (
+                  operations.map((operation) => (
+                    <tr key={operation.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
+                        {new Date(operation.timestamp).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          operation.type === 'buy' 
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                            : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
+                        }`}>
+                          {operation.type === 'buy' ? 'Compra' : 'Venta'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
+                        {operation.symbol}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
+                        {operation.exchange}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
+                        ${operation.price.toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
+                        {operation.amount}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          operation.status === 'completed'
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                            : operation.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                        }`}>
+                          {operation.status === 'completed' ? 'Completada' : 
+                           operation.status === 'pending' ? 'Pendiente' : 'Cancelada'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {operation.profit !== undefined && (
+                          <span className={`flex items-center ${
+                            operation.profit >= 0
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-rose-600 dark:text-rose-400'
+                          }`}>
+                            {operation.profit >= 0 ? '+' : '-'}${Math.abs(operation.profit).toLocaleString()}
+                            {operation.profit >= 0 
+                              ? <TrendingUp className="ml-1 h-4 w-4" />
+                              : <TrendingDown className="ml-1 h-4 w-4" />
+                            }
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex gap-1">
+                          {operation.tags?.map((tag) => (
+                            <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {isLoading ? (
+              <div className="col-span-full flex items-center justify-center py-12">
+                <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                  Cargando operaciones...
+                </div>
+              </div>
+            ) : operations.length === 0 ? (
+              <div className="col-span-full flex items-center justify-center py-12 text-zinc-500 dark:text-zinc-400">
+                No hay operaciones para mostrar
+              </div>
+            ) : (
+              operations.map(renderOperationCard)
+            )}
+          </div>
+        )}
         
         {/* Paginación mejorada */}
         <div className="px-6 py-3 flex items-center justify-between border-t border-zinc-200 dark:border-zinc-700">
