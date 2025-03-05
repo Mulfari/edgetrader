@@ -122,26 +122,21 @@ export default function RootLayout({
               `}>
                 <div className="flex flex-col h-full">
                   <div className="p-4 border-b border-zinc-200 dark:border-zinc-700/50">
-                    <div 
-                      onClick={() => setIsMobileMenuOpen(true)}
-                      className="flex items-center gap-3 group cursor-pointer"
-                    >
+                    <div className="flex items-center gap-3">
                       <div className="relative">
                         <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-all duration-300"></div>
                         <div className="relative bg-gradient-to-r from-violet-500 to-indigo-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-violet-500/25 transition-all duration-300">
-                          <BarChart3 className={`h-6 w-6 text-white transform transition-all duration-500 ${isMobileMenuOpen ? 'scale-x-[-1]' : ''}`} />
+                          <BarChart3 className="h-6 w-6 text-white" />
                         </div>
                       </div>
-                      {!isMobileMenuOpen && (
-                        <div className="animate-in slide-in-from-left-5 duration-500">
-                          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
-                            TradingDash
-                          </h1>
-                          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                            Panel de Control
-                          </p>
-                        </div>
-                      )}
+                      <div>
+                        <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
+                          TradingDash
+                        </h1>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                          Panel de Control
+                        </p>
+                      </div>
                     </div>
                   </div>
                   
@@ -157,25 +152,17 @@ export default function RootLayout({
                             ${pathname === item.href
                               ? 'bg-gradient-to-r from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300'
                               : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-r hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
-                            } group
+                            }
                           `}
                         >
-                          {isMobileMenuOpen && (
-                            <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                              {item.name}
-                            </div>
-                          )}
                           <item.icon className={`
-                            ${isMobileMenuOpen ? 'mx-auto' : 'mr-3'} 
-                            h-5 w-5 transition-all duration-300 transform group-hover:scale-110
+                            mr-3 h-5 w-5 transition-all duration-300 transform group-hover:scale-110
                             ${pathname === item.href
                               ? 'text-violet-500 dark:text-violet-400'
                               : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
                             }
                           `} />
-                          {!isMobileMenuOpen && (
-                            <span className="transition-colors duration-200">{item.name}</span>
-                          )}
+                          <span className="transition-colors duration-200">{item.name}</span>
                         </Link>
                       ))}
                     </nav>
@@ -184,28 +171,16 @@ export default function RootLayout({
                   <div className="p-4 border-t border-zinc-200 dark:border-zinc-700/50">
                     <button 
                       onClick={handleLogout}
-                      className={`
-                        relative flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-xl
+                      className="relative flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-xl
                         text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10
-                        group transition-all duration-200 transform hover:scale-[1.02]
-                      `}
+                        transition-all duration-200 transform hover:scale-[1.02]"
                     >
-                      {isMobileMenuOpen && (
-                        <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                          Cerrar Sesión
-                        </div>
-                      )}
-                      <LogOut className={`
-                        ${isMobileMenuOpen ? 'mx-auto' : 'mr-3'} 
-                        h-5 w-5 text-gray-400 dark:text-blue-400/50 
+                      <LogOut className="mr-3 h-5 w-5 text-gray-400 dark:text-blue-400/50 
                         group-hover:text-rose-500 dark:group-hover:text-rose-400 
-                        transition-all duration-200 transform group-hover:scale-110
-                      `} />
-                      {!isMobileMenuOpen && (
-                        <span className="group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-200">
-                          Cerrar Sesión
-                        </span>
-                      )}
+                        transition-all duration-200 transform group-hover:scale-110" />
+                      <span className="group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-200">
+                        Cerrar Sesión
+                      </span>
                     </button>
                   </div>
                 </div>
