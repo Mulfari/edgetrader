@@ -173,11 +173,6 @@ export default function Operations() {
     );
   };
 
-  const handleActionClick = (e: React.MouseEvent, operationId: string) => {
-    e.stopPropagation();
-    setShowActionMenu(showActionMenu === operationId ? null : operationId);
-  };
-
   const renderOperationCard = (operation: Operation) => (
     <div 
       key={operation.id} 
