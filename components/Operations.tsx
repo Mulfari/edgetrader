@@ -497,115 +497,166 @@ export default function Operations() {
         {view === 'table' ? (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
-              <thead className="bg-zinc-50 dark:bg-zinc-800">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Fecha
+              <thead>
+                <tr className="bg-gradient-to-r from-zinc-50/80 to-zinc-100/80 dark:from-zinc-800/80 dark:to-zinc-900/80 backdrop-blur-sm sticky top-0 z-10">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
+                      Fecha
+                      <Clock className="h-3.5 w-3.5" />
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Tipo
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
+                      Tipo/Estado
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Par
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
+                      Par/Exchange
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Exchange
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
+                      Precio/Cantidad
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Precio
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
+                      Beneficio
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Cantidad
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
+                      Etiquetas
+                    </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Beneficio
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Etiquetas
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Acciones
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
                 {isLoading ? (
-                  <tr>
-                    <td colSpan={9} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                      <div className="flex items-center justify-center gap-2">
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        Cargando operaciones...
-                      </div>
-                    </td>
-                  </tr>
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <tr key={index} className="animate-pulse">
+                      <td colSpan={7} className="px-6 py-6">
+                        <div className="h-12 bg-zinc-200 dark:bg-zinc-700 rounded-lg"></div>
+                      </td>
+                    </tr>
+                  ))
                 ) : operations.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                      No hay operaciones para mostrar
+                    <td colSpan={7} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <div className="p-3 bg-zinc-100 dark:bg-zinc-700 rounded-full">
+                          <Search className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
+                        </div>
+                        <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                          No hay operaciones para mostrar
+                        </p>
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                          Intenta ajustar los filtros o crear una nueva operación
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
                   operations.map((operation) => (
-                    <tr key={operation.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
-                        {new Date(operation.timestamp).toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          operation.type === 'buy' 
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                            : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
-                        }`}>
-                          {operation.type === 'buy' ? 'Compra' : 'Venta'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
-                        {operation.symbol}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
-                        {operation.exchange}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
-                        ${operation.price.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
-                        {operation.amount}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          operation.status === 'completed'
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                            : operation.status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                        }`}>
-                          {operation.status === 'completed' ? 'Completada' : 
-                           operation.status === 'pending' ? 'Pendiente' : 'Cancelada'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {operation.profit !== undefined && (
-                          <span className={`flex items-center ${
-                            operation.profit >= 0
-                              ? 'text-emerald-600 dark:text-emerald-400'
-                              : 'text-rose-600 dark:text-rose-400'
-                          }`}>
-                            {operation.profit >= 0 ? '+' : '-'}${Math.abs(operation.profit).toLocaleString()}
-                            {operation.profit >= 0 
-                              ? <TrendingUp className="ml-1 h-4 w-4" />
-                              : <TrendingDown className="ml-1 h-4 w-4" />
-                            }
+                    <tr 
+                      key={operation.id} 
+                      className="group hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-all duration-200 cursor-pointer"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                            {new Date(operation.timestamp).toLocaleDateString()}
                           </span>
+                          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                            {new Date(operation.timestamp).toLocaleTimeString()}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-2">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            operation.type === 'buy' 
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                              : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
+                          }`}>
+                            {operation.type === 'buy' ? 'Compra' : 'Venta'}
+                          </span>
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            operation.status === 'completed'
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                              : operation.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                              : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                          }`}>
+                            {operation.status === 'completed' ? 'Completada' : 
+                             operation.status === 'pending' ? 'Pendiente' : 'Cancelada'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                            {operation.symbol}
+                          </span>
+                          <span className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                            <ExternalLink className="w-3 h-3" />
+                            {operation.exchange}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                            ${operation.price.toLocaleString()}
+                          </span>
+                          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                            {operation.amount} unidades
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {operation.profit !== undefined && (
+                          <div className="flex flex-col">
+                            <span className={`text-sm font-medium flex items-center ${
+                              operation.profit >= 0
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-rose-600 dark:text-rose-400'
+                            }`}>
+                              {operation.profit >= 0 ? '+' : '-'}${Math.abs(operation.profit).toLocaleString()}
+                              {operation.profit >= 0 
+                                ? <TrendingUp className="ml-1 h-4 w-4" />
+                                : <TrendingDown className="ml-1 h-4 w-4" />
+                              }
+                            </span>
+                            {operation.fee !== undefined && (
+                              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                                Comisión: ${operation.fee.toLocaleString()}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="flex gap-1">
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
                           {operation.tags?.map((tag) => (
-                            <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300">
+                            <span 
+                              key={tag} 
+                              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors cursor-pointer"
+                            >
+                              <Tag className="w-3 h-3 mr-1" />
                               {tag}
                             </span>
                           ))}
                         </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 inline-flex items-center justify-center p-2 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/40">
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
                       </td>
                     </tr>
                   ))
