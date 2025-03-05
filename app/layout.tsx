@@ -18,6 +18,8 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import "./globals.css";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 const menuItems = [
   {
@@ -222,46 +224,120 @@ export default function RootLayout({
 
                     <div className="flex items-center gap-4">
                       <div className="hidden sm:block">
-                        <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-lg">
-                          <div className="flex items-center gap-1.5">
-                            <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                            <span>En línea</span>
-                          </div>
-                          {lastUpdate && (
-                            <>
-                              <span className="text-zinc-300 dark:text-zinc-600">•</span>
-                              <span>Actualizado {lastUpdate}</span>
-                            </>
-                          )}
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700/50 transition-all duration-200">
+                              <div className="flex items-center gap-1.5">
+                                <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                                <span>En línea</span>
+                              </div>
+                              {lastUpdate && (
+                                <>
+                                  <span className="text-zinc-300 dark:text-zinc-600">•</span>
+                                  <span>Actualizado {lastUpdate}</span>
+                                </>
+                              )}
+                            </div>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-64">
+                            <div className="p-3 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium">Estado del sistema</span>
+                                <Badge variant="outline" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                                  Operativo
+                                </Badge>
+                              </div>
+                              <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                                Última actualización hace 2 minutos
+                              </div>
+                              <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                                Próxima actualización en 3 minutos
+                              </div>
+                            </div>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          className="group p-2 rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
-                        >
-                          <span className="sr-only">Ver notificaciones</span>
-                          <div className="relative">
-                            <Bell className="h-5 w-5" />
-                            <div className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-zinc-900"></div>
-                          </div>
-                        </button>
-
-                        <button
-                          type="button"
-                          className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
-                        >
-                          <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 p-0.5 transition-transform duration-200 hover:scale-105">
-                            <div className="h-full w-full rounded-[10px] bg-white dark:bg-zinc-900 flex items-center justify-center">
-                              <User className="h-4 w-4 text-violet-500 dark:text-violet-400" />
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="group p-2 rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
+                            >
+                              <span className="sr-only">Ver notificaciones</span>
+                              <div className="relative">
+                                <Bell className="h-5 w-5" />
+                                <div className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-zinc-900"></div>
+                              </div>
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-80">
+                            <div className="p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <h3 className="font-medium">Notificaciones</h3>
+                                <Badge variant="outline" className="bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400">
+                                  3 nuevas
+                                </Badge>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
+                                  <div className="text-sm font-medium">Nuevo balance detectado</div>
+                                  <div className="text-xs text-zinc-500 dark:text-zinc-400">Hace 5 minutos</div>
+                                </div>
+                                <div className="p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
+                                  <div className="text-sm font-medium">Operación cerrada</div>
+                                  <div className="text-xs text-zinc-500 dark:text-zinc-400">Hace 15 minutos</div>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                          <div className="hidden sm:block text-left">
-                            <div className="text-sm font-medium text-zinc-900 dark:text-white">Usuario</div>
-                            <div className="text-xs text-zinc-500 dark:text-zinc-400">Administrador</div>
-                          </div>
-                        </button>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
+                            >
+                              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 p-0.5 transition-transform duration-200 hover:scale-105">
+                                <div className="h-full w-full rounded-[10px] bg-white dark:bg-zinc-900 flex items-center justify-center">
+                                  <User className="h-4 w-4 text-violet-500 dark:text-violet-400" />
+                                </div>
+                              </div>
+                              <div className="hidden sm:block text-left">
+                                <div className="text-sm font-medium text-zinc-900 dark:text-white">Usuario</div>
+                                <div className="text-xs text-zinc-500 dark:text-zinc-400">Administrador</div>
+                              </div>
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-80">
+                            <div className="p-4 space-y-3">
+                              <div className="space-y-1">
+                                <h3 className="font-medium">Detalles de membresía</h3>
+                                <div className="text-sm text-zinc-500 dark:text-zinc-400">
+                                  Miembro premium
+                                </div>
+                              </div>
+                              <div className="p-3 rounded-lg bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-zinc-600 dark:text-zinc-400">Inicio:</span>
+                                  <span className="font-medium">01 Marzo 2024</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-zinc-600 dark:text-zinc-400">Vence:</span>
+                                  <span className="font-medium">01 Abril 2024</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-zinc-600 dark:text-zinc-400">Plan:</span>
+                                  <Badge variant="outline" className="bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
+                                    Premium
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   </div>
