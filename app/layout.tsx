@@ -122,6 +122,7 @@ export default function RootLayout({
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 ${isSidebarCollapsed ? 'w-[5.5rem]' : 'w-72'}
                 shadow-[0_0_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)]
+                overflow-x-hidden
               `}>
                 <div className="flex flex-col h-full">
                   <div className={`h-20 flex items-center justify-between border-b border-zinc-200/50 dark:border-zinc-800/40 ${isSidebarCollapsed ? 'px-4' : 'px-6'}`}>
@@ -194,7 +195,7 @@ export default function RootLayout({
                             )}
                           </div>
                           {isSidebarCollapsed && (
-                            <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            <div className="absolute left-full ml-6 px-2 py-1 bg-zinc-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                               {item.name}
                             </div>
                           )}
@@ -224,7 +225,7 @@ export default function RootLayout({
                         </span>
                       )}
                       {isSidebarCollapsed && (
-                        <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                        <div className="absolute left-full ml-6 px-2 py-1 bg-zinc-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                           Cerrar Sesión
                         </div>
                       )}
