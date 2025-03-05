@@ -121,7 +121,7 @@ export default function RootLayout({
                 shadow-xl shadow-zinc-200/50 dark:shadow-zinc-900/50
               `}>
                 <div className="flex flex-col h-full">
-                  <div className="h-[4.5rem] px-6 flex items-center border-b border-zinc-200 dark:border-zinc-700/50">
+                  <div className="h-20 px-6 flex items-center border-b border-zinc-200 dark:border-zinc-700/50">
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl blur-lg opacity-50"></div>
@@ -147,7 +147,7 @@ export default function RootLayout({
                           key={item.href}
                           href={item.href} 
                           className={`
-                            relative flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
+                            flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
                             transition-all duration-300 transform hover:scale-[1.02]
                             ${pathname === item.href
                               ? 'bg-gradient-to-r from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300'
@@ -171,7 +171,7 @@ export default function RootLayout({
                   <div className="p-4 border-t border-zinc-200 dark:border-zinc-700/50">
                     <button 
                       onClick={handleLogout}
-                      className="relative flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-xl
+                      className="flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-xl
                         text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10
                         group transition-all duration-200 transform hover:scale-[1.02]"
                     >
@@ -196,7 +196,7 @@ export default function RootLayout({
                   backdrop-blur-xl transition-all duration-300
                   ${isScrolled ? 'shadow-lg shadow-zinc-200/20 dark:shadow-zinc-900/30' : ''}
                 `}>
-                  <div className="flex items-center justify-between h-[4.5rem] px-4 sm:px-6 lg:px-8 -mt-[1px]">
+                  <div className="flex items-center justify-between h-20 px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center flex-1 gap-4">
                       <button
                         type="button"
