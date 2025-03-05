@@ -365,7 +365,7 @@ export default function Operations() {
             </svg>
             Duplicar
           </button>
-        </div>
+      </div>
         <button 
           onClick={(e) => {
             e.stopPropagation();
@@ -556,7 +556,7 @@ export default function Operations() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white/95 dark:bg-[#12121A]/95 backdrop-blur-xl rounded-xl p-6 shadow-sm border border-zinc-200/50 dark:border-zinc-700/50 hover:shadow-lg hover:shadow-violet-100/20 dark:hover:shadow-violet-900/20 transition-all duration-300">
-          <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Total Operaciones</p>
               <p className="text-3xl font-bold text-zinc-900 dark:text-white mt-2">
@@ -616,7 +616,7 @@ export default function Operations() {
               <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
                 Comisiones: <span className="text-rose-500">${stats?.totalFees.toLocaleString()}</span>
               </p>
-            </div>
+              </div>
             <div className="p-4 bg-yellow-500/10 rounded-xl">
               <BarChart className="w-8 h-8 text-yellow-500" />
             </div>
@@ -730,30 +730,30 @@ export default function Operations() {
 
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
-              <select
+        <select
                 className="px-4 py-2.5 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-xl text-sm text-zinc-900 dark:text-white border border-zinc-200/50 dark:border-zinc-700/50 focus:border-violet-500 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:focus:ring-violet-500/20 transition-all duration-200"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-              >
-                <option value="all">Todas las operaciones</option>
-                <option value="completed">Completadas</option>
-                <option value="pending">Pendientes</option>
-                <option value="cancelled">Canceladas</option>
-              </select>
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+        >
+          <option value="all">Todas las operaciones</option>
+          <option value="completed">Completadas</option>
+          <option value="pending">Pendientes</option>
+          <option value="cancelled">Canceladas</option>
+        </select>
             </div>
-
+        
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
-              <select
+        <select
                 className="px-4 py-2.5 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-xl text-sm text-zinc-900 dark:text-white border border-zinc-200/50 dark:border-zinc-700/50 focus:border-violet-500 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:focus:ring-violet-500/20 transition-all duration-200"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="date">Ordenar por fecha</option>
-                <option value="amount">Ordenar por monto</option>
-                <option value="profit">Ordenar por beneficio</option>
-              </select>
-            </div>
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+        >
+          <option value="date">Ordenar por fecha</option>
+          <option value="amount">Ordenar por monto</option>
+          <option value="profit">Ordenar por beneficio</option>
+        </select>
+      </div>
 
             <button 
               onClick={() => {
@@ -796,8 +796,8 @@ export default function Operations() {
 
         {/* Vista condicional: Tabla o Tarjetas */}
         {view === 'table' ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
               <thead>
                 <tr className="bg-gradient-to-r from-zinc-50/80 to-zinc-100/80 dark:from-zinc-800/80 dark:to-zinc-900/80 backdrop-blur-sm sticky top-0 z-10">
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider w-8">
@@ -816,58 +816,58 @@ export default function Operations() {
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
-                      Fecha
+                  Fecha
                       <Clock className="h-3.5 w-3.5" />
                     </div>
-                  </th>
+                </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
                       Tipo/Estado
                     </div>
-                  </th>
+                </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
                       Par/Exchange
                     </div>
-                  </th>
+                </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
                       Precio/Cantidad
                     </div>
-                  </th>
+                </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
                       Beneficio
                     </div>
-                  </th>
+                </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
                       Etiquetas
                     </div>
-                  </th>
+                </th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
-                {isLoading ? (
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
+              {isLoading ? (
                   Array.from({ length: 5 }).map((_, index) => (
                     <tr key={index} className="animate-pulse">
                       <td colSpan={8} className="px-6 py-6">
                         <div className="h-12 bg-zinc-200 dark:bg-zinc-700 rounded-lg"></div>
-                      </td>
-                    </tr>
+                  </td>
+                </tr>
                   ))
-                ) : operations.length === 0 ? (
-                  <tr>
+              ) : operations.length === 0 ? (
+                <tr>
                     <td colSpan={8} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center justify-center gap-3">
                         <div className="p-3 bg-zinc-100 dark:bg-zinc-700 rounded-full">
                           <Search className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
                         </div>
                         <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                          No hay operaciones para mostrar
+                    No hay operaciones para mostrar
                         </p>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400">
                           Intenta ajustar los filtros o crear una nueva operación
@@ -877,10 +877,10 @@ export default function Operations() {
                   </tr>
                 ) : (
                   operations.map(renderTableRow)
-                )}
-              </tbody>
-            </table>
-          </div>
+              )}
+            </tbody>
+          </table>
+                      </div>
         ) : (
           <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {isLoading ? (
@@ -918,7 +918,7 @@ export default function Operations() {
         {selectedOperations.length > 0 && (
           <ActionBar />
         )}
-      </div>
+                    </div>
     </div>
   );
 }
