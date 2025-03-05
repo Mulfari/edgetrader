@@ -32,7 +32,6 @@ import {
   Filler
 } from 'chart.js';
 import { Line, Pie } from 'react-chartjs-2';
-import { Tooltip } from "./ui/tooltip";
 
 // Registrar componentes de Chart.js
 ChartJS.register(
