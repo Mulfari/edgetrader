@@ -208,74 +208,77 @@ export default function RootLayout({
                   backdrop-blur-xl transition-all duration-200
                   ${isScrolled ? 'shadow-md' : ''}
                 `}>
-                  <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center flex-1 gap-4">
-                      <button
-                        type="button"
-                        className="lg:hidden -ml-0.5 -mt-0.5 h-10 w-10 inline-flex items-center justify-center rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
-                        onClick={() => setIsMobileMenuOpen(true)}
-                      >
-                        <span className="sr-only">Abrir menú</span>
-                        <Menu className="h-5 w-5" />
-                      </button>
-                      <div>
-                        <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-indigo-500">
-                          {menuItems.find(item => item.href === pathname)?.name || ''}
-                        </h1>
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                          {menuItems.find(item => item.href === pathname)?.description || ''}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <div className="hidden sm:block">
-                        <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-lg">
-                          <div className="flex items-center gap-1.5">
-                            <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                            <span>En línea</span>
-                          </div>
-                          {lastUpdate && (
-                            <>
-                              <span className="text-zinc-300 dark:text-zinc-600">•</span>
-                              <span>Actualizado {lastUpdate}</span>
-                            </>
-                          )}
+                  <nav className="h-16 px-4 sm:px-6 lg:px-8">
+                    <div className="flex h-full items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <button
+                          type="button"
+                          className="lg:hidden -ml-0.5 -mt-0.5 h-10 w-10 inline-flex items-center justify-center rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
+                          onClick={() => setIsMobileMenuOpen(true)}
+                        >
+                          <span className="sr-only">Abrir menú</span>
+                          <Menu className="h-5 w-5 text-zinc-500 dark:text-zinc-400" />
+                        </button>
+                        <div>
+                          <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-indigo-500">
+                            {menuItems.find(item => item.href === pathname)?.name || ''}
+                          </h1>
+                          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                            {menuItems.find(item => item.href === pathname)?.description || ''}
+                          </p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-6">
+                        {/* Status Badge */}
+                        <div className="hidden sm:block">
+                          <div className="flex items-center gap-2 text-sm bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-lg">
+                            <div className="flex items-center gap-1.5">
+                              <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                              <span className="text-zinc-600 dark:text-zinc-400">En línea</span>
+                            </div>
+                            {lastUpdate && (
+                              <>
+                                <span className="text-zinc-300 dark:text-zinc-600">•</span>
+                                <span className="text-zinc-600 dark:text-zinc-400">Actualizado {lastUpdate}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Notifications */}
                         <button
                           type="button"
-                          className="group p-2 rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
+                          className="relative group p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
                         >
                           <span className="sr-only">Ver notificaciones</span>
-                          <div className="relative">
-                            <Bell className="h-5 w-5" />
-                            <div className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-zinc-900"></div>
-                          </div>
+                          <Bell className="h-5 w-5 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors" />
+                          <div className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-zinc-900"></div>
                         </button>
 
-                        <button
-                          type="button"
-                          className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
-                        >
-                          <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 p-0.5 transition-transform duration-200 hover:scale-105">
-                            <div className="h-full w-full rounded-[10px] bg-white dark:bg-zinc-900 flex items-center justify-center">
-                              <User className="h-4 w-4 text-violet-500 dark:text-violet-400" />
+                        {/* User Menu */}
+                        <div className="relative">
+                          <button
+                            type="button"
+                            className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
+                          >
+                            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 p-0.5 transition-transform duration-200 hover:scale-105">
+                              <div className="h-full w-full rounded-[10px] bg-white dark:bg-zinc-900 flex items-center justify-center">
+                                <User className="h-4 w-4 text-violet-500 dark:text-violet-400" />
+                              </div>
                             </div>
-                          </div>
-                          <div className="hidden sm:block text-left">
-                            <div className="text-sm font-medium text-zinc-900 dark:text-white">Usuario</div>
-                            <div className="text-xs text-zinc-500 dark:text-zinc-400">Administrador</div>
-                          </div>
-                        </button>
+                            <div className="hidden sm:block text-left">
+                              <div className="text-sm font-medium text-zinc-900 dark:text-white">Usuario</div>
+                              <div className="text-xs text-zinc-500 dark:text-zinc-400">Administrador</div>
+                            </div>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </nav>
                 </header>
 
-                <main className="py-6 px-4 sm:px-6 lg:px-8">
+                <main className="py-6 px-4 sm:px-6 lg:px-8 min-h-[calc(100vh-4rem)] bg-gradient-to-b from-zinc-50/50 to-white dark:from-zinc-900 dark:to-zinc-900/50">
                   {children}
                 </main>
               </div>
