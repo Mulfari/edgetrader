@@ -123,25 +123,22 @@ export default function RootLayout({
                 shadow-xl shadow-zinc-200/50 dark:shadow-zinc-900/50
               `}>
                 <div className="flex flex-col h-full">
-                  <div className="p-4 border-b border-zinc-200 dark:border-zinc-700/50 flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="bg-gradient-to-r from-violet-500 to-indigo-500 w-8 h-8 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-violet-500/25 transition-all duration-300">
-                        <BarChart3 className="h-5 w-5 text-white animate-in fade-in-50 duration-500" />
-                      </div>
-                      {!isSidebarCollapsed && (
-                        <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500 animate-in slide-in-from-left-5 duration-300">
-                          TradingDash
-                        </h1>
-                      )}
-                    </div>
+                  <div className="p-4 border-b border-zinc-200 dark:border-zinc-700/50">
                     <button
                       onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                      className="hidden lg:flex items-center justify-center w-6 h-6 rounded-lg text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700/50 transition-all duration-200 hover:shadow-lg"
+                      className="w-full flex items-center gap-3 group cursor-pointer"
                     >
-                      {isSidebarCollapsed ? (
-                        <ChevronRight className="h-4 w-4" />
-                      ) : (
-                        <ChevronLeft className="h-4 w-4" />
+                      <div className="bg-gradient-to-r from-violet-500 to-indigo-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-violet-500/25 transition-all duration-300 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                        <BarChart3 className="h-6 w-6 text-white animate-in fade-in-50 duration-500" />
+                      </div>
+                      {!isSidebarCollapsed && (
+                        <div className="flex items-center justify-between flex-1">
+                          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500 animate-in slide-in-from-left-5 duration-300">
+                            TradingDash
+                          </h1>
+                          <ChevronLeft className="h-5 w-5 text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-600 dark:group-hover:text-zinc-400 transition-colors duration-200" />
+                        </div>
                       )}
                     </button>
                   </div>
