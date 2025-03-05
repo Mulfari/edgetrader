@@ -123,8 +123,8 @@ export default function RootLayout({
                 shadow-[0_0_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)]
                 overflow-hidden
               `}>
-                <div className="flex flex-col h-full w-72">
-                  <div className="h-20 flex items-center justify-between border-b border-zinc-200/50 dark:border-zinc-800/40 px-4 group-hover:px-6 min-w-[5.5rem]">
+                <div className="flex flex-col h-full w-full">
+                  <div className="h-20 flex items-center justify-between border-b border-zinc-200/50 dark:border-zinc-800/40 px-4 group-hover:px-6">
                     <div className="flex items-center gap-3">
                       <div className="relative shrink-0">
                         <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
@@ -156,7 +156,7 @@ export default function RootLayout({
                               ? 'bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300 shadow-[0_2px_8px_-3px_rgba(139,92,246,0.3)] dark:shadow-[0_2px_8px_-3px_rgba(139,92,246,0.2)]'
                               : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-br hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
                             }
-                            justify-center group-hover:justify-start w-full min-w-[3rem]
+                            justify-center group-hover:justify-start w-full
                           `}
                         >
                           {!isMobileMenuOpen && pathname === item.href && (
@@ -187,7 +187,7 @@ export default function RootLayout({
                       className={`
                         relative group/item flex items-center justify-center group-hover:justify-start px-3 py-2.5 text-sm font-medium rounded-xl w-full
                         text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10
-                        transition-all duration-200 transform hover:scale-[1.02] min-w-[3rem]
+                        transition-all duration-200 transform hover:scale-[1.02]
                       `}
                     >
                       <LogOut className={`
