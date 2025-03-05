@@ -30,10 +30,8 @@ import {
   Tooltip as ChartTooltip,
   Legend,
   Filler,
-  ChartArea,
   Chart,
-  TooltipItem,
-  ScriptableContext
+  TooltipItem
 } from 'chart.js';
 import { Line, Pie } from 'react-chartjs-2';
 
