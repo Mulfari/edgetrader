@@ -114,7 +114,7 @@ export default function RootLayout({
 
               {/* Sidebar */}
               <div className={`
-                fixed top-0 left-0 z-50 h-full w-64 bg-white/80 dark:bg-zinc-800/80
+                fixed top-0 left-0 z-50 h-full w-64 bg-white/95 dark:bg-zinc-900/95
                 border-r border-zinc-200 dark:border-zinc-700/50
                 transform transition-all duration-500 ease-in-out backdrop-blur-xl
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -191,7 +191,7 @@ export default function RootLayout({
                 {/* Top navigation */}
                 <header className={`
                   sticky top-0 z-30 
-                  bg-white/80 dark:bg-zinc-900/80 
+                  bg-white/95 dark:bg-zinc-900/95
                   border-b border-zinc-200 dark:border-zinc-800 
                   backdrop-blur-xl transition-all duration-300
                   ${isScrolled ? 'shadow-lg shadow-zinc-200/20 dark:shadow-zinc-900/30' : ''}
