@@ -9,7 +9,6 @@ import {
   Menu,
   User,
   ChevronLeft,
-  ChevronRight,
   Home,
   LineChart,
   Wallet
