@@ -57,7 +57,6 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [lastUpdate] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -162,47 +161,39 @@ export default function RootLayout({
 
                   {/* Sidebar */}
                   <div className={`
-                    fixed top-0 left-0 z-50 h-full bg-white/80 dark:bg-zinc-800/80
+                    fixed top-0 left-0 z-50 h-full w-64
+                    bg-white/80 dark:bg-zinc-800/80
                     border-r border-zinc-200 dark:border-zinc-700/50
-                    transform transition-all duration-500 ease-in-out backdrop-blur-xl
+                    transform transition-all duration-300 ease-in-out backdrop-blur-xl
                     ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-                    ${isSidebarCollapsed ? 'w-20' : 'w-64'}
                     shadow-xl shadow-zinc-200/50 dark:shadow-zinc-900/50
                   `}>
                     <div className="flex flex-col h-full">
                       {/* Header */}
-                      <div className="p-4 border-b border-zinc-200 dark:border-zinc-700/50">
-                        <div 
-                          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                          className="flex items-center gap-3 group cursor-pointer"
-                        >
-                          <div className="relative">
-                            <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-all duration-300"></div>
-                            <div className="relative bg-gradient-to-r from-violet-500 to-indigo-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-violet-500/25 transition-all duration-300">
-                              <BarChart3 className={`h-6 w-6 text-white transform transition-all duration-500 ${isSidebarCollapsed ? 'scale-x-[-1]' : ''}`} />
+                      <div className="h-16 px-6 flex items-center border-b border-zinc-200 dark:border-zinc-700/50">
+                        <div className="flex items-center gap-3">
+                          <div className="relative flex-shrink-0">
+                            <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl blur-lg opacity-50"></div>
+                            <div className="relative bg-gradient-to-r from-violet-500 to-indigo-500 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
+                              <BarChart3 className="h-5 w-5 text-white" />
                             </div>
                           </div>
-                          {!isSidebarCollapsed && (
-                            <div className="animate-in slide-in-from-left-5 duration-500">
-                              <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
-                                TradingDash
-                              </h1>
-                              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                Panel de Control
-                              </p>
-                            </div>
-                          )}
+                          <div>
+                            <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
+                              TradingDash
+                            </h1>
+                          </div>
                         </div>
                       </div>
                       
                       {/* Navigation */}
-                      <div className="flex-1 overflow-y-auto py-4">
-                        <nav className="px-2 space-y-1">
+                      <div className="flex-1 overflow-y-auto">
+                        <nav className="p-3 space-y-6">
                           {/* Principal Menu Items */}
                           <div className="space-y-1">
                             <div className="px-3 py-2">
                               <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                                {!isSidebarCollapsed ? "Principal" : ""}
+                                Principal
                               </span>
                             </div>
                             {menuItems
@@ -212,39 +203,31 @@ export default function RootLayout({
                                   key={item.href}
                                   href={item.href} 
                                   className={`
-                                    relative flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
-                                    transition-all duration-300 transform hover:scale-[1.02]
+                                    flex items-center px-3 py-2 text-sm font-medium rounded-lg
+                                    transition-colors duration-200
                                     ${pathname === item.href
                                       ? 'bg-gradient-to-r from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300'
-                                      : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-r hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
-                                    } group
+                                      : 'text-gray-700 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                    }
                                   `}
                                 >
-                                  {isSidebarCollapsed && (
-                                    <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
-                                      {item.name}
-                                    </div>
-                                  )}
                                   <item.icon className={`
-                                    ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} 
-                                    h-5 w-5 transition-all duration-300 transform group-hover:scale-110
+                                    mr-3 h-5 w-5
                                     ${pathname === item.href
                                       ? 'text-violet-500 dark:text-violet-400'
-                                      : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
+                                      : 'text-gray-400 dark:text-zinc-500'
                                     }
                                   `} />
-                                  {!isSidebarCollapsed && (
-                                    <span className="transition-colors duration-200">{item.name}</span>
-                                  )}
+                                  <span>{item.name}</span>
                                 </Link>
                               ))}
                           </div>
 
                           {/* Configuración Menu Items */}
-                          <div className="space-y-1 mt-4">
+                          <div className="space-y-1">
                             <div className="px-3 py-2">
                               <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                                {!isSidebarCollapsed ? "Configuración" : ""}
+                                Configuración
                               </span>
                             </div>
                             {menuItems
@@ -254,30 +237,22 @@ export default function RootLayout({
                                   key={item.href}
                                   href={item.href} 
                                   className={`
-                                    relative flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
-                                    transition-all duration-300 transform hover:scale-[1.02]
+                                    flex items-center px-3 py-2 text-sm font-medium rounded-lg
+                                    transition-colors duration-200
                                     ${pathname === item.href
                                       ? 'bg-gradient-to-r from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300'
-                                      : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-r hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
-                                    } group
+                                      : 'text-gray-700 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                    }
                                   `}
                                 >
-                                  {isSidebarCollapsed && (
-                                    <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
-                                      {item.name}
-                                    </div>
-                                  )}
                                   <item.icon className={`
-                                    ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} 
-                                    h-5 w-5 transition-all duration-300 transform group-hover:scale-110
+                                    mr-3 h-5 w-5
                                     ${pathname === item.href
                                       ? 'text-violet-500 dark:text-violet-400'
-                                      : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
+                                      : 'text-gray-400 dark:text-zinc-500'
                                     }
                                   `} />
-                                  {!isSidebarCollapsed && (
-                                    <span className="transition-colors duration-200">{item.name}</span>
-                                  )}
+                                  <span>{item.name}</span>
                                 </Link>
                               ))}
                           </div>
@@ -288,58 +263,42 @@ export default function RootLayout({
                       <div className="p-4 border-t border-zinc-200 dark:border-zinc-700/50">
                         <button 
                           onClick={handleLogout}
-                          className={`
-                            relative flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-xl
-                            text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10
-                            group transition-all duration-200 transform hover:scale-[1.02]
-                          `}
+                          className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg
+                            text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20
+                            transition-colors duration-200"
                         >
-                          {isSidebarCollapsed && (
-                            <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
-                              Cerrar Sesión
-                            </div>
-                          )}
-                          <LogOut className={`
-                            ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} 
-                            h-5 w-5 text-gray-400 dark:text-blue-400/50 
-                            group-hover:text-rose-500 dark:group-hover:text-rose-400 
-                            transition-all duration-200 transform group-hover:scale-110
-                          `} />
-                          {!isSidebarCollapsed && (
-                            <span className="group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-200">
-                              Cerrar Sesión
-                            </span>
-                          )}
+                          <LogOut className="mr-3 h-5 w-5" />
+                          <span>Cerrar Sesión</span>
                         </button>
                       </div>
                     </div>
                   </div>
 
                   {/* Main content with navigation */}
-                  <div className={`
-                    transition-all duration-300
-                    ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}
-                  `}>
+                  <div className="lg:pl-64 min-h-screen flex flex-col">
                     {/* Top navigation */}
                     <header className={`
                       sticky top-0 z-30 
                       bg-white/80 dark:bg-zinc-900/80 
                       border-b border-zinc-200 dark:border-zinc-800 
                       backdrop-blur-xl transition-all duration-300
-                      ${isScrolled ? 'shadow-lg shadow-zinc-200/20 dark:shadow-zinc-900/30' : ''}
+                      ${isScrolled ? 'shadow-sm' : ''}
                     `}>
-                      <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-                        <div className="flex items-center flex-1 gap-4">
+                      <div className="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
                           <button
                             type="button"
-                            className="lg:hidden -ml-0.5 -mt-0.5 h-10 w-10 inline-flex items-center justify-center rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200 transform hover:scale-105"
+                            className="lg:hidden -ml-0.5 -mt-0.5 h-10 w-10 inline-flex items-center justify-center rounded-lg
+                              text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 
+                              dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 
+                              focus:outline-none transition-colors duration-200"
                             onClick={() => setIsMobileMenuOpen(true)}
                           >
                             <span className="sr-only">Abrir menú</span>
                             <Menu className="h-5 w-5" />
                           </button>
-                          <div className="animate-in slide-in-from-left-5 duration-500">
-                            <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-indigo-500">
+                          <div>
+                            <h1 className="text-lg font-semibold text-zinc-900 dark:text-white">
                               {menuItems.find(item => item.href === pathname)?.name || ''}
                             </h1>
                             <p className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -580,7 +539,7 @@ export default function RootLayout({
                       </div>
                     </header>
 
-                    <main className="py-6 px-4 sm:px-6 lg:px-8">
+                    <main className="flex-1 py-6 px-4 sm:px-6 lg:px-8">
                       {children}
                     </main>
                   </div>
