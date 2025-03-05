@@ -27,11 +27,14 @@ interface Operation {
   price: number;
   timestamp: string;
   status: 'completed' | 'pending' | 'cancelled';
+  market: 'spot' | 'futures';
   profit?: number;
   tags?: string[];
   notes?: string;
   exchange?: string;
   fee?: number;
+  leverage?: number;
+  liquidationPrice?: number;
 }
 
 interface DashboardStats {
@@ -51,6 +54,7 @@ export default function Operations() {
   const [operations, setOperations] = useState<Operation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [marketFilter, setMarketFilter] = useState<'all' | 'spot' | 'futures'>('all');
   const [sortBy, setSortBy] = useState('date');
   const [dateRange, setDateRange] = useState('7d');
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,6 +76,7 @@ export default function Operations() {
         price: 45000,
         timestamp: '2024-03-20T10:30:00',
         status: 'completed',
+        market: 'spot',
         profit: 1200,
         tags: ['swing', 'trend'],
         notes: 'Entrada en soporte fuerte',
@@ -86,11 +91,14 @@ export default function Operations() {
         price: 3200,
         timestamp: '2024-03-19T15:45:00',
         status: 'completed',
+        market: 'futures',
         profit: -300,
         tags: ['scalping'],
         notes: 'Salida por stop loss',
         exchange: 'Kraken',
-        fee: 1.8
+        fee: 1.8,
+        leverage: 10,
+        liquidationPrice: 2800
       },
       {
         id: '3',
@@ -100,10 +108,13 @@ export default function Operations() {
         price: 125,
         timestamp: '2024-03-18T09:15:00',
         status: 'pending',
+        market: 'futures',
         tags: ['position'],
         notes: 'Esperando confirmación',
         exchange: 'Binance',
-        fee: 0.5
+        fee: 0.5,
+        leverage: 5,
+        liquidationPrice: 110
       },
       {
         id: '4',
@@ -113,6 +124,7 @@ export default function Operations() {
         price: 420,
         timestamp: '2024-03-17T14:20:00',
         status: 'completed',
+        market: 'spot',
         profit: 850,
         tags: ['day-trade'],
         notes: 'Toma de beneficios',
@@ -127,6 +139,7 @@ export default function Operations() {
         price: 0.65,
         timestamp: '2024-03-16T11:30:00',
         status: 'cancelled',
+        market: 'spot',
         tags: ['spot'],
         notes: 'Orden cancelada por volatilidad',
         exchange: 'Kraken',
@@ -213,6 +226,15 @@ export default function Operations() {
           ? 'bg-rose-500'
           : 'bg-yellow-500'
       } ${hoveredOperation === operation.id ? 'w-1.5' : 'w-1'}`} />
+
+      {/* Indicador de mercado */}
+      <div className={`absolute right-0 top-12 -rotate-90 transform origin-right px-2 py-1 text-xs font-medium rounded-b-md ${
+        operation.market === 'futures' 
+          ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
+          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+      }`}>
+        {operation.market === 'futures' ? 'Futuros' : 'Spot'}
+      </div>
 
       <div className="flex items-start justify-between mb-6">
         <div className="space-y-2">
@@ -355,6 +377,22 @@ export default function Operations() {
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
+
+      {/* Información adicional para futuros */}
+      {operation.market === 'futures' && operation.leverage && (
+        <div className="mt-3 flex items-center gap-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+          <div>
+            <p className="text-xs text-orange-600 dark:text-orange-400">Apalancamiento</p>
+            <p className="text-sm font-medium text-orange-700 dark:text-orange-300">{operation.leverage}x</p>
+          </div>
+          {operation.liquidationPrice && (
+            <div>
+              <p className="text-xs text-orange-600 dark:text-orange-400">Precio de liquidación</p>
+              <p className="text-sm font-medium text-orange-700 dark:text-orange-300">${operation.liquidationPrice.toLocaleString()}</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -518,7 +556,9 @@ export default function Operations() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
-            Dashboard de Operaciones
+            {marketFilter === 'futures' ? 'Operaciones Futuros' : 
+             marketFilter === 'spot' ? 'Operaciones Spot' : 
+             'Todas las Operaciones'}
           </h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Vista general del rendimiento y operaciones
@@ -679,6 +719,19 @@ export default function Operations() {
                   className="w-full pl-9 pr-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0 focus:ring-2 focus:ring-violet-500"
                 />
               </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+              <select
+                className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0 focus:ring-2 focus:ring-violet-500"
+                value={marketFilter}
+                onChange={(e) => setMarketFilter(e.target.value as 'all' | 'spot' | 'futures')}
+              >
+                <option value="all">Todos los mercados</option>
+                <option value="spot">Solo Spot</option>
+                <option value="futures">Solo Futuros</option>
+              </select>
             </div>
 
             <div className="flex items-center gap-2">
