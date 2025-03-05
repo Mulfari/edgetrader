@@ -166,16 +166,17 @@ export default function RootLayout({
                             relative flex items-center w-full
                             ${pathname === item.href ? 'text-violet-500 dark:text-violet-400' : ''}
                           `}>
-                            <div className="flex items-center justify-center w-[2.5rem] transition-all duration-300 ease-in-out">
+                            <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-spring group-hover:scale-90">
                               <item.icon className={`
-                                h-5 w-5 transition-all duration-300 transform shrink-0
+                                h-5 w-5 transition-all duration-500 ease-spring
                                 ${pathname === item.href
                                   ? 'text-violet-500 dark:text-violet-400'
                                   : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
                                 }
+                                group-hover:-translate-x-1
                               `} />
                             </div>
-                            <span className="transition-all duration-300 opacity-0 group-hover:opacity-100 whitespace-nowrap">{item.name}</span>
+                            <span className="transition-all duration-500 ease-spring opacity-0 -translate-x-10 group-hover:translate-x-0 group-hover:opacity-100 whitespace-nowrap">{item.name}</span>
                           </div>
                       </Link>
                       ))}
@@ -191,14 +192,15 @@ export default function RootLayout({
                         transition-all duration-300 ease-in-out w-full
                       `}
                     >
-                      <div className="flex items-center justify-center w-[2.5rem] transition-all duration-300 ease-in-out">
+                      <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-spring group-hover:scale-90">
                         <LogOut className={`
                           h-5 w-5 text-gray-400 dark:text-blue-400/50 
                           group-hover:text-rose-500 dark:group-hover:text-rose-400 
-                          transition-all duration-300 transform shrink-0
+                          transition-all duration-500 ease-spring
+                          group-hover:-translate-x-1
                         `} />
                       </div>
-                      <span className="transition-all duration-300 opacity-0 group-hover:opacity-100 whitespace-nowrap group-hover:text-rose-600 dark:group-hover:text-rose-400">
+                      <span className="transition-all duration-500 ease-spring opacity-0 -translate-x-10 group-hover:translate-x-0 group-hover:opacity-100 whitespace-nowrap group-hover:text-rose-600 dark:group-hover:text-rose-400">
                         Cerrar Sesión
                       </span>
                     </button>
