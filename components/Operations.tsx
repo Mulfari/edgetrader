@@ -16,12 +16,8 @@ import {
   Grid,
   Info,
   ExternalLink,
-  ChevronRight,
-  Star,
-  Bell,
-  HelpCircle
+  ChevronRight
 } from "lucide-react";
-import { Tooltip } from "./ui/tooltip";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Chart as ChartJS,
@@ -29,14 +25,14 @@ import {
   LinearScale,
   PointElement,
   LineElement,
-  BarElement,
   ArcElement,
   Title,
   Tooltip as ChartTooltip,
   Legend,
   Filler
 } from 'chart.js';
-import { Line, Bar, Pie } from 'react-chartjs-2';
+import { Line, Pie } from 'react-chartjs-2';
+import { Tooltip } from "./ui/tooltip";
 
 // Registrar componentes de Chart.js
 ChartJS.register(
@@ -44,7 +40,6 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
-  BarElement,
   ArcElement,
   Title,
   ChartTooltip,
