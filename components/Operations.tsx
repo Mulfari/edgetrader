@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   LineChart,
@@ -551,6 +551,63 @@ export default function Operations() {
     </div>
   );
 
+  // Filtrar operaciones basado en los filtros actuales
+  const filteredOperations = useMemo(() => {
+    return operations
+      .filter(op => {
+        // Filtrar por estado
+        if (filter !== 'all' && op.status !== filter) return false;
+        
+        // Filtrar por mercado
+        if (marketFilter !== 'all' && op.market !== marketFilter) return false;
+        
+        // Filtrar por búsqueda
+        if (searchTerm && !op.symbol.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+        
+        // Filtrar por etiquetas seleccionadas
+        if (selectedTags.length > 0 && !op.tags?.some(tag => selectedTags.includes(tag))) return false;
+        
+        return true;
+      })
+      .sort((a, b) => {
+        switch (sortBy) {
+          case 'date':
+            return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+          case 'profit':
+            return (b.profit || 0) - (a.profit || 0);
+          case 'amount':
+            return b.amount - a.amount;
+          default:
+            return 0;
+        }
+      });
+  }, [operations, filter, marketFilter, searchTerm, selectedTags, sortBy]);
+
+  // Filtrar operaciones por rango de fecha
+  const dateFilteredOperations = useMemo(() => {
+    const now = new Date();
+    const ranges = {
+      '7d': new Date(now.setDate(now.getDate() - 7)),
+      '30d': new Date(now.setDate(now.getDate() - 30)),
+      '90d': new Date(now.setDate(now.getDate() - 90)),
+      '1y': new Date(now.setFullYear(now.getFullYear() - 1)),
+      'all': new Date(0)
+    };
+
+    return filteredOperations.filter(op => 
+      new Date(op.timestamp) >= ranges[dateRange as keyof typeof ranges]
+    );
+  }, [filteredOperations, dateRange]);
+
+  // Manejar selección de etiquetas
+  const handleTagSelect = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header mejorado */}
@@ -608,6 +665,37 @@ export default function Operations() {
               className="pl-10 pr-4 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500 w-64"
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          </div>
+
+          {/* Selector de rango de fecha */}
+          <select
+            className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500"
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+          >
+            <option value="7d">Últimos 7 días</option>
+            <option value="30d">Últimos 30 días</option>
+            <option value="90d">Últimos 90 días</option>
+            <option value="1y">Último año</option>
+            <option value="all">Todo</option>
+          </select>
+
+          {/* Filtro de etiquetas */}
+          <div className="flex flex-wrap gap-2">
+            {Array.from(new Set(operations.flatMap(op => op.tags || []))).map(tag => (
+              <button
+                key={tag}
+                onClick={() => handleTagSelect(tag)}
+                className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  selectedTags.includes(tag)
+                    ? 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400'
+                    : 'bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300'
+                }`}
+              >
+                <Tag className="w-3 h-3 mr-2" />
+                {tag}
+              </button>
+            ))}
           </div>
 
           {/* Vista y nueva operación */}
@@ -741,7 +829,7 @@ export default function Operations() {
       {/* Renderizado condicional de vista */}
       {view === 'cards' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {operations.map(operation => renderOperationCard(operation))}
+          {dateFilteredOperations.map(operation => renderOperationCard(operation))}
         </div>
       ) : (
         <div className="bg-white/95 dark:bg-[#12121A]/95 rounded-xl shadow-[0_4px_20px_-5px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-5px_rgba(0,0,0,0.3)] border border-zinc-200/50 dark:border-zinc-800/40 backdrop-blur-sm">
@@ -808,7 +896,7 @@ export default function Operations() {
                       </td>
                     </tr>
                   ))
-                ) : operations.length === 0 ? (
+                ) : dateFilteredOperations.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center justify-center gap-3">
@@ -825,7 +913,7 @@ export default function Operations() {
                     </td>
                   </tr>
                 ) : (
-                  operations.map(renderTableRow)
+                  dateFilteredOperations.map(renderTableRow)
                 )}
               </tbody>
             </table>
