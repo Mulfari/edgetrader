@@ -121,18 +121,18 @@ export default function RootLayout({
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 w-[5.5rem] hover:w-72 group
                 shadow-[0_0_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)]
-                overflow-x-hidden
+                overflow-hidden
               `}>
-                <div className="flex flex-col h-full">
-                  <div className="h-20 flex items-center justify-between border-b border-zinc-200/50 dark:border-zinc-800/40 px-4 group-hover:px-6">
+                <div className="flex flex-col h-full w-72">
+                  <div className="h-20 flex items-center justify-between border-b border-zinc-200/50 dark:border-zinc-800/40 px-4 group-hover:px-6 min-w-[5.5rem]">
                     <div className="flex items-center gap-3">
-                      <div className="relative">
+                      <div className="relative shrink-0">
                         <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
                         <div className="relative bg-gradient-to-br from-violet-500 to-indigo-500 w-11 h-11 rounded-xl flex items-center justify-center shadow-lg transform transition-transform duration-300 hover:scale-105">
                           <BarChart3 className="h-6 w-6 text-white" />
                         </div>
                       </div>
-                      <div className="transition-all duration-300 transform opacity-0 group-hover:opacity-100">
+                      <div className="transition-all duration-300 transform opacity-0 group-hover:opacity-100 whitespace-nowrap">
                         <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
                           TradingDash
                         </h1>
@@ -143,7 +143,7 @@ export default function RootLayout({
                     </div>
                   </div>
                   
-                  <div className="flex-1 overflow-y-auto py-4">
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden py-4">
                     <nav className="space-y-1 px-3 group-hover:px-4">
                       {menuItems.map((item) => (
                       <Link 
@@ -156,28 +156,25 @@ export default function RootLayout({
                               ? 'bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300 shadow-[0_2px_8px_-3px_rgba(139,92,246,0.3)] dark:shadow-[0_2px_8px_-3px_rgba(139,92,246,0.2)]'
                               : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-br hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
                             }
-                            justify-center group-hover:justify-start
+                            justify-center group-hover:justify-start w-full min-w-[3rem]
                           `}
                         >
                           {!isMobileMenuOpen && pathname === item.href && (
                             <div className="absolute left-0 w-1 h-8 bg-violet-500 rounded-r-full transform -translate-y-1/2 top-1/2" />
                           )}
                           <div className={`
-                            relative flex items-center justify-center group-hover:justify-start
+                            relative flex items-center justify-center group-hover:justify-start w-full
                             ${pathname === item.href ? 'text-violet-500 dark:text-violet-400' : ''}
                           `}>
                             <item.icon className={`
-                              h-5 w-5 transition-all duration-300 transform
+                              h-5 w-5 transition-all duration-300 transform shrink-0
                               group-hover:mr-3
                               ${pathname === item.href
                                 ? 'text-violet-500 dark:text-violet-400'
                                 : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
                               }
                             `} />
-                            <span className="hidden group-hover:block transition-all duration-300">{item.name}</span>
-                          </div>
-                          <div className="absolute left-full ml-6 px-2 py-1 bg-zinc-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-0 group-hover/item:opacity-0 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                            {item.name}
+                            <span className="hidden group-hover:block transition-all duration-300 whitespace-nowrap">{item.name}</span>
                           </div>
                       </Link>
                       ))}
@@ -190,21 +187,18 @@ export default function RootLayout({
                       className={`
                         relative group/item flex items-center justify-center group-hover:justify-start px-3 py-2.5 text-sm font-medium rounded-xl w-full
                         text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10
-                        transition-all duration-200 transform hover:scale-[1.02]
+                        transition-all duration-200 transform hover:scale-[1.02] min-w-[3rem]
                       `}
                     >
                       <LogOut className={`
                         h-5 w-5 text-gray-400 dark:text-blue-400/50 
                         group-hover:text-rose-500 dark:group-hover:text-rose-400 
-                        transition-all duration-200 transform group-hover:scale-110
+                        transition-all duration-200 transform group-hover:scale-110 shrink-0
                         group-hover:mr-3
                       `} />
-                      <span className="hidden group-hover:block group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-200">
+                      <span className="hidden group-hover:block group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-200 whitespace-nowrap">
                         Cerrar Sesión
                       </span>
-                      <div className="absolute left-full ml-6 px-2 py-1 bg-zinc-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-0 group-hover/item:opacity-0 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                        Cerrar Sesión
-                      </div>
                     </button>
                   </div>
                 </div>
