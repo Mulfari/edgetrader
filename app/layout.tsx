@@ -196,7 +196,7 @@ export default function RootLayout({
                   backdrop-blur-xl transition-all duration-300
                   ${isScrolled ? 'shadow-lg shadow-zinc-200/20 dark:shadow-zinc-900/30' : ''}
                 `}>
-                  <div className="flex items-center justify-between h-16 px-4 sm:px-6">
+                  <div className="flex items-center justify-between h-16 px-4">
                     <div className="flex items-center flex-1 gap-4">
                       <button
                         type="button"
@@ -446,7 +446,7 @@ export default function RootLayout({
                   </div>
                 </header>
 
-                <main className="py-6 px-4 sm:px-6">
+                <main className="py-6 px-4">
                   {children}
                 </main>
               </div>
