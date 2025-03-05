@@ -117,7 +117,7 @@ export default function RootLayout({
               <div className={`
                 fixed top-0 left-0 z-50 h-full bg-white/80 dark:bg-zinc-800/80
                 border-r border-zinc-200 dark:border-zinc-700/50
-                transform transition-all duration-300 ease-in-out backdrop-blur-xl
+                transform transition-all duration-500 ease-in-out backdrop-blur-xl
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 ${isSidebarCollapsed ? 'w-20' : 'w-64'}
                 shadow-xl shadow-zinc-200/50 dark:shadow-zinc-900/50
@@ -130,14 +130,14 @@ export default function RootLayout({
                     >
                       <div className="bg-gradient-to-r from-violet-500 to-indigo-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-violet-500/25 transition-all duration-300 relative overflow-hidden">
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-                        <BarChart3 className="h-6 w-6 text-white animate-in fade-in-50 duration-500" />
+                        <BarChart3 className={`h-6 w-6 text-white transition-all duration-500 ${isSidebarCollapsed ? 'rotate-180' : 'rotate-0'}`} />
                       </div>
                       {!isSidebarCollapsed && (
-                        <div className="flex items-center justify-between flex-1">
-                          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500 animate-in slide-in-from-left-5 duration-300">
+                        <div className="flex items-center justify-between flex-1 animate-in fade-in-50 duration-500">
+                          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
                             TradingDash
                           </h1>
-                          <ChevronLeft className="h-5 w-5 text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-600 dark:group-hover:text-zinc-400 transition-colors duration-200" />
+                          <ChevronLeft className={`h-5 w-5 text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-600 dark:group-hover:text-zinc-400 transition-all duration-500 transform ${isSidebarCollapsed ? 'rotate-180' : 'rotate-0'}`} />
                         </div>
                       )}
                     </button>
@@ -148,20 +148,26 @@ export default function RootLayout({
                       {menuItems.map((item) => (
                         <Link 
                           key={item.href}
-                          href={item.href} 
+                          href={item.href}
+                          title={isSidebarCollapsed ? item.name : undefined}
                           className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-xl ${
                             pathname === item.href
                               ? 'bg-gradient-to-r from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300'
                               : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-r hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
-                          } group transition-all duration-200`}
+                          } group transition-all duration-300 relative`}
                         >
                           <item.icon className={`${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 ${
                             pathname === item.href
                               ? 'text-violet-500 dark:text-violet-400'
                               : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
-                          } transition-colors duration-200`} />
+                          } transition-all duration-300 transform group-hover:scale-110`} />
                           {!isSidebarCollapsed && (
-                            <span className="transition-colors duration-200">{item.name}</span>
+                            <span className="transition-all duration-300">{item.name}</span>
+                          )}
+                          {isSidebarCollapsed && (
+                            <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap">
+                              {item.name}
+                            </div>
                           )}
                         </Link>
                       ))}
@@ -171,13 +177,19 @@ export default function RootLayout({
                   <div className="p-4 border-t border-zinc-200 dark:border-zinc-700/50">
                     <button 
                       onClick={handleLogout}
-                      className="flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-xl text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10 group transition-all duration-200"
+                      title={isSidebarCollapsed ? "Cerrar Sesión" : undefined}
+                      className="flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-xl text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10 group transition-all duration-300 relative"
                     >
-                      <LogOut className={`${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 text-gray-400 dark:text-blue-400/50 group-hover:text-rose-500 dark:group-hover:text-rose-400 transition-colors duration-200`} />
+                      <LogOut className={`${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} h-5 w-5 text-gray-400 dark:text-blue-400/50 group-hover:text-rose-500 dark:group-hover:text-rose-400 transition-all duration-300 transform group-hover:scale-110`} />
                       {!isSidebarCollapsed && (
-                        <span className="group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-200">
+                        <span className="group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-300">
                           Cerrar Sesión
                         </span>
+                      )}
+                      {isSidebarCollapsed && (
+                        <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap">
+                          Cerrar Sesión
+                        </div>
                       )}
                     </button>
                   </div>
