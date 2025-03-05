@@ -57,6 +57,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [lastUpdate] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -161,16 +162,17 @@ export default function RootLayout({
 
                   {/* Sidebar */}
                   <div className={`
-                    fixed top-0 left-0 z-50 h-full w-64
+                    fixed top-0 left-0 z-50 h-full
                     bg-white/80 dark:bg-zinc-800/80
                     border-r border-zinc-200 dark:border-zinc-700/50
                     transform transition-all duration-300 ease-in-out backdrop-blur-xl
                     ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                    ${isSidebarCollapsed ? 'w-20' : 'w-64'}
                     shadow-xl shadow-zinc-200/50 dark:shadow-zinc-900/50
                   `}>
                     <div className="flex flex-col h-full">
                       {/* Header */}
-                      <div className="h-16 px-6 flex items-center border-b border-zinc-200 dark:border-zinc-700/50">
+                      <div className="h-16 px-6 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-700/50">
                         <div className="flex items-center gap-3">
                           <div className="relative flex-shrink-0">
                             <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl blur-lg opacity-50"></div>
@@ -178,12 +180,23 @@ export default function RootLayout({
                               <BarChart3 className="h-5 w-5 text-white" />
                             </div>
                           </div>
-                          <div>
-                            <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
-                              TradingDash
-                            </h1>
-                          </div>
+                          {!isSidebarCollapsed && (
+                            <div className="transition-all duration-300 overflow-hidden">
+                              <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500 whitespace-nowrap">
+                                TradingDash
+                              </h1>
+                            </div>
+                          )}
                         </div>
+                        <button
+                          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                          className="hidden lg:flex h-8 w-8 items-center justify-center rounded-lg
+                            text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 
+                            dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 
+                            focus:outline-none transition-colors duration-200"
+                        >
+                          <Menu className="h-5 w-5" />
+                        </button>
                       </div>
                       
                       {/* Navigation */}
@@ -192,7 +205,8 @@ export default function RootLayout({
                           {/* Principal Menu Items */}
                           <div className="space-y-1">
                             <div className="px-3 py-2">
-                              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                              <span className={`text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider
+                                ${isSidebarCollapsed ? 'hidden' : 'block'}`}>
                                 Principal
                               </span>
                             </div>
@@ -203,8 +217,8 @@ export default function RootLayout({
                                   key={item.href}
                                   href={item.href} 
                                   className={`
-                                    flex items-center px-3 py-2 text-sm font-medium rounded-lg
-                                    transition-colors duration-200
+                                    relative flex items-center px-3 py-2 text-sm font-medium rounded-lg
+                                    transition-colors duration-200 group
                                     ${pathname === item.href
                                       ? 'bg-gradient-to-r from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300'
                                       : 'text-gray-700 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
@@ -212,13 +226,23 @@ export default function RootLayout({
                                   `}
                                 >
                                   <item.icon className={`
-                                    mr-3 h-5 w-5
+                                    ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} 
+                                    h-5 w-5 transition-all duration-300
                                     ${pathname === item.href
                                       ? 'text-violet-500 dark:text-violet-400'
                                       : 'text-gray-400 dark:text-zinc-500'
                                     }
                                   `} />
-                                  <span>{item.name}</span>
+                                  {!isSidebarCollapsed && (
+                                    <span className="transition-all duration-300">{item.name}</span>
+                                  )}
+                                  {isSidebarCollapsed && (
+                                    <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded-lg
+                                      opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200
+                                      whitespace-nowrap z-50">
+                                      {item.name}
+                                    </div>
+                                  )}
                                 </Link>
                               ))}
                           </div>
@@ -226,7 +250,8 @@ export default function RootLayout({
                           {/* Configuración Menu Items */}
                           <div className="space-y-1">
                             <div className="px-3 py-2">
-                              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                              <span className={`text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider
+                                ${isSidebarCollapsed ? 'hidden' : 'block'}`}>
                                 Configuración
                               </span>
                             </div>
@@ -237,8 +262,8 @@ export default function RootLayout({
                                   key={item.href}
                                   href={item.href} 
                                   className={`
-                                    flex items-center px-3 py-2 text-sm font-medium rounded-lg
-                                    transition-colors duration-200
+                                    relative flex items-center px-3 py-2 text-sm font-medium rounded-lg
+                                    transition-colors duration-200 group
                                     ${pathname === item.href
                                       ? 'bg-gradient-to-r from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300'
                                       : 'text-gray-700 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
@@ -246,13 +271,23 @@ export default function RootLayout({
                                   `}
                                 >
                                   <item.icon className={`
-                                    mr-3 h-5 w-5
+                                    ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} 
+                                    h-5 w-5 transition-all duration-300
                                     ${pathname === item.href
                                       ? 'text-violet-500 dark:text-violet-400'
                                       : 'text-gray-400 dark:text-zinc-500'
                                     }
                                   `} />
-                                  <span>{item.name}</span>
+                                  {!isSidebarCollapsed && (
+                                    <span className="transition-all duration-300">{item.name}</span>
+                                  )}
+                                  {isSidebarCollapsed && (
+                                    <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded-lg
+                                      opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200
+                                      whitespace-nowrap z-50">
+                                      {item.name}
+                                    </div>
+                                  )}
                                 </Link>
                               ))}
                           </div>
@@ -263,19 +298,37 @@ export default function RootLayout({
                       <div className="p-4 border-t border-zinc-200 dark:border-zinc-700/50">
                         <button 
                           onClick={handleLogout}
-                          className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg
+                          className={`
+                            relative flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg
                             text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20
-                            transition-colors duration-200"
+                            transition-colors duration-200 group
+                          `}
                         >
-                          <LogOut className="mr-3 h-5 w-5" />
-                          <span>Cerrar Sesión</span>
+                          <LogOut className={`
+                            ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} 
+                            h-5 w-5
+                          `} />
+                          {!isSidebarCollapsed && (
+                            <span>Cerrar Sesión</span>
+                          )}
+                          {isSidebarCollapsed && (
+                            <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded-lg
+                              opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200
+                              whitespace-nowrap z-50">
+                              Cerrar Sesión
+                            </div>
+                          )}
                         </button>
                       </div>
                     </div>
                   </div>
 
                   {/* Main content with navigation */}
-                  <div className="lg:pl-64 min-h-screen flex flex-col">
+                  <div className={`
+                    min-h-screen flex flex-col
+                    transition-all duration-300
+                    ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}
+                  `}>
                     {/* Top navigation */}
                     <header className={`
                       sticky top-0 z-30 
