@@ -76,43 +76,120 @@ interface DashboardStats {
 
 // Componente para el gráfico de rendimiento
 const PerformanceChart = ({ data }: { data: Operation[] }) => {
+  const gradientFill = {
+    id: 'gradientFill',
+    beforeDatasetsDraw(chart: any) {
+      const {ctx, chartArea: {top, bottom, left, width, height}} = chart;
+      const gradientBg = ctx.createLinearGradient(0, top, 0, bottom);
+      gradientBg.addColorStop(0, 'rgba(99, 102, 241, 0.5)');
+      gradientBg.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+      return gradientBg;
+    }
+  };
+
   const chartData = {
     labels: data.map(op => new Date(op.timestamp).toLocaleDateString()),
     datasets: [{
       label: 'Beneficio',
       data: data.map(op => op.profit || 0),
       borderColor: 'rgb(99, 102, 241)',
-      backgroundColor: 'rgba(99, 102, 241, 0.1)',
+      backgroundColor: function(context: any) {
+        const chart = context.chart;
+        const {ctx, chartArea} = chart;
+        if (!chartArea) return null;
+        return gradientFill.beforeDatasetsDraw(chart);
+      },
       fill: true,
-      tension: 0.4
+      tension: 0.4,
+      borderWidth: 2,
+      pointRadius: 4,
+      pointBackgroundColor: 'rgb(99, 102, 241)',
+      pointBorderColor: 'white',
+      pointBorderWidth: 2,
+      pointHoverRadius: 6,
+      pointHoverBackgroundColor: 'white',
+      pointHoverBorderColor: 'rgb(99, 102, 241)',
+      pointHoverBorderWidth: 2
     }]
   };
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      intersect: false,
+      mode: 'index' as const
+    },
     plugins: {
-      legend: { position: 'top' as const },
+      legend: { 
+        display: false 
+      },
       title: { 
         display: true, 
         text: 'Rendimiento Histórico',
-        color: 'rgb(161, 161, 170)'
+        color: 'rgb(161, 161, 170)',
+        font: {
+          size: 16,
+          weight: 'normal' as const
+        },
+        padding: 20
+      },
+      tooltip: {
+        backgroundColor: 'rgb(24, 24, 27)',
+        titleColor: 'rgb(244, 244, 245)',
+        bodyColor: 'rgb(228, 228, 231)',
+        bodyFont: {
+          size: 14
+        },
+        titleFont: {
+          size: 14,
+          weight: 'bold' as const
+        },
+        padding: 12,
+        borderColor: 'rgb(63, 63, 70)',
+        borderWidth: 1,
+        displayColors: false,
+        callbacks: {
+          label: function(context: any) {
+            const value = context.parsed.y;
+            return `Beneficio: ${value >= 0 ? '+' : ''}$${value.toLocaleString()}`;
+          }
+        }
       }
     },
     scales: {
-      y: {
-        grid: {
-          color: 'rgba(161, 161, 170, 0.1)'
-        },
-        ticks: {
-          color: 'rgb(161, 161, 170)'
-        }
-      },
       x: {
         grid: {
-          color: 'rgba(161, 161, 170, 0.1)'
+          display: false
         },
         ticks: {
-          color: 'rgb(161, 161, 170)'
+          color: 'rgb(161, 161, 170)',
+          maxRotation: 45,
+          minRotation: 45,
+          font: {
+            size: 11
+          }
+        },
+        border: {
+          display: false
+        }
+      },
+      y: {
+        grid: {
+          color: 'rgba(161, 161, 170, 0.1)',
+          drawBorder: false
+        },
+        ticks: {
+          color: 'rgb(161, 161, 170)',
+          font: {
+            size: 11
+          },
+          callback: function(value: any) {
+            return '$' + value.toLocaleString();
+          }
+        },
+        border: {
+          display: false
         }
       }
     }
@@ -120,7 +197,7 @@ const PerformanceChart = ({ data }: { data: Operation[] }) => {
 
   return (
     <div className="h-[300px] w-full">
-      <Line data={chartData} options={options} />
+      <Line data={chartData} options={options} plugins={[gradientFill]} />
     </div>
   );
 };
@@ -137,23 +214,82 @@ const DistributionChart = ({ data }: { data: Operation[] }) => {
     datasets: [{
       data: Object.values(symbolCounts),
       backgroundColor: [
-        'rgba(99, 102, 241, 0.8)',
-        'rgba(34, 197, 94, 0.8)',
-        'rgba(234, 179, 8, 0.8)',
-        'rgba(239, 68, 68, 0.8)',
-        'rgba(168, 85, 247, 0.8)'
-      ]
+        'rgba(99, 102, 241, 0.8)',  // Indigo
+        'rgba(34, 197, 94, 0.8)',   // Emerald
+        'rgba(234, 179, 8, 0.8)',   // Yellow
+        'rgba(239, 68, 68, 0.8)',   // Rose
+        'rgba(168, 85, 247, 0.8)',  // Purple
+        'rgba(14, 165, 233, 0.8)',  // Sky
+        'rgba(249, 115, 22, 0.8)',  // Orange
+        'rgba(236, 72, 153, 0.8)'   // Pink
+      ],
+      borderColor: [
+        'rgb(99, 102, 241)',
+        'rgb(34, 197, 94)',
+        'rgb(234, 179, 8)',
+        'rgb(239, 68, 68)',
+        'rgb(168, 85, 247)',
+        'rgb(14, 165, 233)',
+        'rgb(249, 115, 22)',
+        'rgb(236, 72, 153)'
+      ],
+      borderWidth: 2,
+      hoverBorderWidth: 0,
+      hoverOffset: 15
     }]
   };
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
+    cutout: '60%',
     plugins: {
-      legend: { position: 'top' as const },
+      legend: {
+        position: 'right' as const,
+        labels: {
+          color: 'rgb(161, 161, 170)',
+          font: {
+            size: 12,
+            weight: 'normal' as const
+          },
+          padding: 20,
+          usePointStyle: true,
+          pointStyle: 'circle'
+        }
+      },
       title: {
         display: true,
         text: 'Distribución por Par',
-        color: 'rgb(161, 161, 170)'
+        color: 'rgb(161, 161, 170)',
+        font: {
+          size: 16,
+          weight: 'normal' as const
+        },
+        padding: 20
+      },
+      tooltip: {
+        backgroundColor: 'rgb(24, 24, 27)',
+        titleColor: 'rgb(244, 244, 245)',
+        bodyColor: 'rgb(228, 228, 231)',
+        bodyFont: {
+          size: 14
+        },
+        titleFont: {
+          size: 14,
+          weight: 'bold' as const
+        },
+        padding: 12,
+        borderColor: 'rgb(63, 63, 70)',
+        borderWidth: 1,
+        callbacks: {
+          label: function(context: any) {
+            const label = context.label || '';
+            const value = context.parsed || 0;
+            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+            const percentage = ((value * 100) / total).toFixed(1);
+            return `${label}: ${value} (${percentage}%)`;
+          }
+        }
       }
     }
   };
