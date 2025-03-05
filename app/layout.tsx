@@ -443,12 +443,12 @@ export default function RootLayout({
                                 </div>
                                 <div className="hidden sm:block text-left">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-sm font-medium text-zinc-900 dark:text-white">John Doe</span>
+                                      <span className="text-sm font-medium text-zinc-900 dark:text-white">{user?.name || 'Usuario'}</span>
                                       <Badge variant="outline" className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20">
-                                        Admin
+                                        {user?.role || 'Usuario'}
                                       </Badge>
                                     </div>
-                                    <div className="text-xs text-zinc-500 dark:text-zinc-400">john@example.com</div>
+                                    <div className="text-xs text-zinc-500 dark:text-zinc-400">{user?.email || 'usuario@example.com'}</div>
                                   </div>
                                 </button>
                               </DropdownMenuTrigger>
@@ -465,12 +465,12 @@ export default function RootLayout({
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2">
-                                        <h3 className="font-medium text-lg truncate">John Doe</h3>
+                                        <h3 className="font-medium text-lg truncate">{user?.name || 'Usuario'}</h3>
                                         <Badge variant="outline" className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20 shrink-0">
-                                          Admin
+                                          {user?.role || 'Usuario'}
                                         </Badge>
                                       </div>
-                                      <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">john@example.com</p>
+                                      <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">{user?.email || 'usuario@example.com'}</p>
                                     </div>
                                   </div>
 
