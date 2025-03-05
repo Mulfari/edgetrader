@@ -4,7 +4,15 @@ import { useState, useEffect } from "react";
 import {
   LineChart,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  PieChart,
+  BarChart,
+  Calendar,
+  Clock,
+  Tag,
+  Filter,
+  Search,
+  RefreshCw
 } from "lucide-react";
 
 interface Operation {
@@ -18,6 +26,8 @@ interface Operation {
   profit?: number;
   tags?: string[];
   notes?: string;
+  exchange?: string;
+  fee?: number;
 }
 
 interface DashboardStats {
@@ -27,6 +37,10 @@ interface DashboardStats {
   bestOperation: Operation | null;
   worstOperation: Operation | null;
   monthlyVolume: number;
+  weeklyOperations: number;
+  averageProfit: number;
+  totalFees: number;
+  profitableSymbols: { symbol: string; profit: number }[];
 }
 
 export default function Operations() {
@@ -34,8 +48,11 @@ export default function Operations() {
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
-  const [dateRange, setDateRange] = useState('7d'); // 7d, 30d, 90d, 1y, all
+  const [dateRange, setDateRange] = useState('7d');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [view, setView] = useState<'table' | 'cards'>('table');
 
   useEffect(() => {
     // Datos de ejemplo mejorados
@@ -50,7 +67,9 @@ export default function Operations() {
         status: 'completed',
         profit: 1200,
         tags: ['swing', 'trend'],
-        notes: 'Entrada en soporte fuerte'
+        notes: 'Entrada en soporte fuerte',
+        exchange: 'Binance',
+        fee: 2.5
       },
       {
         id: '2',
@@ -62,7 +81,9 @@ export default function Operations() {
         status: 'completed',
         profit: -300,
         tags: ['scalping'],
-        notes: 'Salida por stop loss'
+        notes: 'Salida por stop loss',
+        exchange: 'Kraken',
+        fee: 1.8
       },
       {
         id: '3',
@@ -73,7 +94,9 @@ export default function Operations() {
         timestamp: '2024-03-18T09:15:00',
         status: 'pending',
         tags: ['position'],
-        notes: 'Esperando confirmación'
+        notes: 'Esperando confirmación',
+        exchange: 'Binance',
+        fee: 0.5
       },
       {
         id: '4',
@@ -85,7 +108,9 @@ export default function Operations() {
         status: 'completed',
         profit: 850,
         tags: ['day-trade'],
-        notes: 'Toma de beneficios'
+        notes: 'Toma de beneficios',
+        exchange: 'Binance',
+        fee: 1.2
       },
       {
         id: '5',
@@ -96,7 +121,9 @@ export default function Operations() {
         timestamp: '2024-03-16T11:30:00',
         status: 'cancelled',
         tags: ['spot'],
-        notes: 'Orden cancelada por volatilidad'
+        notes: 'Orden cancelada por volatilidad',
+        exchange: 'Kraken',
+        fee: 0
       }
     ];
 
@@ -112,7 +139,15 @@ export default function Operations() {
         if (!worst) return op;
         return (op.profit || 0) < (worst.profit || 0) ? op : worst;
       }, null),
-      monthlyVolume: 125000
+      monthlyVolume: 125000,
+      weeklyOperations: 12,
+      averageProfit: 450,
+      totalFees: mockOperations.reduce((acc, op) => acc + (op.fee || 0), 0),
+      profitableSymbols: [
+        { symbol: 'BTC/USDT', profit: 2500 },
+        { symbol: 'ETH/USDT', profit: 1200 },
+        { symbol: 'SOL/USDT', profit: 800 }
+      ]
     };
 
     setTimeout(() => {
@@ -135,8 +170,30 @@ export default function Operations() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1">
+            <button
+              onClick={() => setView('table')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                view === 'table'
+                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              Tabla
+            </button>
+            <button
+              onClick={() => setView('cards')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                view === 'cards'
+                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              Tarjetas
+            </button>
+          </div>
           <select
-            className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm"
+            className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500"
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
           >
@@ -146,7 +203,8 @@ export default function Operations() {
             <option value="1y">Último año</option>
             <option value="all">Todo</option>
           </select>
-          <button className="px-4 py-2 text-sm font-medium text-white bg-violet-500 rounded-lg hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors">
+          <button className="px-4 py-2 text-sm font-medium text-white bg-violet-500 rounded-lg hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors flex items-center gap-2">
+            <PieChart className="w-4 h-4" />
             Nueva Operación
           </button>
         </div>
@@ -160,6 +218,9 @@ export default function Operations() {
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Total Operaciones</p>
               <p className="text-2xl font-bold text-zinc-900 dark:text-white">
                 {isLoading ? '-' : stats?.totalOperations}
+              </p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                <span className="text-emerald-500">+{stats?.weeklyOperations || 0}</span> esta semana
               </p>
             </div>
             <div className="p-2 bg-violet-500/10 rounded-lg">
@@ -175,6 +236,9 @@ export default function Operations() {
               <p className="text-2xl font-bold text-zinc-900 dark:text-white">
                 {isLoading ? '-' : `$${stats?.totalProfit.toLocaleString()}`}
               </p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                Promedio: <span className="text-emerald-500">${stats?.averageProfit.toLocaleString()}</span>
+              </p>
             </div>
             <div className="p-2 bg-emerald-500/10 rounded-lg">
               <TrendingUp className="w-6 h-6 text-emerald-500" />
@@ -189,9 +253,12 @@ export default function Operations() {
               <p className="text-2xl font-bold text-zinc-900 dark:text-white">
                 {isLoading ? '-' : `${stats?.successRate}%`}
               </p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                Operaciones completadas
+              </p>
             </div>
             <div className="p-2 bg-blue-500/10 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-blue-500" />
+              <PieChart className="w-6 h-6 text-blue-500" />
             </div>
           </div>
         </div>
@@ -203,50 +270,127 @@ export default function Operations() {
               <p className="text-2xl font-bold text-zinc-900 dark:text-white">
                 {isLoading ? '-' : `$${stats?.monthlyVolume.toLocaleString()}`}
               </p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                Comisiones: <span className="text-rose-500">${stats?.totalFees.toLocaleString()}</span>
+              </p>
             </div>
             <div className="p-2 bg-yellow-500/10 rounded-lg">
-              <LineChart className="w-6 h-6 text-yellow-500" />
+              <BarChart className="w-6 h-6 text-yellow-500" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filters mejorados */}
-      <div className="flex flex-wrap items-center gap-4 p-4 bg-white dark:bg-zinc-800 rounded-xl shadow-sm">
-        <select
-          className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        >
-          <option value="all">Todas las operaciones</option>
-          <option value="completed">Completadas</option>
-          <option value="pending">Pendientes</option>
-          <option value="cancelled">Canceladas</option>
-        </select>
-        
-        <select
-          className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0"
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-        >
-          <option value="date">Ordenar por fecha</option>
-          <option value="amount">Ordenar por monto</option>
-          <option value="profit">Ordenar por beneficio</option>
-        </select>
+      {/* Gráficos y Análisis */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+          <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">
+            Distribución por Par
+          </h3>
+          <div className="h-64 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
+            Gráfico de distribución por par (próximamente)
+          </div>
+        </div>
 
-        <input
-          type="text"
-          placeholder="Buscar por símbolo..."
-          className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0"
-        />
-
-        <button className="px-3 py-2 text-sm text-violet-500 hover:text-violet-600 font-medium">
-          Limpiar filtros
-        </button>
+        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+          <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">
+            Rendimiento Histórico
+          </h3>
+          <div className="h-64 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
+            Gráfico de rendimiento (próximamente)
+          </div>
+        </div>
       </div>
 
-      {/* Tabla mejorada */}
-      <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm overflow-hidden">
+      {/* Filters mejorados */}
+      <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm">
+        <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+          <h3 className="text-lg font-medium text-zinc-900 dark:text-white">
+            Operaciones
+          </h3>
+        </div>
+        <div className="p-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex-1 min-w-[200px]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar por símbolo, tipo, estado..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0 focus:ring-2 focus:ring-violet-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+              <select
+                className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0 focus:ring-2 focus:ring-violet-500"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              >
+                <option value="all">Todas las operaciones</option>
+                <option value="completed">Completadas</option>
+                <option value="pending">Pendientes</option>
+                <option value="cancelled">Canceladas</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+              <select
+                className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0 focus:ring-2 focus:ring-violet-500"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="date">Ordenar por fecha</option>
+                <option value="amount">Ordenar por monto</option>
+                <option value="profit">Ordenar por beneficio</option>
+              </select>
+            </div>
+
+            <button 
+              onClick={() => {
+                setFilter('all');
+                setSortBy('date');
+                setSearchTerm('');
+                setSelectedTags([]);
+              }}
+              className="px-3 py-2 text-sm text-violet-500 hover:text-violet-600 font-medium flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Limpiar filtros
+            </button>
+          </div>
+
+          {/* Tags populares */}
+          <div className="mt-4 flex flex-wrap gap-2">
+            {['swing', 'scalping', 'position', 'day-trade', 'spot'].map((tag) => (
+              <button
+                key={tag}
+                onClick={() => {
+                  if (selectedTags.includes(tag)) {
+                    setSelectedTags(selectedTags.filter(t => t !== tag));
+                  } else {
+                    setSelectedTags([...selectedTags, tag]);
+                  }
+                }}
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                  selectedTags.includes(tag)
+                    ? 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400'
+                    : 'bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600'
+                }`}
+              >
+                <Tag className="w-3 h-3" />
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tabla mejorada */}
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
             <thead className="bg-zinc-50 dark:bg-zinc-800">
@@ -259,6 +403,9 @@ export default function Operations() {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   Par
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                  Exchange
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   Precio
@@ -280,13 +427,16 @@ export default function Operations() {
             <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                    Cargando operaciones...
+                  <td colSpan={9} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                    <div className="flex items-center justify-center gap-2">
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Cargando operaciones...
+                    </div>
                   </td>
                 </tr>
               ) : operations.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                  <td colSpan={9} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
                     No hay operaciones para mostrar
                   </td>
                 </tr>
@@ -307,6 +457,9 @@ export default function Operations() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
                       {operation.symbol}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
+                      {operation.exchange}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
                       ${operation.price.toLocaleString()}
@@ -357,7 +510,7 @@ export default function Operations() {
           </table>
         </div>
         
-        {/* Paginación */}
+        {/* Paginación mejorada */}
         <div className="px-6 py-3 flex items-center justify-between border-t border-zinc-200 dark:border-zinc-700">
           <div className="flex-1 flex justify-between sm:hidden">
             <button className="relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700">
