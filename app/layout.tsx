@@ -158,9 +158,9 @@ export default function RootLayout({
 
                   {/* Sidebar */}
                   <div className={`
-                    fixed top-0 left-0 z-50 h-full bg-white/80 dark:bg-zinc-800/80
+                    fixed top-0 left-0 z-50 h-full bg-white/90 dark:bg-zinc-900/90
                     border-r border-zinc-200 dark:border-zinc-700/50
-                    transform transition-all duration-500 ease-in-out backdrop-blur-xl
+                    transform transition-all duration-300 ease-in-out backdrop-blur-xl
                     ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                     ${isSidebarCollapsed ? 'w-20' : 'w-64'}
                     shadow-xl shadow-zinc-200/50 dark:shadow-zinc-900/50
@@ -170,6 +170,14 @@ export default function RootLayout({
                         <div 
                           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                           className="flex items-center gap-3 group cursor-pointer"
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              setIsSidebarCollapsed(!isSidebarCollapsed);
+                            }
+                          }}
+                          aria-label={isSidebarCollapsed ? "Expandir menú" : "Colapsar menú"}
                         >
                           <div className="relative">
                             <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-all duration-300"></div>
@@ -193,20 +201,20 @@ export default function RootLayout({
                       <div className="flex-1 overflow-y-auto py-4">
                         <nav className="px-2 space-y-1">
                           {menuItems.map((item) => (
-                          <Link 
+                            <Link 
                               key={item.href}
                               href={item.href} 
                               className={`
                                 relative flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
                                 transition-all duration-300 transform hover:scale-[1.02]
                                 ${pathname === item.href
-                                  ? 'bg-gradient-to-r from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300'
+                                  ? 'bg-gradient-to-r from-violet-500/20 to-indigo-500/20 dark:from-violet-500/30 dark:to-indigo-500/30 text-violet-700 dark:text-violet-300 shadow-lg shadow-violet-500/10'
                                   : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-r hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
                                 } group
                               `}
                             >
                               {isSidebarCollapsed && (
-                                <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                                <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
                                   {item.name}
                                 </div>
                               )}
@@ -221,7 +229,7 @@ export default function RootLayout({
                               {!isSidebarCollapsed && (
                                 <span className="transition-colors duration-200">{item.name}</span>
                               )}
-                          </Link>
+                            </Link>
                           ))}
                         </nav>
                       </div>
@@ -233,10 +241,12 @@ export default function RootLayout({
                             relative flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-xl
                             text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10
                             group transition-all duration-200 transform hover:scale-[1.02]
+                            focus:outline-none focus:ring-2 focus:ring-rose-500/20
                           `}
+                          aria-label="Cerrar sesión"
                         >
                           {isSidebarCollapsed && (
-                            <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                            <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
                               Cerrar Sesión
                             </div>
                           )}
@@ -248,7 +258,7 @@ export default function RootLayout({
                           `} />
                           {!isSidebarCollapsed && (
                             <span className="group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-200">
-                          Cerrar Sesión
+                              Cerrar Sesión
                             </span>
                           )}
                         </button>
