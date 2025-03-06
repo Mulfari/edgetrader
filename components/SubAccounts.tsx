@@ -708,15 +708,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
         <div className="flex flex-col space-y-4">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="flex flex-col space-y-4">
-              <h2 className="text-2xl font-bold tracking-tight">
-                Subcuentas
-                {loadingAllBalances && (
-                  <span className="ml-2 inline-flex items-center text-sm font-normal text-blue-600 dark:text-blue-400">
-                    <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                    Cargando balances...
-                  </span>
-                )}
-              </h2>
               <div className="flex items-center space-x-4">
                 <div className="relative">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
