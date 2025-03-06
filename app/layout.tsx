@@ -426,31 +426,28 @@ export default function RootLayout({
 
                               <div className="py-4 space-y-4">
                                 <div className="space-y-2">
-                                  <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Detalles de membresía</h4>
-                                  <div className="p-3 rounded-xl bg-gradient-to-r from-violet-500/5 to-indigo-500/5 hover:from-violet-500/10 hover:to-indigo-500/10 dark:from-violet-500/10 dark:to-indigo-500/10 dark:hover:from-violet-500/20 dark:hover:to-indigo-500/20 border border-violet-500/20 dark:border-violet-400/20 space-y-3 transition-all duration-300">
-                                    <div className="flex justify-between items-center">
-                                      <Badge variant="outline" className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20">
-                                        Premium
-                                      </Badge>
-                                      <Badge variant="outline" className="bg-gradient-to-r from-emerald-500/10 to-emerald-600/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
-                                        Activo
-                                      </Badge>
+                                  <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Estado del sistema</h4>
+                                  <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 bg-gradient-to-r from-emerald-500/10 to-emerald-600/10 dark:from-emerald-500/20 dark:to-emerald-600/20 px-3 py-2.5 rounded-xl border border-emerald-500/20 dark:border-emerald-400/20">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="relative">
+                                        <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                        <div className="absolute inset-0 h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping"></div>
+                                      </div>
+                                      <span className="font-medium text-emerald-700 dark:text-emerald-400">En línea</span>
                                     </div>
-                                    <div className="space-y-2">
-                                      <div className="flex justify-between text-sm">
-                                        <span className="text-zinc-600 dark:text-zinc-400">Inicio</span>
-                                        <span className="font-medium text-zinc-900 dark:text-zinc-100">01 Marzo 2024</span>
-                                      </div>
-                                      <div className="flex justify-between text-sm">
-                                        <span className="text-zinc-600 dark:text-zinc-400">Vence</span>
-                                        <span className="font-medium text-zinc-900 dark:text-zinc-100">01 Abril 2024</span>
-                                      </div>
-                                      <div className="relative h-1.5 w-full bg-violet-100 dark:bg-violet-900/30 rounded-full overflow-hidden">
-                                        <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 w-3/4 rounded-full"></div>
-                                      </div>
-                                      <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center">
-                                        21 días restantes
-                                      </p>
+                                    {lastUpdate && (
+                                      <>
+                                        <span className="text-emerald-400/30 dark:text-emerald-600">•</span>
+                                        <span className="text-emerald-600/70 dark:text-emerald-400/70">Actualizado {lastUpdate}</span>
+                                      </>
+                                    )}
+                                  </div>
+                                  <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-zinc-600 dark:text-zinc-400">API Latencia</span>
+                                      <Badge variant="outline" className="bg-gradient-to-r from-blue-500/10 to-violet-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
+                                        45ms
+                                      </Badge>
                                     </div>
                                   </div>
                                 </div>
