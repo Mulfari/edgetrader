@@ -6,7 +6,8 @@ import {
   DollarSign,
   ChevronDown,
   Eye,
-  EyeOff
+  EyeOff,
+  Users
 } from "lucide-react";
 import SubAccounts from "@/components/SubAccounts";
 import SubAccountManager from "@/components/SubAccountManager";
@@ -275,6 +276,9 @@ export default function DashboardPage() {
                 </>
               )}
             </div>
+          </div>
+          <div className="absolute right-0 bottom-0 transform translate-x-1/4 translate-y-1/4">
+            <Users className="h-32 w-32 text-gray-200 dark:text-zinc-700" />
           </div>
         </div>
 
