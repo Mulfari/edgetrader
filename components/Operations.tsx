@@ -191,15 +191,14 @@ export default function Operations() {
       onClick={() => handleOperationSelect(operation.id)}
       onMouseEnter={() => setHoveredOperation(operation.id)}
       onMouseLeave={() => setHoveredOperation(null)}
-      className={`group bg-white/95 dark:bg-[#12121A]/95 backdrop-blur-xl rounded-xl shadow-sm transition-all duration-300 border relative overflow-hidden cursor-pointer
+      className={`group bg-white dark:bg-zinc-800 rounded-xl shadow-sm transition-all duration-300 border-2 relative overflow-hidden cursor-pointer
         ${selectedOperations.includes(operation.id)
-          ? 'border-violet-500/50 dark:border-violet-400/50 shadow-lg shadow-violet-100/50 dark:shadow-violet-900/30 scale-[1.02]'
-          : 'border-zinc-200/30 dark:border-zinc-700/30 hover:border-violet-200/50 dark:hover:border-violet-800/50 hover:shadow-lg hover:shadow-violet-100/20 dark:hover:shadow-violet-900/20 hover:scale-[1.01]'}
+          ? 'border-violet-500 dark:border-violet-400 shadow-lg shadow-violet-100 dark:shadow-violet-900/20 scale-[1.02]'
+          : 'border-transparent hover:border-violet-200 dark:hover:border-violet-800/30 hover:shadow-md hover:scale-[1.01]'}
         ${expandedOperation === operation.id ? 'p-8' : 'p-6'}`}
     >
-      {/* Efecto de brillo mejorado */}
-      <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/[0.075] to-violet-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none blur-2xl" />
-      <div className="absolute inset-0 bg-gradient-to-b from-white/50 dark:from-white/[0.025] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+      {/* Efecto de brillo al hover */}
+      <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/5 to-violet-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
       {/* Checkbox mejorado */}
       <div 
@@ -365,7 +364,7 @@ export default function Operations() {
             </svg>
             Duplicar
           </button>
-      </div>
+        </div>
         <button 
           onClick={(e) => {
             e.stopPropagation();
@@ -403,14 +402,14 @@ export default function Operations() {
       onClick={() => handleOperationSelect(operation.id)}
       onMouseEnter={() => setHoveredOperation(operation.id)}
       onMouseLeave={() => setHoveredOperation(null)}
-      className={`group transition-all duration-300 cursor-pointer relative backdrop-blur-sm ${
+      className={`group transition-all duration-200 cursor-pointer relative ${
         selectedOperations.includes(operation.id)
-          ? 'bg-violet-50/90 dark:bg-violet-900/20'
-          : 'hover:bg-zinc-50/90 dark:hover:bg-zinc-800/50'
+          ? 'bg-violet-50 dark:bg-violet-900/20'
+          : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
       }`}
     >
-      {/* Efecto de brillo mejorado para filas */}
-      <td className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/[0.05] to-violet-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+      {/* Efecto de brillo al hover */}
+      <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/5 to-violet-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
       <td className="px-6 py-4 w-8">
         <div 
@@ -526,7 +525,7 @@ export default function Operations() {
   );
 
   const ActionBar = () => (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-4 bg-white/95 dark:bg-[#12121A]/95 backdrop-blur-xl rounded-xl shadow-2xl border border-zinc-200/50 dark:border-zinc-700/50 flex items-center gap-4 z-50 transition-all duration-300 transform hover:shadow-violet-100/20 dark:hover:shadow-violet-900/20">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-4 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-700 flex items-center gap-4 z-50 transition-all duration-300 transform">
       <span className="text-sm font-medium text-zinc-900 dark:text-white flex items-center gap-2">
         <div className="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></div>
         {selectedOperations.length} {selectedOperations.length === 1 ? 'operación' : 'operaciones'} seleccionada{selectedOperations.length === 1 ? '' : 's'}
@@ -553,107 +552,23 @@ export default function Operations() {
 
   return (
     <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white/95 dark:bg-[#12121A]/95 backdrop-blur-xl rounded-xl p-6 shadow-sm border border-zinc-200/50 dark:border-zinc-700/50 hover:shadow-lg hover:shadow-violet-100/20 dark:hover:shadow-violet-900/20 transition-all duration-300">
-              <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">Total Operaciones</p>
-              <p className="text-3xl font-bold text-zinc-900 dark:text-white mt-2">
-                {isLoading ? '-' : stats?.totalOperations}
-              </p>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 flex items-center gap-1">
-                <span className="flex items-center text-emerald-500"><TrendingUp className="w-3 h-3 mr-1" />+{stats?.weeklyOperations || 0}</span> esta semana
-              </p>
-            </div>
-            <div className="p-4 bg-violet-500/10 rounded-xl">
-              <LineChart className="w-8 h-8 text-violet-500" />
-            </div>
-          </div>
+      {/* Header mejorado */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
+            {marketFilter === 'futures' ? 'Operaciones Futuros' : 
+             marketFilter === 'spot' ? 'Operaciones Spot' : 
+             'Todas las Operaciones'}
+          </h2>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Vista general del rendimiento y operaciones
+          </p>
         </div>
-
-        <div className="bg-white/95 dark:bg-[#12121A]/95 backdrop-blur-xl rounded-xl p-6 shadow-sm border border-zinc-200/50 dark:border-zinc-700/50 hover:shadow-lg hover:shadow-violet-100/20 dark:hover:shadow-violet-900/20 transition-all duration-300">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">Beneficio Total</p>
-              <p className="text-3xl font-bold text-zinc-900 dark:text-white mt-2">
-                {isLoading ? '-' : `$${stats?.totalProfit.toLocaleString()}`}
-              </p>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
-                Promedio: <span className="text-emerald-500">${stats?.averageProfit.toLocaleString()}</span>
-              </p>
-            </div>
-            <div className="p-4 bg-emerald-500/10 rounded-xl">
-              <TrendingUp className="w-8 h-8 text-emerald-500" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white/95 dark:bg-[#12121A]/95 backdrop-blur-xl rounded-xl p-6 shadow-sm border border-zinc-200/50 dark:border-zinc-700/50 hover:shadow-lg hover:shadow-violet-100/20 dark:hover:shadow-violet-900/20 transition-all duration-300">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">Tasa de Éxito</p>
-              <p className="text-3xl font-bold text-zinc-900 dark:text-white mt-2">
-                {isLoading ? '-' : `${stats?.successRate}%`}
-              </p>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
-                Operaciones completadas
-              </p>
-            </div>
-            <div className="p-4 bg-blue-500/10 rounded-xl">
-              <PieChart className="w-8 h-8 text-blue-500" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white/95 dark:bg-[#12121A]/95 backdrop-blur-xl rounded-xl p-6 shadow-sm border border-zinc-200/50 dark:border-zinc-700/50 hover:shadow-lg hover:shadow-violet-100/20 dark:hover:shadow-violet-900/20 transition-all duration-300">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">Volumen Mensual</p>
-              <p className="text-3xl font-bold text-zinc-900 dark:text-white mt-2">
-                {isLoading ? '-' : `$${stats?.monthlyVolume.toLocaleString()}`}
-              </p>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
-                Comisiones: <span className="text-rose-500">${stats?.totalFees.toLocaleString()}</span>
-              </p>
-              </div>
-            <div className="p-4 bg-yellow-500/10 rounded-xl">
-              <BarChart className="w-8 h-8 text-yellow-500" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Gráficos y Análisis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white/95 dark:bg-[#12121A]/95 backdrop-blur-xl rounded-xl p-6 shadow-sm border border-zinc-200/50 dark:border-zinc-700/50 hover:shadow-lg hover:shadow-violet-100/20 dark:hover:shadow-violet-900/20 transition-all duration-300">
-          <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-6 flex items-center gap-3">
-            <PieChart className="w-5 h-5 text-violet-500" />
-            Distribución por Par
-          </h3>
-          <div className="h-64 flex items-center justify-center text-zinc-500 dark:text-zinc-400 bg-zinc-50/50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200/50 dark:border-zinc-700/50">
-            Gráfico de distribución por par (próximamente)
-          </div>
-        </div>
-
-        <div className="bg-white/95 dark:bg-[#12121A]/95 backdrop-blur-xl rounded-xl p-6 shadow-sm border border-zinc-200/50 dark:border-zinc-700/50 hover:shadow-lg hover:shadow-violet-100/20 dark:hover:shadow-violet-900/20 transition-all duration-300">
-          <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-6 flex items-center gap-3">
-            <LineChart className="w-5 h-5 text-violet-500" />
-            Rendimiento Histórico
-          </h3>
-          <div className="h-64 flex items-center justify-center text-zinc-500 dark:text-zinc-400 bg-zinc-50/50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200/50 dark:border-zinc-700/50">
-            Gráfico de rendimiento (próximamente)
-          </div>
-        </div>
-      </div>
-
-      {/* Controles principales */}
-      <div className="flex items-center justify-end mb-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-xl p-1">
+          <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1">
             <button
               onClick={() => setView('table')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 inline-flex items-center gap-2 ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors inline-flex items-center gap-2 ${
                 view === 'table'
                   ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
@@ -664,7 +579,7 @@ export default function Operations() {
             </button>
             <button
               onClick={() => setView('cards')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 inline-flex items-center gap-2 ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors inline-flex items-center gap-2 ${
                 view === 'cards'
                   ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
@@ -675,7 +590,7 @@ export default function Operations() {
             </button>
           </div>
           <select
-            className="px-4 py-2.5 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-xl text-sm text-zinc-900 dark:text-white border border-zinc-200/50 dark:border-zinc-700/50 focus:border-violet-500 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:focus:ring-violet-500/20 transition-all duration-200"
+            className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500"
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
           >
@@ -685,40 +600,131 @@ export default function Operations() {
             <option value="1y">Último año</option>
             <option value="all">Todo</option>
           </select>
-          <button className="px-4 py-2.5 text-sm font-medium text-white bg-violet-500 rounded-xl hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-lg hover:shadow-violet-500/10">
+          <button className="px-4 py-2 text-sm font-medium text-white bg-violet-500 rounded-lg hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors flex items-center gap-2">
             <PieChart className="w-4 h-4" />
             Nueva Operación
           </button>
         </div>
       </div>
 
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Total Operaciones</p>
+              <p className="text-2xl font-bold text-zinc-900 dark:text-white">
+                {isLoading ? '-' : stats?.totalOperations}
+              </p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                <span className="text-emerald-500">+{stats?.weeklyOperations || 0}</span> esta semana
+              </p>
+            </div>
+            <div className="p-2 bg-violet-500/10 rounded-lg">
+              <LineChart className="w-6 h-6 text-violet-500" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Beneficio Total</p>
+              <p className="text-2xl font-bold text-zinc-900 dark:text-white">
+                {isLoading ? '-' : `$${stats?.totalProfit.toLocaleString()}`}
+              </p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                Promedio: <span className="text-emerald-500">${stats?.averageProfit.toLocaleString()}</span>
+              </p>
+            </div>
+            <div className="p-2 bg-emerald-500/10 rounded-lg">
+              <TrendingUp className="w-6 h-6 text-emerald-500" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Tasa de Éxito</p>
+              <p className="text-2xl font-bold text-zinc-900 dark:text-white">
+                {isLoading ? '-' : `${stats?.successRate}%`}
+              </p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                Operaciones completadas
+              </p>
+            </div>
+            <div className="p-2 bg-blue-500/10 rounded-lg">
+              <PieChart className="w-6 h-6 text-blue-500" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Volumen Mensual</p>
+              <p className="text-2xl font-bold text-zinc-900 dark:text-white">
+                {isLoading ? '-' : `$${stats?.monthlyVolume.toLocaleString()}`}
+              </p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                Comisiones: <span className="text-rose-500">${stats?.totalFees.toLocaleString()}</span>
+              </p>
+            </div>
+            <div className="p-2 bg-yellow-500/10 rounded-lg">
+              <BarChart className="w-6 h-6 text-yellow-500" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Gráficos y Análisis */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+          <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">
+            Distribución por Par
+          </h3>
+          <div className="h-64 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
+            Gráfico de distribución por par (próximamente)
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
+          <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">
+            Rendimiento Histórico
+          </h3>
+          <div className="h-64 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
+            Gráfico de rendimiento (próximamente)
+          </div>
+        </div>
+      </div>
+
       {/* Filters mejorados */}
-      <div className="bg-white/95 dark:bg-[#12121A]/95 backdrop-blur-xl rounded-xl shadow-sm border border-zinc-200/50 dark:border-zinc-700/50">
-        <div className="p-6 border-b border-zinc-200/50 dark:border-zinc-700/50">
-          <h3 className="text-lg font-medium text-zinc-900 dark:text-white flex items-center gap-3">
-            <Filter className="w-5 h-5 text-violet-500" />
+      <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm">
+        <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+          <h3 className="text-lg font-medium text-zinc-900 dark:text-white">
             Operaciones
           </h3>
         </div>
-        <div className="p-6">
+        <div className="p-4">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex-1 min-w-[200px]">
-              <div className="relative group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-hover:text-violet-500 transition-colors" />
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 dark:text-zinc-400" />
                 <input
                   type="text"
                   placeholder="Buscar por símbolo, tipo, estado..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-xl text-sm text-zinc-900 dark:text-white border border-zinc-200/50 dark:border-zinc-700/50 focus:border-violet-500 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:focus:ring-violet-500/20 transition-all duration-200"
+                  className="w-full pl-9 pr-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0 focus:ring-2 focus:ring-violet-500"
                 />
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+              <Filter className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
               <select
-                className="px-4 py-2.5 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-xl text-sm text-zinc-900 dark:text-white border border-zinc-200/50 dark:border-zinc-700/50 focus:border-violet-500 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:focus:ring-violet-500/20 transition-all duration-200"
+                className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0 focus:ring-2 focus:ring-violet-500"
                 value={marketFilter}
                 onChange={(e) => setMarketFilter(e.target.value as 'all' | 'spot' | 'futures')}
               >
@@ -729,31 +735,31 @@ export default function Operations() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
-        <select
-                className="px-4 py-2.5 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-xl text-sm text-zinc-900 dark:text-white border border-zinc-200/50 dark:border-zinc-700/50 focus:border-violet-500 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:focus:ring-violet-500/20 transition-all duration-200"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        >
-          <option value="all">Todas las operaciones</option>
-          <option value="completed">Completadas</option>
-          <option value="pending">Pendientes</option>
-          <option value="cancelled">Canceladas</option>
-        </select>
+              <Filter className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+              <select
+                className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0 focus:ring-2 focus:ring-violet-500"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              >
+                <option value="all">Todas las operaciones</option>
+                <option value="completed">Completadas</option>
+                <option value="pending">Pendientes</option>
+                <option value="cancelled">Canceladas</option>
+              </select>
             </div>
-        
+
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
-        <select
-                className="px-4 py-2.5 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-xl text-sm text-zinc-900 dark:text-white border border-zinc-200/50 dark:border-zinc-700/50 focus:border-violet-500 dark:focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:focus:ring-violet-500/20 transition-all duration-200"
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-        >
-          <option value="date">Ordenar por fecha</option>
-          <option value="amount">Ordenar por monto</option>
-          <option value="profit">Ordenar por beneficio</option>
-        </select>
-      </div>
+              <Clock className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+              <select
+                className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white border-0 focus:ring-2 focus:ring-violet-500"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="date">Ordenar por fecha</option>
+                <option value="amount">Ordenar por monto</option>
+                <option value="profit">Ordenar por beneficio</option>
+              </select>
+            </div>
 
             <button 
               onClick={() => {
@@ -762,7 +768,7 @@ export default function Operations() {
                 setSearchTerm('');
                 setSelectedTags([]);
               }}
-              className="px-4 py-2.5 text-sm text-violet-500 hover:text-violet-600 dark:text-violet-400 dark:hover:text-violet-300 font-medium flex items-center gap-2 bg-violet-50 dark:bg-violet-500/10 rounded-xl hover:bg-violet-100 dark:hover:bg-violet-500/20 transition-all duration-200"
+              className="px-3 py-2 text-sm text-violet-500 hover:text-violet-600 font-medium flex items-center gap-2"
             >
               <RefreshCw className="w-4 h-4" />
               Limpiar filtros
@@ -781,13 +787,13 @@ export default function Operations() {
                     setSelectedTags([...selectedTags, tag]);
                   }
                 }}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
                   selectedTags.includes(tag)
-                    ? 'bg-violet-100 text-violet-800 dark:bg-violet-500/20 dark:text-violet-300 shadow-sm'
-                    : 'bg-zinc-100/50 text-zinc-800 dark:bg-zinc-800/50 dark:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50'
+                    ? 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400'
+                    : 'bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600'
                 }`}
               >
-                <Tag className="w-3.5 h-3.5" />
+                <Tag className="w-3 h-3" />
                 {tag}
               </button>
             ))}
@@ -796,8 +802,8 @@ export default function Operations() {
 
         {/* Vista condicional: Tabla o Tarjetas */}
         {view === 'table' ? (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
               <thead>
                 <tr className="bg-gradient-to-r from-zinc-50/80 to-zinc-100/80 dark:from-zinc-800/80 dark:to-zinc-900/80 backdrop-blur-sm sticky top-0 z-10">
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider w-8">
@@ -816,58 +822,58 @@ export default function Operations() {
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
-                  Fecha
+                      Fecha
                       <Clock className="h-3.5 w-3.5" />
                     </div>
-                </th>
+                  </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
                       Tipo/Estado
                     </div>
-                </th>
+                  </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
                       Par/Exchange
                     </div>
-                </th>
+                  </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
                       Precio/Cantidad
                     </div>
-                </th>
+                  </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
                       Beneficio
                     </div>
-                </th>
+                  </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     <div className="flex items-center gap-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer">
                       Etiquetas
                     </div>
-                </th>
+                  </th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
-              {isLoading ? (
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
+                {isLoading ? (
                   Array.from({ length: 5 }).map((_, index) => (
                     <tr key={index} className="animate-pulse">
                       <td colSpan={8} className="px-6 py-6">
                         <div className="h-12 bg-zinc-200 dark:bg-zinc-700 rounded-lg"></div>
-                  </td>
-                </tr>
+                      </td>
+                    </tr>
                   ))
-              ) : operations.length === 0 ? (
-                <tr>
+                ) : operations.length === 0 ? (
+                  <tr>
                     <td colSpan={8} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center justify-center gap-3">
                         <div className="p-3 bg-zinc-100 dark:bg-zinc-700 rounded-full">
                           <Search className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
                         </div>
                         <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                    No hay operaciones para mostrar
+                          No hay operaciones para mostrar
                         </p>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400">
                           Intenta ajustar los filtros o crear una nueva operación
@@ -877,10 +883,10 @@ export default function Operations() {
                   </tr>
                 ) : (
                   operations.map(renderTableRow)
-              )}
-            </tbody>
-          </table>
-                      </div>
+                )}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {isLoading ? (
@@ -918,7 +924,7 @@ export default function Operations() {
         {selectedOperations.length > 0 && (
           <ActionBar />
         )}
-                    </div>
+      </div>
     </div>
   );
 }
