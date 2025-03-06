@@ -232,12 +232,17 @@ export default function RootLayout({
                         <Menu className="h-5 w-5" />
                       </button>
                       <div className="animate-in slide-in-from-left-5 duration-500">
-                        <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-indigo-500">
-                          {menuItems.find(item => item.href === pathname)?.name || ''}
-                        </h1>
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                          {menuItems.find(item => item.href === pathname)?.description || ''}
-                        </p>
+                        <div className="flex flex-col">
+                          <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-indigo-500 tracking-tight">
+                            {menuItems.find(item => item.href === pathname)?.name || ''}
+                          </h1>
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="h-1 w-1 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500"></div>
+                            <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">
+                              {menuItems.find(item => item.href === pathname)?.description || ''}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
