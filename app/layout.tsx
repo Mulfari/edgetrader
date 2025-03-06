@@ -141,7 +141,7 @@ export default function RootLayout({
                           <BarChart3 className="h-6 w-6 text-white" />
                         </div>
                       </div>
-                      <div className="transition-all duration-300 transform opacity-0 group-hover:opacity-100 whitespace-nowrap">
+                      <div className="transition-all duration-300 transform lg:opacity-0 lg:group-hover:opacity-100 whitespace-nowrap">
                         <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
                           TradingDash
                         </h1>
@@ -187,9 +187,11 @@ export default function RootLayout({
                             </div>
                             <span className={`
                               transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                              lg:opacity-0 lg:-translate-x-6 lg:group-hover:translate-x-0 lg:group-hover:opacity-100
-                              opacity-100 translate-x-0 lg:whitespace-nowrap
-                              ${isMobileMenuOpen ? 'block' : 'hidden lg:block'}
+                              lg:opacity-0 lg:group-hover:opacity-100
+                              ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 lg:opacity-0'}
+                              translate-x-0 lg:group-hover:translate-x-0
+                              whitespace-nowrap
+                              block lg:block
                             `}>
                               {item.name}
                             </span>
@@ -218,9 +220,11 @@ export default function RootLayout({
                       </div>
                       <span className={`
                         transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                        lg:opacity-0 lg:-translate-x-6 lg:group-hover:translate-x-0 lg:group-hover:opacity-100
-                        opacity-100 translate-x-0 lg:whitespace-nowrap
-                        ${isMobileMenuOpen ? 'block' : 'hidden lg:block'}
+                        lg:opacity-0 lg:group-hover:opacity-100
+                        ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 lg:opacity-0'}
+                        translate-x-0 lg:group-hover:translate-x-0
+                        whitespace-nowrap
+                        block lg:block
                         group-hover:text-rose-600 dark:group-hover:text-rose-400
                       `}>
                         Cerrar Sesión
