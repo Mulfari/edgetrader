@@ -155,31 +155,31 @@ export default function DashboardPage() {
   return (
     <div className="px-4 sm:px-6 lg:px-8">
       {/* Dashboard Content */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Balance Card */}
-        <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl p-6 text-white relative">
+        <div className="col-span-1 sm:col-span-2 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl p-4 sm:p-6 text-white relative">
           <div className="relative">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="flex items-center space-x-2 relative">
                 <button
                   id="balance-menu-button"
-                  className="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-white/20 transition-colors duration-200"
+                  className="flex items-center space-x-2 bg-white/10 rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium hover:bg-white/20 transition-colors duration-200"
                   onClick={() => {
                     const menu = document.getElementById('balance-menu');
                     menu?.classList.toggle('hidden');
                   }}
                 >
                   <span>{getBalanceTitle()}</span>
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
                 </button>
                 <button
                   onClick={() => setShowBalance(!showBalance)}
-                  className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200"
+                  className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200"
                 >
                   {showBalance ? (
-                    <EyeOff className="h-4 w-4 text-white/80" />
+                    <EyeOff className="h-3 w-3 sm:h-4 sm:w-4 text-white/80" />
                   ) : (
-                    <Eye className="h-4 w-4 text-white/80" />
+                    <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-white/80" />
                   )}
                 </button>
                 
@@ -209,13 +209,13 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            <div className="flex items-start gap-12">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:gap-12">
               <div className="space-y-1">
-                <div className="text-4xl font-bold">
+                <div className="text-3xl sm:text-4xl font-bold">
                   {isLoading ? (
                     <div className="flex flex-col space-y-2">
-                      <div className="h-10 w-40 bg-white/20 animate-pulse rounded"></div>
-                      <div className="h-4 w-24 bg-white/10 animate-pulse rounded"></div>
+                      <div className="h-8 sm:h-10 w-32 sm:w-40 bg-white/20 animate-pulse rounded"></div>
+                      <div className="h-4 w-20 sm:w-24 bg-white/10 animate-pulse rounded"></div>
                     </div>
                   ) : !showBalance ? (
                     "••••••"
@@ -228,7 +228,7 @@ export default function DashboardPage() {
               </div>
               
               {/* Balances secundarios */}
-              <div className="space-y-2 text-base text-white/90">
+              <div className="space-y-2 text-sm sm:text-base text-white/90 mt-2 sm:mt-0">
                 {isLoading ? (
                   <>
                     <div className="flex items-center space-x-2">
@@ -256,22 +256,22 @@ export default function DashboardPage() {
           </div>
           
           <div className="absolute right-0 bottom-0 transform translate-x-1/6 translate-y-1/6 overflow-hidden">
-            <DollarSign className="h-24 w-24 text-white/10" />
+            <DollarSign className="h-20 w-20 sm:h-24 sm:w-24 text-white/10" />
           </div>
         </div>
 
         {/* Subcuentas Activas Card */}
-        <div className="bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl p-6 text-white relative overflow-hidden">
+        <div className="bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden">
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-medium text-white/90">Subcuentas Activas</h3>
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-sm sm:text-base font-medium text-white/90">Subcuentas Activas</h3>
             </div>
-            <div className="text-4xl font-bold text-white">
+            <div className="text-3xl sm:text-4xl font-bold text-white">
               {getSkeletonOrValue(activeSubAccounts)}
             </div>
-            <div className="mt-2 text-sm text-white/80">
+            <div className="mt-2 text-xs sm:text-sm text-white/80">
               {!isLoading && (
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                   <div className="flex items-center gap-1">
                     <div className="w-2 h-2 rounded-full bg-green-400"></div>
                     <span>Reales: {realAccounts}</span>
@@ -285,32 +285,32 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="absolute right-0 bottom-0 transform translate-x-1/6 translate-y-1/6">
-            <Users className="h-24 w-24 text-white/10" />
+            <Users className="h-20 w-20 sm:h-24 sm:w-24 text-white/10" />
           </div>
         </div>
 
         {/* Operaciones Card */}
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden">
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">Operaciones</h3>
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-sm sm:text-base font-medium text-white/90">Operaciones</h3>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white">
+            <div className="text-3xl sm:text-4xl font-bold text-white">
               {getSkeletonOrValue(exchanges)}
             </div>
-            <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <div className="mt-2 text-xs sm:text-sm text-white/80">
               {!isLoading && 'Total de operaciones realizadas'}
             </div>
           </div>
-          <div className="absolute right-0 bottom-0 transform translate-x-1/4 translate-y-1/4">
-            <LineChart className="h-32 w-32 text-gray-200 dark:text-zinc-700" />
+          <div className="absolute right-0 bottom-0 transform translate-x-1/6 translate-y-1/6">
+            <LineChart className="h-20 w-20 sm:h-24 sm:w-24 text-white/10" />
           </div>
         </div>
       </div>
 
       {/* Subcuentas Section */}
       <div className="space-y-4">
-        <div id="subaccounts-component">
+        <div id="subaccounts-component" className="px-0 sm:px-2">
           <SubAccounts onStatsUpdate={handleStatsUpdate} showBalance={showBalance} />
         </div>
       </div>
