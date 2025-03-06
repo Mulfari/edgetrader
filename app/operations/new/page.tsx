@@ -281,7 +281,6 @@ export default function NewOperation() {
   const executeOrder = async () => {
     try {
       setIsLoading(true);
-      setError('');
       // Aquí iría la lógica para enviar la orden a la API
       console.log('Ejecutando orden:', orderSummary);
       // Simular una llamada a la API
@@ -290,7 +289,8 @@ export default function NewOperation() {
       setSuccessMessage('Orden ejecutada exitosamente');
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-    } catch (err) {
+    } catch (error) {
+      console.error('Error al ejecutar la orden:', error);
       setError('Error al ejecutar la orden. Por favor, intente nuevamente.');
     } finally {
       setIsLoading(false);
@@ -442,9 +442,10 @@ export default function NewOperation() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          const updatedPairs = tradingPairs.map(p => 
+                          const newPairs = tradingPairs.map(p => 
                             p.symbol === pair.symbol ? { ...p, favorite: !p.favorite } : p
                           );
+                          console.log('Actualizando favoritos:', newPairs);
                         }}
                         className={`text-amber-400 hover:text-amber-300 transition-colors duration-150 ${
                           pair.favorite ? 'opacity-100' : 'opacity-50'
