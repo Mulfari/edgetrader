@@ -117,14 +117,14 @@ export default function RootLayout({
                 fixed top-0 left-0 z-50 h-full
                 bg-white/95 dark:bg-[#12121A]/95
                 border-r border-zinc-200/50 dark:border-zinc-800/40
-                transform transition-all duration-300 ease-in-out backdrop-blur-xl
-                ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-                w-[5.5rem] hover:w-72 group
+                transform transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] backdrop-blur-xl
+                ${isMobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0 lg:w-[5.5rem] lg:hover:w-72'}
+                group
                 shadow-[0_0_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)]
                 overflow-hidden
               `}>
                 <div className="flex flex-col h-full w-full">
-                  <div className="h-20 flex items-center border-b border-zinc-200/50 dark:border-zinc-800/40 px-4 group-hover:px-6">
+                  <div className="h-20 flex items-center justify-between border-b border-zinc-200/50 dark:border-zinc-800/40 px-6 lg:px-4 lg:group-hover:px-6">
                     <div className="flex items-center gap-3">
                       <div className="relative shrink-0">
                         <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
@@ -132,7 +132,7 @@ export default function RootLayout({
                           <BarChart3 className="h-6 w-6 text-white" />
                         </div>
                       </div>
-                      <div className="transition-all duration-300 transform opacity-0 group-hover:opacity-100 whitespace-nowrap">
+                      <div className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:opacity-0 lg:group-hover:opacity-100 whitespace-nowrap">
                         <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
                           TradingDash
                         </h1>
@@ -141,6 +141,16 @@ export default function RootLayout({
                         </p>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      className="lg:hidden -mr-1 h-10 w-10 inline-flex items-center justify-center rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <span className="sr-only">Cerrar menú</span>
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
                   
                   <div className="flex-1 overflow-y-auto overflow-x-hidden py-4">
