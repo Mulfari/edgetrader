@@ -117,95 +117,91 @@ export default function RootLayout({
                 fixed top-0 left-0 z-50 h-full
                 bg-white/95 dark:bg-[#12121A]/95
                 border-r border-zinc-200/50 dark:border-zinc-800/40
-                transform transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] backdrop-blur-xl
-                ${isMobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0 lg:w-[4.5rem] xl:w-[5.5rem]'}
-                lg:hover:w-72 group
+                transform transition-all duration-300 ease-in-out backdrop-blur-xl
+                ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                w-[5.5rem] hover:w-72 group
                 shadow-[0_0_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)]
                 overflow-hidden
               `}>
                 <div className="flex flex-col h-full w-full">
-                  <div className="h-16 sm:h-20 flex items-center border-b border-zinc-200/50 dark:border-zinc-800/40 px-6 lg:px-5 lg:group-hover:px-6">
-                    <div className="flex items-center gap-3 lg:justify-center lg:w-full lg:group-hover:justify-start">
+                  <div className="h-20 flex items-center border-b border-zinc-200/50 dark:border-zinc-800/40 px-4 group-hover:px-6">
+                    <div className="flex items-center gap-3">
                       <div className="relative shrink-0">
                         <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
-                        <div className="relative bg-gradient-to-br from-violet-500 to-indigo-500 w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shadow-lg transform transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-110 hover:shadow-violet-500/25">
-                          <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-white transform transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:rotate-[360deg]" />
+                        <div className="relative bg-gradient-to-br from-violet-500 to-indigo-500 w-11 h-11 rounded-xl flex items-center justify-center shadow-lg transform transition-transform duration-300 hover:scale-105">
+                          <BarChart3 className="h-6 w-6 text-white" />
                         </div>
                       </div>
-                      <div className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform lg:opacity-0 lg:group-hover:opacity-100 opacity-100 whitespace-nowrap">
-                        <h1 className="text-base sm:text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
+                      <div className="transition-all duration-300 transform opacity-0 group-hover:opacity-100 whitespace-nowrap">
+                        <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
                           TradingDash
                         </h1>
-                        <p className="text-[10px] sm:text-xs text-zinc-500 dark:text-zinc-400">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
                           Panel de Control
                         </p>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 sm:py-4 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-                    <nav className="space-y-1.5 px-4 lg:px-3 lg:group-hover:px-4">
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden py-4">
+                    <nav className="space-y-1 px-3 group-hover:px-4">
                       {menuItems.map((item) => (
-                        <Link 
+                      <Link 
                           key={item.href}
                           href={item.href} 
                           className={`
-                            relative group/item flex items-center px-3 py-2.5 text-xs sm:text-sm font-medium
-                            transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                            relative group/item flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
+                            transition-all duration-300 ease-in-out
                             ${pathname === item.href
                               ? 'bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300 shadow-[0_2px_8px_-3px_rgba(139,92,246,0.3)] dark:shadow-[0_2px_8px_-3px_rgba(139,92,246,0.2)]'
                               : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-br hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
                             }
-                            w-full hover:shadow-[0_2px_8px_-3px_rgba(139,92,246,0.2)]
-                            lg:aspect-square lg:group-hover:aspect-auto lg:p-0 lg:group-hover:px-3 lg:group-hover:py-2.5
-                            rounded-xl
+                            w-full
                           `}
                         >
-                          {pathname === item.href && (
-                            <div className="absolute left-0 w-1 h-8 bg-gradient-to-b from-violet-500 to-indigo-500 rounded-r-full transform -translate-y-1/2 top-1/2 shadow-[0_0_8px_-1px_rgba(139,92,246,0.5)] lg:hidden lg:group-hover:block" />
+                          {!isMobileMenuOpen && pathname === item.href && (
+                            <div className="absolute left-0 w-1 h-8 bg-violet-500 rounded-r-full transform -translate-y-1/2 top-1/2" />
                           )}
                           <div className={`
                             relative flex items-center w-full
                             ${pathname === item.href ? 'text-violet-500 dark:text-violet-400' : ''}
-                            lg:justify-center lg:group-hover:justify-start
                           `}>
-                            <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:group-hover:scale-95">
+                            <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-95">
                               <item.icon className={`
                                 h-5 w-5 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
                                 ${pathname === item.href
                                   ? 'text-violet-500 dark:text-violet-400'
                                   : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
                                 }
-                                lg:group-hover:-translate-x-0.5 transform-gpu group-hover/item:scale-110
+                                group-hover:-translate-x-0.5 transform-gpu
                               `} />
                             </div>
-                            <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:opacity-0 lg:-translate-x-6 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 opacity-100 translate-x-0 whitespace-nowrap">{item.name}</span>
+                            <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] opacity-0 -translate-x-6 group-hover:translate-x-0 group-hover:opacity-100 whitespace-nowrap">{item.name}</span>
                           </div>
-                        </Link>
+                      </Link>
                       ))}
                     </nav>
                   </div>
                   
-                  <div className="p-4 border-t border-zinc-200 dark:border-zinc-800/60 px-4 lg:px-2 lg:group-hover:px-4">
+                  <div className="p-4 border-t border-zinc-200 dark:border-zinc-800/60 px-3 group-hover:px-4">
                     <button 
                       onClick={handleLogout}
                       className={`
-                        relative group/item flex items-center px-3 py-2.5 text-xs sm:text-sm font-medium rounded-xl
+                        relative group/item flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
                         text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10
-                        transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] w-full
-                        hover:shadow-[0_2px_8px_-3px_rgba(244,63,94,0.2)]
+                        transition-all duration-300 ease-in-out w-full
                       `}
                     >
-                      <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:group-hover:scale-95">
+                      <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-95">
                         <LogOut className={`
                           h-5 w-5 text-gray-400 dark:text-blue-400/50 
                           group-hover:text-rose-500 dark:group-hover:text-rose-400 
                           transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                          lg:group-hover:-translate-x-0.5 transform-gpu group-hover/item:scale-110
+                          group-hover:-translate-x-0.5 transform-gpu
                         `} />
                       </div>
-                      <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:opacity-0 lg:-translate-x-6 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 opacity-100 translate-x-0 whitespace-nowrap group-hover:text-rose-600 dark:group-hover:text-rose-400">
-                        Cerrar Sesión
+                      <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] opacity-0 -translate-x-6 group-hover:translate-x-0 group-hover:opacity-100 whitespace-nowrap group-hover:text-rose-600 dark:group-hover:text-rose-400">
+                      Cerrar Sesión
                       </span>
                     </button>
                   </div>
@@ -214,8 +210,8 @@ export default function RootLayout({
 
               {/* Main content with navigation */}
               <div className={`
-                transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                lg:pl-[4.5rem] lg:group-hover:pl-72 xl:pl-[5.5rem]
+                transition-all duration-500 ease-in-out
+                lg:pl-[5.5rem] group-hover:lg:pl-72
               `}>
                 {/* Top navigation */}
                 <header className={`
@@ -225,43 +221,100 @@ export default function RootLayout({
                   backdrop-blur-xl transition-all duration-300
                   ${isScrolled ? 'shadow-[0_8px_30px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_8px_30px_-15px_rgba(0,0,0,0.5)]' : ''}
                 `}>
-                  <div className="flex items-center justify-between h-16 sm:h-20 px-3 sm:px-6 lg:px-8">
-                    <div className="flex items-center flex-1 gap-3 sm:gap-4">
+                  <div className="flex items-center justify-between h-20 px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center flex-1 gap-4">
                       <button
                         type="button"
-                        className="lg:hidden -ml-0.5 -mt-0.5 h-9 w-9 sm:h-10 sm:w-10 inline-flex items-center justify-center rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200 transform hover:scale-105"
+                        className="lg:hidden -ml-0.5 -mt-0.5 h-10 w-10 inline-flex items-center justify-center rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200 transform hover:scale-105"
                         onClick={() => setIsMobileMenuOpen(true)}
                       >
                         <span className="sr-only">Abrir menú</span>
-                        <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
+                        <Menu className="h-5 w-5" />
                       </button>
                       <div className="animate-in slide-in-from-left-5 duration-500">
-                        <h1 className="text-lg sm:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-indigo-500">
+                        <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-indigo-500">
                           {menuItems.find(item => item.href === pathname)?.name || ''}
                         </h1>
-                        <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
                           {menuItems.find(item => item.href === pathname)?.description || ''}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-4">
+                      <div className="hidden sm:block">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 bg-gradient-to-r from-emerald-500/10 to-emerald-600/10 dark:from-emerald-500/20 dark:to-emerald-600/20 px-3 py-1.5 rounded-xl cursor-pointer hover:from-emerald-500/20 hover:to-emerald-600/20 dark:hover:from-emerald-500/30 dark:hover:to-emerald-600/30 transition-all duration-300 border border-emerald-500/20 dark:border-emerald-400/20">
+                              <div className="flex items-center gap-1.5">
+                                <div className="relative">
+                                  <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                  <div className="absolute inset-0 h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping"></div>
+                                </div>
+                                <span className="font-medium text-emerald-700 dark:text-emerald-400">En línea</span>
+                          </div>
+                          {lastUpdate && (
+                            <>
+                                  <span className="text-emerald-400/30 dark:text-emerald-600">•</span>
+                                  <span className="text-emerald-600/70 dark:text-emerald-400/70">Actualizado {lastUpdate}</span>
+                            </>
+                          )}
+                        </div>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-72">
+                            <div className="p-4 space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div className="space-y-1">
+                                  <h3 className="font-medium bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-emerald-600">Estado del sistema</h3>
+                                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Todos los servicios operativos</p>
+                                </div>
+                                <div className="flex flex-col items-end">
+                                  <Badge variant="outline" className="bg-gradient-to-r from-emerald-500/10 to-emerald-600/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
+                                    100% Uptime
+                                  </Badge>
+                                  <span className="text-xs text-emerald-600/70 dark:text-emerald-400/70">24h monitoreo</span>
+                                </div>
+                              </div>
+                              <div className="space-y-3 border-t border-zinc-200 dark:border-zinc-800 pt-3">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm">API Latencia</span>
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                    <Badge variant="outline" className="bg-gradient-to-r from-blue-500/10 to-violet-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
+                                      45ms
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm">Última actualización</span>
+                                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Hace 2 min</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm">Próxima actualización</span>
+                                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">En 3 min</span>
+                                </div>
+                              </div>
+                            </div>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+
                       <div className="flex items-center gap-2">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
+                          <button
+                            type="button"
                               className="group relative p-2 rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
-                            >
-                              <span className="sr-only">Ver notificaciones</span>
-                              <div className="relative">
-                                  <Bell className="h-5 w-5 transition-all duration-300 transform group-hover:scale-110" />
-                                  <div className="absolute -top-1 -right-1 h-3 w-3">
-                                    <div className="absolute inset-0 rounded-full bg-rose-500 animate-ping opacity-75"></div>
-                                    <div className="relative rounded-full h-3 w-3 bg-rose-500 ring-2 ring-white dark:ring-zinc-900"></div>
-                                  </div>
-                              </div>
-                            </button>
+                          >
+                            <span className="sr-only">Ver notificaciones</span>
+                            <div className="relative">
+                                <Bell className="h-5 w-5 transition-all duration-300 transform group-hover:scale-110" />
+                                <div className="absolute -top-1 -right-1 h-3 w-3">
+                                  <div className="absolute inset-0 rounded-full bg-rose-500 animate-ping opacity-75"></div>
+                                  <div className="relative rounded-full h-3 w-3 bg-rose-500 ring-2 ring-white dark:ring-zinc-900"></div>
+                                </div>
+                            </div>
+                          </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-96">
                             <div className="p-4 space-y-4">
@@ -273,7 +326,7 @@ export default function RootLayout({
                                 <Badge variant="outline" className="bg-gradient-to-r from-rose-500/10 to-pink-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20">
                                   3 nuevas
                                 </Badge>
-                            </div>
+                        </div>
 
                               <div className="space-y-3">
                                 <div className="group p-3 rounded-xl bg-gradient-to-r from-blue-500/5 to-violet-500/5 hover:from-blue-500/10 hover:to-violet-500/10 dark:from-blue-500/10 dark:to-violet-500/10 dark:hover:from-blue-500/20 dark:hover:to-violet-500/20 border border-blue-500/20 dark:border-blue-400/20 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer">
@@ -323,9 +376,7 @@ export default function RootLayout({
                             </div>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </div>
 
-                      <div className="flex items-center gap-2">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                           <button
@@ -369,44 +420,11 @@ export default function RootLayout({
                                       Admin
                                     </Badge>
                                   </div>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <div className="flex items-center gap-1.5">
-                                      <div className="relative">
-                                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                        <div className="absolute inset-0 h-2 w-2 rounded-full bg-emerald-500 animate-ping"></div>
-                                      </div>
-                                      <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">En línea</span>
-                                    </div>
-                                    {lastUpdate && (
-                                      <>
-                                        <span className="text-emerald-400/30 dark:text-emerald-600">•</span>
-                                        <span className="text-xs text-emerald-600/70 dark:text-emerald-400/70">Actualizado {lastUpdate}</span>
-                                      </>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate mt-1">john@example.com</p>
+                                  <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">john@example.com</p>
                                 </div>
                               </div>
 
                               <div className="py-4 space-y-4">
-                                <div className="space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Estado del sistema</h4>
-                                    <Badge variant="outline" className="bg-gradient-to-r from-emerald-500/10 to-emerald-600/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
-                                      100% Uptime
-                                    </Badge>
-                                  </div>
-                                  <div className="flex justify-between items-center text-sm">
-                                    <span className="text-zinc-600 dark:text-zinc-400">API Latencia</span>
-                                    <div className="flex items-center gap-2">
-                                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                      <Badge variant="outline" className="bg-gradient-to-r from-blue-500/10 to-violet-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
-                                        45ms
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                </div>
-
                                 <div className="space-y-2">
                                   <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Detalles de membresía</h4>
                                   <div className="p-3 rounded-xl bg-gradient-to-r from-violet-500/5 to-indigo-500/5 hover:from-violet-500/10 hover:to-indigo-500/10 dark:from-violet-500/10 dark:to-indigo-500/10 dark:hover:from-violet-500/20 dark:hover:to-indigo-500/20 border border-violet-500/20 dark:border-violet-400/20 space-y-3 transition-all duration-300">
