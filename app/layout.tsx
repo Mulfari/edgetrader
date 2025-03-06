@@ -54,7 +54,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed] = useState(false);
   const [lastUpdate] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const router = useRouter();
@@ -180,7 +180,7 @@ export default function RootLayout({
                                 lg:group-hover:-translate-x-0.5 transform-gpu
                               `} />
                             </div>
-                            <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:opacity-0 lg:-translate-x-6 opacity-100 translate-x-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 whitespace-nowrap">{item.name}</span>
+                            <span className="transition-all duration-500 ease-spring lg:opacity-0 lg:-translate-x-6 opacity-100 translate-x-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 whitespace-nowrap">{item.name}</span>
                           </div>
                         </Link>
                       ))}
@@ -204,7 +204,7 @@ export default function RootLayout({
                           lg:group-hover:-translate-x-0.5 transform-gpu
                         `} />
                       </div>
-                      <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:opacity-0 lg:-translate-x-6 opacity-100 translate-x-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 whitespace-nowrap group-hover:text-rose-600 dark:group-hover:text-rose-400">
+                      <span className="transition-all duration-500 ease-spring lg:opacity-0 lg:-translate-x-6 opacity-100 translate-x-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 whitespace-nowrap group-hover:text-rose-600 dark:group-hover:text-rose-400">
                         Cerrar Sesión
                       </span>
                     </button>
