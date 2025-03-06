@@ -72,6 +72,9 @@ interface AccountDetails {
     balance: number;
   }[];
   lastUpdate?: number;
+  openOperations?: number;
+  closedOperations?: number;
+  totalOperations?: number;
 }
 
 interface AccountStats {
@@ -83,6 +86,9 @@ interface AccountStats {
   demoBalance: number;
   uniqueExchanges: number;
   avgPerformance: number;
+  openOperations: number;
+  closedOperations: number;
+  totalOperations: number;
 }
 
 type SortDirection = 'asc' | 'desc';
@@ -353,6 +359,29 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
     }
   };
 
+  const calculateStats = (subAccounts: SubAccount[], balances: Record<string, AccountDetails>) => {
+    const stats: AccountStats = {
+      totalAccounts: subAccounts.length,
+      realAccounts: subAccounts.filter(acc => !acc.isDemo).length,
+      demoAccounts: subAccounts.filter(acc => acc.isDemo).length,
+      totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
+      realBalance: Object.entries(balances).reduce((sum, [id, acc]) => {
+        const subAccount = subAccounts.find(sa => sa.id === id);
+        return sum + ((subAccount?.isDemo ? 0 : acc.balance) || 0);
+      }, 0),
+      demoBalance: Object.entries(balances).reduce((sum, [id, acc]) => {
+        const subAccount = subAccounts.find(sa => sa.id === id);
+        return sum + ((subAccount?.isDemo ? acc.balance : 0) || 0);
+      }, 0),
+      uniqueExchanges: new Set(subAccounts.map(acc => acc.exchange)).size,
+      avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0,
+      openOperations: Object.values(balances).reduce((sum, acc) => sum + (acc.openOperations || 0), 0),
+      closedOperations: Object.values(balances).reduce((sum, acc) => sum + (acc.closedOperations || 0), 0),
+      totalOperations: Object.values(balances).reduce((sum, acc) => sum + (acc.totalOperations || 0), 0)
+    };
+    return stats;
+  };
+
   const loadSubAccounts = async () => {
     try {
       console.log('🔄 Iniciando carga de subcuentas...');
@@ -447,26 +476,9 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
         }
       }
 
-      // Actualizar estadísticas
-      if (onStatsUpdate) {
-        const stats: AccountStats = {
-          totalAccounts: subAccountsRef.current.length,
-          realAccounts: subAccountsRef.current.filter((acc: SubAccount) => !acc.isDemo).length,
-          demoAccounts: subAccountsRef.current.filter((acc: SubAccount) => acc.isDemo).length,
-          totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
-          realBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
-            const account = subAccountsRef.current.find((a: SubAccount) => a.id === accountId);
-            return sum + (!account?.isDemo ? (acc.balance || 0) : 0);
-          }, 0),
-          demoBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
-            const account = subAccountsRef.current.find((a: SubAccount) => a.id === accountId);
-            return sum + (account?.isDemo ? (acc.balance || 0) : 0);
-          }, 0),
-          uniqueExchanges: new Set(subAccountsRef.current.map((acc: SubAccount) => acc.exchange)).size,
-          avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
-        };
-        onStatsUpdate(stats);
-      }
+      // Calcular y enviar estadísticas
+      const stats = calculateStats(data, balances);
+      onStatsUpdate?.(stats);
       
     } catch (error) {
       console.error('❌ Error en loadSubAccounts:', error);
@@ -618,25 +630,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       }
       
       // Calcular estadísticas
-      if (onStatsUpdate) {
-        const stats: AccountStats = {
-          totalAccounts: subAccounts.length,
-          realAccounts: subAccounts.filter((acc: SubAccount) => !acc.isDemo).length,
-          demoAccounts: subAccounts.filter((acc: SubAccount) => acc.isDemo).length,
-          totalBalance: Object.values(balances).reduce((sum, acc) => sum + (acc.balance || 0), 0),
-          realBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
-            const account = subAccounts.find((a: SubAccount) => a.id === accountId);
-            return sum + (!account?.isDemo ? (acc.balance || 0) : 0);
-          }, 0),
-          demoBalance: Object.entries(balances).reduce((sum, [accountId, acc]) => {
-            const account = subAccounts.find((a: SubAccount) => a.id === accountId);
-            return sum + (account?.isDemo ? (acc.balance || 0) : 0);
-          }, 0),
-          uniqueExchanges: new Set(subAccounts.map((acc: SubAccount) => acc.exchange)).size,
-          avgPerformance: Object.values(balances).reduce((sum, acc) => sum + (acc.performance || 0), 0) / Object.values(balances).length || 0
-        };
-        onStatsUpdate(stats);
-      }
+      const stats = calculateStats(subAccounts, balances);
+      onStatsUpdate?.(stats);
     } catch (error) {
       console.error("❌ Error al actualizar balances:", error);
       setError("Error al actualizar los balances. Intenta nuevamente más tarde.");
