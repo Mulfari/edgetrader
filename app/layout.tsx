@@ -124,8 +124,8 @@ export default function RootLayout({
                 overflow-hidden
               `}>
                 <div className="flex flex-col h-full w-full">
-                  <div className="h-16 sm:h-20 flex items-center border-b border-zinc-200/50 dark:border-zinc-800/40 px-6 lg:px-3 lg:group-hover:px-6">
-                    <div className="flex items-center gap-3">
+                  <div className="h-16 sm:h-20 flex items-center border-b border-zinc-200/50 dark:border-zinc-800/40 px-6 lg:px-5 lg:group-hover:px-6">
+                    <div className="flex items-center gap-3 lg:justify-center lg:w-full lg:group-hover:justify-start">
                       <div className="relative shrink-0">
                         <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
                         <div className="relative bg-gradient-to-br from-violet-500 to-indigo-500 w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shadow-lg transform transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-110 hover:shadow-violet-500/25">
@@ -144,27 +144,30 @@ export default function RootLayout({
                   </div>
                   
                   <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 sm:py-4 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-                    <nav className="space-y-1.5 px-4 lg:px-2 lg:group-hover:px-4">
+                    <nav className="space-y-1.5 px-4 lg:px-3 lg:group-hover:px-4">
                       {menuItems.map((item) => (
-                      <Link 
+                        <Link 
                           key={item.href}
                           href={item.href} 
                           className={`
-                            relative group/item flex items-center px-3 py-2.5 text-xs sm:text-sm font-medium rounded-xl
+                            relative group/item flex items-center px-3 py-2.5 text-xs sm:text-sm font-medium
                             transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
                             ${pathname === item.href
                               ? 'bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300 shadow-[0_2px_8px_-3px_rgba(139,92,246,0.3)] dark:shadow-[0_2px_8px_-3px_rgba(139,92,246,0.2)]'
                               : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-br hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
                             }
                             w-full hover:shadow-[0_2px_8px_-3px_rgba(139,92,246,0.2)]
+                            lg:aspect-square lg:group-hover:aspect-auto lg:p-0 lg:group-hover:px-3 lg:group-hover:py-2.5
+                            rounded-xl
                           `}
                         >
                           {pathname === item.href && (
-                            <div className="absolute left-0 w-1 h-8 bg-gradient-to-b from-violet-500 to-indigo-500 rounded-r-full transform -translate-y-1/2 top-1/2 shadow-[0_0_8px_-1px_rgba(139,92,246,0.5)]" />
+                            <div className="absolute left-0 w-1 h-8 bg-gradient-to-b from-violet-500 to-indigo-500 rounded-r-full transform -translate-y-1/2 top-1/2 shadow-[0_0_8px_-1px_rgba(139,92,246,0.5)] lg:hidden lg:group-hover:block" />
                           )}
                           <div className={`
                             relative flex items-center w-full
                             ${pathname === item.href ? 'text-violet-500 dark:text-violet-400' : ''}
+                            lg:justify-center lg:group-hover:justify-start
                           `}>
                             <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:group-hover:scale-95">
                               <item.icon className={`
@@ -178,7 +181,7 @@ export default function RootLayout({
                             </div>
                             <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:opacity-0 lg:-translate-x-6 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 opacity-100 translate-x-0 whitespace-nowrap">{item.name}</span>
                           </div>
-                      </Link>
+                        </Link>
                       ))}
                     </nav>
                   </div>
