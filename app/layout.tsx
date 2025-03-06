@@ -118,13 +118,22 @@ export default function RootLayout({
                 bg-white/95 dark:bg-[#12121A]/95
                 border-r border-zinc-200/50 dark:border-zinc-800/40
                 transform transition-all duration-300 ease-in-out backdrop-blur-xl
-                ${isMobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'}
-                lg:w-[5.5rem] lg:hover:w-72 lg:group
+                ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                w-[5.5rem] lg:hover:w-72 lg:group
                 shadow-[0_0_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)]
                 overflow-hidden
               `}>
                 <div className="flex flex-col h-full w-full">
-                  <div className="h-20 flex items-center border-b border-zinc-200/50 dark:border-zinc-800/40 px-6 lg:px-4 lg:group-hover:px-6">
+                  {/* Mobile expand button - Only visible on mobile */}
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="lg:hidden absolute top-4 right-2 p-2 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400"
+                  >
+                    <Menu className="h-5 w-5" />
+                  </button>
+
+                  <div className="h-20 flex items-center border-b border-zinc-200/50 dark:border-zinc-800/40 px-4 lg:group-hover:px-6">
                     <div className="flex items-center gap-3">
                       <div className="relative shrink-0">
                         <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
@@ -132,7 +141,7 @@ export default function RootLayout({
                           <BarChart3 className="h-6 w-6 text-white" />
                         </div>
                       </div>
-                      <div className="transition-all duration-300 transform lg:opacity-0 lg:group-hover:opacity-100 opacity-100 whitespace-nowrap">
+                      <div className="transition-all duration-300 transform opacity-0 group-hover:opacity-100 whitespace-nowrap">
                         <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
                           TradingDash
                         </h1>
@@ -144,7 +153,7 @@ export default function RootLayout({
                   </div>
                   
                   <div className="flex-1 overflow-y-auto overflow-x-hidden py-4">
-                    <nav className="space-y-1 px-4 lg:px-3 lg:group-hover:px-4">
+                    <nav className="space-y-1 px-3 lg:group-hover:px-4">
                       {menuItems.map((item) => (
                       <Link 
                           key={item.href}
@@ -160,7 +169,7 @@ export default function RootLayout({
                           `}
                         >
                           {pathname === item.href && (
-                            <div className="absolute left-0 w-1 h-8 bg-violet-500 rounded-r-full transform -translate-y-1/2 top-1/2 lg:opacity-0 lg:group-hover:opacity-100" />
+                            <div className="absolute left-0 w-1 h-8 bg-violet-500 rounded-r-full transform -translate-y-1/2 top-1/2" />
                           )}
                           <div className={`
                             relative flex items-center w-full
@@ -176,14 +185,21 @@ export default function RootLayout({
                                 lg:group-hover:-translate-x-0.5 transform-gpu
                               `} />
                             </div>
-                            <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:opacity-0 lg:-translate-x-6 opacity-100 translate-x-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 whitespace-nowrap">{item.name}</span>
+                            <span className={`
+                              transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                              lg:opacity-0 lg:-translate-x-6 lg:group-hover:translate-x-0 lg:group-hover:opacity-100
+                              opacity-100 translate-x-0 lg:whitespace-nowrap
+                              ${isMobileMenuOpen ? 'block' : 'hidden lg:block'}
+                            `}>
+                              {item.name}
+                            </span>
                           </div>
                       </Link>
                       ))}
                     </nav>
                   </div>
                   
-                  <div className="p-4 border-t border-zinc-200 dark:border-zinc-800/60 px-4 lg:px-3 lg:group-hover:px-4">
+                  <div className="p-4 border-t border-zinc-200 dark:border-zinc-800/60 px-3 lg:group-hover:px-4">
                     <button 
                       onClick={handleLogout}
                       className={`
@@ -200,7 +216,13 @@ export default function RootLayout({
                           lg:group-hover:-translate-x-0.5 transform-gpu
                         `} />
                       </div>
-                      <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:opacity-0 lg:-translate-x-6 opacity-100 translate-x-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 whitespace-nowrap group-hover:text-rose-600 dark:group-hover:text-rose-400">
+                      <span className={`
+                        transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                        lg:opacity-0 lg:-translate-x-6 lg:group-hover:translate-x-0 lg:group-hover:opacity-100
+                        opacity-100 translate-x-0 lg:whitespace-nowrap
+                        ${isMobileMenuOpen ? 'block' : 'hidden lg:block'}
+                        group-hover:text-rose-600 dark:group-hover:text-rose-400
+                      `}>
                         Cerrar Sesión
                       </span>
                     </button>
