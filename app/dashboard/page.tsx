@@ -261,24 +261,31 @@ export default function DashboardPage() {
         </div>
 
         {/* Subcuentas Activas Card */}
-        <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl p-6 text-white relative overflow-hidden">
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">Subcuentas Activas</h3>
+              <h3 className="text-base font-medium text-white/90">Subcuentas Activas</h3>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white">
+            <div className="text-4xl font-bold text-white">
               {getSkeletonOrValue(activeSubAccounts)}
             </div>
-            <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <div className="mt-2 text-sm text-white/80">
               {!isLoading && (
-                <>
-                  Reales: {realAccounts} • Demo: {demoAccounts}
-                </>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                    <span>Reales: {realAccounts}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
+                    <span>Demo: {demoAccounts}</span>
+                  </div>
+                </div>
               )}
             </div>
           </div>
-          <div className="absolute right-0 bottom-0 transform translate-x-1/4 translate-y-1/4">
-            <Users className="h-32 w-32 text-gray-200 dark:text-zinc-700" />
+          <div className="absolute right-0 bottom-0 transform translate-x-1/6 translate-y-1/6">
+            <Users className="h-24 w-24 text-white/10" />
           </div>
         </div>
 
