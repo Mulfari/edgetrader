@@ -7,7 +7,10 @@ import {
   ChevronDown,
   Eye,
   EyeOff,
-  Users
+  Users,
+  TrendingUp,
+  ArrowUpRight,
+  ArrowDownRight
 } from "lucide-react";
 import SubAccounts from "@/components/SubAccounts";
 import SubAccountManager from "@/components/SubAccountManager";
@@ -157,24 +160,25 @@ export default function DashboardPage() {
       {/* Dashboard Content */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Balance Card */}
-        <div className="col-span-1 sm:col-span-2 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl p-4 sm:p-6 text-white relative">
+        <div className="col-span-1 sm:col-span-2 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden group hover:shadow-lg transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <div className="relative">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="flex items-center space-x-2 relative">
                 <button
                   id="balance-menu-button"
-                  className="flex items-center space-x-2 bg-white/10 rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium hover:bg-white/20 transition-colors duration-200"
+                  className="flex items-center space-x-2 bg-white/10 rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium hover:bg-white/20 transition-all duration-200 hover:scale-105"
                   onClick={() => {
                     const menu = document.getElementById('balance-menu');
                     menu?.classList.toggle('hidden');
                   }}
                 >
                   <span>{getBalanceTitle()}</span>
-                  <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200" />
                 </button>
                 <button
                   onClick={() => setShowBalance(!showBalance)}
-                  className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200"
+                  className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 hover:scale-105"
                 >
                   {showBalance ? (
                     <EyeOff className="h-3 w-3 sm:h-4 sm:w-4 text-white/80" />
@@ -184,7 +188,7 @@ export default function DashboardPage() {
                 </button>
                 
                 {/* Balance Type Menu */}
-                <div id="balance-menu" className="hidden absolute top-full left-0 mt-2 w-48 rounded-xl bg-white/10 backdrop-blur-lg shadow-lg border border-white/20 z-[100]">
+                <div id="balance-menu" className="hidden absolute top-full left-0 mt-2 w-48 rounded-xl bg-white/10 backdrop-blur-lg shadow-lg border border-white/20 z-[100] animate-in fade-in-50 slide-in-from-top-2 duration-200">
                   <div className="py-1">
                     <button
                       onClick={() => handleBalanceDisplayChange('total')}
@@ -220,8 +224,11 @@ export default function DashboardPage() {
                   ) : !showBalance ? (
                     "••••••"
                   ) : (
-                    <div>
-                      ${(balanceDisplay === 'real' ? realBalance : balanceDisplay === 'demo' ? demoBalance : totalBalance)?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+                    <div className="flex items-center gap-2">
+                      <span>
+                        ${(balanceDisplay === 'real' ? realBalance : balanceDisplay === 'demo' ? demoBalance : totalBalance)?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+                      </span>
+                      <TrendingUp className="h-5 w-5 text-green-400" />
                     </div>
                   )}
                 </div>
@@ -247,21 +254,30 @@ export default function DashboardPage() {
                   </>
                 ) : (
                   <>
-                    <div>Balance Real: ${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
-                    <div>Balance Demo: ${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</div>
+                    <div className="flex items-center gap-2">
+                      <span>Balance Real:</span>
+                      <span className="font-medium">${realBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                      <ArrowUpRight className="h-3 w-3 text-green-400" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span>Balance Demo:</span>
+                      <span className="font-medium">${demoBalance?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
+                      <ArrowDownRight className="h-3 w-3 text-yellow-400" />
+                    </div>
                   </>
                 )}
               </div>
             </div>
           </div>
           
-          <div className="absolute right-0 bottom-0 transform translate-x-1/6 translate-y-1/6 overflow-hidden">
+          <div className="absolute right-0 bottom-0 transform translate-x-1/6 translate-y-1/6 overflow-hidden group-hover:scale-110 transition-transform duration-300">
             <DollarSign className="h-20 w-20 sm:h-24 sm:w-24 text-white/10" />
           </div>
         </div>
 
         {/* Subcuentas Activas Card */}
-        <div className="bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden">
+        <div className="bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden group hover:shadow-lg transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <h3 className="text-sm sm:text-base font-medium text-white/90">Subcuentas Activas</h3>
@@ -272,11 +288,11 @@ export default function DashboardPage() {
             <div className="mt-2 text-xs sm:text-sm text-white/80">
               {!isLoading && (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 bg-white/10 rounded-full px-2 py-1">
                     <div className="w-2 h-2 rounded-full bg-green-400"></div>
                     <span>Reales: {realAccounts}</span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 bg-white/10 rounded-full px-2 py-1">
                     <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
                     <span>Demo: {demoAccounts}</span>
                   </div>
@@ -284,13 +300,14 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
-          <div className="absolute right-0 bottom-0 transform translate-x-1/6 translate-y-1/6">
+          <div className="absolute right-0 bottom-0 transform translate-x-1/6 translate-y-1/6 group-hover:scale-110 transition-transform duration-300">
             <Users className="h-20 w-20 sm:h-24 sm:w-24 text-white/10" />
           </div>
         </div>
 
         {/* Operaciones Card */}
-        <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden">
+        <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden group hover:shadow-lg transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <h3 className="text-sm sm:text-base font-medium text-white/90">Operaciones</h3>
@@ -299,10 +316,15 @@ export default function DashboardPage() {
               {getSkeletonOrValue(exchanges)}
             </div>
             <div className="mt-2 text-xs sm:text-sm text-white/80">
-              {!isLoading && 'Total de operaciones realizadas'}
+              {!isLoading && (
+                <div className="flex items-center gap-2 bg-white/10 rounded-full px-2 py-1 w-fit">
+                  <TrendingUp className="h-3 w-3 text-green-400" />
+                  <span>Total de operaciones realizadas</span>
+                </div>
+              )}
             </div>
           </div>
-          <div className="absolute right-0 bottom-0 transform translate-x-1/6 translate-y-1/6">
+          <div className="absolute right-0 bottom-0 transform translate-x-1/6 translate-y-1/6 group-hover:scale-110 transition-transform duration-300">
             <LineChart className="h-20 w-20 sm:h-24 sm:w-24 text-white/10" />
           </div>
         </div>
