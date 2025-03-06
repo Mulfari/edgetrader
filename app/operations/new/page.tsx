@@ -39,6 +39,7 @@ interface OrderSummary {
 interface TradingPair {
   symbol: string;
   price: string;
+  indexPrice: string;
   change: string;
   volume: string;
   leverage: string;
@@ -50,6 +51,9 @@ interface TradingPair {
     long: string;
     short: string;
   };
+  nextFundingTime: number;
+  fundingRate: string;
+  openInterest: string;
 }
 
 // Mapa de imágenes de activos (usando URLs de CoinGecko)
@@ -90,6 +94,7 @@ export default function NewOperation() {
   const [selectedPair, setSelectedPair] = useState<MarketTicker>({
     symbol: 'BTC',
     price: '89033.97',
+    indexPrice: '89034.50',
     change: '-1.62%',
     volume: '968.93M',
     high24h: '28,950.00',
@@ -100,7 +105,10 @@ export default function NewOperation() {
     interestRate: {
       long: '0.00%',
       short: '0.00%'
-    }
+    },
+    nextFundingTime: Date.now() + 86400000,
+    fundingRate: '0.00%',
+    openInterest: '0.00 BTC'
   });
 
   // Datos de ejemplo de subcuentas
@@ -247,6 +255,33 @@ export default function NewOperation() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Función para formatear el tiempo restante
+  const formatCountdown = (nextFundingTime: number) => {
+    const now = Date.now();
+    const timeLeft = nextFundingTime - now;
+    if (timeLeft <= 0) return '00:00:00';
+    
+    const hours = Math.floor(timeLeft / (60 * 60 * 1000));
+    const minutes = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
+    const seconds = Math.floor((timeLeft % (60 * 1000)) / 1000);
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Efecto para actualizar el countdown
+  useEffect(() => {
+    if (!selectedPair?.nextFundingTime) return;
+    
+    const interval = setInterval(() => {
+      setSelectedPair(prev => ({
+        ...prev,
+        nextFundingTime: prev.nextFundingTime
+      }));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [selectedPair?.nextFundingTime]);
 
   return (
     <div className="min-h-screen">
@@ -464,13 +499,17 @@ export default function NewOperation() {
           <div className="flex items-center gap-12 px-8">
             <div className="flex flex-col">
               <div className="text-xl font-bold text-white tracking-tight">{selectedPair.price}</div>
+              <div className="text-sm text-zinc-400">Mark Price</div>
+            </div>
+            <div className="flex flex-col">
+              <div className="text-xl font-bold text-white tracking-tight">{selectedPair.indexPrice}</div>
               <div className="text-sm text-zinc-400">Index Price</div>
             </div>
             <div className="flex flex-col">
               <div className={`text-base font-medium ${selectedPair.change.startsWith('-') ? 'text-rose-500' : 'text-emerald-500'}`}>
                 {selectedPair.change}
               </div>
-              <div className="text-sm text-zinc-400">24H Change %</div>
+              <div className="text-sm text-zinc-400">24H Change</div>
             </div>
             <div className="flex flex-col">
               <div className="text-base font-medium text-white">{selectedPair.high24h}</div>
@@ -482,13 +521,19 @@ export default function NewOperation() {
             </div>
             <div className="flex flex-col">
               <div className="text-base font-medium text-white">{selectedPair.volumeUSDT}</div>
-              <div className="text-sm text-zinc-400">24H Turnover(USDT)</div>
+              <div className="text-sm text-zinc-400">24H Volume(USDT)</div>
             </div>
             <div className="flex flex-col">
-              <div className="text-base font-medium text-white">
-                {selectedPair.interestRate?.long || '0.00%'} | {selectedPair.interestRate?.short || '0.00%'}
-              </div>
-              <div className="text-sm text-zinc-400">Daily Interest Rate({selectedPair.symbol})</div>
+              <div className="text-base font-medium text-white">{selectedPair.openInterest}</div>
+              <div className="text-sm text-zinc-400">Open Interest(BTC)</div>
+            </div>
+            <div className="flex flex-col">
+              <div className="text-base font-medium text-amber-400">{selectedPair.fundingRate}</div>
+              <div className="text-sm text-zinc-400">Funding Rate</div>
+            </div>
+            <div className="flex flex-col">
+              <div className="text-base font-medium text-white">{formatCountdown(selectedPair.nextFundingTime)}</div>
+              <div className="text-sm text-zinc-400">Countdown</div>
             </div>
           </div>
 
@@ -538,7 +583,7 @@ export default function NewOperation() {
               </div>
             </div>
             <TradingViewChart 
-              symbol="BTCUSDT"
+              symbol={`${selectedPair.symbol}USDT`}
               theme={theme}
             />
           </div>

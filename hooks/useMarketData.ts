@@ -4,14 +4,18 @@ import axios from 'axios';
 export interface MarketTicker {
   symbol: string;
   price: string;
+  indexPrice: string;
   change: string;
   volume: string;
   high24h: string;
   low24h: string;
   volumeUSDT: string;
-  leverage?: string;
-  favorite?: boolean;
-  interestRate?: {
+  openInterest: string;
+  fundingRate: string;
+  nextFundingTime: number;
+  leverage: string;
+  favorite: boolean;
+  interestRate: {
     long: string;
     short: string;
   };
