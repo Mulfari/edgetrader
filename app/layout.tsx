@@ -246,18 +246,8 @@ export default function RootLayout({
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-                              <div className="flex items-center gap-1.5">
-                                <div className="relative">
-                                  <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                                  <div className="absolute inset-0 h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping"></div>
-                                </div>
-                                <span className="font-medium text-emerald-700 dark:text-emerald-400">En línea</span>
-                              </div>
                               {lastUpdate && (
-                                <>
-                                  <span className="text-emerald-400/30 dark:text-emerald-600">•</span>
-                                  <span className="text-emerald-600/70 dark:text-emerald-400/70">Actualizado {lastUpdate}</span>
-                                </>
+                                <span className="text-emerald-600/70 dark:text-emerald-400/70">Actualizado {lastUpdate}</span>
                               )}
                             </div>
                           </DropdownMenuTrigger>
