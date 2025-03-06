@@ -14,6 +14,7 @@ import {
 import Link from 'next/link';
 import TradingViewChart from '@/components/TradingViewChart';
 import Image from 'next/image';
+import { useMarketData, MarketTicker } from '@/hooks/useMarketData';
 
 interface SubAccount {
   id: string;
@@ -65,6 +66,7 @@ const tokenImages: { [key: string]: string } = {
 };
 
 export default function NewOperation() {
+  const { tickers, loading: marketLoading, error: marketError } = useMarketData();
   const [marketType, setMarketType] = useState<'spot' | 'futures'>('spot');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [orderType, setOrderType] = useState<'limit' | 'market'>('limit');
@@ -85,16 +87,16 @@ export default function NewOperation() {
   const [selectedQuote, setSelectedQuote] = useState('USDT');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-  const [selectedPair, setSelectedPair] = useState({
+  const [selectedPair, setSelectedPair] = useState<MarketTicker>({
     symbol: 'BTC',
     price: '89033.97',
     change: '-1.62%',
     volume: '968.93M',
-    leverage: '10x',
-    favorite: true,
     high24h: '28,950.00',
     low24h: '28,150.00',
     volumeUSDT: '968.93M',
+    leverage: '10x',
+    favorite: false,
     interestRate: {
       long: '0.00%',
       short: '0.00%'
@@ -109,72 +111,8 @@ export default function NewOperation() {
     { id: '4', name: 'DCA', balance: { btc: 0.3456, usdt: 15000 } },
   ];
 
-  // Lista de pares de ejemplo
-  const tradingPairs: TradingPair[] = [
-    {
-      symbol: 'BTC',
-      price: '89,033.97',
-      change: '-1.62%',
-      volume: '968.93M',
-      leverage: '10x',
-      favorite: true,
-      high24h: '90,123.45',
-      low24h: '88,456.78',
-      volumeUSDT: '968,930,000.00',
-      interestRate: {
-        long: '0.00456789',
-        short: '0.01234567'
-      }
-    },
-    {
-      symbol: 'ETH',
-      price: '2,199.57',
-      change: '-1.44%',
-      volume: '253.11M',
-      leverage: '10x',
-      favorite: false,
-      high24h: '2,320.45',
-      low24h: '2,176.66',
-      volumeUSDT: '263,595,399.11',
-      interestRate: {
-        long: '0.00486786',
-        short: '0.01665217'
-      }
-    },
-    {
-      symbol: 'SOL',
-      price: '144.00',
-      change: '-1.09%',
-      volume: '142.83M',
-      leverage: '10x',
-      favorite: true,
-      high24h: '146.25',
-      low24h: '142.50',
-      volumeUSDT: '142,830,000.00',
-      interestRate: {
-        long: '0.00567890',
-        short: '0.01789012'
-      }
-    },
-    {
-      symbol: 'XRP',
-      price: '2.5991',
-      change: '+3.81%',
-      volume: '159.59M',
-      leverage: '10x',
-      favorite: false,
-      high24h: '2.7500',
-      low24h: '2.4500',
-      volumeUSDT: '159,590,000.00',
-      interestRate: {
-        long: '0.00345678',
-        short: '0.01123456'
-      }
-    }
-  ];
-
   // Filtrar pares según la búsqueda y pestaña activa
-  const filteredPairs = tradingPairs.filter(pair => {
+  const filteredPairs = tickers.filter(pair => {
     const matchesSearch = pair.symbol.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesTab = activeTab === 'all' || (activeTab === 'favorites' && pair.favorite);
     return matchesSearch && matchesTab;
@@ -377,25 +315,36 @@ export default function NewOperation() {
                 </button>
               </div>
 
-              {/* Barra de búsqueda */}
+              {/* Barra de búsqueda mejorada */}
               <div className="p-3 border-b border-zinc-800">
                 <div className="relative">
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setShowSearchResults(true)}
                     className="w-full bg-zinc-800 text-white placeholder-zinc-400 rounded-lg py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 transition-shadow duration-200"
-                    placeholder="Buscar par de trading..."
+                    placeholder="Buscar por símbolo o nombre..."
                   />
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-zinc-300 transition-colors"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {/* Tabs de filtros */}
+              {/* Tabs de filtros mejorados */}
               <div className="flex items-center gap-1 p-3 border-b border-zinc-800">
                 <button
                   onClick={() => setActiveTab('all')}
@@ -422,75 +371,85 @@ export default function NewOperation() {
                 </button>
               </div>
 
-              {/* Lista de pares */}
+              {/* Lista de pares con scroll mejorado */}
               <div className="max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
-                <div className="sticky top-0 z-10 grid grid-cols-3 gap-4 px-4 py-2.5 text-xs font-medium text-zinc-400 bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-800">
+                <div className="sticky top-0 z-10 grid grid-cols-[2fr,1fr,1fr] gap-4 px-4 py-2.5 text-xs font-medium text-zinc-400 bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-800">
                   <div>Par de Trading</div>
                   <div className="text-right">Último Precio</div>
                   <div className="text-right">Cambio 24h</div>
                 </div>
-                {filteredPairs.map((pair) => (
-                  <div
-                    key={pair.symbol}
-                    className="grid grid-cols-3 gap-4 px-4 py-3 hover:bg-zinc-800/50 cursor-pointer transition-colors duration-150"
-                    onClick={() => {
-                      setSelectedPair(pair);
-                      setShowSearchResults(false);
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const newPairs = tradingPairs.map(p => 
-                            p.symbol === pair.symbol ? { ...p, favorite: !p.favorite } : p
-                          );
-                          console.log('Actualizando favoritos:', newPairs);
-                        }}
-                        className={`text-amber-400 hover:text-amber-300 transition-colors duration-150 ${
-                          pair.favorite ? 'opacity-100' : 'opacity-50'
-                        }`}
-                      >
-                        {pair.favorite ? (
-                          <svg className="w-5 h-5 drop-shadow" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ) : (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                          </svg>
-                        )}
-                      </button>
-                      <div className="relative w-12 h-12">
-                        <Image
-                          src={tokenImages[pair.symbol] || tokenImages.default}
-                          alt={pair.symbol}
-                          width={48}
-                          height={48}
-                          className="rounded-full ring-2 ring-violet-500/20 shadow-lg"
-                          priority
-                          loading="eager"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = tokenImages.default;
-                            console.error(`Error loading image for ${pair.symbol}`);
-                          }}
-                        />
-                      </div>
-                      <span className="text-base font-medium text-white">{pair.symbol}/USDT</span>
-                    </div>
-                    <div className="text-right text-base font-medium text-white">
-                      {pair.price}
-                    </div>
-                    <div className={`text-right text-base font-medium ${
-                      pair.change.startsWith('-') 
-                        ? 'text-rose-500' 
-                        : 'text-emerald-500'
-                    }`}>
-                      {pair.change}
-                    </div>
+                {marketLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
                   </div>
-                ))}
+                ) : marketError ? (
+                  <div className="flex items-center justify-center py-8 text-rose-500">
+                    {marketError}
+                  </div>
+                ) : (
+                  filteredPairs.map((pair) => (
+                    <div
+                      key={pair.symbol}
+                      className="grid grid-cols-[2fr,1fr,1fr] gap-4 px-4 py-3 hover:bg-zinc-800/50 cursor-pointer transition-colors duration-150"
+                      onClick={() => {
+                        setSelectedPair(pair);
+                        setShowSearchResults(false);
+                      }}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newPairs = tickers.map(p => 
+                              p.symbol === pair.symbol ? { ...p, favorite: !p.favorite } : p
+                            );
+                            console.log('Actualizando favoritos:', newPairs);
+                          }}
+                          className={`flex-shrink-0 text-amber-400 hover:text-amber-300 transition-colors duration-150 ${
+                            pair.favorite ? 'opacity-100' : 'opacity-50'
+                          }`}
+                        >
+                          {pair.favorite ? (
+                            <svg className="w-5 h-5 drop-shadow" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                          )}
+                        </button>
+                        <div className="relative w-8 h-8 flex-shrink-0">
+                          <Image
+                            src={tokenImages[pair.symbol] || tokenImages.default}
+                            alt={pair.symbol}
+                            fill
+                            sizes="32px"
+                            className="rounded-full ring-2 ring-violet-500/20 object-cover"
+                            priority
+                            loading="eager"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = tokenImages.default;
+                              console.error(`Error loading image for ${pair.symbol}`);
+                            }}
+                          />
+                        </div>
+                        <span className="text-base font-medium text-white whitespace-nowrap min-w-0">{pair.symbol}/USDT</span>
+                      </div>
+                      <div className="text-right text-base font-medium text-white whitespace-nowrap">
+                        {pair.price}
+                      </div>
+                      <div className={`text-right text-base font-medium whitespace-nowrap ${
+                        pair.change.startsWith('-') 
+                          ? 'text-rose-500' 
+                          : 'text-emerald-500'
+                      }`}>
+                        {pair.change}
+                      </div>
+                    </div>
+                  ))
+                )}
                 
                 {filteredPairs.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
@@ -529,7 +488,9 @@ export default function NewOperation() {
               <div className="text-sm text-zinc-400">24H Turnover(USDT)</div>
             </div>
             <div className="flex flex-col">
-              <div className="text-base font-medium text-white">{selectedPair.interestRate.long}% | {selectedPair.interestRate.short}%</div>
+              <div className="text-base font-medium text-white">
+                {selectedPair.interestRate?.long || '0.00%'} | {selectedPair.interestRate?.short || '0.00%'}
+              </div>
               <div className="text-sm text-zinc-400">Daily Interest Rate({selectedPair.symbol})</div>
             </div>
           </div>
