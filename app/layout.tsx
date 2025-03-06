@@ -150,7 +150,7 @@ export default function RootLayout({
                           key={item.href}
                           href={item.href} 
                           className={`
-                            relative group/item flex items-center px-3 py-2.5 text-xs sm:text-sm font-medium rounded-xl
+                            relative group/item flex items-center justify-center lg:justify-start px-3 py-2.5 text-xs sm:text-sm font-medium rounded-xl
                             transition-all duration-300 ease-in-out
                             ${pathname === item.href
                               ? 'bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300 shadow-[0_2px_8px_-3px_rgba(139,92,246,0.3)] dark:shadow-[0_2px_8px_-3px_rgba(139,92,246,0.2)]'
@@ -163,7 +163,7 @@ export default function RootLayout({
                             <div className="absolute left-0 w-1 h-8 bg-violet-500 rounded-r-full transform -translate-y-1/2 top-1/2" />
                           )}
                           <div className={`
-                            relative flex items-center w-full
+                            relative flex items-center justify-center lg:justify-start w-full
                             ${pathname === item.href ? 'text-violet-500 dark:text-violet-400' : ''}
                           `}>
                             <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:group-hover:scale-95">
@@ -187,7 +187,7 @@ export default function RootLayout({
                     <button 
                       onClick={handleLogout}
                       className={`
-                        relative group/item flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
+                        relative group/item flex items-center justify-center lg:justify-start px-3 py-2.5 text-sm font-medium rounded-xl
                         text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10
                         transition-all duration-300 ease-in-out w-full
                       `}
