@@ -170,9 +170,9 @@ export default function RootLayout({
                             relative flex items-center justify-center w-full
                             ${pathname === item.href ? 'text-violet-500 dark:text-violet-400' : ''}
                           `}>
-                            <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:group-hover:scale-95">
+                            <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-spring lg:group-hover:scale-95">
                               <item.icon className={`
-                                h-5 w-5 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                                h-5 w-5 transition-all duration-500 ease-spring
                                 ${pathname === item.href
                                   ? 'text-violet-500 dark:text-violet-400'
                                   : 'text-violet-500/70 dark:text-violet-400/70 group-hover:text-violet-500 dark:group-hover:text-violet-400'
@@ -196,11 +196,11 @@ export default function RootLayout({
                         transition-all duration-300 ease-in-out w-full
                       `}
                     >
-                      <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:group-hover:scale-95">
+                      <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-spring lg:group-hover:scale-95">
                         <LogOut className={`
                           h-5 w-5 text-rose-500/70 dark:text-rose-400/70
                           group-hover:text-rose-500 dark:group-hover:text-rose-400 
-                          transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                          transition-all duration-500 ease-spring
                           lg:group-hover:-translate-x-0.5 transform-gpu
                         `} />
                       </div>
