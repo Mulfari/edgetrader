@@ -982,14 +982,6 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
                                     maximumFractionDigits: 2
                                   })}
                                 </span>
-                                {accountBalances[sub.id].isDemo && !accountBalances[sub.id].isSimulated && (
-                                  <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30">
-                                    <div className="flex items-center gap-1">
-                                      <Sparkles className="h-3 w-3" />
-                                      <span>Demo</span>
-                                    </div>
-                                  </Badge>
-                                )}
                                 {accountBalances[sub.id].isSimulated && (
                                   <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500 border-blue-200 dark:border-blue-800/30">
                                     <div className="flex items-center gap-1">
