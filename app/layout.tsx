@@ -422,10 +422,6 @@ export default function RootLayout({
                                       Admin
                                     </Badge>
                                   </div>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
-                                    <p className="text-sm text-emerald-600 dark:text-emerald-400">Activo</p>
-                                  </div>
                                   <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate mt-1">john@example.com</p>
                                 </div>
                               </div>
