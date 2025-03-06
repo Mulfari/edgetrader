@@ -8,6 +8,8 @@ import {
   Bell,
   Menu,
   User,
+  ChevronLeft,
+  ChevronRight,
   Home,
   LineChart,
   Wallet
@@ -52,6 +54,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [lastUpdate] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const router = useRouter();
@@ -100,110 +103,113 @@ export default function RootLayout({
 
   return (
     <html lang="es">
-      <body className="min-h-screen bg-gradient-to-br from-zinc-50/50 via-white/50 to-zinc-100/50 dark:from-[#0A0A0F] dark:via-[#12121A] dark:to-[#0A0A0F]">
+      <body className="min-h-screen bg-zinc-50/50 dark:bg-zinc-900">
         <ThemeProvider>
           {!isPublicPage && (
             <>
               {/* Mobile menu overlay */}
               {isMobileMenuOpen && (
                 <div 
-                  className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden animate-in fade-in-50 duration-300"
+                  className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden animate-in fade-in-50 duration-300"
                   onClick={() => setIsMobileMenuOpen(false)}
                 />
               )}
 
               {/* Sidebar */}
               <div className={`
-                fixed top-0 left-0 z-50 h-full
-                bg-white/95 dark:bg-[#12121A]/95
-                border-r border-zinc-200/50 dark:border-zinc-800/40
-                transform transition-all duration-300 ease-in-out backdrop-blur-xl
-                ${isMobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'}
-                lg:w-[5.5rem] lg:hover:w-72 lg:group
-                shadow-[0_0_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)]
-                overflow-hidden
+                fixed top-0 left-0 z-50 h-full bg-white/80 dark:bg-zinc-800/80
+                border-r border-zinc-200 dark:border-zinc-700/50
+                transform transition-all duration-500 ease-in-out backdrop-blur-xl
+                ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                ${isSidebarCollapsed ? 'w-20' : 'w-64'}
+                shadow-xl shadow-zinc-200/50 dark:shadow-zinc-900/50
               `}>
-                <div className="flex flex-col h-full w-full">
-                  <div className="h-20 flex items-center border-b border-zinc-200/50 dark:border-zinc-800/40 px-6 lg:px-4 lg:group-hover:px-6">
-                    <div className="flex items-center gap-3">
-                      <div className="relative shrink-0">
-                        <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
-                        <div className="relative bg-gradient-to-br from-violet-500 to-indigo-500 w-11 h-11 rounded-xl flex items-center justify-center shadow-lg transform transition-transform duration-300 hover:scale-105">
-                          <BarChart3 className="h-6 w-6 text-white" />
+                <div className="flex flex-col h-full">
+                  <div className="p-4 border-b border-zinc-200 dark:border-zinc-700/50">
+                    <div 
+                      onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                      className="flex items-center gap-3 group cursor-pointer"
+                    >
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-all duration-300"></div>
+                        <div className="relative bg-gradient-to-r from-violet-500 to-indigo-500 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-violet-500/25 transition-all duration-300">
+                          <BarChart3 className={`h-6 w-6 text-white transform transition-all duration-500 ${isSidebarCollapsed ? 'scale-x-[-1]' : ''}`} />
                         </div>
                       </div>
-                      <div className="transition-all duration-300 transform lg:opacity-0 lg:group-hover:opacity-100 opacity-100 whitespace-nowrap">
-                        <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
-                          TradingDash
-                        </h1>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          Panel de Control
-                        </p>
-                      </div>
+                      {!isSidebarCollapsed && (
+                        <div className="animate-in slide-in-from-left-5 duration-500">
+                          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
+                            TradingDash
+                          </h1>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                            Panel de Control
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
-                  <div className="flex-1 overflow-y-auto overflow-x-hidden py-4">
-                    <nav className="space-y-1 px-4 lg:px-3 lg:group-hover:px-4">
+                  <div className="flex-1 overflow-y-auto py-4">
+                    <nav className="px-2 space-y-1">
                       {menuItems.map((item) => (
-                      <Link 
+                        <Link 
                           key={item.href}
                           href={item.href} 
-                          onClick={() => setIsMobileMenuOpen(false)}
                           className={`
-                            relative group/item flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
-                            transition-all duration-300 ease-in-out
+                            relative flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
+                            transition-all duration-300 transform hover:scale-[1.02]
                             ${pathname === item.href
-                              ? 'bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300 shadow-[0_2px_8px_-3px_rgba(139,92,246,0.3)] dark:shadow-[0_2px_8px_-3px_rgba(139,92,246,0.2)]'
-                              : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-br hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
-                            }
-                            w-full
+                              ? 'bg-gradient-to-r from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300'
+                              : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-r hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
+                            } group
                           `}
                         >
-                          {pathname === item.href && (
-                            <div className="absolute left-0 w-1 h-8 bg-violet-500 rounded-r-full transform -translate-y-1/2 top-1/2" />
-                          )}
-                          <div className={`
-                            relative flex items-center w-full
-                            ${pathname === item.href ? 'text-violet-500 dark:text-violet-400' : ''}
-                          `}>
-                            <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:group-hover:scale-95">
-                              <item.icon className={`
-                                h-5 w-5 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                                ${pathname === item.href
-                                  ? 'text-violet-500 dark:text-violet-400'
-                                  : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
-                                }
-                                lg:group-hover:-translate-x-0.5 transform-gpu
-                              `} />
+                          {isSidebarCollapsed && (
+                            <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                              {item.name}
                             </div>
-                            <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:opacity-0 lg:-translate-x-6 opacity-100 translate-x-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 whitespace-nowrap">{item.name}</span>
-                          </div>
-                      </Link>
+                          )}
+                          <item.icon className={`
+                            ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} 
+                            h-5 w-5 transition-all duration-300 transform group-hover:scale-110
+                            ${pathname === item.href
+                              ? 'text-violet-500 dark:text-violet-400'
+                              : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
+                            }
+                          `} />
+                          {!isSidebarCollapsed && (
+                            <span className="transition-colors duration-200">{item.name}</span>
+                          )}
+                        </Link>
                       ))}
                     </nav>
                   </div>
                   
-                  <div className="p-4 border-t border-zinc-200 dark:border-zinc-800/60 px-4 lg:px-3 lg:group-hover:px-4">
+                  <div className="p-4 border-t border-zinc-200 dark:border-zinc-700/50">
                     <button 
                       onClick={handleLogout}
                       className={`
-                        relative group/item flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
+                        relative flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-xl
                         text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10
-                        transition-all duration-300 ease-in-out w-full
+                        group transition-all duration-200 transform hover:scale-[1.02]
                       `}
                     >
-                      <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:group-hover:scale-95">
-                        <LogOut className={`
-                          h-5 w-5 text-gray-400 dark:text-blue-400/50 
-                          group-hover:text-rose-500 dark:group-hover:text-rose-400 
-                          transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                          lg:group-hover:-translate-x-0.5 transform-gpu
-                        `} />
-                      </div>
-                      <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:opacity-0 lg:-translate-x-6 opacity-100 translate-x-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 whitespace-nowrap group-hover:text-rose-600 dark:group-hover:text-rose-400">
-                      Cerrar Sesión
-                      </span>
+                      {isSidebarCollapsed && (
+                        <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                          Cerrar Sesión
+                        </div>
+                      )}
+                      <LogOut className={`
+                        ${isSidebarCollapsed ? 'mx-auto' : 'mr-3'} 
+                        h-5 w-5 text-gray-400 dark:text-blue-400/50 
+                        group-hover:text-rose-500 dark:group-hover:text-rose-400 
+                        transition-all duration-200 transform group-hover:scale-110
+                      `} />
+                      {!isSidebarCollapsed && (
+                        <span className="group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-200">
+                          Cerrar Sesión
+                        </span>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -211,18 +217,18 @@ export default function RootLayout({
 
               {/* Main content with navigation */}
               <div className={`
-                transition-all duration-500 ease-in-out
-                lg:pl-[5.5rem] group-hover:lg:pl-72
+                transition-all duration-300
+                ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}
               `}>
                 {/* Top navigation */}
                 <header className={`
                   sticky top-0 z-30 
-                  bg-white/95 dark:bg-[#12121A]/95
-                  border-b border-zinc-200/50 dark:border-zinc-800/40
+                  bg-white/80 dark:bg-zinc-900/80 
+                  border-b border-zinc-200 dark:border-zinc-800 
                   backdrop-blur-xl transition-all duration-300
-                  ${isScrolled ? 'shadow-[0_8px_30px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_8px_30px_-15px_rgba(0,0,0,0.5)]' : ''}
+                  ${isScrolled ? 'shadow-lg shadow-zinc-200/20 dark:shadow-zinc-900/30' : ''}
                 `}>
-                  <div className="flex items-center justify-between h-20 px-4 sm:px-6 lg:px-8">
+                  <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center flex-1 gap-4">
                       <button
                         type="button"
@@ -253,14 +259,14 @@ export default function RootLayout({
                                   <div className="absolute inset-0 h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping"></div>
                                 </div>
                                 <span className="font-medium text-emerald-700 dark:text-emerald-400">En línea</span>
-                          </div>
-                          {lastUpdate && (
-                            <>
+                              </div>
+                              {lastUpdate && (
+                                <>
                                   <span className="text-emerald-400/30 dark:text-emerald-600">•</span>
                                   <span className="text-emerald-600/70 dark:text-emerald-400/70">Actualizado {lastUpdate}</span>
-                            </>
-                          )}
-                        </div>
+                                </>
+                              )}
+                            </div>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-72">
                             <div className="p-4 space-y-4">
@@ -303,19 +309,19 @@ export default function RootLayout({
                       <div className="flex items-center gap-2">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
+                            <button
+                              type="button"
                               className="group relative p-2 rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
-                          >
-                            <span className="sr-only">Ver notificaciones</span>
-                            <div className="relative">
+                            >
+                              <span className="sr-only">Ver notificaciones</span>
+                              <div className="relative">
                                 <Bell className="h-5 w-5 transition-all duration-300 transform group-hover:scale-110" />
                                 <div className="absolute -top-1 -right-1 h-3 w-3">
                                   <div className="absolute inset-0 rounded-full bg-rose-500 animate-ping opacity-75"></div>
                                   <div className="relative rounded-full h-3 w-3 bg-rose-500 ring-2 ring-white dark:ring-zinc-900"></div>
                                 </div>
-                            </div>
-                          </button>
+                              </div>
+                            </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-96">
                             <div className="p-4 space-y-4">
@@ -327,8 +333,8 @@ export default function RootLayout({
                                 <Badge variant="outline" className="bg-gradient-to-r from-rose-500/10 to-pink-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20">
                                   3 nuevas
                                 </Badge>
-                        </div>
-
+                              </div>
+                              
                               <div className="space-y-3">
                                 <div className="group p-3 rounded-xl bg-gradient-to-r from-blue-500/5 to-violet-500/5 hover:from-blue-500/10 hover:to-violet-500/10 dark:from-blue-500/10 dark:to-violet-500/10 dark:hover:from-blue-500/20 dark:hover:to-violet-500/20 border border-blue-500/20 dark:border-blue-400/20 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer">
                                   <div className="flex items-start gap-3">
@@ -380,8 +386,8 @@ export default function RootLayout({
 
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
+                            <button
+                              type="button"
                               className="group flex items-center gap-3 p-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-300"
                             >
                               <div className="relative">
@@ -390,9 +396,9 @@ export default function RootLayout({
                                   <div className="h-full w-full rounded-[10px] bg-white dark:bg-zinc-900 flex items-center justify-center overflow-hidden">
                                     <User className="h-5 w-5 text-violet-500 dark:text-violet-400 transform transition-transform duration-300 group-hover:scale-110" />
                                   </div>
+                                </div>
                               </div>
-                            </div>
-                            <div className="hidden sm:block text-left">
+                              <div className="hidden sm:block text-left">
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm font-medium text-zinc-900 dark:text-white">John Doe</span>
                                   <Badge variant="outline" className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20">
