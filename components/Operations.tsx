@@ -18,6 +18,7 @@ import {
   ExternalLink,
   ChevronRight
 } from "lucide-react";
+import Link from "next/link";
 
 interface Operation {
   id: string;
@@ -681,10 +682,12 @@ export default function Operations() {
                 <option value="1y">Último año</option>
                 <option value="all">Todo</option>
               </select>
-              <button className="px-4 py-2 text-sm font-medium text-white bg-violet-500 rounded-lg hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors flex items-center gap-2">
-                <PieChart className="w-4 h-4" />
-                Nueva Operación
-              </button>
+              <Link href="/operations/new">
+                <button className="px-4 py-2 text-sm font-medium text-white bg-violet-500 rounded-lg hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors flex items-center gap-2">
+                  <PieChart className="w-4 h-4" />
+                  Nueva Operación
+                </button>
+              </Link>
             </div>
           </div>
         </div>
