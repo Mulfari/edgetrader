@@ -731,17 +731,18 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button
-                  onClick={refreshAllBalances}
-                  disabled={loadingAllBalances}
-                  variant="outline"
-                  size="icon"
-                >
-                  <RefreshCw className={`h-4 w-4 ${loadingAllBalances ? 'animate-spin' : ''}`} />
-                </Button>
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <button
+                onClick={refreshAllBalances}
+                disabled={loadingAllBalances}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Actualizar datos"
+              >
+                <RefreshCw className={`h-4 w-4 ${loadingAllBalances ? 'animate-spin' : ''}`} />
+                Actualizar
+              </button>
               <Button
                 onClick={() => setIsCreateModalOpen(true)}
                 className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-md hover:shadow-lg transition-all duration-200"

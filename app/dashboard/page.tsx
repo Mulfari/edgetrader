@@ -295,29 +295,17 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Header con botón de actualización */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          {lastUpdate && (
-            <span 
-              className="text-sm text-muted-foreground"
-              onMouseEnter={() => setTooltipContent(`Última actualización: ${lastUpdate.toLocaleString()}`)}
-              onMouseLeave={() => setTooltipContent(null)}
-            >
-              Última actualización: {lastUpdate.toLocaleTimeString()}
-            </span>
-          )}
-        </div>
-        <button
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="Actualizar datos"
-        >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          Actualizar
-        </button>
+      {/* Header con información de última actualización */}
+      <div className="flex items-center justify-end mb-6">
+        {lastUpdate && (
+          <span 
+            className="text-sm text-muted-foreground"
+            onMouseEnter={() => setTooltipContent(`Última actualización: ${lastUpdate.toLocaleString()}`)}
+            onMouseLeave={() => setTooltipContent(null)}
+          >
+            Última actualización: {lastUpdate.toLocaleTimeString()}
+          </span>
+        )}
       </div>
 
       {/* Dashboard Content */}
