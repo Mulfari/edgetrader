@@ -105,7 +105,7 @@ export default function RootLayout({
     <html lang="es">
       <body className="min-h-screen bg-gradient-to-br from-zinc-50/50 via-white/50 to-zinc-100/50 dark:from-[#0A0A0F] dark:via-[#12121A] dark:to-[#0A0A0F]">
         <ThemeProvider>
-          {!isPublicPage && (
+          {!isPublicPage ? (
             <>
               {/* Mobile menu overlay */}
               {isMobileMenuOpen && (
@@ -170,9 +170,9 @@ export default function RootLayout({
                             relative flex items-center w-full
                             ${pathname === item.href ? 'text-violet-500 dark:text-violet-400' : ''}
                           `}>
-                            <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:group-hover:scale-95">
+                            <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-out">
                               <item.icon className={`
-                                h-5 w-5 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                                h-5 w-5 transition-all duration-500 ease-out
                                 ${pathname === item.href
                                   ? 'text-violet-500 dark:text-violet-400'
                                   : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
@@ -180,7 +180,7 @@ export default function RootLayout({
                                 lg:group-hover:-translate-x-0.5 transform-gpu
                               `} />
                             </div>
-                            <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:opacity-0 lg:-translate-x-6 opacity-100 translate-x-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 whitespace-nowrap">{item.name}</span>
+                            <span className="transition-all duration-500 ease-out lg:opacity-0 lg:-translate-x-6 opacity-100 translate-x-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 whitespace-nowrap">{item.name}</span>
                           </div>
                       </Link>
                       ))}
@@ -196,24 +196,24 @@ export default function RootLayout({
                         transition-all duration-300 ease-in-out w-full mb-2
                       `}
                     >
-                      <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:group-hover:scale-95">
+                      <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-out lg:group-hover:scale-95">
                         {theme === 'light' ? (
                           <Moon className={`
                             h-5 w-5 text-gray-400 dark:text-blue-400/50 
                             group-hover:text-violet-500 dark:group-hover:text-violet-400 
-                            transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                            transition-all duration-500 ease-out
                             lg:group-hover:-translate-x-0.5 transform-gpu
                           `} />
                         ) : (
                           <Sun className={`
                             h-5 w-5 text-gray-400 dark:text-blue-400/50 
                             group-hover:text-violet-500 dark:group-hover:text-violet-400 
-                            transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                            transition-all duration-500 ease-out
                             lg:group-hover:-translate-x-0.5 transform-gpu
                           `} />
                         )}
                       </div>
-                      <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:opacity-0 lg:-translate-x-6 opacity-100 translate-x-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 whitespace-nowrap group-hover:text-violet-600 dark:group-hover:text-violet-400">
+                      <span className="transition-all duration-500 ease-out lg:opacity-0 lg:-translate-x-6 opacity-100 translate-x-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 whitespace-nowrap group-hover:text-violet-600 dark:group-hover:text-violet-400">
                         {theme === 'light' ? 'Modo Oscuro' : 'Modo Claro'}
                       </span>
                     </button>
@@ -226,15 +226,15 @@ export default function RootLayout({
                         transition-all duration-300 ease-in-out w-full
                       `}
                     >
-                      <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:group-hover:scale-95">
+                      <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-out lg:group-hover:scale-95">
                         <LogOut className={`
                           h-5 w-5 text-gray-400 dark:text-blue-400/50 
                           group-hover:text-rose-500 dark:group-hover:text-rose-400 
-                          transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                          transition-all duration-500 ease-out
                           lg:group-hover:-translate-x-0.5 transform-gpu
                         `} />
                       </div>
-                      <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:opacity-0 lg:-translate-x-6 opacity-100 translate-x-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 whitespace-nowrap group-hover:text-rose-600 dark:group-hover:text-rose-400">
+                      <span className="transition-all duration-500 ease-out lg:opacity-0 lg:-translate-x-6 opacity-100 translate-x-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 whitespace-nowrap group-hover:text-rose-600 dark:group-hover:text-rose-400">
                         Cerrar Sesión
                       </span>
                     </button>
@@ -510,10 +510,7 @@ export default function RootLayout({
                 </main>
               </div>
             </>
-          )}
-
-          {/* Render children directly without layout on login page */}
-          {isPublicPage && (
+          ) : (
             <main>
               {children}
             </main>
