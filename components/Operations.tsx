@@ -409,8 +409,10 @@ export default function Operations() {
           : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
       }`}
     >
-      {/* Efecto de brillo al hover */}
-      <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/5 to-violet-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+      <td className="absolute inset-0 pointer-events-none">
+        {/* Efecto de brillo al hover */}
+        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/5 to-violet-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+      </td>
 
       <td className="px-6 py-4 w-8">
         <div 

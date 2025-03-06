@@ -23,8 +23,17 @@ interface TradingViewWidget {
       popup_height: string;
       height: string;
       width: string;
-    }): unknown;
+    }): TradingViewChartInstance;
   };
+}
+
+interface TradingViewChartInstance {
+  options: {
+    symbol: string;
+    theme: string;
+    interval: string;
+  };
+  iframe: HTMLIFrameElement;
 }
 
 declare global {

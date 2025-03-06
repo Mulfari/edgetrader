@@ -212,16 +212,18 @@ export default function RootLayout({
               <div className={`
                 transition-all duration-500 ease-in-out
                 lg:pl-[5.5rem] group-hover:lg:pl-72
+                min-h-screen
               `}>
                 {/* Top navigation */}
                 <header className={`
                   sticky top-0 z-30 
                   bg-white/95 dark:bg-[#12121A]/95
                   border-b border-zinc-200/50 dark:border-zinc-800/40
-                  backdrop-blur-xl transition-all duration-300
-                  ${isScrolled ? 'shadow-[0_8px_30px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_8px_30px_-15px_rgba(0,0,0,0.5)]' : ''}
+                  backdrop-blur-xl transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                  ${isScrolled ? 'h-12 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-8px_rgba(0,0,0,0.3)]' : 'h-20'}
+                  overflow-hidden
                 `}>
-                  <div className="flex items-center justify-between h-20 px-4 sm:px-6 lg:px-8">
+                  <div className="flex items-center justify-between h-full px-4 sm:px-6 lg:px-8 w-full lg:max-w-[calc(100%-5.5rem)] lg:group-hover:max-w-[calc(100%-18rem)] transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]">
                     <div className="flex items-center flex-1 gap-4">
                       <button
                         type="button"
@@ -233,13 +235,13 @@ export default function RootLayout({
                       </button>
                       <div className="animate-in slide-in-from-left-5 duration-500">
                         <div className="flex flex-col">
-                          <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-indigo-500 tracking-tight">
-                            {menuItems.find(item => item.href === pathname)?.name || ''}
+                          <h1 className={`font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-indigo-500 tracking-tight transition-all duration-300 ${isScrolled ? 'text-lg' : 'text-2xl'}`}>
+                            {pathname === '/operations/new' ? 'Nueva Operación' : menuItems.find(item => item.href === pathname)?.name || ''}
                           </h1>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className={`flex items-center gap-2 transition-all duration-300 ${isScrolled ? 'opacity-0 h-0' : 'opacity-100 mt-1'}`}>
                             <div className="h-1 w-1 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500"></div>
                             <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">
-                              {menuItems.find(item => item.href === pathname)?.description || ''}
+                              {pathname === '/operations/new' ? 'Crear una nueva operación de trading' : menuItems.find(item => item.href === pathname)?.description || ''}
                             </p>
                           </div>
                         </div>
@@ -247,7 +249,7 @@ export default function RootLayout({
                     </div>
 
                     <div className="flex items-center gap-4">
-                      <div className="hidden sm:block">
+                      <div className={`hidden sm:block transition-all duration-300 ${isScrolled ? 'opacity-0 w-0' : 'opacity-100'}`}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 mr-4">
@@ -297,19 +299,21 @@ export default function RootLayout({
                       <div className="flex items-center gap-2">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                              className="group relative p-2 rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200"
-                          >
-                            <span className="sr-only">Ver notificaciones</span>
-                            <div className="relative">
-                                <Bell className="h-5 w-5 transition-all duration-300 transform group-hover:scale-110" />
-                                <div className="absolute -top-1 -right-1 h-3 w-3">
+                            <button
+                              type="button"
+                              className="group relative p-2.5 rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-gradient-to-br hover:from-violet-500/5 hover:to-indigo-500/5 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-gradient-to-br dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10 focus:outline-none transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:shadow-lg hover:shadow-violet-200/50 dark:hover:shadow-violet-900/50"
+                            >
+                              <span className="sr-only">Ver notificaciones</span>
+                              <div className="relative">
+                                <div className={`transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform ${isScrolled ? 'scale-95' : 'scale-100'}`}>
+                                  <Bell className={`transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform group-hover:scale-110 h-5 w-5`} />
+                                </div>
+                                <div className={`absolute -top-1 -right-1 h-3 w-3 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform ${isScrolled ? 'scale-95' : 'scale-100'}`}>
                                   <div className="absolute inset-0 rounded-full bg-rose-500 animate-ping opacity-75"></div>
                                   <div className="relative rounded-full h-3 w-3 bg-rose-500 ring-2 ring-white dark:ring-zinc-900"></div>
                                 </div>
-                            </div>
-                          </button>
+                              </div>
+                            </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-96">
                             <div className="p-4 space-y-4">
@@ -321,7 +325,7 @@ export default function RootLayout({
                                 <Badge variant="outline" className="bg-gradient-to-r from-rose-500/10 to-pink-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20">
                                   3 nuevas
                                 </Badge>
-                        </div>
+                              </div>
 
                               <div className="space-y-3">
                                 <div className="group p-3 rounded-xl bg-gradient-to-r from-blue-500/5 to-violet-500/5 hover:from-blue-500/10 hover:to-violet-500/10 dark:from-blue-500/10 dark:to-violet-500/10 dark:hover:from-blue-500/20 dark:hover:to-violet-500/20 border border-blue-500/20 dark:border-blue-400/20 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer">
@@ -374,27 +378,29 @@ export default function RootLayout({
 
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                              className="group flex items-center gap-3 p-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-300"
+                            <button
+                              type="button"
+                              className="group relative flex items-center gap-3"
                             >
-                              <div className="relative">
-                                <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-md opacity-50 group-hover:opacity-75 transition-all duration-300"></div>
-                                <div className="relative h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 p-0.5 transition-transform duration-300 group-hover:scale-105">
+                              <div className="relative p-1.5 rounded-xl hover:bg-gradient-to-br hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]">
+                                <div className={`absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-md opacity-50 group-hover:opacity-75 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform ${isScrolled ? 'scale-95' : 'scale-100'}`}></div>
+                                <div className={`relative rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 p-0.5 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-105 ${isScrolled ? 'h-9 w-9' : 'h-10 w-10'}`}>
                                   <div className="relative h-full w-full rounded-[10px] bg-white dark:bg-zinc-900 flex items-center justify-center overflow-hidden">
-                                    <User className="h-5 w-5 text-violet-500 dark:text-violet-400 transform transition-transform duration-300 group-hover:scale-110" />
-                                    <div className="absolute bottom-0.5 right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-zinc-900"></div>
+                                    <div className={`transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform ${isScrolled ? 'scale-95' : 'scale-100'}`}>
+                                      <User className={`text-violet-500 dark:text-violet-400 transform transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-110 h-5 w-5`} />
+                                    </div>
+                                    <div className={`absolute bottom-0.5 right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-zinc-900 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform ${isScrolled ? 'scale-95' : 'scale-100'}`}></div>
                                   </div>
+                                </div>
                               </div>
-                            </div>
-                            <div className="hidden sm:block text-left">
+                              <div className={`hidden sm:block text-left transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isScrolled ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-zinc-900 dark:text-white">John Doe</span>
-                                  <Badge variant="outline" className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20">
+                                  <span className="text-sm font-medium text-zinc-900 dark:text-white whitespace-nowrap">John Doe</span>
+                                  <Badge variant="outline" className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20 whitespace-nowrap">
                                     Admin
                                   </Badge>
                                 </div>
-                                <div className="text-xs text-zinc-500 dark:text-zinc-400">john@example.com</div>
+                                <div className="text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">john@example.com</div>
                               </div>
                             </button>
                           </DropdownMenuTrigger>
