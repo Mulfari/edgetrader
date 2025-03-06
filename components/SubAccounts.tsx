@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import {
   Search,
   RefreshCw,
@@ -382,7 +382,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
     return stats;
   };
 
-  const loadSubAccounts = async () => {
+  const loadSubAccounts = useCallback(async () => {
     try {
       console.log('🔄 Iniciando carga de subcuentas...');
       const token = localStorage.getItem('token');
@@ -487,13 +487,13 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       setIsLoading(false);
       setLoadingAllBalances(false);
     }
-  };
+  }, [router, onBalanceUpdate, onStatsUpdate]);
 
   // Efecto para cargar las subcuentas una sola vez al montar el componente
   useEffect(() => {
     console.log('🔄 Efecto de carga inicial activado - Una sola vez');
     loadSubAccounts();
-  }, []); // Sin dependencias para que solo se ejecute al montar
+  }, [loadSubAccounts]); // Agregamos loadSubAccounts como dependencia
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {

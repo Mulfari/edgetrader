@@ -62,7 +62,6 @@ export default function DashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [tooltipContent, setTooltipContent] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const [isHoveringCard, setIsHoveringCard] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -328,8 +327,6 @@ export default function DashboardPage() {
           className="col-span-1 sm:col-span-2 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden group hover:shadow-lg transition-all duration-300"
           role="region"
           aria-label="Balance"
-          onMouseEnter={() => setIsHoveringCard('balance')}
-          onMouseLeave={() => setIsHoveringCard(null)}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <div className="relative">
