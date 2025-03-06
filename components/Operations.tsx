@@ -552,61 +552,6 @@ export default function Operations() {
 
   return (
     <div className="space-y-6">
-      {/* Header mejorado */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
-            {marketFilter === 'futures' ? 'Operaciones Futuros' : 
-             marketFilter === 'spot' ? 'Operaciones Spot' : 
-             'Todas las Operaciones'}
-          </h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Vista general del rendimiento y operaciones
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1">
-            <button
-              onClick={() => setView('table')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors inline-flex items-center gap-2 ${
-                view === 'table'
-                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-              }`}
-            >
-              <Table className="w-4 h-4" />
-              Tabla
-            </button>
-            <button
-              onClick={() => setView('cards')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors inline-flex items-center gap-2 ${
-                view === 'cards'
-                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-              }`}
-            >
-              <Grid className="w-4 h-4" />
-              Tarjetas
-            </button>
-          </div>
-          <select
-            className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500"
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-          >
-            <option value="7d">Últimos 7 días</option>
-            <option value="30d">Últimos 30 días</option>
-            <option value="90d">Últimos 90 días</option>
-            <option value="1y">Último año</option>
-            <option value="all">Todo</option>
-          </select>
-          <button className="px-4 py-2 text-sm font-medium text-white bg-violet-500 rounded-lg hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors flex items-center gap-2">
-            <PieChart className="w-4 h-4" />
-            Nueva Operación
-          </button>
-        </div>
-      </div>
-
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
@@ -681,18 +626,12 @@ export default function Operations() {
       {/* Gráficos y Análisis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
-          <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">
-            Distribución por Par
-          </h3>
           <div className="h-64 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
             Gráfico de distribución por par (próximamente)
           </div>
         </div>
 
         <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
-          <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">
-            Rendimiento Histórico
-          </h3>
           <div className="h-64 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
             Gráfico de rendimiento (próximamente)
           </div>
@@ -702,10 +641,54 @@ export default function Operations() {
       {/* Filters mejorados */}
       <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm">
         <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
-          <h3 className="text-lg font-medium text-zinc-900 dark:text-white">
-            Operaciones
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium text-zinc-900 dark:text-white">
+              Operaciones
+            </h3>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1">
+                <button
+                  onClick={() => setView('table')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors inline-flex items-center gap-2 ${
+                    view === 'table'
+                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Table className="w-4 h-4" />
+                  Tabla
+                </button>
+                <button
+                  onClick={() => setView('cards')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors inline-flex items-center gap-2 ${
+                    view === 'cards'
+                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Grid className="w-4 h-4" />
+                  Tarjetas
+                </button>
+              </div>
+              <select
+                className="px-3 py-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg text-sm border-0 focus:ring-2 focus:ring-violet-500"
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value)}
+              >
+                <option value="7d">Últimos 7 días</option>
+                <option value="30d">Últimos 30 días</option>
+                <option value="90d">Últimos 90 días</option>
+                <option value="1y">Último año</option>
+                <option value="all">Todo</option>
+              </select>
+              <button className="px-4 py-2 text-sm font-medium text-white bg-violet-500 rounded-lg hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 transition-colors flex items-center gap-2">
+                <PieChart className="w-4 h-4" />
+                Nueva Operación
+              </button>
+            </div>
+          </div>
         </div>
+
         <div className="p-4">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex-1 min-w-[200px]">
