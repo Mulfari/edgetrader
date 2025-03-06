@@ -124,12 +124,12 @@ export default function RootLayout({
                 overflow-hidden
               `}>
                 <div className="flex flex-col h-full w-full">
-                  <div className="h-16 sm:h-20 flex items-center border-b border-zinc-200/50 dark:border-zinc-800/40 px-6 lg:px-3 lg:group-hover:px-6">
+                  <div className="h-16 sm:h-20 flex items-center justify-center lg:justify-start border-b border-zinc-200/50 dark:border-zinc-800/40 px-6 lg:px-3 lg:group-hover:px-6">
                     <div className="flex items-center gap-3">
-                      <div className="relative shrink-0 flex items-center justify-center lg:w-[2.5rem]">
+                      <div className="relative shrink-0 flex items-center justify-center lg:w-[2.5rem] lg:group-hover:w-auto">
                         <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
-                        <div className="relative bg-gradient-to-br from-violet-500 to-indigo-500 w-9 h-9 sm:w-11 sm:h-11 lg:w-9 lg:h-9 rounded-xl flex items-center justify-center shadow-lg transform transition-transform duration-300 hover:scale-105">
-                          <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 lg:h-5 lg:w-5 text-white" />
+                        <div className="relative bg-gradient-to-br from-violet-500 to-indigo-500 w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shadow-lg transform transition-transform duration-300 hover:scale-105">
+                          <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                         </div>
                       </div>
                       <div className="transition-all duration-300 transform lg:opacity-0 lg:group-hover:opacity-100 opacity-100 whitespace-nowrap">
