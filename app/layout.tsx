@@ -245,7 +245,7 @@ export default function RootLayout({
                       <div className="hidden sm:block">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+                            <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 mr-2">
                               {lastUpdate && (
                                 <span className="text-emerald-600/70 dark:text-emerald-400/70">Actualizado {lastUpdate}</span>
                               )}
@@ -374,7 +374,7 @@ export default function RootLayout({
                               className="group flex items-center gap-3 p-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-300"
                             >
                               <div className="relative">
-                                <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-all duration-300"></div>
+                                <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-md opacity-50 group-hover:opacity-75 transition-all duration-300"></div>
                                 <div className="relative h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 p-0.5 transition-transform duration-300 group-hover:scale-105">
                                   <div className="relative h-full w-full rounded-[10px] bg-white dark:bg-zinc-900 flex items-center justify-center overflow-hidden">
                                     <User className="h-5 w-5 text-violet-500 dark:text-violet-400 transform transition-transform duration-300 group-hover:scale-110" />
