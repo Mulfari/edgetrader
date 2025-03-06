@@ -117,7 +117,7 @@ export default function RootLayout({
                 fixed top-0 left-0 z-50 h-full
                 bg-white/95 dark:bg-[#12121A]/95
                 border-r border-zinc-200/50 dark:border-zinc-800/40
-                transform transition-all duration-300 ease-in-out backdrop-blur-xl
+                transform transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] backdrop-blur-xl
                 ${isMobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0 lg:w-[4.5rem] xl:w-[5.5rem]'}
                 lg:hover:w-72 group
                 shadow-[0_0_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)]
@@ -128,11 +128,11 @@ export default function RootLayout({
                     <div className="flex items-center gap-3">
                       <div className="relative shrink-0">
                         <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
-                        <div className="relative bg-gradient-to-br from-violet-500 to-indigo-500 w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shadow-lg transform transition-transform duration-300 hover:scale-105">
-                          <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                        <div className="relative bg-gradient-to-br from-violet-500 to-indigo-500 w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shadow-lg transform transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-110 hover:shadow-violet-500/25">
+                          <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-white transform transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:rotate-[360deg]" />
                         </div>
                       </div>
-                      <div className="transition-all duration-300 transform lg:opacity-0 lg:group-hover:opacity-100 opacity-100 whitespace-nowrap">
+                      <div className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform lg:opacity-0 lg:group-hover:opacity-100 opacity-100 whitespace-nowrap">
                         <h1 className="text-base sm:text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
                           TradingDash
                         </h1>
@@ -143,24 +143,24 @@ export default function RootLayout({
                     </div>
                   </div>
                   
-                  <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 sm:py-4">
-                    <nav className="space-y-1 px-4 lg:px-2 lg:group-hover:px-4">
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 sm:py-4 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+                    <nav className="space-y-1.5 px-4 lg:px-2 lg:group-hover:px-4">
                       {menuItems.map((item) => (
                       <Link 
                           key={item.href}
                           href={item.href} 
                           className={`
                             relative group/item flex items-center px-3 py-2.5 text-xs sm:text-sm font-medium rounded-xl
-                            transition-all duration-300 ease-in-out
+                            transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
                             ${pathname === item.href
                               ? 'bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300 shadow-[0_2px_8px_-3px_rgba(139,92,246,0.3)] dark:shadow-[0_2px_8px_-3px_rgba(139,92,246,0.2)]'
                               : 'text-gray-700 dark:text-blue-300/70 hover:bg-gradient-to-br hover:from-violet-500/5 hover:to-indigo-500/5 dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10'
                             }
-                            w-full
+                            w-full hover:shadow-[0_2px_8px_-3px_rgba(139,92,246,0.2)]
                           `}
                         >
                           {pathname === item.href && (
-                            <div className="absolute left-0 w-1 h-8 bg-violet-500 rounded-r-full transform -translate-y-1/2 top-1/2" />
+                            <div className="absolute left-0 w-1 h-8 bg-gradient-to-b from-violet-500 to-indigo-500 rounded-r-full transform -translate-y-1/2 top-1/2 shadow-[0_0_8px_-1px_rgba(139,92,246,0.5)]" />
                           )}
                           <div className={`
                             relative flex items-center w-full
@@ -173,7 +173,7 @@ export default function RootLayout({
                                   ? 'text-violet-500 dark:text-violet-400'
                                   : 'text-gray-400 dark:text-blue-400/50 group-hover:text-violet-500 dark:group-hover:text-violet-400'
                                 }
-                                lg:group-hover:-translate-x-0.5 transform-gpu
+                                lg:group-hover:-translate-x-0.5 transform-gpu group-hover/item:scale-110
                               `} />
                             </div>
                             <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:opacity-0 lg:-translate-x-6 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 opacity-100 translate-x-0 whitespace-nowrap">{item.name}</span>
@@ -183,13 +183,14 @@ export default function RootLayout({
                     </nav>
                   </div>
                   
-                  <div className="p-4 border-t border-zinc-200 dark:border-zinc-800/60 px-4 lg:px-3 lg:group-hover:px-4">
+                  <div className="p-4 border-t border-zinc-200 dark:border-zinc-800/60 px-4 lg:px-2 lg:group-hover:px-4">
                     <button 
                       onClick={handleLogout}
                       className={`
-                        relative group/item flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
+                        relative group/item flex items-center px-3 py-2.5 text-xs sm:text-sm font-medium rounded-xl
                         text-gray-700 dark:text-blue-300/70 hover:bg-rose-500/5 dark:hover:bg-rose-500/10
-                        transition-all duration-300 ease-in-out w-full
+                        transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] w-full
+                        hover:shadow-[0_2px_8px_-3px_rgba(244,63,94,0.2)]
                       `}
                     >
                       <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:group-hover:scale-95">
@@ -197,7 +198,7 @@ export default function RootLayout({
                           h-5 w-5 text-gray-400 dark:text-blue-400/50 
                           group-hover:text-rose-500 dark:group-hover:text-rose-400 
                           transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                          lg:group-hover:-translate-x-0.5 transform-gpu
+                          lg:group-hover:-translate-x-0.5 transform-gpu group-hover/item:scale-110
                         `} />
                       </div>
                       <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:opacity-0 lg:-translate-x-6 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 opacity-100 translate-x-0 whitespace-nowrap group-hover:text-rose-600 dark:group-hover:text-rose-400">
@@ -210,7 +211,7 @@ export default function RootLayout({
 
               {/* Main content with navigation */}
               <div className={`
-                transition-all duration-500 ease-in-out
+                transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
                 lg:pl-[4.5rem] lg:group-hover:pl-72 xl:pl-[5.5rem]
               `}>
                 {/* Top navigation */}
