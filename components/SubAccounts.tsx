@@ -493,7 +493,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
   useEffect(() => {
     console.log('🔄 Efecto de carga inicial activado - Una sola vez');
     loadSubAccounts();
-  }, [loadSubAccounts]); // Agregamos loadSubAccounts como dependencia
+  }, []); // Sin dependencias para que solo se ejecute al montar
 
   const handleRowClick = (sub: SubAccount) => {
     if (selectedSubAccountId === sub.id) {
