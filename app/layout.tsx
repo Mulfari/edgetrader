@@ -124,7 +124,7 @@ export default function RootLayout({
                 overflow-hidden
               `}>
                 <div className="flex flex-col h-full w-full">
-                  <div className="h-20 flex items-center border-b border-zinc-200/50 dark:border-zinc-800/40 px-4 group-hover:px-6">
+                  <div className="h-20 flex items-center border-b border-zinc-200/50 dark:border-zinc-800/40 px-6 group-hover:px-8">
                     <div className="flex items-center gap-3">
                       <div className="relative shrink-0">
                         <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
@@ -245,7 +245,7 @@ export default function RootLayout({
                       <div className="hidden sm:block">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 mr-2">
+                            <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 mr-4">
                               {lastUpdate && (
                                 <span className="text-emerald-600/70 dark:text-emerald-400/70">Actualizado {lastUpdate}</span>
                               )}
