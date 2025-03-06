@@ -10,11 +10,13 @@ import {
   User,
   Home,
   LineChart,
-  Wallet
+  Wallet,
+  Moon,
+  Sun
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { ThemeProvider } from "./contexts/ThemeContext";
+import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 import "./globals.css";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +53,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const { theme, toggleTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [lastUpdate] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -185,6 +188,36 @@ export default function RootLayout({
                   </div>
                   
                   <div className="p-4 border-t border-zinc-200 dark:border-zinc-800/60 px-4 lg:px-3 lg:group-hover:px-4">
+                    <button 
+                      onClick={toggleTheme}
+                      className={`
+                        relative group/item flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
+                        text-gray-700 dark:text-blue-300/70 hover:bg-violet-500/5 dark:hover:bg-violet-500/10
+                        transition-all duration-300 ease-in-out w-full mb-2
+                      `}
+                    >
+                      <div className="flex items-center justify-center min-w-[2.5rem] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:group-hover:scale-95">
+                        {theme === 'light' ? (
+                          <Moon className={`
+                            h-5 w-5 text-gray-400 dark:text-blue-400/50 
+                            group-hover:text-violet-500 dark:group-hover:text-violet-400 
+                            transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                            lg:group-hover:-translate-x-0.5 transform-gpu
+                          `} />
+                        ) : (
+                          <Sun className={`
+                            h-5 w-5 text-gray-400 dark:text-blue-400/50 
+                            group-hover:text-violet-500 dark:group-hover:text-violet-400 
+                            transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                            lg:group-hover:-translate-x-0.5 transform-gpu
+                          `} />
+                        )}
+                      </div>
+                      <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] lg:opacity-0 lg:-translate-x-6 opacity-100 translate-x-0 lg:group-hover:translate-x-0 lg:group-hover:opacity-100 whitespace-nowrap group-hover:text-violet-600 dark:group-hover:text-violet-400">
+                        {theme === 'light' ? 'Modo Oscuro' : 'Modo Claro'}
+                      </span>
+                    </button>
+
                     <button 
                       onClick={handleLogout}
                       className={`
