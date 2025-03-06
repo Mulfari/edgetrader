@@ -7,7 +7,7 @@ export default function NotFound() {
   const { theme } = useTheme();
   
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-zinc-50/50 via-white/50 to-zinc-100/50 dark:from-[#0A0A0F] dark:via-[#12121A] dark:to-[#0A0A0F]">
       <div className="text-center space-y-4">
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
@@ -18,7 +18,7 @@ export default function NotFound() {
         <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
           Página no encontrada
         </h1>
-        <p className="text-zinc-500 dark:text-zinc-400">
+        <p className="text-zinc-600 dark:text-zinc-400">
           Lo sentimos, la página que buscas no existe.
         </p>
         <Link
