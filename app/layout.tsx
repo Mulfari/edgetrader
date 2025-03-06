@@ -245,21 +245,21 @@ export default function RootLayout({
                       <div className="hidden sm:block">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 bg-gradient-to-r from-emerald-500/10 to-emerald-600/10 dark:from-emerald-500/20 dark:to-emerald-600/20 px-3 py-1.5 rounded-xl cursor-pointer hover:from-emerald-500/20 hover:to-emerald-600/20 dark:hover:from-emerald-500/30 dark:hover:to-emerald-600/30 transition-all duration-300 border border-emerald-500/20 dark:border-emerald-400/20">
+                            <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
                               <div className="flex items-center gap-1.5">
                                 <div className="relative">
                                   <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
                                   <div className="absolute inset-0 h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping"></div>
                                 </div>
                                 <span className="font-medium text-emerald-700 dark:text-emerald-400">En línea</span>
-                          </div>
-                          {lastUpdate && (
-                            <>
+                              </div>
+                              {lastUpdate && (
+                                <>
                                   <span className="text-emerald-400/30 dark:text-emerald-600">•</span>
                                   <span className="text-emerald-600/70 dark:text-emerald-400/70">Actualizado {lastUpdate}</span>
-                            </>
-                          )}
-                        </div>
+                                </>
+                              )}
+                            </div>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-72">
                             <div className="p-4 space-y-4">
@@ -386,8 +386,9 @@ export default function RootLayout({
                               <div className="relative">
                                 <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-all duration-300"></div>
                                 <div className="relative h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 p-0.5 transition-transform duration-300 group-hover:scale-105">
-                                  <div className="h-full w-full rounded-[10px] bg-white dark:bg-zinc-900 flex items-center justify-center overflow-hidden">
+                                  <div className="relative h-full w-full rounded-[10px] bg-white dark:bg-zinc-900 flex items-center justify-center overflow-hidden">
                                     <User className="h-5 w-5 text-violet-500 dark:text-violet-400 transform transition-transform duration-300 group-hover:scale-110" />
+                                    <div className="absolute bottom-0.5 right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-zinc-900"></div>
                                   </div>
                               </div>
                             </div>
@@ -408,8 +409,9 @@ export default function RootLayout({
                                 <div className="relative">
                                   <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-lg opacity-50"></div>
                                   <div className="relative h-16 w-16 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 p-0.5">
-                                    <div className="h-full w-full rounded-[10px] bg-white dark:bg-zinc-900 flex items-center justify-center overflow-hidden">
+                                    <div className="relative h-full w-full rounded-[10px] bg-white dark:bg-zinc-900 flex items-center justify-center overflow-hidden">
                                       <User className="h-8 w-8 text-violet-500 dark:text-violet-400" />
+                                      <div className="absolute bottom-1 right-1 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-zinc-900"></div>
                                     </div>
                                   </div>
                                 </div>
@@ -420,34 +422,41 @@ export default function RootLayout({
                                       Admin
                                     </Badge>
                                   </div>
-                                  <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">john@example.com</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
+                                    <p className="text-sm text-emerald-600 dark:text-emerald-400">Activo</p>
+                                  </div>
+                                  <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate mt-1">john@example.com</p>
                                 </div>
                               </div>
 
                               <div className="py-4 space-y-4">
                                 <div className="space-y-2">
-                                  <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Estado del sistema</h4>
-                                  <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 bg-gradient-to-r from-emerald-500/10 to-emerald-600/10 dark:from-emerald-500/20 dark:to-emerald-600/20 px-3 py-2.5 rounded-xl border border-emerald-500/20 dark:border-emerald-400/20">
-                                    <div className="flex items-center gap-1.5">
-                                      <div className="relative">
-                                        <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                                        <div className="absolute inset-0 h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping"></div>
-                                      </div>
-                                      <span className="font-medium text-emerald-700 dark:text-emerald-400">En línea</span>
-                                    </div>
-                                    {lastUpdate && (
-                                      <>
-                                        <span className="text-emerald-400/30 dark:text-emerald-600">•</span>
-                                        <span className="text-emerald-600/70 dark:text-emerald-400/70">Actualizado {lastUpdate}</span>
-                                      </>
-                                    )}
-                                  </div>
-                                  <div className="space-y-2 text-sm">
+                                  <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Detalles de membresía</h4>
+                                  <div className="p-3 rounded-xl bg-gradient-to-r from-violet-500/5 to-indigo-500/5 hover:from-violet-500/10 hover:to-indigo-500/10 dark:from-violet-500/10 dark:to-indigo-500/10 dark:hover:from-violet-500/20 dark:hover:to-indigo-500/20 border border-violet-500/20 dark:border-violet-400/20 space-y-3 transition-all duration-300">
                                     <div className="flex justify-between items-center">
-                                      <span className="text-zinc-600 dark:text-zinc-400">API Latencia</span>
-                                      <Badge variant="outline" className="bg-gradient-to-r from-blue-500/10 to-violet-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">
-                                        45ms
+                                      <Badge variant="outline" className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20">
+                                        Premium
                                       </Badge>
+                                      <Badge variant="outline" className="bg-gradient-to-r from-emerald-500/10 to-emerald-600/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
+                                        Activo
+                                      </Badge>
+                                    </div>
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between text-sm">
+                                        <span className="text-zinc-600 dark:text-zinc-400">Inicio</span>
+                                        <span className="font-medium text-zinc-900 dark:text-zinc-100">01 Marzo 2024</span>
+                                      </div>
+                                      <div className="flex justify-between text-sm">
+                                        <span className="text-zinc-600 dark:text-zinc-400">Vence</span>
+                                        <span className="font-medium text-zinc-900 dark:text-zinc-100">01 Abril 2024</span>
+                                      </div>
+                                      <div className="relative h-1.5 w-full bg-violet-100 dark:bg-violet-900/30 rounded-full overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-500 w-3/4 rounded-full"></div>
+                                      </div>
+                                      <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center">
+                                        21 días restantes
+                                      </p>
                                     </div>
                                   </div>
                                 </div>
