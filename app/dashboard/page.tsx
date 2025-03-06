@@ -180,8 +180,8 @@ export default function DashboardPage() {
     if (isLoading) {
       return (
         <div className="flex flex-col space-y-2">
-          <div className={`${size === 'lg' ? 'h-9 w-24' : 'h-5 w-16'} bg-zinc-200 dark:bg-zinc-700 animate-pulse rounded`}></div>
-          <div className={`${size === 'lg' ? 'h-4 w-16' : 'h-3 w-12'} bg-zinc-100 dark:bg-zinc-600 animate-pulse rounded`}></div>
+          <div className={`${size === 'lg' ? 'h-9 w-24' : 'h-5 w-16'} bg-white/20 animate-pulse rounded`}></div>
+          <div className={`${size === 'lg' ? 'h-4 w-16' : 'h-3 w-12'} bg-white/10 animate-pulse rounded`}></div>
         </div>
       );
     }
@@ -343,32 +343,38 @@ export default function DashboardPage() {
                 </button>
                 
                 {/* Balance Type Menu */}
-                <div id="balance-menu" className="hidden absolute top-full left-0 mt-2 w-48 rounded-xl bg-white/10 backdrop-blur-lg shadow-lg border border-white/20 z-[100] animate-in fade-in-50 slide-in-from-top-2 duration-200">
-                  <div className="py-1">
-                    <button
-                      onClick={() => handleBalanceDisplayChange('total')}
-                      className={`block w-full px-4 py-2 text-sm text-left text-white hover:bg-white/10 transition-colors duration-200 ${
-                        balanceDisplay === 'total' ? 'bg-white/10' : ''
-                      }`}
-                    >
-                      Balance Total
-                    </button>
-                    <button
-                      onClick={() => handleBalanceDisplayChange('real')}
-                      className={`block w-full px-4 py-2 text-sm text-left text-white hover:bg-white/10 transition-colors duration-200 ${
-                        balanceDisplay === 'real' ? 'bg-white/10' : ''
-                      }`}
-                    >
-                      Balance Real
-                    </button>
-                    <button
-                      onClick={() => handleBalanceDisplayChange('demo')}
-                      className={`block w-full px-4 py-2 text-sm text-left text-white hover:bg-white/10 transition-colors duration-200 ${
-                        balanceDisplay === 'demo' ? 'bg-white/10' : ''
-                      }`}
-                    >
-                      Balance Demo
-                    </button>
+                <div id="balance-menu" className="hidden fixed top-auto left-auto mt-4 w-56 rounded-xl bg-gray-900/95 backdrop-blur-lg shadow-2xl border border-gray-700/50 z-[100] animate-in fade-in-50 slide-in-from-top-2 duration-200">
+                  <div className="p-2">
+                    <div className="px-3 py-2 text-xs font-medium text-gray-400 uppercase tracking-wider">Tipo de Balance</div>
+                    <div className="space-y-1">
+                      <button
+                        onClick={() => handleBalanceDisplayChange('total')}
+                        className={`w-full px-4 py-2.5 text-sm text-left text-gray-100 hover:bg-gray-800/80 transition-colors duration-200 flex items-center gap-3 rounded-lg ${
+                          balanceDisplay === 'total' ? 'bg-gray-800/80 text-white ring-2 ring-blue-500' : ''
+                        }`}
+                      >
+                        <DollarSign className="h-4 w-4 text-blue-400" />
+                        Balance Total
+                      </button>
+                      <button
+                        onClick={() => handleBalanceDisplayChange('real')}
+                        className={`w-full px-4 py-2.5 text-sm text-left text-gray-100 hover:bg-gray-800/80 transition-colors duration-200 flex items-center gap-3 rounded-lg ${
+                          balanceDisplay === 'real' ? 'bg-gray-800/80 text-white ring-2 ring-green-500' : ''
+                        }`}
+                      >
+                        <DollarSign className="h-4 w-4 text-green-400" />
+                        Balance Real
+                      </button>
+                      <button
+                        onClick={() => handleBalanceDisplayChange('demo')}
+                        className={`w-full px-4 py-2.5 text-sm text-left text-gray-100 hover:bg-gray-800/80 transition-colors duration-200 flex items-center gap-3 rounded-lg ${
+                          balanceDisplay === 'demo' ? 'bg-gray-800/80 text-white ring-2 ring-yellow-500' : ''
+                        }`}
+                      >
+                        <DollarSign className="h-4 w-4 text-yellow-400" />
+                        Balance Demo
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -461,7 +467,11 @@ export default function DashboardPage() {
               {getSkeletonOrValue(activeSubAccounts)}
             </div>
             <div className="mt-2 text-xs sm:text-sm text-white/80">
-              {!isLoading && (
+              {isLoading ? (
+                <div className="flex flex-col space-y-2">
+                  <div className="h-4 w-16 bg-white/10 animate-pulse rounded"></div>
+                </div>
+              ) : (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                   <div className="flex items-center gap-1 bg-white/10 rounded-full px-2 py-1">
                     <div className="w-2 h-2 rounded-full bg-green-400"></div>
@@ -513,35 +523,38 @@ export default function DashboardPage() {
                 </button>
                 
                 {/* Operations Type Menu */}
-                <div id="operations-menu" className="hidden absolute top-full left-0 mt-2 w-48 rounded-xl bg-white/10 backdrop-blur-lg shadow-lg border border-white/20 z-[100] animate-in fade-in-50 slide-in-from-top-2 duration-200">
-                  <div className="py-1">
-                    <button
-                      onClick={() => handleOperationsDisplayChange('open')}
-                      className={`block w-full px-4 py-2 text-sm text-left text-white hover:bg-white/10 transition-colors duration-200 flex items-center gap-2 ${
-                        operationsDisplay === 'open' ? 'bg-white/10' : ''
-                      }`}
-                    >
-                      <Clock className="h-4 w-4 text-blue-400" />
-                      Operaciones Abiertas
-                    </button>
-                    <button
-                      onClick={() => handleOperationsDisplayChange('closed')}
-                      className={`block w-full px-4 py-2 text-sm text-left text-white hover:bg-white/10 transition-colors duration-200 flex items-center gap-2 ${
-                        operationsDisplay === 'closed' ? 'bg-white/10' : ''
-                      }`}
-                    >
-                      <CheckCircle className="h-4 w-4 text-green-400" />
-                      Operaciones Cerradas
-                    </button>
-                    <button
-                      onClick={() => handleOperationsDisplayChange('total')}
-                      className={`block w-full px-4 py-2 text-sm text-left text-white hover:bg-white/10 transition-colors duration-200 flex items-center gap-2 ${
-                        operationsDisplay === 'total' ? 'bg-white/10' : ''
-                      }`}
-                    >
-                      <Activity className="h-4 w-4 text-purple-400" />
-                      Total Operaciones
-                    </button>
+                <div id="operations-menu" className="hidden fixed top-auto left-auto mt-4 w-56 rounded-xl bg-gray-900/95 backdrop-blur-lg shadow-2xl border border-gray-700/50 z-[100] animate-in fade-in-50 slide-in-from-top-2 duration-200">
+                  <div className="p-2">
+                    <div className="px-3 py-2 text-xs font-medium text-gray-400 uppercase tracking-wider">Tipo de Operaciones</div>
+                    <div className="space-y-1">
+                      <button
+                        onClick={() => handleOperationsDisplayChange('open')}
+                        className={`w-full px-4 py-2.5 text-sm text-left text-gray-100 hover:bg-gray-800/80 transition-colors duration-200 flex items-center gap-3 rounded-lg ${
+                          operationsDisplay === 'open' ? 'bg-gray-800/80 text-white ring-2 ring-blue-500' : ''
+                        }`}
+                      >
+                        <Clock className="h-4 w-4 text-blue-400" />
+                        Operaciones Abiertas
+                      </button>
+                      <button
+                        onClick={() => handleOperationsDisplayChange('closed')}
+                        className={`w-full px-4 py-2.5 text-sm text-left text-gray-100 hover:bg-gray-800/80 transition-colors duration-200 flex items-center gap-3 rounded-lg ${
+                          operationsDisplay === 'closed' ? 'bg-gray-800/80 text-white ring-2 ring-green-500' : ''
+                        }`}
+                      >
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                        Operaciones Cerradas
+                      </button>
+                      <button
+                        onClick={() => handleOperationsDisplayChange('total')}
+                        className={`w-full px-4 py-2.5 text-sm text-left text-gray-100 hover:bg-gray-800/80 transition-colors duration-200 flex items-center gap-3 rounded-lg ${
+                          operationsDisplay === 'total' ? 'bg-gray-800/80 text-white ring-2 ring-purple-500' : ''
+                        }`}
+                      >
+                        <Activity className="h-4 w-4 text-purple-400" />
+                        Total Operaciones
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -550,7 +563,11 @@ export default function DashboardPage() {
               {getSkeletonOrValue(getOperationsValue())}
             </div>
             <div className="mt-2 text-xs sm:text-sm text-white/80">
-              {!isLoading && (
+              {isLoading ? (
+                <div className="flex flex-col space-y-2">
+                  <div className="h-4 w-16 bg-white/10 animate-pulse rounded"></div>
+                </div>
+              ) : (
                 <div className="flex items-center gap-2 bg-white/10 rounded-full px-2 py-1 w-fit">
                   {getOperationsIcon()}
                   <span>{getOperationsDescription()}</span>

@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useEffect, useState, useRef, useMemo } from "react";
 import {
   Search,
@@ -731,18 +732,32 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                <button
+                  onClick={refreshAllBalances}
+                  disabled={loadingAllBalances}
+                  className="relative flex items-center justify-center h-9 rounded-lg bg-gradient-to-br from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden shadow-sm hover:shadow-md group"
+                  aria-label="Actualizar datos"
+                  title="Actualizar todos los balances"
+                >
+                  <div className="flex items-center">
+                    <div className="flex items-center justify-center w-9 h-9">
+                      <RefreshCw className={`h-4 w-4 text-blue-500 dark:text-blue-400 transition-transform duration-500 ${loadingAllBalances ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+                    </div>
+                    <div className={`w-0 overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ${
+                      loadingAllBalances ? 'w-[105px]' : 'group-hover:w-[85px]'
+                    }`}>
+                      <span className={`text-sm font-medium text-blue-600 dark:text-blue-400 transition-all duration-300 ${
+                        loadingAllBalances ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      }`}>
+                        {loadingAllBalances ? 'Actualizando...' : 'Actualizar'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className={`absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/0 to-blue-500/0 group-hover:from-blue-500/5 group-hover:via-blue-500/10 group-hover:to-blue-500/5 transition-all duration-500 group-hover:translate-x-full ${loadingAllBalances ? 'animate-pulse bg-blue-500/10' : ''}`}></div>
+                </button>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <button
-                onClick={refreshAllBalances}
-                disabled={loadingAllBalances}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Actualizar datos"
-              >
-                <RefreshCw className={`h-4 w-4 ${loadingAllBalances ? 'animate-spin' : ''}`} />
-                Actualizar
-              </button>
               <Button
                 onClick={() => setIsCreateModalOpen(true)}
                 className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-md hover:shadow-lg transition-all duration-200"
@@ -945,9 +960,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
                   </TableRow>
                 ) : (
                   filteredAccounts.map((sub, index) => (
-                    <>
+                    <React.Fragment key={sub.id}>
                       <TableRow
-                        key={sub.id}
                         className={`transition-all duration-200 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 cursor-pointer group animate-in fade-in-50 slide-in-from-bottom-1 duration-300 ${index % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-900/10' : ''}`}
                         style={{ animationDelay: `${index * 50}ms` }}
                       >
@@ -1026,7 +1040,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
                           {sub.isDemo !== undefined ? (
                             <Badge variant="outline" className={sub.isDemo ? 
                               "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border-yellow-200 dark:border-yellow-800/30 group-hover:bg-yellow-200/70 dark:group-hover:bg-yellow-800/30 transition-colors" : 
-                              "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500 border-green-200 dark:border-green-800/30 group-hover:bg-green-200/70 dark:group-hover:bg-green-800/30 transition-colors"}>
+                                "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500 border-green-200 dark:border-green-800/30 group-hover:bg-green-200/70 dark:group-hover:bg-green-800/30 transition-colors"}>
                               {sub.isDemo ? (
                                 <div className="flex items-center gap-1">
                                   <Sparkles className="h-3 w-3" />
@@ -1301,7 +1315,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </React.Fragment>
                   ))
                 )}
               </TableBody>
