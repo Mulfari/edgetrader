@@ -66,7 +66,7 @@ const tokenImages: { [key: string]: string } = {
 };
 
 export default function NewOperation() {
-  const { tickers, loading: marketLoading, error: marketError } = useMarketData();
+  const { tickers, loading: marketLoading, error: marketError, toggleFavorite } = useMarketData();
   const [marketType, setMarketType] = useState<'spot' | 'futures'>('spot');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [orderType, setOrderType] = useState<'limit' | 'market'>('limit');
@@ -400,10 +400,7 @@ export default function NewOperation() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            const newPairs = tickers.map(p => 
-                              p.symbol === pair.symbol ? { ...p, favorite: !p.favorite } : p
-                            );
-                            console.log('Actualizando favoritos:', newPairs);
+                            toggleFavorite(pair.symbol);
                           }}
                           className={`flex-shrink-0 text-amber-400 hover:text-amber-300 transition-colors duration-150 ${
                             pair.favorite ? 'opacity-100' : 'opacity-50'
