@@ -119,38 +119,38 @@ export default function RootLayout({
                 border-r border-zinc-200/50 dark:border-zinc-800/40
                 transform transition-all duration-300 ease-in-out backdrop-blur-xl
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-                w-[5.5rem] hover:w-72 group
+                w-[4.5rem] sm:w-[5.5rem] hover:w-72 group
                 shadow-[0_0_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)]
                 overflow-hidden
               `}>
                 <div className="flex flex-col h-full w-full">
-                  <div className="h-20 flex items-center border-b border-zinc-200/50 dark:border-zinc-800/40 px-4 group-hover:px-6">
+                  <div className="h-16 sm:h-20 flex items-center border-b border-zinc-200/50 dark:border-zinc-800/40 px-3 sm:px-4 group-hover:px-6">
                     <div className="flex items-center gap-3">
                       <div className="relative shrink-0">
                         <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl blur-2xl opacity-30"></div>
-                        <div className="relative bg-gradient-to-br from-violet-500 to-indigo-500 w-11 h-11 rounded-xl flex items-center justify-center shadow-lg transform transition-transform duration-300 hover:scale-105">
-                          <BarChart3 className="h-6 w-6 text-white" />
+                        <div className="relative bg-gradient-to-br from-violet-500 to-indigo-500 w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shadow-lg transform transition-transform duration-300 hover:scale-105">
+                          <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                         </div>
                       </div>
                       <div className="transition-all duration-300 transform opacity-0 group-hover:opacity-100 whitespace-nowrap">
-                        <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
+                        <h1 className="text-base sm:text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
                           TradingDash
                         </h1>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                        <p className="text-[10px] sm:text-xs text-zinc-500 dark:text-zinc-400">
                           Panel de Control
                         </p>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex-1 overflow-y-auto overflow-x-hidden py-4">
-                    <nav className="space-y-1 px-3 group-hover:px-4">
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 sm:py-4">
+                    <nav className="space-y-1 px-2 sm:px-3 group-hover:px-4">
                       {menuItems.map((item) => (
                       <Link 
                           key={item.href}
                           href={item.href} 
                           className={`
-                            relative group/item flex items-center px-3 py-2.5 text-sm font-medium rounded-xl
+                            relative group/item flex items-center px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-xl
                             transition-all duration-300 ease-in-out
                             ${pathname === item.href
                               ? 'bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 text-violet-700 dark:text-violet-300 shadow-[0_2px_8px_-3px_rgba(139,92,246,0.3)] dark:shadow-[0_2px_8px_-3px_rgba(139,92,246,0.2)]'
@@ -211,7 +211,7 @@ export default function RootLayout({
               {/* Main content with navigation */}
               <div className={`
                 transition-all duration-500 ease-in-out
-                lg:pl-[5.5rem] group-hover:lg:pl-72
+                lg:pl-[4.5rem] lg:group-hover:pl-72 xl:pl-[5.5rem]
               `}>
                 {/* Top navigation */}
                 <header className={`
@@ -221,21 +221,21 @@ export default function RootLayout({
                   backdrop-blur-xl transition-all duration-300
                   ${isScrolled ? 'shadow-[0_8px_30px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_8px_30px_-15px_rgba(0,0,0,0.5)]' : ''}
                 `}>
-                  <div className="flex items-center justify-between h-20 px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center flex-1 gap-4">
+                  <div className="flex items-center justify-between h-16 sm:h-20 px-3 sm:px-6 lg:px-8">
+                    <div className="flex items-center flex-1 gap-3 sm:gap-4">
                       <button
                         type="button"
-                        className="lg:hidden -ml-0.5 -mt-0.5 h-10 w-10 inline-flex items-center justify-center rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200 transform hover:scale-105"
+                        className="lg:hidden -ml-0.5 -mt-0.5 h-9 w-9 sm:h-10 sm:w-10 inline-flex items-center justify-center rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-zinc-800 focus:outline-none transition-all duration-200 transform hover:scale-105"
                         onClick={() => setIsMobileMenuOpen(true)}
                       >
                         <span className="sr-only">Abrir menú</span>
-                        <Menu className="h-5 w-5" />
+                        <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
                       </button>
                       <div className="animate-in slide-in-from-left-5 duration-500">
-                        <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-indigo-500">
+                        <h1 className="text-lg sm:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-indigo-500">
                           {menuItems.find(item => item.href === pathname)?.name || ''}
                         </h1>
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                        <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
                           {menuItems.find(item => item.href === pathname)?.description || ''}
                         </p>
                       </div>
