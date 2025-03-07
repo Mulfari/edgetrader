@@ -14,7 +14,7 @@ import {
 import Link from 'next/link';
 import TradingViewChart from '@/components/TradingViewChart';
 import Image from 'next/image';
-import { useMarketData, MarketTicker } from '@/hooks/useMarketData';
+import { useMarketData, SpotMarketTicker } from '@/hooks/useMarketData';
 
 interface SubAccount {
   id: string;
@@ -34,26 +34,6 @@ interface OrderSummary {
   total: string;
   leverage: string | null;
   subAccounts: SubAccount[];
-}
-
-interface TradingPair {
-  symbol: string;
-  price: string;
-  indexPrice: string;
-  change: string;
-  volume: string;
-  leverage: string;
-  favorite: boolean;
-  high24h: string;
-  low24h: string;
-  volumeUSDT: string;
-  interestRate: {
-    long: string;
-    short: string;
-  };
-  nextFundingTime: number;
-  fundingRate: string;
-  openInterest: string;
 }
 
 // Mapa de imágenes de activos (usando URLs de CoinGecko)
@@ -91,7 +71,7 @@ export default function NewOperation() {
   const [selectedQuote, setSelectedQuote] = useState('USDT');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-  const [selectedPair, setSelectedPair] = useState<MarketTicker>({
+  const [selectedPair, setSelectedPair] = useState<SpotMarketTicker>({
     symbol: 'BTC',
     price: '89033.97',
     indexPrice: '89034.50',
@@ -100,15 +80,10 @@ export default function NewOperation() {
     high24h: '28,950.00',
     low24h: '28,150.00',
     volumeUSDT: '968.93M',
-    leverage: '10x',
-    favorite: false,
-    interestRate: {
-      long: '0.00%',
-      short: '0.00%'
-    },
-    nextFundingTime: Date.now() + 86400000,
-    fundingRate: '0.00%',
-    openInterest: '0.00 BTC'
+    marketType: 'spot',
+    bidPrice: '89033.00',
+    askPrice: '89034.00',
+    favorite: false
   });
 
   // Datos de ejemplo de subcuentas
@@ -256,33 +231,6 @@ export default function NewOperation() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Función para formatear el tiempo restante
-  const formatCountdown = (nextFundingTime: number) => {
-    const now = Date.now();
-    const timeLeft = nextFundingTime - now;
-    if (timeLeft <= 0) return '00:00:00';
-    
-    const hours = Math.floor(timeLeft / (60 * 60 * 1000));
-    const minutes = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
-    const seconds = Math.floor((timeLeft % (60 * 1000)) / 1000);
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  // Efecto para actualizar el countdown
-  useEffect(() => {
-    if (!selectedPair?.nextFundingTime) return;
-    
-    const interval = setInterval(() => {
-      setSelectedPair(prev => ({
-        ...prev,
-        nextFundingTime: prev.nextFundingTime
-      }));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [selectedPair?.nextFundingTime]);
-
   return (
     <div className="min-h-screen">
       {/* Barra superior de información del par */}
@@ -318,7 +266,9 @@ export default function NewOperation() {
                   <div className="flex items-center gap-2.5">
                     <span className="text-sm text-zinc-400 font-medium">{marketType === 'futures' ? 'Perpetual' : 'Spot'}</span>
                     <span className="w-1.5 h-1.5 rounded-full bg-zinc-700"></span>
-                    <span className="text-sm text-zinc-400 font-medium">{selectedPair.leverage} Leverage</span>
+                    <span className="text-sm text-zinc-400 font-medium">
+                      {marketType === 'spot' ? 'Spot Trading' : 'Futuros'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -524,15 +474,19 @@ export default function NewOperation() {
               <div className="text-sm text-zinc-400">24H Volume(USDT)</div>
             </div>
             <div className="flex flex-col">
-              <div className="text-base font-medium text-white">{selectedPair.openInterest}</div>
+              <div className="text-base font-medium text-white">
+                {marketType === 'spot' ? '-' : '0.00 BTC'}
+              </div>
               <div className="text-sm text-zinc-400">Open Interest(BTC)</div>
             </div>
             <div className="flex flex-col">
-              <div className="text-base font-medium text-amber-400">{selectedPair.fundingRate}</div>
+              <div className="text-base font-medium text-amber-400">
+                {marketType === 'spot' ? '-' : '0.00%'}
+              </div>
               <div className="text-sm text-zinc-400">Funding Rate</div>
             </div>
             <div className="flex flex-col">
-              <div className="text-base font-medium text-white">{formatCountdown(selectedPair.nextFundingTime)}</div>
+              <div className="text-base font-medium text-white">-</div>
               <div className="text-sm text-zinc-400">Countdown</div>
             </div>
           </div>
