@@ -91,10 +91,10 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
     }
 
     setError(null)
-    console.log("Intentando cargar subcuentas desde:", `${API_URL}/subaccounts`)
+    console.log("Intentando cargar subcuentas desde:", `${API_URL}/api/subaccounts`)
 
     try {
-      const res = await fetch(`${API_URL}/subaccounts`, {
+      const res = await fetch(`${API_URL}/api/subaccounts`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -196,7 +196,7 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
         apiKeyLength: newAccount.apiKey.length
       });
       
-      const res = await fetch(`${API_URL}/subaccounts`, {
+      const res = await fetch(`${API_URL}/api/subaccounts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -279,7 +279,7 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
     setError(null)
 
     try {
-      const res = await fetch(`${API_URL}/subaccounts/${selectedAccountId}`, {
+      const res = await fetch(`${API_URL}/api/subaccounts/${selectedAccountId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

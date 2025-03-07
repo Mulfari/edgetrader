@@ -1,20 +1,18 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ArrowLeft,
   ChevronDown,
-  TrendingUp,
-  TrendingDown,
-  Clock,
-  AlertCircle,
   Users,
   Check,
+  AlertCircle,
+  Clock,
 } from 'lucide-react';
 import Link from 'next/link';
 import TradingViewChart from '@/components/TradingViewChart';
 import Image from 'next/image';
-import { useMarketData, SpotMarketTicker } from '@/hooks/useMarketData';
+import { useMarketData, SpotMarketTicker, PerpetualMarketTicker, MarketTicker } from '@/hooks/useMarketData';
 
 interface SubAccount {
   id: string;
@@ -26,7 +24,7 @@ interface SubAccount {
 }
 
 interface OrderSummary {
-  marketType: 'spot' | 'futures';
+  marketType: 'spot' | 'perpetual';
   orderType: 'limit' | 'market';
   side: 'buy' | 'sell';
   price: string;
@@ -50,8 +48,29 @@ const tokenImages: { [key: string]: string } = {
 };
 
 export default function NewOperation() {
-  const { tickers, loading: marketLoading, error: marketError, toggleFavorite } = useMarketData();
-  const [marketType, setMarketType] = useState<'spot' | 'futures'>('spot');
+  const [marketType, setMarketType] = useState<'spot' | 'perpetual'>('spot');
+  const { tickers, loading: marketLoading, error: marketError, toggleFavorite } = useMarketData(marketType);
+  
+  // Referencia para el intervalo de actualización manual
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Configurar actualización automática en segundo plano
+  useEffect(() => {
+    // Limpiar intervalo existente si hay uno
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+    }
+    
+    // No necesitamos un intervalo manual adicional ya que el hook se actualiza automáticamente
+    
+    // Limpiar al desmontar
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, []);
+  
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [orderType, setOrderType] = useState<'limit' | 'market'>('limit');
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
@@ -71,20 +90,52 @@ export default function NewOperation() {
   const [selectedQuote, setSelectedQuote] = useState('USDT');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-  const [selectedPair, setSelectedPair] = useState<SpotMarketTicker>({
-    symbol: 'BTC',
-    price: '89033.97',
-    indexPrice: '89034.50',
-    change: '-1.62%',
-    volume: '968.93M',
-    high24h: '28,950.00',
-    low24h: '28,150.00',
-    volumeUSDT: '968.93M',
-    marketType: 'spot',
-    bidPrice: '89033.00',
-    askPrice: '89034.00',
-    favorite: false
-  });
+  const [selectedPair, setSelectedPair] = useState<MarketTicker>(
+    tickers.find(ticker => ticker.symbol === 'BTC') || {
+      symbol: 'BTC',
+      price: '0.00',
+      indexPrice: '0.00',
+      change: '0.00%',
+      volume: '0',
+      high24h: '0.00',
+      low24h: '0.00',
+      volumeUSDT: '0',
+      marketType: 'spot',
+      bidPrice: '0.00',
+      askPrice: '0.00',
+      favorite: false
+    } as SpotMarketTicker
+  );
+
+  // Actualizar selectedPair cuando los tickers cambien
+  useEffect(() => {
+    if (tickers.length > 0) {
+      const currentPair = tickers.find(ticker => ticker.symbol === selectedPair.symbol);
+      if (currentPair) {
+        setSelectedPair(currentPair);
+      } else {
+        // Si no se encuentra el par actual, seleccionar el primero
+        setSelectedPair(tickers[0]);
+      }
+    }
+  }, [tickers, selectedPair.symbol]);
+
+  // Actualizar selectedPair cuando cambia el tipo de mercado
+  useEffect(() => {
+    // Buscar el mismo símbolo en el nuevo tipo de mercado
+    const symbol = selectedPair.symbol;
+    console.log(`Market type changed to ${marketType}, looking for ${symbol} in tickers:`, tickers);
+    
+    const newPair = tickers.find(ticker => ticker.symbol === symbol);
+    if (newPair) {
+      console.log(`Found matching ticker for ${symbol} in ${marketType}:`, newPair);
+      setSelectedPair(newPair);
+    } else if (tickers.length > 0) {
+      // Si no se encuentra, seleccionar el primero
+      console.log(`No matching ticker found for ${symbol} in ${marketType}, using first available:`, tickers[0]);
+      setSelectedPair(tickers[0]);
+    }
+  }, [marketType, tickers]);
 
   // Datos de ejemplo de subcuentas
   const subAccounts: SubAccount[] = [
@@ -137,12 +188,22 @@ export default function NewOperation() {
     setAmount((availableAmount * (percentage / 100)).toFixed(4));
   };
 
-  // Función para formatear números con separadores de miles
+  // Función para formatear números con validación
   const formatNumber = (value: number | string) => {
-    return Number(value).toLocaleString('es-ES', {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(num)) return '0.00';
+    return num.toLocaleString('es-ES', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
+  };
+
+  // Función para validar y formatear precios
+  const safeFormatNumber = (value: string | undefined) => {
+    if (!value || value === '0.00' || isNaN(parseFloat(value))) {
+      return '0.00';
+    }
+    return formatNumber(parseFloat(value));
   };
 
   // Función para calcular el riesgo de la operación
@@ -163,37 +224,58 @@ export default function NewOperation() {
     return totalRisk <= availableBalance;
   };
 
+  // Función para calcular el total
+  const calculateTotal = () => {
+    if (!price || !amount) return '0';
+    return (parseFloat(price) * parseFloat(amount)).toFixed(2);
+  };
+
   // Función para validar los parámetros de la orden
-  const validateOrderParams = () => {
-    if (!selectedSubAccounts.length) {
-      return { valid: false, message: 'Debe seleccionar al menos una subcuenta' };
-    }
+  const validateOrderParams = (): boolean => {
     if (!price && orderType === 'limit') {
-      return { valid: false, message: 'El precio es requerido para órdenes límite' };
+      setError('Por favor, ingrese un precio para la orden límite.');
+      return false;
     }
+    
     if (!amount) {
-      return { valid: false, message: 'La cantidad es requerida' };
+      setError('Por favor, ingrese una cantidad.');
+      return false;
     }
+    
+    if (selectedSubAccounts.length === 0) {
+      setError('Por favor, seleccione al menos una subcuenta.');
+      return false;
+    }
+    
+    // Validar balance
     if (!validateBalance()) {
-      return { valid: false, message: 'Balance insuficiente para esta operación' };
+      return false;
     }
-    return { valid: true, message: '' };
+    
+    return true;
   };
 
   // Función para preparar el resumen de la orden
   const prepareOrderSummary = () => {
+    if (!validateOrderParams()) {
+      return;
+    }
+    
+    const selectedAccounts = subAccounts.filter(account => 
+      selectedSubAccounts.includes(account.id)
+    );
+    
     const summary: OrderSummary = {
-      marketType,
+      marketType: marketType,
       orderType,
       side,
-      price: orderType === 'market' ? 'Mercado' : price,
+      price: orderType === 'limit' ? price : 'Mercado',
       amount,
-      total,
-      leverage: marketType === 'futures' ? leverage : null,
-      subAccounts: selectedSubAccounts
-        .map(id => subAccounts.find(acc => acc.id === id))
-        .filter((acc): acc is SubAccount => acc !== undefined)
+      total: calculateTotal(),
+      leverage: marketType === 'perpetual' ? leverage : null,
+      subAccounts: selectedAccounts
     };
+    
     setOrderSummary(summary);
     setShowConfirmation(true);
   };
@@ -231,6 +313,81 @@ export default function NewOperation() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Función para formatear el tiempo restante hasta el próximo funding
+  const formatFundingCountdown = (nextFundingTime: number): string => {
+    const now = Date.now();
+    const timeLeft = nextFundingTime - now;
+    
+    if (timeLeft <= 0) return '00:00:00';
+    
+    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Estado para el countdown de funding
+  const [fundingCountdown, setFundingCountdown] = useState<string>('00:00:00');
+
+  // Actualizar el countdown cada segundo
+  useEffect(() => {
+    if (marketType === 'perpetual' && selectedPair && 'nextFundingTime' in selectedPair) {
+      // Actualización inicial
+      setFundingCountdown(formatFundingCountdown(selectedPair.nextFundingTime));
+      
+      // Actualizar cada segundo
+      const interval = setInterval(() => {
+        setFundingCountdown(formatFundingCountdown(selectedPair.nextFundingTime));
+      }, 1000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [selectedPair, marketType]);
+
+  // Efecto para mostrar información en la consola sobre el par seleccionado
+  useEffect(() => {
+    if (marketType === 'perpetual' && selectedPair) {
+      console.log('Selected perpetual pair:', selectedPair);
+      
+      // Verificar si el par tiene todas las propiedades necesarias
+      if ('openInterest' in selectedPair) {
+        console.log('Perpetual pair has all required properties');
+      } else {
+        console.warn('Perpetual pair is missing required properties:', selectedPair);
+      }
+    }
+  }, [selectedPair, marketType]);
+
+  // Función para formatear el countdown
+  const formatCountdown = (nextFundingTime: number): string => {
+    const now = Date.now();
+    const diff = nextFundingTime - now;
+    
+    if (diff <= 0) {
+      return 'Próximo funding';
+    }
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return `${hours}h ${minutes}m`;
+  };
+
+  // Estado para forzar la actualización del countdown
+  const [countdownKey, setCountdownKey] = useState(0);
+
+  // Efecto para actualizar el countdown cada minuto
+  useEffect(() => {
+    if (marketType === 'perpetual') {
+      const interval = setInterval(() => {
+        setCountdownKey(prev => prev + 1);
+      }, 60000); // Actualizar cada minuto
+      
+      return () => clearInterval(interval);
+    }
+  }, [marketType]);
+
   return (
     <div className="min-h-screen">
       {/* Barra superior de información del par */}
@@ -254,7 +411,6 @@ export default function NewOperation() {
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = tokenImages.default;
-                      console.error(`Error loading image for ${selectedPair.symbol}`);
                     }}
                   />
                 </div>
@@ -264,7 +420,7 @@ export default function NewOperation() {
                     <ChevronDown className={`w-5 h-5 text-zinc-400 transition-transform duration-300 group-hover:rotate-180`} />
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <span className="text-sm text-zinc-400 font-medium">{marketType === 'futures' ? 'Perpetual' : 'Spot'}</span>
+                    <span className="text-sm text-zinc-400 font-medium">{marketType === 'perpetual' ? 'Perpetual' : 'Spot'}</span>
                     <span className="w-1.5 h-1.5 rounded-full bg-zinc-700"></span>
                     <span className="text-sm text-zinc-400 font-medium">
                       {marketType === 'spot' ? 'Spot Trading' : 'Futuros'}
@@ -289,9 +445,9 @@ export default function NewOperation() {
                   Spot
                 </button>
                 <button
-                  onClick={() => setMarketType('futures')}
+                  onClick={() => setMarketType('perpetual')}
                   className={`px-4 py-2 text-sm rounded-lg transition-all duration-200 ${
-                    marketType === 'futures'
+                    marketType === 'perpetual'
                       ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/25'
                       : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                   }`}
@@ -305,11 +461,10 @@ export default function NewOperation() {
                 <div className="relative">
                   <input
                     type="text"
+                    placeholder="Buscar activo..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    onFocus={() => setShowSearchResults(true)}
-                    className="w-full bg-zinc-800 text-white placeholder-zinc-400 rounded-lg py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 transition-shadow duration-200"
-                    placeholder="Buscar por símbolo o nombre..."
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                   />
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -363,13 +518,17 @@ export default function NewOperation() {
                   <div className="text-right">Último Precio</div>
                   <div className="text-right">Cambio 24h</div>
                 </div>
-                {marketLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+                {marketError ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-rose-500">
+                    <AlertCircle className="w-6 h-6 mb-2" />
+                    <p className="text-sm text-center px-4">{marketError}</p>
                   </div>
-                ) : marketError ? (
-                  <div className="flex items-center justify-center py-8 text-rose-500">
-                    {marketError}
+                ) : filteredPairs.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                    <svg className="w-12 h-12 text-zinc-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <p className="text-sm text-zinc-400">No se encontraron pares de trading que coincidan con tu búsqueda</p>
                   </div>
                 ) : (
                   filteredPairs.map((pair) => (
@@ -413,33 +572,23 @@ export default function NewOperation() {
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.src = tokenImages.default;
-                              console.error(`Error loading image for ${pair.symbol}`);
                             }}
                           />
                         </div>
                         <span className="text-base font-medium text-white whitespace-nowrap min-w-0">{pair.symbol}/USDT</span>
                       </div>
                       <div className="text-right text-base font-medium text-white whitespace-nowrap">
-                        {pair.price}
+                        {safeFormatNumber(pair.price)}
                       </div>
                       <div className={`text-right text-base font-medium whitespace-nowrap ${
-                        pair.change.startsWith('-') 
+                        parseFloat(pair.change || '0') < 0 
                           ? 'text-rose-500' 
                           : 'text-emerald-500'
                       }`}>
-                        {pair.change}
+                        {pair.change || '0.00%'}
                       </div>
                     </div>
                   ))
-                )}
-                
-                {filteredPairs.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-                    <svg className="w-12 h-12 text-zinc-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <p className="text-sm text-zinc-400">No se encontraron pares de trading que coincidan con tu búsqueda</p>
-                  </div>
                 )}
               </div>
             </div>
@@ -447,58 +596,64 @@ export default function NewOperation() {
 
           {/* Información del par */}
           <div className="flex items-center gap-12 px-8">
-            <div className="flex flex-col">
-              <div className="text-xl font-bold text-white tracking-tight">{selectedPair.price}</div>
-              <div className="text-sm text-zinc-400">Mark Price</div>
-            </div>
-            <div className="flex flex-col">
-              <div className="text-xl font-bold text-white tracking-tight">{selectedPair.indexPrice}</div>
-              <div className="text-sm text-zinc-400">Index Price</div>
-            </div>
-            <div className="flex flex-col">
-              <div className={`text-base font-medium ${selectedPair.change.startsWith('-') ? 'text-rose-500' : 'text-emerald-500'}`}>
-                {selectedPair.change}
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-zinc-400 font-medium">Último precio</span>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-white">{safeFormatNumber(selectedPair.price)}</span>
+                <span className={`text-sm font-medium ${
+                  parseFloat(selectedPair.change || '0') < 0 
+                    ? 'text-rose-500' 
+                    : 'text-emerald-500'
+                }`}>
+                  {selectedPair.change || '0.00%'}
+                </span>
               </div>
-              <div className="text-sm text-zinc-400">24H Change</div>
             </div>
             <div className="flex flex-col">
-              <div className="text-base font-medium text-white">{selectedPair.high24h}</div>
-              <div className="text-sm text-zinc-400">24H High</div>
+              <div className="text-xl font-bold text-white tracking-tight">{safeFormatNumber(selectedPair.high24h)}</div>
+              <div className="text-sm text-zinc-400">Máximo 24h</div>
             </div>
             <div className="flex flex-col">
-              <div className="text-base font-medium text-white">{selectedPair.low24h}</div>
-              <div className="text-sm text-zinc-400">24H Low</div>
+              <div className="text-xl font-bold text-white tracking-tight">{safeFormatNumber(selectedPair.low24h)}</div>
+              <div className="text-sm text-zinc-400">Mínimo 24h</div>
             </div>
             <div className="flex flex-col">
-              <div className="text-base font-medium text-white">{selectedPair.volumeUSDT}</div>
-              <div className="text-sm text-zinc-400">24H Volume(USDT)</div>
+              <div className="text-xl font-bold text-white tracking-tight">{selectedPair.volumeUSDT || '0'}</div>
+              <div className="text-sm text-zinc-400">Volumen 24h</div>
             </div>
-            <div className="flex flex-col">
-              <div className="text-base font-medium text-white">
-                {marketType === 'spot' ? '-' : '0.00 BTC'}
-              </div>
-              <div className="text-sm text-zinc-400">Open Interest(BTC)</div>
-            </div>
-            <div className="flex flex-col">
-              <div className="text-base font-medium text-amber-400">
-                {marketType === 'spot' ? '-' : '0.00%'}
-              </div>
-              <div className="text-sm text-zinc-400">Funding Rate</div>
-            </div>
-            <div className="flex flex-col">
-              <div className="text-base font-medium text-white">-</div>
-              <div className="text-sm text-zinc-400">Countdown</div>
-            </div>
-          </div>
-
-          {/* Botones de la derecha */}
-          <div className="ml-auto flex items-center gap-2">
-            <button className="p-2 hover:bg-zinc-800 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-zinc-400" />
-            </button>
-            <button className="p-2 hover:bg-zinc-800 rounded-lg">
-              <AlertCircle className="w-5 h-5 text-zinc-400" />
-            </button>
+            
+            {/* Información específica para futuros */}
+            {marketType === 'perpetual' && selectedPair && (
+              <>
+                {/* Verificar si el par tiene las propiedades necesarias */}
+                {'openInterest' in selectedPair ? (
+                  <>
+                    <div className="flex flex-col">
+                      <div className="text-xl font-bold text-white tracking-tight">
+                        {(selectedPair as PerpetualMarketTicker).openInterest || '0'}
+                      </div>
+                      <div className="text-sm text-zinc-400">Open Interest</div>
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="text-xl font-bold text-amber-400 tracking-tight">
+                        {(selectedPair as PerpetualMarketTicker).fundingRate || '0.00%'}
+                      </div>
+                      <div className="text-sm text-zinc-400">Funding Rate</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-zinc-400" />
+                      <span key={countdownKey} className="text-sm font-medium text-zinc-900 dark:text-white">
+                        {formatCountdown((selectedPair as PerpetualMarketTicker).nextFundingTime)}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col">
+                    <div className="text-sm text-amber-500">Cargando datos de futuros...</div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -518,24 +673,6 @@ export default function NewOperation() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Panel del Gráfico */}
           <div className="lg:col-span-3 bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">BTC/USDT</h2>
-                <span className="text-2xl font-bold text-zinc-900 dark:text-white">28,450.00</span>
-                <span className="text-sm font-medium text-emerald-500">+2.45%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700">
-                  <TrendingUp className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
-                </button>
-                <button className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700">
-                  <Clock className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
-                </button>
-                <button className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700">
-                  <AlertCircle className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
-                </button>
-              </div>
-            </div>
             <TradingViewChart 
               symbol={`${selectedPair.symbol}USDT`}
               theme={theme}
@@ -801,15 +938,13 @@ export default function NewOperation() {
                 </div>
 
                 {/* Apalancamiento (solo para futuros) */}
-                {marketType === 'futures' && (
+                {marketType === 'perpetual' && (
                   <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
                     <div className="flex items-center justify-between mb-3">
                       <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                         Apalancamiento
                       </label>
-                      <span className="text-xs px-2 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                        Riesgo: {parseFloat(leverage)}x
-                      </span>
+                      <span className="text-sm text-zinc-500 dark:text-zinc-400">{leverage}x</span>
                     </div>
                     <div className="relative mb-3">
                       <input
@@ -894,28 +1029,14 @@ export default function NewOperation() {
               {/* Botón de Compra/Venta */}
               <button 
                 onClick={() => {
-                  const validation = validateOrderParams();
-                  if (!validation.valid) {
-                    setError(validation.message);
+                  if (!validateOrderParams()) {
                     return;
                   }
                   prepareOrderSummary();
                 }}
-                disabled={isLoading}
-                className={`w-full mt-6 py-4 px-4 rounded-lg text-base font-medium shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-zinc-800 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed ${
-                  side === 'buy'
-                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-emerald-500/25 dark:shadow-emerald-900/40 focus:ring-emerald-500'
-                    : 'bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white shadow-rose-500/25 dark:shadow-rose-900/40 focus:ring-rose-500'
-                }`}
+                className={`w-full py-3 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-lg transition-colors`}
               >
-                {isLoading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Procesando...</span>
-                  </div>
-                ) : (
-                  `${side === 'buy' ? 'Comprar' : 'Vender'}`
-                )}
+                Crear Orden
               </button>
             </div>
 
@@ -969,6 +1090,40 @@ export default function NewOperation() {
                     <span className="text-zinc-600 dark:text-zinc-400">1.2451 BTC</span>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Información de Mercado */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">24h Vol:</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                    {selectedPair?.volumeUSDT || '0'}
+                  </span>
+                </div>
+                {marketType === 'perpetual' && selectedPair && (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-zinc-500 dark:text-zinc-400">Open Interest:</span>
+                      <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                        {(selectedPair as PerpetualMarketTicker).openInterest || '0'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-zinc-500 dark:text-zinc-400">Funding Rate:</span>
+                      <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                        {(selectedPair as PerpetualMarketTicker).fundingRate || '0.00%'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-zinc-400" />
+                      <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                        {formatCountdown((selectedPair as PerpetualMarketTicker).nextFundingTime)}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

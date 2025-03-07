@@ -227,8 +227,8 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       }
       
       // Obtener el balance actual
-      console.log(`📡 Solicitando balance a: ${API_URL}/subaccounts/${accountId}/balance`);
-      const balanceRes = await fetch(`${API_URL}/subaccounts/${accountId}/balance`, {
+      console.log(`📡 Solicitando balance a: ${API_URL}/api/subaccounts/${accountId}/balance`);
+      const balanceRes = await fetch(`${API_URL}/api/subaccounts/${accountId}/balance`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -395,7 +395,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
       }
       
       setIsLoading(true);
-      const response = await fetch(`${API_URL}/subaccounts`, {
+      const response = await fetch(`${API_URL}/api/subaccounts`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -661,7 +661,7 @@ export default function SubAccounts({ onBalanceUpdate, onStatsUpdate, showBalanc
 
     try {
       const deletePromises = selectedAccountsToDelete.map(async (accountId) => {
-        const response = await fetch(`${API_URL}/subaccounts/${accountId}`, {
+        const response = await fetch(`${API_URL}/api/subaccounts/${accountId}`, {
           method: 'DELETE',
           headers: {
             Authorization: `Bearer ${token}`
