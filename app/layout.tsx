@@ -54,6 +54,8 @@ export default function RootLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [lastUpdate] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [userName, setUserName] = useState<string>('');
+  const [userEmail, setUserEmail] = useState<string>('');
   const router = useRouter();
   const pathname = usePathname();
 
@@ -65,6 +67,78 @@ export default function RootLayout({
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Efecto para obtener el perfil del usuario
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        // Obtener el token del localStorage
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          console.log('No hay token disponible');
+          return;
+        }
+        
+        // Usar la variable de entorno para la URL del backend
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        console.log('URL de la API:', apiUrl); // Para depuración
+        
+        // Hacer la petición al backend (incluyendo el prefijo 'api')
+        const response = await fetch(`${apiUrl}/api/user/profile`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include' // Incluir cookies en la petición
+        });
+        
+        if (!response.ok) {
+          console.error('Error en la respuesta:', response.status, response.statusText);
+          throw new Error(`Error al obtener el perfil del usuario: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Datos del perfil recibidos:', data); // Para depuración
+        
+        if (data.success && data.data) {
+          setUserName(data.data.name || 'Usuario');
+          setUserEmail(data.data.email || '');
+          // Guardar el nombre del usuario en localStorage para uso futuro
+          localStorage.setItem('userName', data.data.name || 'Usuario');
+        } else {
+          console.error('Respuesta sin datos de usuario:', data);
+          // Intentar usar el nombre guardado en localStorage
+          const savedName = localStorage.getItem('userName');
+          if (savedName) {
+            setUserName(savedName);
+          } else {
+            // Si no hay nombre guardado, usar un valor por defecto
+            setUserName('Usuario');
+          }
+        }
+      } catch (error) {
+        console.error('Error al obtener el perfil del usuario:', error);
+        // Si hay un error, intentar usar el nombre guardado en localStorage
+        const savedName = localStorage.getItem('userName');
+        if (savedName) {
+          setUserName(savedName);
+        } else {
+          // Si no hay nombre guardado, usar un valor por defecto
+          setUserName('Usuario');
+        }
+      }
+    };
+
+    // Solo ejecutar si no estamos en una página pública
+    const publicRoutes = ['/', '/login', '/register', '/signup'];
+    const isPublicPage = publicRoutes.includes(pathname);
+    
+    if (!isPublicPage) {
+      fetchUserProfile();
+    }
+  }, [pathname]);
 
   const handleLogout = () => {
     // Limpiar datos de autenticación
@@ -395,12 +469,12 @@ export default function RootLayout({
                               </div>
                               <div className={`hidden sm:block text-left transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isScrolled ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-zinc-900 dark:text-white whitespace-nowrap">John Doe</span>
+                                  <span className="text-sm font-medium text-zinc-900 dark:text-white whitespace-nowrap">{userName || 'Cargando...'}</span>
                                   <Badge variant="outline" className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20 whitespace-nowrap">
                                     Admin
                                   </Badge>
                                 </div>
-                                <div className="text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">john@example.com</div>
+                                <div className="text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{userEmail || 'Cargando...'}</div>
                               </div>
                             </button>
                           </DropdownMenuTrigger>
@@ -418,12 +492,12 @@ export default function RootLayout({
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
-                                    <h3 className="font-medium text-lg truncate">John Doe</h3>
+                                    <h3 className="font-medium text-lg truncate">{userName || 'Cargando...'}</h3>
                                     <Badge variant="outline" className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20 shrink-0">
                                       Admin
                                     </Badge>
                                   </div>
-                                  <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate mt-1">john@example.com</p>
+                                  <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate mt-1">{userEmail || 'Cargando...'}</p>
                                 </div>
                               </div>
 
