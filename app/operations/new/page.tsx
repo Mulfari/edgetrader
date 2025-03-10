@@ -73,25 +73,17 @@ export default function NewOperation() {
   // Función para probar la API de Bybit directamente
   const testBybitAPI = async () => {
     try {
-      console.log('Probando API de Bybit directamente...');
-      
       // Obtener datos del ticker para BTC
       const tickerResponse = await fetch('https://api.bybit.com/v5/market/tickers?category=linear&symbol=BTCUSDT');
       const tickerData = await tickerResponse.json();
-      
-      console.log('Respuesta de Bybit (ticker):', tickerData);
       
       // Obtener datos de funding para BTC
       const fundingResponse = await fetch('https://api.bybit.com/v5/market/funding/history?category=linear&symbol=BTCUSDT&limit=1');
       const fundingData = await fundingResponse.json();
       
-      console.log('Respuesta de Bybit (funding):', fundingData);
-      
       // Obtener datos del orderbook para BTC
       const orderbookResponse = await fetch('https://api.bybit.com/v5/market/orderbook?category=linear&symbol=BTCUSDT&limit=1');
       const orderbookData = await orderbookResponse.json();
-      
-      console.log('Respuesta de Bybit (orderbook):', orderbookData);
       
       // Verificar si se obtuvieron datos válidos
       if (tickerData?.result?.list?.[0]) {
@@ -102,14 +94,6 @@ export default function NewOperation() {
         const price = parseFloat(ticker.lastPrice || '0');
         const changePercent = parseFloat(ticker.price24hPcnt || '0') * 100;
         const fundingRate = parseFloat(funding.fundingRate || '0') * 100;
-        
-        console.log('Datos formateados:', {
-          symbol: 'BTC',
-          price: price.toFixed(2),
-          change: `${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%`,
-          openInterest: ticker.openInterest,
-          fundingRate: `${fundingRate.toFixed(4)}%`
-        });
       } else {
         console.error('No se obtuvieron datos válidos de Bybit');
       }
@@ -213,13 +197,7 @@ export default function NewOperation() {
     if (marketType === 'perpetual' && selectedPair) {
       // Verificar si el par tiene todas las propiedades necesarias
       if (!('openInterest' in selectedPair) || !('fundingRate' in selectedPair) || !('nextFundingTime' in selectedPair)) {
-        console.warn('Perpetual pair is missing required properties');
       } else {
-        console.log('Perpetual pair data:', {
-          symbol: selectedPair.symbol,
-          openInterest: (selectedPair as PerpetualMarketTicker).openInterest,
-          nextFundingTime: (selectedPair as PerpetualMarketTicker).nextFundingTime,
-        });
       }
     }
   }, [selectedPair, marketType]);
@@ -234,8 +212,6 @@ export default function NewOperation() {
           try {
             const { data } = JSON.parse(subAccountsCache);
             if (Array.isArray(data) && data.length > 0) {
-              console.log(`Se cargaron ${data.length} subcuentas desde el caché de useSubAccounts`);
-              
               // Convertir al formato requerido por la interfaz SubAccount
               const formattedSubAccounts: SubAccount[] = data.map(acc => ({
                 id: acc.id,
@@ -287,8 +263,6 @@ export default function NewOperation() {
             // Si existe la clave 'subAccounts', la usamos directamente
             const parsedSubAccounts = JSON.parse(subAccountsData);
             if (Array.isArray(parsedSubAccounts) && parsedSubAccounts.length > 0) {
-              console.log(`Se cargaron ${parsedSubAccounts.length} subcuentas desde localStorage`);
-              
               // Convertir al formato requerido por la interfaz SubAccount
               const formattedSubAccounts: SubAccount[] = parsedSubAccounts.map(acc => ({
                 id: acc.id,
@@ -337,7 +311,6 @@ export default function NewOperation() {
         const subAccountKeys = Object.keys(localStorage).filter(key => key.startsWith(CACHE_PREFIX));
         
         if (subAccountKeys.length === 0) {
-          console.log('No se encontraron subcuentas en caché');
           return;
         }
         
@@ -372,7 +345,6 @@ export default function NewOperation() {
         });
         
         if (cachedSubAccounts.length > 0) {
-          console.log(`Se cargaron ${cachedSubAccounts.length} subcuentas desde caché de balances`);
           setSubAccounts(cachedSubAccounts);
         }
       } catch (error) {
@@ -542,9 +514,22 @@ export default function NewOperation() {
   const formatNumber = (value: number | string) => {
     const num = typeof value === 'string' ? parseFloat(value) : value;
     if (isNaN(num)) return '0.00';
+    
+    // Determinar la precisión decimal según el valor
+    let fractionDigits = 2;
+    if (num < 0.0001) {
+      fractionDigits = 8; // Usar 8 decimales para valores extremadamente pequeños (como SHIB)
+    } else if (num < 0.01) {
+      fractionDigits = 6;
+    } else if (num < 1) {
+      fractionDigits = 4;
+    } else if (num < 10) {
+      fractionDigits = 3;
+    }
+    
     return num.toLocaleString('es-ES', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits
     });
   };
 
@@ -553,6 +538,7 @@ export default function NewOperation() {
     if (!value || value === '0.00' || isNaN(parseFloat(value))) {
       return '0.00';
     }
+    
     return formatNumber(parseFloat(value));
   };
 
@@ -790,7 +776,8 @@ export default function NewOperation() {
       setIsLoading(true);
       
       // Simular una llamada a la API
-      console.log('Ejecutando orden:', summary);
+      // Eliminar log innecesario
+      // console.log('Ejecutando orden:', summary);
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Mostrar mensaje de éxito
@@ -878,14 +865,10 @@ export default function NewOperation() {
             >
               <div className="flex items-center gap-5">
                 <div className="relative w-12 h-12">
-                  <Image
+                  <img
                     src={tokenImages[selectedPair.symbol] || tokenImages.default}
                     alt={selectedPair.symbol}
-                    width={48}
-                    height={48}
-                    className="rounded-full ring-2 ring-violet-500/30"
-                    priority
-                    loading="eager"
+                    className="rounded-full ring-2 ring-violet-500/30 w-12 h-12"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = tokenImages.default;
@@ -1035,7 +1018,7 @@ export default function NewOperation() {
               </div>
 
               {/* Lista de pares con scroll mejorado */}
-              <div className="max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+              <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
                 <div className="sticky top-0 z-10 grid grid-cols-[2fr,1fr,1fr] gap-4 px-4 py-2.5 text-xs font-medium text-zinc-400 bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-800">
                   <div>Par de Trading</div>
                   <div className="text-right">Último Precio</div>
@@ -1083,14 +1066,10 @@ export default function NewOperation() {
                           )}
                         </button>
                         <div className="relative w-8 h-8 flex-shrink-0">
-                          <Image
+                          <img
                             src={tokenImages[pair.symbol] || tokenImages.default}
                             alt={pair.symbol}
-                            fill
-                            sizes="32px"
-                            className="rounded-full ring-2 ring-violet-500/20 object-cover"
-                            priority
-                            loading="eager"
+                            className="rounded-full ring-2 ring-violet-500/20 object-cover w-8 h-8"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.src = tokenImages.default;

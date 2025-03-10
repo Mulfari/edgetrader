@@ -108,34 +108,9 @@ export const useMarketData = (marketType: 'spot' | 'perpetual' = 'spot') => {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       const endpoint = marketType === 'spot' ? 'spot' : 'perpetual';
       
-      // Reducir logs
-      if (showLoading) {
-        console.log(`Fetching ${marketType} data...`);
-      }
-      
       const response = await axios.get<MarketTicker[]>(`${apiUrl}/api/market/${endpoint}/tickers`);
       
       if (response.data && Array.isArray(response.data)) {
-        // Reducir logs
-        if (showLoading) {
-          console.log(`Received ${response.data.length} ${marketType} tickers`);
-        }
-        
-        // Verificar si hay datos para perpetual
-        if (marketType === 'perpetual') {
-          const sampleTicker = response.data[0];
-          if (sampleTicker) {
-            console.log('Sample perpetual ticker:', {
-              symbol: sampleTicker.symbol,
-              price: sampleTicker.price,
-              openInterest: (sampleTicker as PerpetualMarketTicker).openInterest,
-              fundingRate: (sampleTicker as PerpetualMarketTicker).fundingRate,
-              nextFundingTime: (sampleTicker as PerpetualMarketTicker).nextFundingTime
-            });
-          }
-        }
-        
-        // Asegurar que todos los campos tengan valores válidos
         const validatedTickers = response.data.map(ticker => {
           if (marketType === 'spot') {
             return {
@@ -161,15 +136,6 @@ export const useMarketData = (marketType: 'spot' | 'perpetual' = 'spot') => {
               'openInterest' in perpetualTicker && 
               'fundingRate' in perpetualTicker && 
               'nextFundingTime' in perpetualTicker;
-            
-            if (!hasPerpetualProps) {
-              console.warn(`Ticker ${ticker.symbol} missing perpetual properties:`, perpetualTicker);
-            }
-            
-            // Obtener datos de diagnóstico
-            if (ticker.symbol === 'BTC') {
-              console.log('BTC perpetual ticker from API:', perpetualTicker);
-            }
             
             return {
               symbol: ticker.symbol || '',
@@ -226,10 +192,9 @@ export const useMarketData = (marketType: 'spot' | 'perpetual' = 'spot') => {
     // Fetch inicial (mostrar carga)
     fetchTickers(true)
       .then(() => {
-        console.log(`Initial ${marketType} data loaded successfully`);
       })
       .catch(err => {
-        console.error(`Error loading initial ${marketType} data:`, err);
+        console.error(`Error in initial ${marketType} data load:`, err);
       });
 
     // Polling cada 2 segundos para mantener los datos actualizados (sin mostrar carga)
