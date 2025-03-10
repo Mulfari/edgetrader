@@ -271,20 +271,37 @@ export default function NewOperation() {
             console.log('✅ Subcuentas cargadas desde caché de useSubAccounts:', data.length);
             
             // Transformar los datos al formato que necesitamos
-            const formattedAccounts = data.map(account => ({
-              id: account.id,
-              name: account.name,
-              balance: {
-                btc: 0,
-                usdt: 0
+            const formattedAccounts = data.map(account => {
+              // Verificar si la cuenta ya tiene balance y assets
+              const hasBalance = account.balance !== undefined;
+              const hasAssets = Array.isArray(account.assets) && account.assets.length > 0;
+              
+              // Crear el objeto de balance con los datos disponibles
+              const balance = {
+                btc: hasAssets ? account.assets.find((asset: any) => asset.coin === 'BTC')?.walletBalance || 0 : 0,
+                usdt: hasAssets ? account.assets.find((asset: any) => asset.coin === 'USDT')?.walletBalance || 0 : 0
+              };
+              
+              // Si hay balance pero no hay assets, usar el balance total
+              if (hasBalance && !hasAssets) {
+                balance.usdt = account.balance || 0;
               }
-            }));
+              
+              return {
+                id: account.id,
+                name: account.name,
+                balance
+              };
+            });
             
             setSubAccounts(formattedAccounts);
             
-            // Cargar balances para cada subcuenta
+            // Cargar balances adicionales para cada subcuenta si es necesario
             formattedAccounts.forEach(account => {
-              loadBalanceForSubAccount(account.id);
+              // Solo cargar balance si no se pudo extraer de los datos de la subcuenta
+              if (account.balance.usdt === 0 && account.balance.btc === 0) {
+                loadBalanceForSubAccount(account.id);
+              }
             });
             
             return true;
@@ -337,8 +354,8 @@ export default function NewOperation() {
                 id: accountId,
                 name: balanceData.accountName || `Subcuenta ${accounts.length + 1}`,
                 balance: {
-                  btc: 0,
-                  usdt: balanceData.balance || 0
+                  btc: balanceData.data?.assets?.find((asset: any) => asset.coin === 'BTC')?.walletBalance || 0,
+                  usdt: balanceData.data?.balance || 0
                 }
               });
             } catch (error) {
@@ -903,16 +920,24 @@ export default function NewOperation() {
       try {
         const balanceData = JSON.parse(cachedData);
         
+        // Extraer los datos de balance
+        const data = balanceData.data || {};
+        const assets = data.assets || [];
+        
+        // Buscar los activos BTC y USDT
+        const btcAsset = assets.find((asset: any) => asset.coin === 'BTC');
+        const usdtAsset = assets.find((asset: any) => asset.coin === 'USDT');
+        
         // Actualizar el balance de la subcuenta en el estado
         setSubAccounts(prev => 
           prev.map(acc => {
-            if (acc.id === accountId && balanceData.balance) {
+            if (acc.id === accountId) {
               return {
                 ...acc,
                 balance: {
                   ...acc.balance,
-                  usdt: balanceData.balance || 0,
-                  btc: balanceData.assets?.find((asset: any) => asset.coin === 'BTC')?.walletBalance || 0
+                  usdt: data.balance || usdtAsset?.walletBalance || 0,
+                  btc: btcAsset?.walletBalance || 0
                 }
               };
             }
@@ -924,6 +949,8 @@ export default function NewOperation() {
       } catch (error) {
         console.error(`Error al cargar balance para subcuenta ${accountId}:`, error);
       }
+    } else {
+      console.log(`⚠️ No se encontró caché de balance para subcuenta ${accountId}`);
     }
   };
 
@@ -1419,7 +1446,7 @@ export default function NewOperation() {
                                       onError={(e) => {
                                         const target = e.target as HTMLImageElement;
                                         target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f7931a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpath d='M9.5 9.5h4.5a2 2 0 0 1 0 4H9.5'%3E%3C/path%3E%3Cpath d='M9.5 13.5h5a2 2 0 0 1 0 4H9.5'%3E%3C/path%3E%3Cpath d='M12 6v2'%3E%3C/path%3E%3Cpath d='M12 16v2'%3E%3C/path%3E%3C/svg%3E";
-                                      }}
+                                          }}
                                     />
                                   </div>
                                   <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200 text-right ml-2 truncate">
@@ -1439,7 +1466,7 @@ export default function NewOperation() {
                                       onError={(e) => {
                                         const target = e.target as HTMLImageElement;
                                         target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2326a17b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpath d='M12 6v12'%3E%3C/path%3E%3Cpath d='M8 10h8'%3E%3C/path%3E%3C/svg%3E";
-                                      }}
+                                          }}
                                     />
                                   </div>
                                   <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200 text-right ml-2 truncate">
