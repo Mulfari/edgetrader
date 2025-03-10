@@ -66,6 +66,26 @@ const tokenImages: { [key: string]: string } = {
 const CACHE_PREFIX = 'subaccount_balance_';
 const SUBACCOUNTS_CACHE_KEY = 'subaccounts_cache'; // Clave para el caché de useSubAccounts
 
+// Función de utilidad para acceder a localStorage de forma segura
+const safeLocalStorage = {
+  getItem: (key: string, defaultValue: any = null): any => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(key) || defaultValue;
+    }
+    return defaultValue;
+  },
+  setItem: (key: string, value: string): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(key, value);
+    }
+  },
+  removeItem: (key: string): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(key);
+    }
+  }
+};
+
 export default function NewOperation() {
   const [marketType, setMarketType] = useState<'spot' | 'perpetual'>('spot');
   const { tickers, loading: marketLoading, error: marketError, toggleFavorite, refreshData } = useMarketData(marketType);
@@ -158,28 +178,29 @@ export default function NewOperation() {
 
   // Estado para las subcuentas
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
-  const [selectedSubAccounts, setSelectedSubAccounts] = useState<string[]>(() => {
-    // Inicializar desde localStorage si está activada la opción de recordar
-    const remember = localStorage.getItem('rememberSubAccountSelection') === 'true';
+  const [selectedSubAccounts, setSelectedSubAccounts] = useState<string[]>([]);
+  const [rememberSubAccountSelection, setRememberSubAccountSelection] = useState(false);
+  const [isSubAccountSelectorOpen, setIsSubAccountSelectorOpen] = useState(false);
+  const subAccountSelectorRef = useRef<HTMLDivElement>(null);
+  
+  // Inicializar desde localStorage si está activada la opción de recordar
+  // Movemos esto a un useEffect para asegurarnos de que solo se ejecute en el cliente
+  useEffect(() => {
+    const remember = safeLocalStorage.getItem('rememberSubAccountSelection') === 'true';
+    setRememberSubAccountSelection(remember);
+    
     if (remember) {
-      try {
-        const savedSelection = localStorage.getItem('selectedSubAccounts');
-        if (savedSelection) {
-          return JSON.parse(savedSelection);
+      const savedSelection = safeLocalStorage.getItem('selectedSubAccounts');
+      if (savedSelection) {
+        try {
+          const parsed = JSON.parse(savedSelection);
+          setSelectedSubAccounts(Array.isArray(parsed) ? parsed : []);
+        } catch (error) {
+          console.error('Error al parsear selectedSubAccounts:', error);
         }
-      } catch (error) {
-        console.error('Error al cargar subcuentas seleccionadas:', error);
       }
     }
-    return [];
-  });
-  const [showSubAccountSelector, setShowSubAccountSelector] = useState(false);
-  const [rememberSubAccountSelection, setRememberSubAccountSelection] = useState<boolean>(
-    localStorage.getItem('rememberSubAccountSelection') === 'true'
-  );
-
-  // Referencia para saber si es la primera carga
-  const isFirstLoad = useRef(true);
+  }, []);
 
   // Estados para los mejores precios
   const [bestBidPrice, setBestBidPrice] = useState<string>('0.00');
@@ -191,6 +212,9 @@ export default function NewOperation() {
   // Añadir un estado para rastrear si se han modificado las subcuentas
   const [initialSubAccountSelection, setInitialSubAccountSelection] = useState<string[]>([]);
   const [hasModifiedSelection, setHasModifiedSelection] = useState(false);
+
+  // Referencia para saber si es la primera carga
+  const isFirstLoad = useRef(true);
 
   // Actualizar selectedPair cuando los tickers cambien
   useEffect(() => {
@@ -229,205 +253,133 @@ export default function NewOperation() {
     }
   }, [selectedPair, marketType]);
 
-  // Cargar subcuentas desde localStorage
-  useEffect(() => {
-    const loadSubAccountsFromCache = () => {
-      try {
-        // Primero intentamos cargar las subcuentas desde el caché de useSubAccounts
-        const subAccountsCache = localStorage.getItem(SUBACCOUNTS_CACHE_KEY);
-        if (subAccountsCache) {
-          try {
-            const { data } = JSON.parse(subAccountsCache);
-            if (Array.isArray(data) && data.length > 0) {
-              // Convertir al formato requerido por la interfaz SubAccount
-              const formattedSubAccounts: SubAccount[] = data.map(acc => ({
-                id: acc.id,
-                name: acc.name,
-                balance: {
-                  btc: 0, // Valor por defecto
-                  usdt: 0  // Valor por defecto
-                }
-              }));
-              
-              // Ahora buscamos los balances en el caché
-              formattedSubAccounts.forEach(account => {
-                const cacheKey = `${CACHE_PREFIX}${account.id}`;
-                const cachedData = localStorage.getItem(cacheKey);
-                
-                if (cachedData) {
-                  try {
-                    const { data, accountName } = JSON.parse(cachedData);
-                    if (data && data.assets) {
-                      // Actualizar el balance con los datos del caché
-                      account.balance = {
-                        btc: data.assets.find((asset: any) => asset.coin === 'BTC')?.walletBalance || 0,
-                        usdt: data.assets.find((asset: any) => asset.coin === 'USDT')?.walletBalance || 0
-                      };
-                      
-                      // Actualizar el nombre si está disponible en el caché
-                      if (accountName) {
-                        account.name = accountName;
-                      }
-                    }
-                  } catch (error) {
-                    console.error(`Error al procesar el caché para la cuenta ${account.id}:`, error);
-                  }
-                }
-              });
-              
-              setSubAccounts(formattedSubAccounts);
-              
-              // Validar que las subcuentas seleccionadas existan en las subcuentas cargadas
-              if (selectedSubAccounts.length > 0) {
-                const validSelection = selectedSubAccounts.filter(id => 
-                  formattedSubAccounts.some(acc => acc.id === id)
-                );
-                
-                // Solo actualizar si hay cambios
-                if (validSelection.length !== selectedSubAccounts.length) {
-                  setSelectedSubAccounts(validSelection);
-                }
-              }
-              
-              return;
-            }
-          } catch (error) {
-            console.error('Error al parsear subaccounts_cache desde localStorage:', error);
-          }
-        }
-        
-        // Si no encontramos datos en el caché de useSubAccounts, intentamos con 'subAccounts'
-        const subAccountsData = localStorage.getItem('subAccounts');
-        if (subAccountsData) {
-          try {
-            // Si existe la clave 'subAccounts', la usamos directamente
-            const parsedSubAccounts = JSON.parse(subAccountsData);
-            if (Array.isArray(parsedSubAccounts) && parsedSubAccounts.length > 0) {
-              // Convertir al formato requerido por la interfaz SubAccount
-              const formattedSubAccounts: SubAccount[] = parsedSubAccounts.map(acc => ({
-                id: acc.id,
-                name: acc.name,
-                balance: {
-                  btc: 0, // Valor por defecto
-                  usdt: 0  // Valor por defecto
-                }
-              }));
-              
-              // Ahora buscamos los balances en el caché
-              formattedSubAccounts.forEach(account => {
-                const cacheKey = `${CACHE_PREFIX}${account.id}`;
-                const cachedData = localStorage.getItem(cacheKey);
-                
-                if (cachedData) {
-                  try {
-                    const { data, accountName } = JSON.parse(cachedData);
-                    if (data && data.assets) {
-                      // Actualizar el balance con los datos del caché
-                      account.balance = {
-                        btc: data.assets.find((asset: any) => asset.coin === 'BTC')?.walletBalance || 0,
-                        usdt: data.assets.find((asset: any) => asset.coin === 'USDT')?.walletBalance || 0
-                      };
-                      
-                      // Actualizar el nombre si está disponible en el caché
-                      if (accountName) {
-                        account.name = accountName;
-                      }
-                    }
-                  } catch (error) {
-                    console.error(`Error al procesar el caché para la cuenta ${account.id}:`, error);
-                  }
-                }
-              });
-              
-              setSubAccounts(formattedSubAccounts);
-              
-              // Validar que las subcuentas seleccionadas existan en las subcuentas cargadas
-              if (selectedSubAccounts.length > 0) {
-                const validSelection = selectedSubAccounts.filter(id => 
-                  formattedSubAccounts.some(acc => acc.id === id)
-                );
-                
-                // Solo actualizar si hay cambios
-                if (validSelection.length !== selectedSubAccounts.length) {
-                  setSelectedSubAccounts(validSelection);
-                }
-              }
-              
-              return;
-            }
-          } catch (error) {
-            console.error('Error al parsear subAccounts desde localStorage:', error);
-          }
-        }
-        
-        // Si no hay datos en ninguno de los cachés anteriores, intentamos reconstruir desde el caché de balances
-        const subAccountKeys = Object.keys(localStorage).filter(key => key.startsWith(CACHE_PREFIX));
-        
-        if (subAccountKeys.length === 0) {
-          return;
-        }
-        
-        const cachedSubAccounts: SubAccount[] = [];
-        
-        // Procesar cada subcuenta en caché
-        subAccountKeys.forEach(key => {
-          try {
-            const accountId = key.replace(CACHE_PREFIX, '');
-            const cachedData = localStorage.getItem(key);
+  // Función para cargar subcuentas desde caché
+  const loadSubAccountsFromCache = () => {
+    try {
+      console.log('🔄 Intentando cargar subcuentas desde caché...');
+      
+      // Primero intentamos cargar las subcuentas desde el caché de useSubAccounts
+      const subAccountsCache = safeLocalStorage.getItem(SUBACCOUNTS_CACHE_KEY);
+      if (subAccountsCache) {
+        try {
+          const { data, timestamp } = JSON.parse(subAccountsCache);
+          
+          // Verificar si el caché es válido (menos de 5 minutos)
+          const isValid = Date.now() - timestamp < 5 * 60 * 1000;
+          
+          if (isValid && Array.isArray(data) && data.length > 0) {
+            console.log('✅ Subcuentas cargadas desde caché de useSubAccounts:', data.length);
             
-            if (!cachedData) return;
-            
-            const { data, accountName } = JSON.parse(cachedData);
-            
-            if (!data) return;
-            
-            // Convertir los datos en caché al formato de SubAccount
-            const subAccount: SubAccount = {
-              id: accountId,
-              name: accountName || `Cuenta ${accountId.substring(0, 4)}`, // Nombre genérico ya que no tenemos el nombre real
+            // Transformar los datos al formato que necesitamos
+            const formattedAccounts = data.map(account => ({
+              id: account.id,
+              name: account.name,
               balance: {
-                btc: data.assets?.find((asset: any) => asset.coin === 'BTC')?.walletBalance || 0,
-                usdt: data.assets?.find((asset: any) => asset.coin === 'USDT')?.walletBalance || 0
+                btc: 0,
+                usdt: 0
               }
-            };
+            }));
             
-            cachedSubAccounts.push(subAccount);
-          } catch (error) {
-            console.error('Error al procesar subcuenta en caché:', error);
+            setSubAccounts(formattedAccounts);
+            
+            // Cargar balances para cada subcuenta
+            formattedAccounts.forEach(account => {
+              loadBalanceForSubAccount(account.id);
+            });
+            
+            return true;
+          }
+        } catch (error) {
+          console.error('Error al parsear subaccounts_cache desde localStorage:', error);
+        }
+      }
+      
+      // Si no encontramos datos en el caché de useSubAccounts, intentamos con 'subAccounts'
+      const subAccountsData = safeLocalStorage.getItem('subAccounts');
+      if (subAccountsData) {
+        try {
+          const accounts = JSON.parse(subAccountsData);
+          
+          if (Array.isArray(accounts) && accounts.length > 0) {
+            console.log('✅ Subcuentas cargadas desde localStorage subAccounts:', accounts.length);
+            
+            setSubAccounts(accounts);
+            
+            // Cargar balances para cada subcuenta
+            accounts.forEach(account => {
+              loadBalanceForSubAccount(account.id);
+            });
+            
+            return true;
+          }
+        } catch (error) {
+          console.error('Error al parsear subAccounts desde localStorage:', error);
+        }
+      }
+      
+      // Si llegamos aquí, intentamos cargar balances individuales
+      const subAccountKeys = Object.keys(typeof window !== 'undefined' ? localStorage : {}).filter(key => key.startsWith(CACHE_PREFIX));
+      
+      if (subAccountKeys.length > 0) {
+        console.log('✅ Encontrados datos de balance para subcuentas:', subAccountKeys.length);
+        
+        const accounts: SubAccount[] = [];
+        
+        subAccountKeys.forEach(key => {
+          const accountId = key.replace(CACHE_PREFIX, '');
+          const cachedData = safeLocalStorage.getItem(key);
+          
+          if (cachedData) {
+            try {
+              const balanceData = JSON.parse(cachedData);
+              
+              accounts.push({
+                id: accountId,
+                name: balanceData.accountName || `Subcuenta ${accounts.length + 1}`,
+                balance: {
+                  btc: 0,
+                  usdt: balanceData.balance || 0
+                }
+              });
+            } catch (error) {
+              console.error(`Error al parsear datos de balance para ${accountId}:`, error);
+            }
           }
         });
         
-        if (cachedSubAccounts.length > 0) {
-          setSubAccounts(cachedSubAccounts);
+        if (accounts.length > 0) {
+          setSubAccounts(accounts);
+          return true;
         }
-      } catch (error) {
-        console.error('Error al cargar subcuentas desde caché:', error);
       }
-    };
-    
-    loadSubAccountsFromCache();
-  }, [rememberSubAccountSelection]);
+      
+      return false;
+    } catch (error) {
+      console.error('Error al cargar subcuentas desde caché:', error);
+      return false;
+    }
+  };
 
   // Guardar la selección de subcuentas cuando cambie
   useEffect(() => {
     if (rememberSubAccountSelection) {
-      localStorage.setItem('selectedSubAccounts', JSON.stringify(selectedSubAccounts));
+      safeLocalStorage.setItem('selectedSubAccounts', JSON.stringify(selectedSubAccounts));
     } else {
       // Si se desactiva la opción de recordar, eliminar la selección guardada
-      localStorage.removeItem('selectedSubAccounts');
+      safeLocalStorage.removeItem('selectedSubAccounts');
     }
   }, [selectedSubAccounts, rememberSubAccountSelection]);
 
   // Guardar la preferencia de recordar selección
   useEffect(() => {
-    localStorage.setItem('rememberSubAccountSelection', rememberSubAccountSelection.toString());
+    safeLocalStorage.setItem('rememberSubAccountSelection', rememberSubAccountSelection.toString());
     
     // Si se activa la opción de recordar, guardar la selección actual
     if (rememberSubAccountSelection) {
-      localStorage.setItem('selectedSubAccounts', JSON.stringify(selectedSubAccounts));
+      safeLocalStorage.setItem('selectedSubAccounts', JSON.stringify(selectedSubAccounts));
     } else {
       // Si se desactiva, eliminar la selección guardada
-      localStorage.removeItem('selectedSubAccounts');
+      safeLocalStorage.removeItem('selectedSubAccounts');
     }
   }, [rememberSubAccountSelection, selectedSubAccounts]);
 
@@ -926,7 +878,7 @@ export default function NewOperation() {
 
   // Actualizar la función que maneja la apertura del selector de subcuentas
   const handleToggleSubAccountSelector = () => {
-    if (!showSubAccountSelector) {
+    if (!isSubAccountSelectorOpen) {
       // Al abrir el selector, guardar la selección inicial
       setInitialSubAccountSelection([...selectedSubAccounts]);
       setHasModifiedSelection(false);
@@ -934,8 +886,55 @@ export default function NewOperation() {
       // Al cerrar el selector, resetear el estado de modificación
       setHasModifiedSelection(false);
     }
-    setShowSubAccountSelector(!showSubAccountSelector);
+    setIsSubAccountSelectorOpen(!isSubAccountSelectorOpen);
   };
+
+  // Función para cargar el balance de una subcuenta específica
+  const loadBalanceForSubAccount = (accountId: string) => {
+    // Esta función es un placeholder - en una implementación real, 
+    // aquí cargaríamos el balance desde la API o desde el caché
+    console.log(`📊 Cargando balance para subcuenta ${accountId}...`);
+    
+    // Intentar cargar desde caché
+    const cacheKey = `${CACHE_PREFIX}${accountId}`;
+    const cachedData = safeLocalStorage.getItem(cacheKey);
+    
+    if (cachedData) {
+      try {
+        const balanceData = JSON.parse(cachedData);
+        
+        // Actualizar el balance de la subcuenta en el estado
+        setSubAccounts(prev => 
+          prev.map(acc => {
+            if (acc.id === accountId && balanceData.balance) {
+              return {
+                ...acc,
+                balance: {
+                  ...acc.balance,
+                  usdt: balanceData.balance || 0,
+                  btc: balanceData.assets?.find((asset: any) => asset.coin === 'BTC')?.walletBalance || 0
+                }
+              };
+            }
+            return acc;
+          })
+        );
+        
+        console.log(`✅ Balance cargado desde caché para subcuenta ${accountId}`);
+      } catch (error) {
+        console.error(`Error al cargar balance para subcuenta ${accountId}:`, error);
+      }
+    }
+  };
+
+  // Cargar subcuentas desde caché cuando el componente se monte
+  useEffect(() => {
+    // Solo ejecutar en el cliente
+    if (typeof window !== 'undefined') {
+      console.log('🔄 Cargando subcuentas desde caché...');
+      loadSubAccountsFromCache();
+    }
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -1236,7 +1235,7 @@ export default function NewOperation() {
                   Subcuentas
                 </h3>
                 <div className="flex items-center gap-1.5">
-                  {showSubAccountSelector && (
+                  {isSubAccountSelectorOpen && (
                     <button
                       onClick={() => setRememberSubAccountSelection(!rememberSubAccountSelection)}
                       className="flex items-center text-xs text-zinc-500 dark:text-zinc-400 hover:text-violet-500 dark:hover:text-violet-400 transition-colors"
@@ -1257,15 +1256,15 @@ export default function NewOperation() {
                   <button
                     onClick={handleToggleSubAccountSelector}
                     className={`ml-2 p-1.5 rounded-full transition-colors ${
-                      showSubAccountSelector 
+                      isSubAccountSelectorOpen 
                         ? hasModifiedSelection
                           ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'
                           : 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-900/50'
                         : 'text-zinc-500 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 dark:hover:text-violet-400'
                     }`}
-                    title={showSubAccountSelector ? (hasModifiedSelection ? "Confirmar selección" : "Cerrar selector") : "Gestionar subcuentas"}
+                    title={isSubAccountSelectorOpen ? (hasModifiedSelection ? "Confirmar selección" : "Cerrar selector") : "Gestionar subcuentas"}
                   >
-                    {showSubAccountSelector ? (
+                    {isSubAccountSelectorOpen ? (
                       hasModifiedSelection ? (
                         <Check className="w-4 h-4" />
                       ) : (
@@ -1298,7 +1297,7 @@ export default function NewOperation() {
                       Añadir subcuenta
                     </Link>
                   </div>
-                ) : showSubAccountSelector ? (
+                ) : isSubAccountSelectorOpen ? (
                   <div className="space-y-2">
                     {subAccounts.map((account) => (
                       <div
