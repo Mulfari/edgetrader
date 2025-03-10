@@ -42,6 +42,26 @@ type AccountStats = {
   totalOperations: number;
 };
 
+// Función de utilidad para acceder a localStorage de forma segura
+const safeLocalStorage = {
+  getItem: (key: string, defaultValue: any = null): any => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(key) || defaultValue;
+    }
+    return defaultValue;
+  },
+  setItem: (key: string, value: string): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(key, value);
+    }
+  },
+  removeItem: (key: string): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(key);
+    }
+  }
+};
+
 export default function DashboardPage() {
   const [totalBalance, setTotalBalance] = useState<number | null>(null);
   const [realBalance, setRealBalance] = useState<number | null>(null);
@@ -65,7 +85,7 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = safeLocalStorage.getItem("token");
     if (!token) {
       router.push("/login");
       return;
@@ -91,8 +111,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     // Cargar preferencias guardadas
-    const savedBalanceDisplay = localStorage.getItem('balanceDisplayPreference');
-    const savedOperationsDisplay = localStorage.getItem('operationsDisplayPreference');
+    const savedBalanceDisplay = safeLocalStorage.getItem('balanceDisplayPreference');
+    const savedOperationsDisplay = safeLocalStorage.getItem('operationsDisplayPreference');
     
     if (savedBalanceDisplay) {
       setBalanceDisplay(savedBalanceDisplay as BalanceDisplayType);
@@ -145,8 +165,8 @@ export default function DashboardPage() {
     console.log("Actualizando lista de subcuentas después de operación exitosa");
     setShowCreateModal(false);
     setShowDeleteModal(false);
-    localStorage.removeItem("subAccounts");
-    localStorage.removeItem("accountBalances");
+    safeLocalStorage.removeItem("subAccounts");
+    safeLocalStorage.removeItem("accountBalances");
     
     setTimeout(() => {
       try {
@@ -166,7 +186,7 @@ export default function DashboardPage() {
 
   const handleBalanceDisplayChange = (type: BalanceDisplayType) => {
     setBalanceDisplay(type);
-    localStorage.setItem('balanceDisplayPreference', type);
+    safeLocalStorage.setItem('balanceDisplayPreference', type);
     // Cerrar el menú después de seleccionar
     const menu = document.getElementById('balance-menu');
     menu?.classList.add('hidden');
@@ -174,7 +194,7 @@ export default function DashboardPage() {
 
   const handleOperationsDisplayChange = (type: OperationsDisplayType) => {
     setOperationsDisplay(type);
-    localStorage.setItem('operationsDisplayPreference', type);
+    safeLocalStorage.setItem('operationsDisplayPreference', type);
     // Cerrar el menú después de seleccionar
     const menu = document.getElementById('operations-menu');
     menu?.classList.add('hidden');

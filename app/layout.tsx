@@ -46,6 +46,31 @@ const menuItems = [
   }
 ];
 
+// Función de utilidad para acceder a localStorage de forma segura
+const safeLocalStorage = {
+  getItem: (key: string, defaultValue: any = null): any => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(key) || defaultValue;
+    }
+    return defaultValue;
+  },
+  setItem: (key: string, value: string): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(key, value);
+    }
+  },
+  removeItem: (key: string): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(key);
+    }
+  },
+  forEach: (callback: (key: string) => void): void => {
+    if (typeof window !== 'undefined') {
+      Object.keys(localStorage).forEach(callback);
+    }
+  }
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -73,7 +98,7 @@ export default function RootLayout({
     const fetchUserProfile = async () => {
       try {
         // Obtener el token del localStorage
-        const token = localStorage.getItem('token');
+        const token = safeLocalStorage.getItem('token');
         
         if (!token) {
           console.log('No hay token disponible');
@@ -106,11 +131,11 @@ export default function RootLayout({
           setUserName(data.data.name || 'Usuario');
           setUserEmail(data.data.email || '');
           // Guardar el nombre del usuario en localStorage para uso futuro
-          localStorage.setItem('userName', data.data.name || 'Usuario');
+          safeLocalStorage.setItem('userName', data.data.name || 'Usuario');
         } else {
           console.error('Respuesta sin datos de usuario:', data);
           // Intentar usar el nombre guardado en localStorage
-          const savedName = localStorage.getItem('userName');
+          const savedName = safeLocalStorage.getItem('userName');
           if (savedName) {
             setUserName(savedName);
           } else {
@@ -121,7 +146,7 @@ export default function RootLayout({
       } catch (error) {
         console.error('Error al obtener el perfil del usuario:', error);
         // Si hay un error, intentar usar el nombre guardado en localStorage
-        const savedName = localStorage.getItem('userName');
+        const savedName = safeLocalStorage.getItem('userName');
         if (savedName) {
           setUserName(savedName);
         } else {
@@ -142,34 +167,34 @@ export default function RootLayout({
 
   const handleLogout = () => {
     // Limpiar datos de autenticación
-    localStorage.removeItem("token");
-    localStorage.removeItem("userName");
+    safeLocalStorage.removeItem("token");
+    safeLocalStorage.removeItem("userName");
     
     // Limpiar datos de subcuentas y su caché
-    localStorage.removeItem("subAccounts");
-    localStorage.removeItem("subaccounts_cache"); // Clave usada en useSubAccounts hook
-    localStorage.removeItem("user"); // Información del usuario guardada durante login
+    safeLocalStorage.removeItem("subAccounts");
+    safeLocalStorage.removeItem("subaccounts_cache"); // Clave usada en useSubAccounts hook
+    safeLocalStorage.removeItem("user"); // Información del usuario guardada durante login
     
     // Limpiar datos de balances y caché
-    localStorage.removeItem("accountBalances");
+    safeLocalStorage.removeItem("accountBalances");
     
     // Limpiar todo el caché de balances de subcuentas
-    Object.keys(localStorage).forEach(key => {
+    safeLocalStorage.forEach(key => {
       if (key.startsWith('subaccount_balance_')) {
-        localStorage.removeItem(key);
+        safeLocalStorage.removeItem(key);
       }
     });
     
     // Limpiar cualquier otro dato relacionado con balances
-    localStorage.removeItem("balanceDisplayPreference");
+    safeLocalStorage.removeItem("balanceDisplayPreference");
     
     // Limpiar datos de estado de la aplicación
-    localStorage.removeItem("selectedSubAccountId");
-    localStorage.removeItem("lastUpdate");
+    safeLocalStorage.removeItem("selectedSubAccountId");
+    safeLocalStorage.removeItem("lastUpdate");
     
     // No eliminar email/password si el usuario tiene "recordarme" activado
-    // localStorage.removeItem("email");
-    // localStorage.removeItem("password");
+    // safeLocalStorage.removeItem("email");
+    // safeLocalStorage.removeItem("password");
     
     console.log("✅ Sesión cerrada correctamente. Todos los datos en caché han sido eliminados.");
     

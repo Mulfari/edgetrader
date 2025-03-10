@@ -7,6 +7,26 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Función de utilidad para acceder a localStorage de forma segura
+const safeLocalStorage = {
+  getItem: (key: string, defaultValue: any = null): any => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(key) || defaultValue;
+    }
+    return defaultValue;
+  },
+  setItem: (key: string, value: string): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(key, value);
+    }
+  },
+  removeItem: (key: string): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(key);
+    }
+  }
+};
+
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -20,24 +40,22 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Verificar si hay una sesión activa
-    const token = localStorage.getItem("token");
+    // Verificar si ya hay una sesión activa
+    const token = safeLocalStorage.getItem("token");
     if (token) {
       setIsExistingSession(true);
-      setIsCheckingSession(false);
-      return;
     }
+    setIsCheckingSession(false);
 
     // Rellena los campos de correo electrónico y contraseña si hay datos almacenados en localStorage
-    const storedEmail = localStorage.getItem("email");
-    const storedPassword = localStorage.getItem("password");
+    const storedEmail = safeLocalStorage.getItem("email");
+    const storedPassword = safeLocalStorage.getItem("password");
     if (storedEmail && storedPassword) {
       setEmail(storedEmail);
       setPassword(storedPassword);
       setRememberMe(true);
     }
-    setIsCheckingSession(false);
-  }, [router]);
+  }, []);
 
   // Efecto para la redirección cuando se detecta una sesión activa
   useEffect(() => {
@@ -62,29 +80,52 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        localStorage.setItem("token", data.access_token);
+        safeLocalStorage.setItem("token", data.access_token);
         
         // Guardar información del usuario si está disponible
         if (data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
+          safeLocalStorage.setItem("user", JSON.stringify(data.user));
         }
         
         // Guardar subcuentas en caché si están disponibles
         if (data.subAccounts) {
+          // Guardar todas las subcuentas en el caché principal
           const cacheData = {
             data: data.subAccounts,
             timestamp: Date.now()
           };
-          localStorage.setItem("subaccounts_cache", JSON.stringify(cacheData));
+          safeLocalStorage.setItem("subaccounts_cache", JSON.stringify(cacheData));
           console.log("✅ Subcuentas guardadas en caché durante el login:", data.subAccounts.length);
+          
+          // Guardar los balances de cada subcuenta individualmente
+          data.subAccounts.forEach((subAccount: any) => {
+            if (subAccount.balance !== undefined || subAccount.assets) {
+              const balanceData = {
+                data: {
+                  balance: subAccount.balance || 0,
+                  assets: subAccount.assets || [],
+                  performance: subAccount.performance || 0,
+                  lastUpdate: subAccount.lastUpdate || Date.now(),
+                  accountName: subAccount.name
+                },
+                timestamp: Date.now(),
+                accountName: subAccount.name
+              };
+              
+              // Guardar en el formato que espera el componente SubAccounts
+              const CACHE_PREFIX = 'subaccount_balance_';
+              safeLocalStorage.setItem(`${CACHE_PREFIX}${subAccount.id}`, JSON.stringify(balanceData));
+              console.log(`✅ Balance guardado en caché para subcuenta ${subAccount.name}`);
+            }
+          });
         }
         
         if (rememberMe) {
-          localStorage.setItem("email", email);
-          localStorage.setItem("password", password);
+          safeLocalStorage.setItem("email", email);
+          safeLocalStorage.setItem("password", password);
         } else {
-          localStorage.removeItem("email");
-          localStorage.removeItem("password");
+          safeLocalStorage.removeItem("email");
+          safeLocalStorage.removeItem("password");
         }
         setSuccess(true);
         setTimeout(() => router.push("/dashboard"), 2000);

@@ -38,6 +38,26 @@ import SubAccountManager from "@/components/SubAccountManager";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+// Función de utilidad para acceder a localStorage de forma segura
+const safeLocalStorage = {
+  getItem: (key: string, defaultValue: any = null): any => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(key) || defaultValue;
+    }
+    return defaultValue;
+  },
+  setItem: (key: string, value: string): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(key, value);
+    }
+  },
+  removeItem: (key: string): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(key);
+    }
+  }
+};
+
 interface Asset {
   coin: string;
   walletBalance: number;
@@ -108,11 +128,12 @@ export interface SubAccountsProps {
 // Constantes para el caché
 const CACHE_PREFIX = 'subaccount_balance_';
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos en milisegundos
+const CACHE_KEY = 'subaccounts_cache'; // Clave para el caché de subcuentas
 
 // Funciones de caché
 const getCachedBalance = (accountId: string): AccountDetails | null => {
   try {
-    const cachedData = localStorage.getItem(`${CACHE_PREFIX}${accountId}`);
+    const cachedData = safeLocalStorage.getItem(`${CACHE_PREFIX}${accountId}`);
     if (!cachedData) return null;
 
     const { data, timestamp, accountName } = JSON.parse(cachedData);
@@ -120,7 +141,7 @@ const getCachedBalance = (accountId: string): AccountDetails | null => {
     
     // Verificar si el caché ha expirado
     if (now - timestamp > CACHE_DURATION) {
-      localStorage.removeItem(`${CACHE_PREFIX}${accountId}`);
+      safeLocalStorage.removeItem(`${CACHE_PREFIX}${accountId}`);
       return null;
     }
 
@@ -143,7 +164,7 @@ const setCachedBalance = (accountId: string, data: AccountDetails, accountName?:
       timestamp: Date.now(),
       accountName: accountName || 'Subcuenta' // Guardar el nombre de la subcuenta
     };
-    localStorage.setItem(`${CACHE_PREFIX}${accountId}`, JSON.stringify(cacheData));
+    safeLocalStorage.setItem(`${CACHE_PREFIX}${accountId}`, JSON.stringify(cacheData));
   } catch (error) {
     console.error('Error al guardar en caché:', error);
   }
@@ -152,14 +173,16 @@ const setCachedBalance = (accountId: string, data: AccountDetails, accountName?:
 const clearCache = (accountId?: string) => {
   try {
     if (accountId) {
-      localStorage.removeItem(`${CACHE_PREFIX}${accountId}`);
+      safeLocalStorage.removeItem(`${CACHE_PREFIX}${accountId}`);
     } else {
       // Limpiar todo el caché de balances
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith(CACHE_PREFIX)) {
-          localStorage.removeItem(key);
-        }
-      });
+      if (typeof window !== 'undefined') {
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith(CACHE_PREFIX)) {
+            safeLocalStorage.removeItem(key);
+          }
+        });
+      }
     }
   } catch (error) {
     console.error('Error al limpiar el caché:', error);
@@ -409,10 +432,10 @@ export default React.memo(function SubAccounts({ onBalanceUpdate, onStatsUpdate,
     return stats;
   };
 
-  const loadSubAccounts = async () => {
+  const loadSubAccounts = async (forceRefresh = false) => {
     try {
       console.log('🔄 Iniciando carga de subcuentas...');
-      const token = localStorage.getItem('token');
+      const token = safeLocalStorage.getItem('token');
       
       if (!token) {
         console.error('❌ No hay token de autenticación');
@@ -422,70 +445,115 @@ export default React.memo(function SubAccounts({ onBalanceUpdate, onStatsUpdate,
       
       setIsLoading(true);
       
-      // Primero intentamos cargar desde el caché
-      const CACHE_KEY = 'subaccounts_cache';
-      const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos en milisegundos
-      
-      let loadedAccounts: SubAccount[] = [];
-      let loadedFromCache = false;
-      
-      const cachedData = localStorage.getItem(CACHE_KEY);
-      if (cachedData) {
-        try {
-          const { data, timestamp } = JSON.parse(cachedData);
-          const isValid = Date.now() - timestamp < CACHE_DURATION;
-          
-          if (isValid && Array.isArray(data) && data.length > 0) {
-            console.log(`✅ Subcuentas cargadas desde caché:`, data.length);
-            loadedAccounts = data;
-            loadedFromCache = true;
-          } else {
-            console.log("⚠️ Caché de subcuentas expirado o vacío, solicitando datos frescos");
+      // Si no se fuerza la actualización, intentamos cargar desde el caché
+      if (!forceRefresh) {
+        // Primero intentamos cargar desde el caché de login
+        const CACHE_KEY = 'subaccounts_cache';
+        const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos en milisegundos
+        
+        const cachedData = safeLocalStorage.getItem(CACHE_KEY);
+        if (cachedData) {
+          try {
+            const { data, timestamp } = JSON.parse(cachedData);
+            const isValid = Date.now() - timestamp < CACHE_DURATION;
+            
+            if (isValid && Array.isArray(data) && data.length > 0) {
+              console.log(`✅ Subcuentas cargadas desde caché:`, data.length);
+              
+              // Actualizamos tanto el estado como la referencia
+              setSubAccounts(data);
+              subAccountsRef.current = data;
+              
+              // Esperamos a que el estado se actualice
+              await new Promise<void>(resolve => {
+                setTimeout(() => {
+                  console.log('✅ Estado de subcuentas actualizado desde caché');
+                  resolve();
+                }, 100);
+              });
+              
+              // Ahora cargamos los balances usando la referencia y el caché
+              await loadBalancesFromCache(data);
+              setIsLoading(false);
+              return;
+            } else {
+              console.log("⚠️ Caché de subcuentas expirado o vacío, solicitando datos frescos");
+            }
+          } catch (err) {
+            console.error("❌ Error al parsear caché de subcuentas:", err);
           }
-        } catch (err) {
-          console.error("❌ Error al parsear caché de subcuentas:", err);
+        } else {
+          console.log("ℹ️ No se encontró caché de subcuentas");
+        }
+        
+        // Si no hay caché válido, intentamos cargar desde el caché de usuario
+        const userData = safeLocalStorage.getItem('user');
+        if (userData) {
+          try {
+            const user = JSON.parse(userData);
+            if (user && user.subAccounts && Array.isArray(user.subAccounts) && user.subAccounts.length > 0) {
+              console.log(`✅ Subcuentas cargadas desde datos de usuario:`, user.subAccounts.length);
+              
+              // Actualizamos tanto el estado como la referencia
+              setSubAccounts(user.subAccounts);
+              subAccountsRef.current = user.subAccounts;
+              
+              // Esperamos a que el estado se actualice
+              await new Promise<void>(resolve => {
+                setTimeout(() => {
+                  console.log('✅ Estado de subcuentas actualizado desde datos de usuario');
+                  resolve();
+                }, 100);
+              });
+              
+              // Ahora cargamos los balances usando la referencia y el caché
+              await loadBalancesFromCache(user.subAccounts);
+              setIsLoading(false);
+              return;
+            }
+          } catch (err) {
+            console.error("❌ Error al parsear datos de usuario:", err);
+          }
         }
       } else {
-        console.log("ℹ️ No se encontró caché de subcuentas");
+        console.log("🔄 Forzando actualización de subcuentas desde el backend");
       }
       
-      // Si no pudimos cargar desde caché, hacemos la petición al backend
-      if (!loadedFromCache) {
-        try {
-          const response = await fetch(`${API_URL}/api/subaccounts`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          if (!response.ok) {
-            throw new Error('Error al cargar subcuentas');
-          }
-          
-          const data = await response.json();
-          console.log(`✅ Subcuentas cargadas desde API:`, data.length);
-          loadedAccounts = data;
-          
-          // Guardamos en caché para futuras consultas
-          localStorage.setItem(CACHE_KEY, JSON.stringify({
-            data,
-            timestamp: Date.now()
-          }));
-        } catch (error) {
-          console.error('❌ Error al cargar subcuentas desde API:', error);
-          throw error; // Re-lanzamos el error para que se maneje en el catch exterior
+      // Si llegamos aquí, necesitamos hacer la petición al backend
+      const response = await fetch(`${API_URL}/api/subaccounts`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al cargar subcuentas');
       }
       
-      // Actualizamos el estado y la referencia con los datos cargados
-      setSubAccounts(loadedAccounts);
-      subAccountsRef.current = loadedAccounts;
-      console.log('✅ Estado de subcuentas actualizado');
+      const data = await response.json();
+      console.log(`✅ Subcuentas cargadas desde API:`, data.length);
       
-      // Cargamos los balances
-      await loadBalancesFromCache(loadedAccounts);
+      // Actualizamos tanto el estado como la referencia
+      setSubAccounts(data);
+      subAccountsRef.current = data;
       
+      // Guardamos en caché para futuras consultas
+      safeLocalStorage.setItem(CACHE_KEY, JSON.stringify({
+        data,
+        timestamp: Date.now()
+      }));
+      
+      // Esperamos a que el estado se actualice
+      await new Promise<void>(resolve => {
+        setTimeout(() => {
+          console.log('✅ Estado de subcuentas actualizado desde API');
+          resolve();
+        }, 100);
+      });
+
+      // Ahora cargamos los balances usando la referencia y el caché
+      await loadBalancesFromCache(data);
     } catch (error) {
       console.error('❌ Error al cargar subcuentas:', error);
       setError('Error al cargar subcuentas. Por favor, intenta de nuevo.');
@@ -594,7 +662,7 @@ export default React.memo(function SubAccounts({ onBalanceUpdate, onStatsUpdate,
           } else {
             // Si no hay datos en caché, hacer la solicitud al backend
             console.log(`📡 No hay datos en caché para ${account.name}, solicitando al backend...`);
-            const token = localStorage.getItem('token');
+            const token = safeLocalStorage.getItem('token');
             if (!token) {
               throw new Error('No hay token de autenticación');
             }
@@ -711,83 +779,21 @@ export default React.memo(function SubAccounts({ onBalanceUpdate, onStatsUpdate,
     });
   };
 
-  // Modificar la función refreshAllBalances para limpiar el caché
+  // Modificar la función refreshAllBalances para forzar la actualización desde el backend
   const refreshAllBalances = async () => {
     if (loadingAllBalances || subAccounts.length === 0) return;
     
     try {
-      setLoadingAllBalances(true);
-      
       // Limpiar el caché antes de actualizar
       clearCache();
       
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
+      // Forzar la actualización desde el backend
+      await loadSubAccounts(true);
       
-      console.log(`🔄 Actualizando balances para ${subAccounts.length} subcuentas...`);
-      
-      // Crear un array de promesas para todas las subcuentas
-      const balancePromises = subAccounts.map(async (account: SubAccount) => {
-        try {
-          const details = await fetchAccountDetails(account.userId, account.id, token);
-          return { accountId: account.id, details };
-        } catch (error) {
-          console.error(`Error al actualizar balance para cuenta ${account.id}:`, error);
-          return { 
-            accountId: account.id, 
-            details: { 
-              balance: null, 
-              assets: [], 
-              performance: 0,
-              isError: true,
-              error: error instanceof Error ? error.message : 'Error desconocido',
-              isSimulated: false,
-              isDemo: account.isDemo || false
-            } 
-          };
-        }
-      });
-
-      // Procesar las promesas a medida que se completan
-      const balances: Record<string, AccountDetails> = {};
-      for (const promise of balancePromises) {
-        const result = await promise;
-        balances[result.accountId] = result.details;
-        
-        // Actualizar el estado de balances incrementalmente
-        setAccountBalances(prev => ({
-          ...prev,
-          [result.accountId]: result.details
-        }));
-        
-        // Notificar al componente padre si existe el callback
-        if (onBalanceUpdate) {
-          onBalanceUpdate(result.accountId, result.details);
-        }
-      }
-      
-      // Calcular estadísticas
-      const stats = calculateStats(subAccounts, balances);
-      
-      // Comparar con las estadísticas anteriores antes de notificar al componente padre
-      const statsChanged = !prevStatsRef.current || 
-        JSON.stringify(prevStatsRef.current) !== JSON.stringify(stats);
-      
-      if (statsChanged && onStatsUpdate) {
-        console.log('📊 Estadísticas actualizadas, notificando al componente padre');
-        onStatsUpdate(stats);
-        prevStatsRef.current = stats;
-      } else {
-        console.log('📊 Estadísticas sin cambios, no se notifica al componente padre');
-      }
+      console.log('✅ Subcuentas y balances actualizados correctamente');
     } catch (error) {
       console.error("❌ Error al actualizar balances:", error);
       setError("Error al actualizar los balances. Intenta nuevamente más tarde.");
-    } finally {
-      setLoadingAllBalances(false);
     }
   };
 
@@ -795,10 +801,31 @@ export default React.memo(function SubAccounts({ onBalanceUpdate, onStatsUpdate,
   useEffect(() => {
     if (!initialLoadDone.current) {
       console.log('🔄 Efecto de carga inicial activado - Una sola vez');
-      loadSubAccounts();
+      loadSubAccounts(false); // Usar datos del caché si están disponibles
       initialLoadDone.current = true;
     }
   }, []); // Sin dependencias para que solo se ejecute al montar
+
+  // Efecto para escuchar eventos de actualización desde el componente padre
+  useEffect(() => {
+    const handleRefresh = () => {
+      console.log('🔄 Evento de actualización recibido');
+      loadSubAccounts(false); // Usar datos del caché si están disponibles
+    };
+    
+    // Añadir el listener al componente
+    const componentElement = componentRef.current;
+    if (componentElement) {
+      componentElement.addEventListener('refresh', handleRefresh);
+    }
+    
+    // Limpiar el listener al desmontar
+    return () => {
+      if (componentElement) {
+        componentElement.removeEventListener('refresh', handleRefresh);
+      }
+    };
+  }, []);
 
   return (
     <div className="space-y-4" ref={componentRef}>
