@@ -199,7 +199,7 @@ export default function LandingPage() {
                   className="inline-flex items-center px-8 py-3 border-2 border-violet-500 text-base font-medium rounded-xl text-violet-600 dark:text-violet-400 bg-transparent hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all duration-300 transform hover:scale-105"
                 >
                   <Play className="mr-2 h-5 w-5" />
-                  Ver Demo
+                  Próximamente
                 </button>
               </div>
             </motion.div>
@@ -223,24 +223,34 @@ export default function LandingPage() {
                 animate={{ scale: 1 }}
                 exit={{ scale: 0.95 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-xl max-w-3xl w-full"
+                className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-3xl w-full"
               >
-                <div className="relative pt-[56.25%]">
-                  <iframe
-                    className="absolute inset-0 w-full h-full"
-                    src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                    title="Product Demo"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  ></iframe>
+                <div className="relative flex flex-col items-center justify-center min-h-[300px] bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20 rounded-xl p-8">
+                  <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10 dark:opacity-20 rounded-xl" />
+                  
+                  <h3 className="text-3xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500 mb-4">
+                    Próximamente
+                  </h3>
+                  
+                  <p className="text-gray-600 dark:text-gray-300 text-center mb-6 max-w-md">
+                    Estamos trabajando en un video demostrativo que muestre todas las características de nuestra plataforma. ¡Vuelve pronto para verlo!
+                  </p>
+                  
+                  <div className="flex items-center justify-center space-x-2 text-violet-500 dark:text-violet-400 animate-pulse">
+                    <div className="w-3 h-3 rounded-full bg-violet-500 dark:bg-violet-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-violet-500 dark:bg-violet-400 animation-delay-200"></div>
+                    <div className="w-3 h-3 rounded-full bg-violet-500 dark:bg-violet-400 animation-delay-500"></div>
+                  </div>
                 </div>
-                <button
-                  onClick={() => setShowVideo(false)}
-                  className="mt-4 px-4 py-2 bg-gradient-to-r from-violet-500 to-indigo-500 text-white rounded-xl hover:from-violet-600 hover:to-indigo-600 transition-all duration-300"
-                >
-                  Cerrar
-                </button>
+                
+                <div className="flex justify-center mt-6">
+                  <button
+                    onClick={() => setShowVideo(false)}
+                    className="px-6 py-2.5 bg-gradient-to-r from-violet-500 to-indigo-500 text-white rounded-xl hover:from-violet-600 hover:to-indigo-600 transition-all duration-300 shadow-md hover:shadow-lg"
+                  >
+                    Cerrar
+                  </button>
+                </div>
               </motion.div>
             </motion.div>
           )}

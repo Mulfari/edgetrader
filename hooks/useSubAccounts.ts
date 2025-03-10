@@ -23,24 +23,50 @@ export function useSubAccounts() {
       if (!forceRefresh) {
         const cachedData = localStorage.getItem(CACHE_KEY);
         if (cachedData) {
-          const { data, timestamp }: CacheData = JSON.parse(cachedData);
-          const isValid = Date.now() - timestamp < CACHE_DURATION;
-          
-          if (isValid) {
-            setSubAccounts(data);
-            setIsLoading(false);
-            return;
+          try {
+            const { data, timestamp }: CacheData = JSON.parse(cachedData);
+            const isValid = Date.now() - timestamp < CACHE_DURATION;
+            
+            if (isValid && Array.isArray(data) && data.length > 0) {
+              console.log("✅ Usando subcuentas desde caché:", data.length);
+              setSubAccounts(data);
+              setIsLoading(false);
+              return;
+            } else {
+              console.log("⚠️ Caché de subcuentas expirado o vacío, solicitando datos frescos");
+            }
+          } catch (err) {
+            console.error("❌ Error al parsear caché de subcuentas:", err);
           }
+        } else {
+          console.log("ℹ️ No se encontró caché de subcuentas");
         }
+      } else {
+        console.log("🔄 Forzando actualización de subcuentas");
       }
 
       // Si no hay caché válido o se fuerza la actualización, hacer la petición
-      const response = await fetch('/api/subaccounts');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No hay token de autenticación');
+      }
+
+      const response = await fetch('/api/subaccounts', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
       if (!response.ok) {
-        throw new Error('Error al cargar las subcuentas');
+        throw new Error(`Error al cargar las subcuentas: ${response.status}`);
       }
 
       const data = await response.json();
+      
+      // Validar que los datos son un array
+      if (!Array.isArray(data)) {
+        throw new Error('Formato de datos incorrecto');
+      }
       
       // Guardar en caché
       const cacheData: CacheData = {
@@ -48,9 +74,11 @@ export function useSubAccounts() {
         timestamp: Date.now()
       };
       localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+      console.log("✅ Subcuentas actualizadas y guardadas en caché:", data.length);
       
       setSubAccounts(data);
     } catch (err) {
+      console.error("❌ Error en useSubAccounts:", err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
       setIsLoading(false);

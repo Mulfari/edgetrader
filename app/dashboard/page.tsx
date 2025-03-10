@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { 
   LineChart, 
   DollarSign,
@@ -124,7 +124,8 @@ export default function DashboardPage() {
     };
   }, []);
 
-  const handleStatsUpdate = (stats: AccountStats) => {
+  const handleStatsUpdate = useCallback((stats: AccountStats) => {
+    // Usamos una función de actualización de estado para evitar dependencias
     setActiveSubAccounts(stats.totalAccounts);
     setRealAccounts(stats.realAccounts);
     setDemoAccounts(stats.demoAccounts);
@@ -135,7 +136,10 @@ export default function DashboardPage() {
     setOpenOperations(stats.openOperations);
     setClosedOperations(stats.closedOperations);
     setIsLoading(false);
-  };
+    
+    // Actualizamos la última actualización
+    setLastUpdate(new Date());
+  }, []);
 
   const handleSubAccountSuccess = () => {
     console.log("Actualizando lista de subcuentas después de operación exitosa");
@@ -280,6 +284,20 @@ export default function DashboardPage() {
     return 'text-yellow-400';
   };
 
+  const toggleShowBalance = useCallback(() => {
+    setShowBalance(prev => !prev);
+  }, []);
+
+  // Memorizamos el componente SubAccounts para evitar renderizados innecesarios
+  const subAccountsComponent = useMemo(() => {
+    return (
+      <SubAccounts 
+        onStatsUpdate={handleStatsUpdate} 
+        showBalance={showBalance} 
+      />
+    );
+  }, [handleStatsUpdate, showBalance]);
+
   return (
     <div className="px-4 sm:px-6 lg:px-8" onMouseMove={handleMouseMove}>
       {/* Tooltip global */}
@@ -332,7 +350,7 @@ export default function DashboardPage() {
                   <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200" />
                 </button>
                 <button
-                  onClick={() => setShowBalance(!showBalance)}
+                  onClick={toggleShowBalance}
                   className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 hover:scale-105"
                 >
                   {showBalance ? (
@@ -594,7 +612,7 @@ export default function DashboardPage() {
       {/* Subcuentas Section */}
       <div className="space-y-4">
         <div id="subaccounts-component" className="px-0 sm:px-2">
-          <SubAccounts onStatsUpdate={handleStatsUpdate} showBalance={showBalance} />
+          {subAccountsComponent}
         </div>
       </div>
 

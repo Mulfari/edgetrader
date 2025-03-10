@@ -6,6 +6,9 @@ import {
   ChevronDown,
   Users,
   Check,
+  Settings,
+  X,
+  PlusCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import TradingViewChart from '@/components/TradingViewChart';
@@ -155,8 +158,25 @@ export default function NewOperation() {
 
   // Estado para las subcuentas
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
-  const [selectedSubAccounts, setSelectedSubAccounts] = useState<string[]>([]);
+  const [selectedSubAccounts, setSelectedSubAccounts] = useState<string[]>(() => {
+    // Inicializar desde localStorage si está activada la opción de recordar
+    const remember = localStorage.getItem('rememberSubAccountSelection') === 'true';
+    if (remember) {
+      try {
+        const savedSelection = localStorage.getItem('selectedSubAccounts');
+        if (savedSelection) {
+          return JSON.parse(savedSelection);
+        }
+      } catch (error) {
+        console.error('Error al cargar subcuentas seleccionadas:', error);
+      }
+    }
+    return [];
+  });
   const [showSubAccountSelector, setShowSubAccountSelector] = useState(false);
+  const [rememberSubAccountSelection, setRememberSubAccountSelection] = useState<boolean>(
+    localStorage.getItem('rememberSubAccountSelection') === 'true'
+  );
 
   // Referencia para saber si es la primera carga
   const isFirstLoad = useRef(true);
@@ -164,6 +184,13 @@ export default function NewOperation() {
   // Estados para los mejores precios
   const [bestBidPrice, setBestBidPrice] = useState<string>('0.00');
   const [bestAskPrice, setBestAskPrice] = useState<string>('0.00');
+
+  // Añadir un nuevo estado para controlar la animación del botón de cerrar
+  const [highlightCloseButton, setHighlightCloseButton] = useState(false);
+
+  // Añadir un estado para rastrear si se han modificado las subcuentas
+  const [initialSubAccountSelection, setInitialSubAccountSelection] = useState<string[]>([]);
+  const [hasModifiedSelection, setHasModifiedSelection] = useState(false);
 
   // Actualizar selectedPair cuando los tickers cambien
   useEffect(() => {
@@ -249,6 +276,19 @@ export default function NewOperation() {
               });
               
               setSubAccounts(formattedSubAccounts);
+              
+              // Validar que las subcuentas seleccionadas existan en las subcuentas cargadas
+              if (selectedSubAccounts.length > 0) {
+                const validSelection = selectedSubAccounts.filter(id => 
+                  formattedSubAccounts.some(acc => acc.id === id)
+                );
+                
+                // Solo actualizar si hay cambios
+                if (validSelection.length !== selectedSubAccounts.length) {
+                  setSelectedSubAccounts(validSelection);
+                }
+              }
+              
               return;
             }
           } catch (error) {
@@ -300,6 +340,19 @@ export default function NewOperation() {
               });
               
               setSubAccounts(formattedSubAccounts);
+              
+              // Validar que las subcuentas seleccionadas existan en las subcuentas cargadas
+              if (selectedSubAccounts.length > 0) {
+                const validSelection = selectedSubAccounts.filter(id => 
+                  formattedSubAccounts.some(acc => acc.id === id)
+                );
+                
+                // Solo actualizar si hay cambios
+                if (validSelection.length !== selectedSubAccounts.length) {
+                  setSelectedSubAccounts(validSelection);
+                }
+              }
+              
               return;
             }
           } catch (error) {
@@ -353,13 +406,33 @@ export default function NewOperation() {
     };
     
     loadSubAccountsFromCache();
-  }, []);
+  }, [rememberSubAccountSelection]);
+
+  // Guardar la selección de subcuentas cuando cambie
+  useEffect(() => {
+    if (rememberSubAccountSelection) {
+      localStorage.setItem('selectedSubAccounts', JSON.stringify(selectedSubAccounts));
+    } else {
+      // Si se desactiva la opción de recordar, eliminar la selección guardada
+      localStorage.removeItem('selectedSubAccounts');
+    }
+  }, [selectedSubAccounts, rememberSubAccountSelection]);
+
+  // Guardar la preferencia de recordar selección
+  useEffect(() => {
+    localStorage.setItem('rememberSubAccountSelection', rememberSubAccountSelection.toString());
+    
+    // Si se activa la opción de recordar, guardar la selección actual
+    if (rememberSubAccountSelection) {
+      localStorage.setItem('selectedSubAccounts', JSON.stringify(selectedSubAccounts));
+    } else {
+      // Si se desactiva, eliminar la selección guardada
+      localStorage.removeItem('selectedSubAccounts');
+    }
+  }, [rememberSubAccountSelection, selectedSubAccounts]);
 
   // Categorías de activos
-  const assetCategories = {
-    defi: ['UNI', 'LINK', 'AAVE', 'CAKE', 'COMP', 'MKR', 'SNX', 'YFI', 'SUSHI'],
-    layer1: ['BTC', 'ETH', 'SOL', 'ADA', 'AVAX', 'DOT', 'NEAR', 'ATOM', 'MATIC', 'FTM']
-  };
+  const topAssets = ['BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOGE', 'AVAX', 'MATIC', 'DOT', 'LINK'];
 
   // Filtrar pares según la búsqueda y pestaña activa
   const filteredPairs = tickers.filter(pair => {
@@ -369,10 +442,8 @@ export default function NewOperation() {
       return matchesSearch;
     } else if (activeTab === 'favorites') {
       return matchesSearch && pair.favorite;
-    } else if (activeTab === 'defi') {
-      return matchesSearch && assetCategories.defi.includes(pair.symbol);
-    } else if (activeTab === 'layer1') {
-      return matchesSearch && assetCategories.layer1.includes(pair.symbol);
+    } else if (activeTab === 'top') {
+      return matchesSearch && topAssets.includes(pair.symbol);
     }
     
     return matchesSearch;
@@ -853,6 +924,19 @@ export default function NewOperation() {
     }
   }, [selectedPair]);
 
+  // Actualizar la función que maneja la apertura del selector de subcuentas
+  const handleToggleSubAccountSelector = () => {
+    if (!showSubAccountSelector) {
+      // Al abrir el selector, guardar la selección inicial
+      setInitialSubAccountSelection([...selectedSubAccounts]);
+      setHasModifiedSelection(false);
+    } else {
+      // Al cerrar el selector, resetear el estado de modificación
+      setHasModifiedSelection(false);
+    }
+    setShowSubAccountSelector(!showSubAccountSelector);
+  };
+
   return (
     <div className="min-h-screen">
       {/* Barra superior de información del par */}
@@ -920,25 +1004,25 @@ export default function NewOperation() {
               </div>
 
               {/* Barra de búsqueda mejorada */}
-              <div className="p-3 border-b border-zinc-800">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Buscar activo..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    autoFocus
-                  />
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="p-4 border-b border-zinc-800">
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg className="asset-search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
+                  <input
+                    type="text"
+                    placeholder="Buscar activo por nombre o símbolo..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="asset-search-input"
+                    autoFocus
+                  />
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-zinc-300 transition-colors"
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-zinc-400 hover:text-zinc-200 transition-colors"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -946,75 +1030,44 @@ export default function NewOperation() {
                     </button>
                   )}
                 </div>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {['BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOGE'].map(symbol => (
-                    <button
-                      key={symbol}
-                      onClick={() => {
-                        setSearchQuery(symbol);
-                        const pair = tickers.find(t => t.symbol === symbol);
-                        if (pair) {
-                          setSelectedPair(pair);
-                          setShowSearchResults(false);
-                        }
-                      }}
-                      className="px-2 py-1 text-xs rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
-                    >
-                      {symbol}
-                    </button>
-                  ))}
-                </div>
               </div>
 
-              {/* Tabs de filtros mejorados */}
-              <div className="flex items-center gap-1 p-3 border-b border-zinc-800">
-                <button
-                  onClick={() => setActiveTab('all')}
-                  className={`px-4 py-2 text-sm rounded-lg transition-all duration-200 ${
-                    activeTab === 'all'
-                      ? 'bg-zinc-700 text-white shadow-lg'
-                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                  }`}
-                >
-                  Todos los pares
-                </button>
-                <button
-                  onClick={() => setActiveTab('favorites')}
-                  className={`px-4 py-2 text-sm rounded-lg transition-all duration-200 flex items-center gap-2 ${
-                    activeTab === 'favorites'
-                      ? 'bg-amber-500/20 text-amber-400 shadow-lg'
-                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                  }`}
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  Favoritos
-                </button>
-                {marketType === 'spot' && (
-                  <>
+              {/* Selector de categoría simplificado */}
+              <div className="flex items-center p-3 border-b border-zinc-800 bg-zinc-900/80">
+                <div className="flex items-center space-x-2 w-full">
+                  <button
+                    onClick={() => setActiveTab('all')}
+                    className={`flex-1 py-2 px-3 text-sm rounded-lg transition-all duration-200 ${
+                      activeTab === 'all'
+                        ? 'bg-violet-500/20 text-violet-300 font-medium'
+                        : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                    }`}
+                  >
+                    Todos
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('favorites')}
+                    className={`flex-1 py-2 px-3 text-sm rounded-lg transition-all duration-200 ${
+                      activeTab === 'favorites'
+                        ? 'bg-amber-500/20 text-amber-300 font-medium'
+                        : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                    }`}
+                  >
+                    Favoritos
+                  </button>
+                  {marketType === 'spot' && (
                     <button
-                      onClick={() => setActiveTab('defi')}
-                      className={`px-4 py-2 text-sm rounded-lg transition-all duration-200 ${
-                        activeTab === 'defi'
-                          ? 'bg-blue-500/20 text-blue-400 shadow-lg'
+                      onClick={() => setActiveTab('top')}
+                      className={`flex-1 py-2 px-3 text-sm rounded-lg transition-all duration-200 ${
+                        activeTab === 'top'
+                          ? 'bg-emerald-500/20 text-emerald-300 font-medium'
                           : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
                       }`}
                     >
-                      DeFi
+                      Top 10
                     </button>
-                    <button
-                      onClick={() => setActiveTab('layer1')}
-                      className={`px-4 py-2 text-sm rounded-lg transition-all duration-200 ${
-                        activeTab === 'layer1'
-                          ? 'bg-green-500/20 text-green-400 shadow-lg'
-                          : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                      }`}
-                    >
-                      Layer 1
-                    </button>
-                  </>
-                )}
+                  )}
+                </div>
               </div>
 
               {/* Lista de pares con scroll mejorado */}
@@ -1079,14 +1132,14 @@ export default function NewOperation() {
                         <div className="flex flex-col min-w-0">
                           <span className="text-base font-medium text-white whitespace-nowrap min-w-0">{pair.symbol}/USDT</span>
                           <div className="flex items-center gap-1.5">
-                            {assetCategories.defi.includes(pair.symbol) && (
-                              <span className="px-1.5 py-0.5 text-[10px] rounded bg-blue-500/20 text-blue-400 font-medium">DeFi</span>
+                            {topAssets.includes(pair.symbol) && (
+                              <span className="px-1.5 py-0.5 text-[10px] rounded bg-emerald-500/20 text-emerald-400 font-medium">Top</span>
                             )}
-                            {assetCategories.layer1.includes(pair.symbol) && (
-                              <span className="px-1.5 py-0.5 text-[10px] rounded bg-green-500/20 text-green-400 font-medium">L1</span>
+                            {pair.favorite && (
+                              <span className="px-1.5 py-0.5 text-[10px] rounded bg-amber-500/20 text-amber-400 font-medium">Fav</span>
                             )}
                             {marketType === 'perpetual' && (
-                              <span className="px-1.5 py-0.5 text-[10px] rounded bg-amber-500/20 text-amber-400 font-medium">Perp</span>
+                              <span className="px-1.5 py-0.5 text-[10px] rounded bg-violet-500/20 text-violet-400 font-medium">Perp</span>
                             )}
                           </div>
                         </div>
@@ -1175,96 +1228,254 @@ export default function NewOperation() {
           {/* Panel Lateral */}
           <div className="space-y-6">
             {/* Selector de Subcuentas */}
-            <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700 p-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-violet-500" />
-                  <h3 className="text-sm font-medium text-zinc-900 dark:text-white">
-                    Subcuentas Seleccionadas
-                  </h3>
+            <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+              {/* Encabezado con título centrado y botones a la derecha */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80">
+                <h3 className="text-sm font-medium text-zinc-900 dark:text-white flex items-center">
+                  <Users className="w-4 h-4 text-violet-500 mr-1.5" />
+                  Subcuentas
+                </h3>
+                <div className="flex items-center gap-1.5">
+                  {showSubAccountSelector && (
+                    <button
+                      onClick={() => setRememberSubAccountSelection(!rememberSubAccountSelection)}
+                      className="flex items-center text-xs text-zinc-500 dark:text-zinc-400 hover:text-violet-500 dark:hover:text-violet-400 transition-colors"
+                      title={rememberSubAccountSelection ? "No recordar selección" : "Recordar selección"}
+                    >
+                      <div className={`w-3.5 h-3.5 rounded-sm mr-1 border flex items-center justify-center transition-colors ${
+                        rememberSubAccountSelection 
+                          ? 'bg-violet-500 border-violet-500' 
+                          : 'border-zinc-300 dark:border-zinc-600'
+                      }`}>
+                        {rememberSubAccountSelection && (
+                          <Check className="w-2.5 h-2.5 text-white" />
+                        )}
+                      </div>
+                      <span className="hidden sm:inline">Recordar</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={handleToggleSubAccountSelector}
+                    className={`ml-2 p-1.5 rounded-full transition-colors ${
+                      showSubAccountSelector 
+                        ? hasModifiedSelection
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'
+                          : 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-900/50'
+                        : 'text-zinc-500 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 dark:hover:text-violet-400'
+                    }`}
+                    title={showSubAccountSelector ? (hasModifiedSelection ? "Confirmar selección" : "Cerrar selector") : "Gestionar subcuentas"}
+                  >
+                    {showSubAccountSelector ? (
+                      hasModifiedSelection ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        <X className="w-4 h-4" />
+                      )
+                    ) : (
+                      <Settings className="w-4 h-4" />
+                    )}
+                  </button>
                 </div>
-                <button
-                  onClick={() => setShowSubAccountSelector(!showSubAccountSelector)}
-                  className="text-xs text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
-                >
-                  {showSubAccountSelector ? 'Cerrar' : 'Gestionar'}
-                </button>
               </div>
 
-              {showSubAccountSelector ? (
-                <div className="space-y-2">
-                  {subAccounts.map((account) => (
-                    <div
-                      key={account.id}
-                      onClick={() => {
-                        if (selectedSubAccounts.includes(account.id)) {
-                          setSelectedSubAccounts(selectedSubAccounts.filter(id => id !== account.id));
-                        } else {
-                          setSelectedSubAccounts([...selectedSubAccounts, account.id]);
-                        }
-                      }}
-                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
-                        selectedSubAccounts.includes(account.id)
-                          ? 'bg-violet-50 dark:bg-violet-900/20'
-                          : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+              {/* Contenido del selector */}
+              <div className="p-4">
+                {subAccounts.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
+                    <div className="bg-zinc-100 dark:bg-zinc-800 rounded-full p-3">
+                      <Users className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                        No hay subcuentas disponibles
+                      </p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto">
+                        Necesitas añadir subcuentas para poder operar. Las subcuentas te permiten organizar tus fondos y operaciones.
+                      </p>
+                    </div>
+                    <Link href="/dashboard" className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-violet-500 rounded-lg hover:bg-violet-600 transition-colors">
+                      <PlusCircle className="w-4 h-4" />
+                      Añadir subcuenta
+                    </Link>
+                  </div>
+                ) : showSubAccountSelector ? (
+                  <div className="space-y-2">
+                    {subAccounts.map((account) => (
+                      <div
+                        key={account.id}
+                        onClick={() => {
+                          let newSelection;
+                          if (selectedSubAccounts.includes(account.id)) {
+                            newSelection = selectedSubAccounts.filter(id => id !== account.id);
+                          } else {
+                            newSelection = [...selectedSubAccounts, account.id];
+                          }
+                          setSelectedSubAccounts(newSelection);
+                          
+                          // Comprobar si la selección actual es diferente de la inicial
+                          const isModified = JSON.stringify(newSelection.sort()) !== JSON.stringify(initialSubAccountSelection.sort());
+                          setHasModifiedSelection(isModified);
+                          
+                          // Activar la animación del botón de cerrar si se ha modificado
+                          if (isModified) {
+                            setHighlightCloseButton(true);
+                            setTimeout(() => {
+                              setHighlightCloseButton(false);
+                            }, 3000);
+                          }
+                        }}
+                        className={`flex items-center justify-between p-3 h-[72px] rounded-lg cursor-pointer transition-colors ${
                           selectedSubAccounts.includes(account.id)
-                            ? 'bg-violet-500 border-violet-500'
-                            : 'border-zinc-300 dark:border-zinc-600'
-                        }`}>
-                          {selectedSubAccounts.includes(account.id) && (
-                            <Check className="w-3 h-3 text-white" />
-                          )}
-                        </div>
-                        <span className="text-sm font-medium text-zinc-900 dark:text-white">
-                          {account.name}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="text-sm font-medium text-zinc-900 dark:text-white">
-                            {account.balance.btc} BTC
+                            ? 'bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800'
+                            : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/50 border border-transparent'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 w-[60%]">
+                          <div className={`min-w-5 w-5 h-5 rounded-md border flex items-center justify-center ${
+                            selectedSubAccounts.includes(account.id)
+                              ? 'bg-violet-500 border-violet-500'
+                              : 'border-zinc-300 dark:border-zinc-600'
+                          }`}>
+                            {selectedSubAccounts.includes(account.id) && (
+                              <Check className="w-3.5 h-3.5 text-white" />
+                            )}
                           </div>
-                          <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                            {account.balance.usdt} USDT
+                          <div className="truncate">
+                            <span className="text-sm font-medium text-zinc-900 dark:text-white block truncate">
+                              {account.name}
+                            </span>
+                            <span className="text-xs text-zinc-500 dark:text-zinc-400 block">
+                              ID: {account.id.substring(0, 8)}...
+                            </span>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {selectedSubAccounts.length > 0 ? (
-                    subAccounts
-                      .filter(account => selectedSubAccounts.includes(account.id))
-                      .map((account) => (
-                        <div key={account.id} className="flex items-center justify-between p-2">
-                          <span className="text-sm font-medium text-zinc-900 dark:text-white">
-                            {account.name}
-                          </span>
-                          <div className="text-right">
-                            <div className="text-sm font-medium text-zinc-900 dark:text-white">
-                              {account.balance.btc} BTC
+                        <div className="flex flex-col items-end gap-2 w-[40%]">
+                          <div className="flex items-center w-full">
+                            <div className="flex items-center justify-between w-[120px] bg-zinc-100 dark:bg-zinc-800 rounded-full px-3 py-1">
+                              <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                                <Image 
+                                  src="https://assets.coingecko.com/coins/images/1/small/bitcoin.png"
+                                  alt="BTC" 
+                                  width={16} 
+                                  height={16}
+                                  className="object-contain rounded-full"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f7931a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpath d='M9.5 9.5h4.5a2 2 0 0 1 0 4H9.5'%3E%3C/path%3E%3Cpath d='M9.5 13.5h5a2 2 0 0 1 0 4H9.5'%3E%3C/path%3E%3Cpath d='M12 6v2'%3E%3C/path%3E%3Cpath d='M12 16v2'%3E%3C/path%3E%3C/svg%3E";
+                                  }}
+                                />
+                              </div>
+                              <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200 text-right ml-2 truncate">
+                                {Math.floor(account.balance.btc)}
+                              </span>
                             </div>
-                            <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                              {account.balance.usdt} USDT
+                          </div>
+                          <div className="flex items-center w-full">
+                            <div className="flex items-center justify-between w-[120px] bg-zinc-100 dark:bg-zinc-800 rounded-full px-3 py-1">
+                              <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                                <Image 
+                                  src="https://assets.coingecko.com/coins/images/325/small/Tether.png"
+                                  alt="USDT" 
+                                  width={16} 
+                                  height={16}
+                                  className="object-contain rounded-full"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2326a17b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpath d='M12 6v12'%3E%3C/path%3E%3Cpath d='M8 10h8'%3E%3C/path%3E%3C/svg%3E";
+                                  }}
+                                />
+                              </div>
+                              <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200 text-right ml-2 truncate">
+                                {Math.floor(account.balance.usdt)}
+                              </span>
                             </div>
                           </div>
                         </div>
-                      ))
-                  ) : (
-                    <div className="text-center py-2">
-                      <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                        No hay subcuentas seleccionadas
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {selectedSubAccounts.length > 0 ? (
+                      subAccounts
+                        .filter(account => selectedSubAccounts.includes(account.id))
+                        .map((account) => (
+                          <div key={account.id} className="flex items-center justify-between p-3 h-[72px] rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/50 dark:bg-violet-900/10">
+                            <div className="w-[60%] truncate">
+                              <span className="text-sm font-medium text-zinc-900 dark:text-white block truncate">
+                                {account.name}
+                              </span>
+                              {/* El ID se ha eliminado para aprovechar mejor el espacio */}
+                            </div>
+                            <div className="flex flex-col items-end gap-2 w-[40%]">
+                              <div className="flex items-center w-full">
+                                <div className="flex items-center justify-between w-[120px] bg-zinc-100 dark:bg-zinc-800 rounded-full px-3 py-1">
+                                  <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                                    <Image 
+                                      src="https://assets.coingecko.com/coins/images/1/small/bitcoin.png"
+                                      alt="BTC" 
+                                      width={16} 
+                                      height={16}
+                                      className="object-contain rounded-full"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f7931a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpath d='M9.5 9.5h4.5a2 2 0 0 1 0 4H9.5'%3E%3C/path%3E%3Cpath d='M9.5 13.5h5a2 2 0 0 1 0 4H9.5'%3E%3C/path%3E%3Cpath d='M12 6v2'%3E%3C/path%3E%3Cpath d='M12 16v2'%3E%3C/path%3E%3C/svg%3E";
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200 text-right ml-2 truncate">
+                                    {Math.floor(account.balance.btc)}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center w-full">
+                                <div className="flex items-center justify-between w-[120px] bg-zinc-100 dark:bg-zinc-800 rounded-full px-3 py-1">
+                                  <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                                    <Image 
+                                      src="https://assets.coingecko.com/coins/images/325/small/Tether.png"
+                                      alt="USDT" 
+                                      width={16} 
+                                      height={16}
+                                      className="object-contain rounded-full"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2326a17b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpath d='M12 6v12'%3E%3C/path%3E%3Cpath d='M8 10h8'%3E%3C/path%3E%3C/svg%3E";
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200 text-right ml-2 truncate">
+                                    {Math.floor(account.balance.usdt)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
+                        <div className="bg-zinc-100 dark:bg-zinc-800 rounded-full p-3">
+                          <Users className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                            No hay subcuentas seleccionadas
+                          </p>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto">
+                            Haz clic en el botón "Gestionar" para seleccionar las subcuentas que deseas utilizar para esta operación.
+                          </p>
+                        </div>
+                        <button
+                          onClick={handleToggleSubAccountSelector}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-violet-500 rounded-lg hover:bg-violet-600 transition-colors"
+                        >
+                          <Settings className="w-4 h-4" />
+                          Gestionar subcuentas
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Panel de Operaciones */}

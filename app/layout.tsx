@@ -145,8 +145,10 @@ export default function RootLayout({
     localStorage.removeItem("token");
     localStorage.removeItem("userName");
     
-    // Limpiar datos de subcuentas
+    // Limpiar datos de subcuentas y su caché
     localStorage.removeItem("subAccounts");
+    localStorage.removeItem("subaccounts_cache"); // Clave usada en useSubAccounts hook
+    localStorage.removeItem("user"); // Información del usuario guardada durante login
     
     // Limpiar datos de balances y caché
     localStorage.removeItem("accountBalances");
@@ -165,6 +167,13 @@ export default function RootLayout({
     localStorage.removeItem("selectedSubAccountId");
     localStorage.removeItem("lastUpdate");
     
+    // No eliminar email/password si el usuario tiene "recordarme" activado
+    // localStorage.removeItem("email");
+    // localStorage.removeItem("password");
+    
+    console.log("✅ Sesión cerrada correctamente. Todos los datos en caché han sido eliminados.");
+    
+    // Redirigir al usuario a la página de login
     router.push("/login");
   };
 
@@ -193,7 +202,7 @@ export default function RootLayout({
                 border-r border-zinc-200/50 dark:border-zinc-800/40
                 transform transition-all duration-300 ease-in-out backdrop-blur-xl
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-                w-[5.5rem] hover:w-72 group
+                ${isMobileMenuOpen ? 'w-72 lg:w-[5.5rem] lg:hover:w-72' : 'w-[5.5rem] hover:w-72'} group
                 shadow-[0_0_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)]
                 overflow-hidden
               `}>
@@ -206,7 +215,7 @@ export default function RootLayout({
                           <BarChart3 className="h-6 w-6 text-white" />
                         </div>
                       </div>
-                      <div className="transition-all duration-300 transform opacity-0 group-hover:opacity-100 whitespace-nowrap">
+                      <div className={`transition-all duration-300 transform whitespace-nowrap ${isMobileMenuOpen ? 'opacity-100 lg:opacity-0 lg:group-hover:opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                         <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
                           TradingDash
                         </h1>
@@ -236,6 +245,9 @@ export default function RootLayout({
                           {!isMobileMenuOpen && pathname === item.href && (
                             <div className="absolute left-0 w-1 h-8 bg-violet-500 rounded-r-full transform -translate-y-1/2 top-1/2" />
                           )}
+                          {isMobileMenuOpen && pathname === item.href && (
+                            <div className="absolute left-0 w-1 h-8 bg-violet-500 rounded-r-full transform -translate-y-1/2 top-1/2 lg:hidden" />
+                          )}
                           <div className={`
                             relative flex items-center w-full
                             ${pathname === item.href ? 'text-violet-500 dark:text-violet-400' : ''}
@@ -250,7 +262,13 @@ export default function RootLayout({
                                 group-hover:-translate-x-0.5 transform-gpu
                               `} />
                             </div>
-                            <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] opacity-0 -translate-x-6 group-hover:translate-x-0 group-hover:opacity-100 whitespace-nowrap">{item.name}</span>
+                            <span className={`transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] whitespace-nowrap
+                              ${isMobileMenuOpen 
+                                ? 'opacity-100 translate-x-0 lg:opacity-0 lg:-translate-x-6 lg:group-hover:translate-x-0 lg:group-hover:opacity-100' 
+                                : 'opacity-0 -translate-x-6 group-hover:translate-x-0 group-hover:opacity-100'
+                              }`}>
+                              {item.name}
+                            </span>
                           </div>
                       </Link>
                       ))}
@@ -274,8 +292,12 @@ export default function RootLayout({
                           group-hover:-translate-x-0.5 transform-gpu
                         `} />
                       </div>
-                      <span className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] opacity-0 -translate-x-6 group-hover:translate-x-0 group-hover:opacity-100 whitespace-nowrap group-hover:text-rose-600 dark:group-hover:text-rose-400">
-                      Cerrar Sesión
+                      <span className={`transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] whitespace-nowrap group-hover:text-rose-600 dark:group-hover:text-rose-400
+                        ${isMobileMenuOpen 
+                          ? 'opacity-100 translate-x-0 lg:opacity-0 lg:-translate-x-6 lg:group-hover:translate-x-0 lg:group-hover:opacity-100' 
+                          : 'opacity-0 -translate-x-6 group-hover:translate-x-0 group-hover:opacity-100'
+                        }`}>
+                        Cerrar Sesión
                       </span>
                     </button>
                   </div>

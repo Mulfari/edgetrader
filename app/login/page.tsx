@@ -63,6 +63,22 @@ export default function LoginPage() {
 
       if (res.ok) {
         localStorage.setItem("token", data.access_token);
+        
+        // Guardar información del usuario si está disponible
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+        
+        // Guardar subcuentas en caché si están disponibles
+        if (data.subAccounts) {
+          const cacheData = {
+            data: data.subAccounts,
+            timestamp: Date.now()
+          };
+          localStorage.setItem("subaccounts_cache", JSON.stringify(cacheData));
+          console.log("✅ Subcuentas guardadas en caché durante el login:", data.subAccounts.length);
+        }
+        
         if (rememberMe) {
           localStorage.setItem("email", email);
           localStorage.setItem("password", password);
