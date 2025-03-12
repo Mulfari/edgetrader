@@ -254,14 +254,14 @@ export default function NewOperation() {
   }, [selectedPair, marketType]);
 
   // Función para cargar subcuentas desde caché
-  const loadSubAccountsFromCache = () => {
-    try {
+    const loadSubAccountsFromCache = () => {
+      try {
       console.log('🔄 Intentando cargar subcuentas desde caché...');
       
-      // Primero intentamos cargar las subcuentas desde el caché de useSubAccounts
+        // Primero intentamos cargar las subcuentas desde el caché de useSubAccounts
       const subAccountsCache = safeLocalStorage.getItem(SUBACCOUNTS_CACHE_KEY);
-      if (subAccountsCache) {
-        try {
+        if (subAccountsCache) {
+          try {
           const { data, timestamp } = JSON.parse(subAccountsCache);
           
           // Verificar si el caché es válido (menos de 5 minutos)
@@ -305,16 +305,16 @@ export default function NewOperation() {
             });
             
             return true;
+            }
+          } catch (error) {
+            console.error('Error al parsear subaccounts_cache desde localStorage:', error);
           }
-        } catch (error) {
-          console.error('Error al parsear subaccounts_cache desde localStorage:', error);
         }
-      }
-      
-      // Si no encontramos datos en el caché de useSubAccounts, intentamos con 'subAccounts'
+        
+        // Si no encontramos datos en el caché de useSubAccounts, intentamos con 'subAccounts'
       const subAccountsData = safeLocalStorage.getItem('subAccounts');
-      if (subAccountsData) {
-        try {
+        if (subAccountsData) {
+          try {
           const accounts = JSON.parse(subAccountsData);
           
           if (Array.isArray(accounts) && accounts.length > 0) {
@@ -328,12 +328,12 @@ export default function NewOperation() {
             });
             
             return true;
+            }
+          } catch (error) {
+            console.error('Error al parsear subAccounts desde localStorage:', error);
           }
-        } catch (error) {
-          console.error('Error al parsear subAccounts desde localStorage:', error);
         }
-      }
-      
+        
       // Si llegamos aquí, intentamos cargar balances individuales
       const subAccountKeys = Object.keys(typeof window !== 'undefined' ? localStorage : {}).filter(key => key.startsWith(CACHE_PREFIX));
       
@@ -343,7 +343,7 @@ export default function NewOperation() {
         const accounts: SubAccount[] = [];
         
         subAccountKeys.forEach(key => {
-          const accountId = key.replace(CACHE_PREFIX, '');
+            const accountId = key.replace(CACHE_PREFIX, '');
           const cachedData = safeLocalStorage.getItem(key);
           
           if (cachedData) {
@@ -351,14 +351,14 @@ export default function NewOperation() {
               const balanceData = JSON.parse(cachedData);
               
               accounts.push({
-                id: accountId,
+              id: accountId,
                 name: balanceData.accountName || `Subcuenta ${accounts.length + 1}`,
-                balance: {
+              balance: {
                   btc: balanceData.data?.assets?.find((asset: any) => asset.coin === 'BTC')?.walletBalance || 0,
                   usdt: balanceData.data?.balance || 0
-                }
+              }
               });
-            } catch (error) {
+          } catch (error) {
               console.error(`Error al parsear datos de balance para ${accountId}:`, error);
             }
           }
@@ -371,8 +371,8 @@ export default function NewOperation() {
       }
       
       return false;
-    } catch (error) {
-      console.error('Error al cargar subcuentas desde caché:', error);
+      } catch (error) {
+        console.error('Error al cargar subcuentas desde caché:', error);
       return false;
     }
   };
@@ -1061,27 +1061,27 @@ export default function NewOperation() {
               {/* Selector de categoría simplificado */}
               <div className="flex items-center p-3 border-b border-zinc-800 bg-zinc-900/80">
                 <div className="flex items-center space-x-2 w-full">
-                  <button
-                    onClick={() => setActiveTab('all')}
+                <button
+                  onClick={() => setActiveTab('all')}
                     className={`flex-1 py-2 px-3 text-sm rounded-lg transition-all duration-200 ${
-                      activeTab === 'all'
+                    activeTab === 'all'
                         ? 'bg-violet-500/20 text-violet-300 font-medium'
-                        : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                    }`}
-                  >
+                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                  }`}
+                >
                     Todos
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('favorites')}
+                </button>
+                <button
+                  onClick={() => setActiveTab('favorites')}
                     className={`flex-1 py-2 px-3 text-sm rounded-lg transition-all duration-200 ${
-                      activeTab === 'favorites'
+                    activeTab === 'favorites'
                         ? 'bg-amber-500/20 text-amber-300 font-medium'
-                        : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                    }`}
-                  >
-                    Favoritos
-                  </button>
-                  {marketType === 'spot' && (
+                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                  }`}
+                >
+                  Favoritos
+                </button>
+                {marketType === 'spot' && (
                     <button
                       onClick={() => setActiveTab('top')}
                       className={`flex-1 py-2 px-3 text-sm rounded-lg transition-all duration-200 ${
@@ -1260,7 +1260,7 @@ export default function NewOperation() {
                 <h3 className="text-sm font-medium text-zinc-900 dark:text-white flex items-center">
                   <Users className="w-4 h-4 text-violet-500 mr-1.5" />
                   Subcuentas
-                </h3>
+                  </h3>
                 <div className="flex items-center gap-1.5">
                   {isSubAccountSelectorOpen && (
                     <button
@@ -1276,11 +1276,11 @@ export default function NewOperation() {
                         {rememberSubAccountSelection && (
                           <Check className="w-2.5 h-2.5 text-white" />
                         )}
-                      </div>
+                </div>
                       <span className="hidden sm:inline">Recordar</span>
                     </button>
                   )}
-                  <button
+                <button
                     onClick={handleToggleSubAccountSelector}
                     className={`ml-2 p-1.5 rounded-full transition-colors ${
                       isSubAccountSelectorOpen 
@@ -1300,7 +1300,7 @@ export default function NewOperation() {
                     ) : (
                       <Settings className="w-4 h-4" />
                     )}
-                  </button>
+                </button>
                 </div>
               </div>
 
@@ -1325,15 +1325,15 @@ export default function NewOperation() {
                     </Link>
                   </div>
                 ) : isSubAccountSelectorOpen ? (
-                  <div className="space-y-2">
-                    {subAccounts.map((account) => (
-                      <div
-                        key={account.id}
-                        onClick={() => {
+                <div className="space-y-2">
+                  {subAccounts.map((account) => (
+                    <div
+                      key={account.id}
+                      onClick={() => {
                           let newSelection;
-                          if (selectedSubAccounts.includes(account.id)) {
+                        if (selectedSubAccounts.includes(account.id)) {
                             newSelection = selectedSubAccounts.filter(id => id !== account.id);
-                          } else {
+                        } else {
                             newSelection = [...selectedSubAccounts, account.id];
                           }
                           setSelectedSubAccounts(newSelection);
@@ -1351,30 +1351,30 @@ export default function NewOperation() {
                           }
                         }}
                         className={`flex items-center justify-between p-3 h-[72px] rounded-lg cursor-pointer transition-colors ${
-                          selectedSubAccounts.includes(account.id)
+                        selectedSubAccounts.includes(account.id)
                             ? 'bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800'
                             : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/50 border border-transparent'
-                        }`}
-                      >
+                      }`}
+                    >
                         <div className="flex items-center gap-3 w-[60%]">
                           <div className={`min-w-5 w-5 h-5 rounded-md border flex items-center justify-center ${
-                            selectedSubAccounts.includes(account.id)
-                              ? 'bg-violet-500 border-violet-500'
-                              : 'border-zinc-300 dark:border-zinc-600'
-                          }`}>
-                            {selectedSubAccounts.includes(account.id) && (
+                          selectedSubAccounts.includes(account.id)
+                            ? 'bg-violet-500 border-violet-500'
+                            : 'border-zinc-300 dark:border-zinc-600'
+                        }`}>
+                          {selectedSubAccounts.includes(account.id) && (
                               <Check className="w-3.5 h-3.5 text-white" />
-                            )}
-                          </div>
+                          )}
+                        </div>
                           <div className="truncate">
                             <span className="text-sm font-medium text-zinc-900 dark:text-white block truncate">
-                              {account.name}
-                            </span>
+                          {account.name}
+                        </span>
                             <span className="text-xs text-zinc-500 dark:text-zinc-400 block">
                               ID: {account.id.substring(0, 8)}...
                             </span>
+                      </div>
                           </div>
-                        </div>
                         <div className="flex flex-col items-end gap-2 w-[40%]">
                           <div className="flex items-center w-full">
                             <div className="flex items-center justify-between w-[120px] bg-zinc-100 dark:bg-zinc-800 rounded-full px-3 py-1">
@@ -1390,7 +1390,7 @@ export default function NewOperation() {
                                     target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f7931a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpath d='M9.5 9.5h4.5a2 2 0 0 1 0 4H9.5'%3E%3C/path%3E%3Cpath d='M9.5 13.5h5a2 2 0 0 1 0 4H9.5'%3E%3C/path%3E%3Cpath d='M12 6v2'%3E%3C/path%3E%3Cpath d='M12 16v2'%3E%3C/path%3E%3C/svg%3E";
                                   }}
                                 />
-                              </div>
+                          </div>
                               <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200 text-right ml-2 truncate">
                                 {Math.floor(account.balance.btc)}
                               </span>
@@ -1415,22 +1415,22 @@ export default function NewOperation() {
                                 {Math.floor(account.balance.usdt)}
                               </span>
                             </div>
-                          </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {selectedSubAccounts.length > 0 ? (
-                      subAccounts
-                        .filter(account => selectedSubAccounts.includes(account.id))
-                        .map((account) => (
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {selectedSubAccounts.length > 0 ? (
+                    subAccounts
+                      .filter(account => selectedSubAccounts.includes(account.id))
+                      .map((account) => (
                           <div key={account.id} className="flex items-center justify-between p-3 h-[72px] rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/50 dark:bg-violet-900/10">
                             <div className="w-[60%] truncate">
                               <span className="text-sm font-medium text-zinc-900 dark:text-white block truncate">
-                                {account.name}
-                              </span>
+                            {account.name}
+                          </span>
                               {/* El ID se ha eliminado para aprovechar mejor el espacio */}
                             </div>
                             <div className="flex flex-col items-end gap-2 w-[40%]">
@@ -1473,18 +1473,18 @@ export default function NewOperation() {
                                     {Math.floor(account.balance.usdt)}
                                   </span>
                                 </div>
-                              </div>
                             </div>
                           </div>
-                        ))
-                    ) : (
+                        </div>
+                      ))
+                  ) : (
                       <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
                         <div className="bg-zinc-100 dark:bg-zinc-800 rounded-full p-3">
                           <Users className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
                         </div>
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                            No hay subcuentas seleccionadas
+                        No hay subcuentas seleccionadas
                           </p>
                           <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto">
                             Haz clic en el botón "Gestionar" para seleccionar las subcuentas que deseas utilizar para esta operación.
@@ -1497,10 +1497,10 @@ export default function NewOperation() {
                           <Settings className="w-4 h-4" />
                           Gestionar subcuentas
                         </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
+              )}
               </div>
             </div>
 

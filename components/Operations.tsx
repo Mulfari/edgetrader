@@ -19,23 +19,28 @@ import {
   ChevronRight
 } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "../hooks/useAuth";
 
+// Actualizada para coincidir con la interfaz del backend
 interface Operation {
   id: string;
-  type: 'buy' | 'sell';
+  subAccountId: string;
   symbol: string;
-  amount: number;
+  side: 'buy' | 'sell';
+  type: 'limit' | 'market';
+  status: 'open' | 'closed' | 'canceled';
   price: number;
-  timestamp: string;
-  status: 'completed' | 'pending' | 'cancelled';
-  market: 'spot' | 'futures';
-  profit?: number;
-  tags?: string[];
-  notes?: string;
-  exchange?: string;
-  fee?: number;
+  quantity: number;
+  filledQuantity?: number;
+  remainingQuantity?: number;
   leverage?: number;
-  liquidationPrice?: number;
+  openTime: Date;
+  closeTime?: Date;
+  profit?: number;
+  profitPercentage?: number;
+  fee?: number;
+  exchange: string;
+  isDemo: boolean;
 }
 
 interface DashboardStats {
@@ -52,7 +57,9 @@ interface DashboardStats {
 }
 
 export default function Operations() {
+  const { user, token } = useAuth();
   const [operations, setOperations] = useState<Operation[]>([]);
+  const [operationsBySubAccount, setOperationsBySubAccount] = useState<{ [subAccountId: string]: Operation[] }>({});
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [marketFilter, setMarketFilter] = useState<'all' | 'spot' | 'futures'>('all');
@@ -65,118 +72,262 @@ export default function Operations() {
   const [selectedOperations, setSelectedOperations] = useState<string[]>([]);
   const [hoveredOperation, setHoveredOperation] = useState<string | null>(null);
   const [expandedOperation, setExpandedOperation] = useState<string | null>(null);
+  const [selectedSubAccount, setSelectedSubAccount] = useState<string | 'all'>('all');
+  const [error, setError] = useState<string | null>(null);
 
+  // Cargar operaciones abiertas desde la API
   useEffect(() => {
+    const fetchOpenOperations = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        if (!token) {
+          throw new Error("No hay token de autenticación");
+        }
+        
+        console.log("🔍 Obteniendo operaciones abiertas...");
+        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/operations/open`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error al obtener operaciones: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+          throw new Error(data.message || "Error desconocido al obtener operaciones");
+        }
+        
+        console.log("✅ Operaciones obtenidas:", data);
+        
+        // Guardar operaciones por subcuenta
+        setOperationsBySubAccount(data.operations || {});
+        
+        // Aplanar todas las operaciones en un solo array
+        const allOperations = Object.values(data.operations || {}).flat() as Operation[];
+        
+        // Convertir las fechas de string a Date
+        const processedOperations = allOperations.map(op => ({
+          ...op,
+          openTime: new Date(op.openTime),
+          closeTime: op.closeTime ? new Date(op.closeTime) : undefined
+        }));
+        
+        setOperations(processedOperations);
+        
+        // Calcular estadísticas
+        if (processedOperations.length > 0) {
+          calculateStats(processedOperations);
+        }
+      } catch (err) {
+        console.error("❌ Error al obtener operaciones:", err);
+        setError(err instanceof Error ? err.message : "Error desconocido");
+        // Usar datos de ejemplo en caso de error
+        setMockData();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchOpenOperations();
+  }, [token]);
+  
+  // Función para calcular estadísticas
+  const calculateStats = (ops: Operation[]) => {
+    const totalProfit = ops.reduce((acc, op) => acc + (op.profit || 0), 0);
+    const completedOps = ops.filter(op => op.status === 'closed');
+    const successRate = completedOps.length > 0 
+      ? (completedOps.filter(op => (op.profit || 0) > 0).length / completedOps.length) * 100 
+      : 0;
+    
+    const bestOperation = ops.reduce<Operation | null>((best, op) => {
+      if (!best) return op;
+      return (op.profit || 0) > (best.profit || 0) ? op : best;
+    }, null);
+    
+    const worstOperation = ops.reduce<Operation | null>((worst, op) => {
+      if (!worst) return op;
+      return (op.profit || 0) < (worst.profit || 0) ? op : worst;
+    }, null);
+    
+    // Calcular volumen mensual (suma de quantity * price)
+    const monthlyVolume = ops
+      .filter(op => {
+        const opDate = new Date(op.openTime);
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        return opDate >= oneMonthAgo;
+      })
+      .reduce((acc, op) => acc + (op.quantity * op.price), 0);
+    
+    // Calcular operaciones semanales
+    const weeklyOperations = ops.filter(op => {
+      const opDate = new Date(op.openTime);
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      return opDate >= oneWeekAgo;
+    }).length;
+    
+    // Calcular beneficio promedio
+    const averageProfit = completedOps.length > 0 
+      ? totalProfit / completedOps.length 
+      : 0;
+    
+    // Calcular comisiones totales
+    const totalFees = ops.reduce((acc, op) => acc + (op.fee || 0), 0);
+    
+    // Calcular símbolos más rentables
+    const symbolProfits = ops.reduce((acc, op) => {
+      if (!acc[op.symbol]) {
+        acc[op.symbol] = 0;
+      }
+      acc[op.symbol] += op.profit || 0;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    const profitableSymbols = Object.entries(symbolProfits)
+      .map(([symbol, profit]) => ({ symbol, profit }))
+      .sort((a, b) => b.profit - a.profit)
+      .slice(0, 3);
+    
+    setStats({
+      totalOperations: ops.length,
+      totalProfit,
+      successRate,
+      bestOperation,
+      worstOperation,
+      monthlyVolume,
+      weeklyOperations,
+      averageProfit,
+      totalFees,
+      profitableSymbols
+    });
+  };
+  
+  // Función para cargar datos de ejemplo en caso de error
+  const setMockData = () => {
     // Datos de ejemplo mejorados
     const mockOperations: Operation[] = [
       {
         id: '1',
-        type: 'buy',
-        symbol: 'BTC/USDT',
-        amount: 0.5,
+        subAccountId: 'demo-1',
+        symbol: 'BTCUSDT',
+        side: 'buy',
+        type: 'limit',
+        status: 'open',
         price: 45000,
-        timestamp: '2024-03-20T10:30:00',
-        status: 'completed',
-        market: 'spot',
+        quantity: 0.5,
+        filledQuantity: 0.2,
+        remainingQuantity: 0.3,
+        openTime: new Date('2024-03-20T10:30:00'),
         profit: 1200,
-        tags: ['swing', 'trend'],
-        notes: 'Entrada en soporte fuerte',
-        exchange: 'Binance',
-        fee: 2.5
+        fee: 2.5,
+        exchange: 'binance',
+        isDemo: true
       },
       {
         id: '2',
-        type: 'sell',
-        symbol: 'ETH/USDT',
-        amount: 2.5,
+        subAccountId: 'demo-1',
+        symbol: 'ETHUSDT',
+        side: 'sell',
+        type: 'market',
+        status: 'open',
         price: 3200,
-        timestamp: '2024-03-19T15:45:00',
-        status: 'completed',
-        market: 'futures',
-        profit: -300,
-        tags: ['scalping'],
-        notes: 'Salida por stop loss',
-        exchange: 'Kraken',
-        fee: 1.8,
+        quantity: 2.5,
+        filledQuantity: 2.5,
+        remainingQuantity: 0,
         leverage: 10,
-        liquidationPrice: 2800
+        openTime: new Date('2024-03-19T15:45:00'),
+        profit: -300,
+        fee: 1.8,
+        exchange: 'kraken',
+        isDemo: true
       },
       {
         id: '3',
-        type: 'buy',
-        symbol: 'SOL/USDT',
-        amount: 10,
+        subAccountId: 'demo-2',
+        symbol: 'SOLUSDT',
+        side: 'buy',
+        type: 'limit',
+        status: 'open',
         price: 125,
-        timestamp: '2024-03-18T09:15:00',
-        status: 'pending',
-        market: 'futures',
-        tags: ['position'],
-        notes: 'Esperando confirmación',
-        exchange: 'Binance',
-        fee: 0.5,
+        quantity: 10,
+        filledQuantity: 0,
+        remainingQuantity: 10,
         leverage: 5,
-        liquidationPrice: 110
-      },
-      {
-        id: '4',
-        type: 'sell',
-        symbol: 'BNB/USDT',
-        amount: 5,
-        price: 420,
-        timestamp: '2024-03-17T14:20:00',
-        status: 'completed',
-        market: 'spot',
-        profit: 850,
-        tags: ['day-trade'],
-        notes: 'Toma de beneficios',
-        exchange: 'Binance',
-        fee: 1.2
-      },
-      {
-        id: '5',
-        type: 'buy',
-        symbol: 'ADA/USDT',
-        amount: 1000,
-        price: 0.65,
-        timestamp: '2024-03-16T11:30:00',
-        status: 'cancelled',
-        market: 'spot',
-        tags: ['spot'],
-        notes: 'Orden cancelada por volatilidad',
-        exchange: 'Kraken',
-        fee: 0
+        openTime: new Date('2024-03-18T09:15:00'),
+        fee: 0.5,
+        exchange: 'binance',
+        isDemo: true
       }
     ];
 
-    const mockStats: DashboardStats = {
-      totalOperations: mockOperations.length,
-      totalProfit: mockOperations.reduce((acc, op) => acc + (op.profit || 0), 0),
-      successRate: 65,
-      bestOperation: mockOperations.reduce<Operation | null>((best, op) => {
-        if (!best) return op;
-        return (op.profit || 0) > (best.profit || 0) ? op : best;
-      }, null),
-      worstOperation: mockOperations.reduce<Operation | null>((worst, op) => {
-        if (!worst) return op;
-        return (op.profit || 0) < (worst.profit || 0) ? op : worst;
-      }, null),
-      monthlyVolume: 125000,
-      weeklyOperations: 12,
-      averageProfit: 450,
-      totalFees: mockOperations.reduce((acc, op) => acc + (op.fee || 0), 0),
-      profitableSymbols: [
-        { symbol: 'BTC/USDT', profit: 2500 },
-        { symbol: 'ETH/USDT', profit: 1200 },
-        { symbol: 'SOL/USDT', profit: 800 }
-      ]
-    };
+    // Agrupar por subcuenta
+    const groupedOperations = mockOperations.reduce((acc, op) => {
+      if (!acc[op.subAccountId]) {
+        acc[op.subAccountId] = [];
+      }
+      acc[op.subAccountId].push(op);
+      return acc;
+    }, {} as Record<string, Operation[]>);
 
-    setTimeout(() => {
-      setOperations(mockOperations);
-      setStats(mockStats);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+    setOperationsBySubAccount(groupedOperations);
+    setOperations(mockOperations);
+    calculateStats(mockOperations);
+  };
+
+  // Filtrar operaciones según los filtros seleccionados
+  const filteredOperations = operations.filter(operation => {
+    // Filtrar por subcuenta
+    if (selectedSubAccount !== 'all' && operation.subAccountId !== selectedSubAccount) {
+      return false;
+    }
+    
+    // Filtrar por estado
+    if (filter !== 'all' && operation.status !== filter) {
+      return false;
+    }
+    
+    // Filtrar por tipo de mercado (spot/futures)
+    if (marketFilter !== 'all') {
+      const isSpot = !operation.leverage;
+      if (marketFilter === 'spot' && !isSpot) return false;
+      if (marketFilter === 'futures' && isSpot) return false;
+    }
+    
+    // Filtrar por término de búsqueda
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        operation.symbol.toLowerCase().includes(searchLower) ||
+        operation.exchange.toLowerCase().includes(searchLower) ||
+        operation.side.toLowerCase().includes(searchLower) ||
+        operation.type.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return true;
+  });
+
+  // Ordenar operaciones
+  const sortedOperations = [...filteredOperations].sort((a, b) => {
+    if (sortBy === 'date') {
+      return new Date(b.openTime).getTime() - new Date(a.openTime).getTime();
+    } else if (sortBy === 'amount') {
+      return (b.quantity * b.price) - (a.quantity * a.price);
+    } else if (sortBy === 'profit') {
+      return (b.profit || 0) - (a.profit || 0);
+    }
+    return 0;
+  });
 
   const handleOperationSelect = (operationId: string) => {
     setSelectedOperations(prev => 
@@ -230,32 +381,30 @@ export default function Operations() {
 
       {/* Indicador de mercado */}
       <div className={`absolute right-0 top-12 -rotate-90 transform origin-right px-2 py-1 text-xs font-medium rounded-b-md ${
-        operation.market === 'futures' 
-          ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
-          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+        operation.leverage ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
       }`}>
-        {operation.market === 'futures' ? 'Futuros' : 'Spot'}
+        {operation.leverage ? 'Futuros' : 'Spot'}
       </div>
 
       <div className="flex items-start justify-between mb-6">
         <div className="space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
-              operation.type === 'buy' 
+              operation.side === 'buy' 
                 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/40'
                 : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400 group-hover:bg-rose-200 dark:group-hover:bg-rose-900/40'
             }`}>
-              {operation.type === 'buy' ? 'Compra' : 'Venta'}
+              {operation.side === 'buy' ? 'Compra' : 'Venta'}
             </span>
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
-              operation.status === 'completed'
+              operation.status === 'closed'
                 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/40'
-                : operation.status === 'pending'
+                : operation.status === 'open'
                 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 group-hover:bg-yellow-200 dark:group-hover:bg-yellow-900/40'
                 : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 group-hover:bg-red-200 dark:group-hover:bg-red-900/40'
             }`}>
-              {operation.status === 'completed' ? 'Completada' : 
-               operation.status === 'pending' ? 'Pendiente' : 'Cancelada'}
+              {operation.status === 'closed' ? 'Completada' : 
+               operation.status === 'open' ? 'Pendiente' : 'Cancelada'}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -269,7 +418,7 @@ export default function Operations() {
           </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
             <Clock className="w-3.5 h-3.5" />
-            {new Date(operation.timestamp).toLocaleString()}
+            {new Date(operation.openTime).toLocaleString()}
           </p>
         </div>
         {operation.profit !== undefined && (
@@ -305,29 +454,16 @@ export default function Operations() {
             Cantidad
           </p>
           <p className="text-base font-medium text-zinc-900 dark:text-white">
-            {operation.amount}
+            {operation.quantity}
           </p>
         </div>
       </div>
 
       <div className="space-y-3">
-        {operation.notes && (
+        {operation.profit !== undefined && (
           <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-sm text-blue-800 dark:text-blue-300 transition-all duration-200 group-hover:bg-blue-100/80 dark:group-hover:bg-blue-900/30">
             <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <p>{operation.notes}</p>
-          </div>
-        )}
-        {operation.tags && operation.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {operation.tags.map((tag) => (
-              <span 
-                key={tag} 
-                className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-all duration-200 cursor-pointer group-hover:shadow-sm"
-              >
-                <Tag className="w-3 h-3 mr-2" />
-                {tag}
-              </span>
-            ))}
+            <p>{operation.profitPercentage ? `${operation.profitPercentage}%` : ''}</p>
           </div>
         )}
         {operation.fee !== undefined && (
@@ -378,22 +514,6 @@ export default function Operations() {
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
-
-      {/* Información adicional para futuros */}
-      {operation.market === 'futures' && operation.leverage && (
-        <div className="mt-3 flex items-center gap-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-          <div>
-            <p className="text-xs text-orange-600 dark:text-orange-400">Apalancamiento</p>
-            <p className="text-sm font-medium text-orange-700 dark:text-orange-300">{operation.leverage}x</p>
-          </div>
-          {operation.liquidationPrice && (
-            <div>
-              <p className="text-xs text-orange-600 dark:text-orange-400">Precio de liquidación</p>
-              <p className="text-sm font-medium text-orange-700 dark:text-orange-300">${operation.liquidationPrice.toLocaleString()}</p>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 
@@ -435,31 +555,31 @@ export default function Operations() {
       <td className="px-6 py-4">
         <div className="flex flex-col">
           <span className="text-sm font-medium text-zinc-900 dark:text-white">
-            {new Date(operation.timestamp).toLocaleDateString()}
+            {new Date(operation.openTime).toLocaleDateString()}
           </span>
           <span className="text-xs text-zinc-500 dark:text-zinc-400">
-            {new Date(operation.timestamp).toLocaleTimeString()}
+            {new Date(operation.openTime).toLocaleTimeString()}
           </span>
         </div>
       </td>
       <td className="px-6 py-4">
         <div className="flex flex-col gap-2">
           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-            operation.type === 'buy' 
+            operation.side === 'buy' 
               ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
               : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
           }`}>
-            {operation.type === 'buy' ? 'Compra' : 'Venta'}
+            {operation.side === 'buy' ? 'Compra' : 'Venta'}
           </span>
           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-            operation.status === 'completed'
+            operation.status === 'closed'
               ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-              : operation.status === 'pending'
+              : operation.status === 'open'
               ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
               : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
           }`}>
-            {operation.status === 'completed' ? 'Completada' : 
-             operation.status === 'pending' ? 'Pendiente' : 'Cancelada'}
+            {operation.status === 'closed' ? 'Completada' : 
+             operation.status === 'open' ? 'Pendiente' : 'Cancelada'}
           </span>
         </div>
       </td>
@@ -480,7 +600,7 @@ export default function Operations() {
             ${operation.price.toLocaleString()}
           </span>
           <span className="text-xs text-zinc-500 dark:text-zinc-400">
-            {operation.amount} unidades
+            {operation.quantity} unidades
           </span>
         </div>
       </td>
@@ -508,15 +628,22 @@ export default function Operations() {
       </td>
       <td className="px-6 py-4">
         <div className="flex flex-wrap gap-1">
-          {operation.tags?.map((tag) => (
+          {/* Mostrar tipo de operación como etiqueta */}
+          <span 
+            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors cursor-pointer"
+          >
+            <Tag className="w-3 h-3 mr-1" />
+            {operation.type}
+          </span>
+          {/* Mostrar si es demo como etiqueta */}
+          {operation.isDemo && (
             <span 
-              key={tag} 
-              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors cursor-pointer"
+              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/40 transition-colors cursor-pointer"
             >
               <Tag className="w-3 h-3 mr-1" />
-              {tag}
+              Demo
             </span>
-          ))}
+          )}
         </div>
       </td>
       <td className="px-6 py-4 text-right">
@@ -730,9 +857,9 @@ export default function Operations() {
                 onChange={(e) => setFilter(e.target.value)}
               >
                 <option value="all">Todas las operaciones</option>
-                <option value="completed">Completadas</option>
-                <option value="pending">Pendientes</option>
-                <option value="cancelled">Canceladas</option>
+                <option value="closed">Completadas</option>
+                <option value="open">Pendientes</option>
+                <option value="canceled">Canceladas</option>
               </select>
             </div>
 
@@ -765,24 +892,24 @@ export default function Operations() {
 
           {/* Tags populares */}
           <div className="mt-4 flex flex-wrap gap-2">
-            {['swing', 'scalping', 'position', 'day-trade', 'spot'].map((tag) => (
+            {['swing', 'scalping', 'position', 'day-trade', 'spot'].map((tagName) => (
               <button
-                key={tag}
+                key={tagName}
                 onClick={() => {
-                  if (selectedTags.includes(tag)) {
-                    setSelectedTags(selectedTags.filter(t => t !== tag));
+                  if (selectedTags.includes(tagName)) {
+                    setSelectedTags(selectedTags.filter(t => t !== tagName));
                   } else {
-                    setSelectedTags([...selectedTags, tag]);
+                    setSelectedTags([...selectedTags, tagName]);
                   }
                 }}
                 className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
-                  selectedTags.includes(tag)
+                  selectedTags.includes(tagName)
                     ? 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400'
                     : 'bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600'
                 }`}
               >
                 <Tag className="w-3 h-3" />
-                {tag}
+                {tagName}
               </button>
             ))}
           </div>
@@ -870,7 +997,7 @@ export default function Operations() {
                     </td>
                   </tr>
                 ) : (
-                  operations.map(renderTableRow)
+                  sortedOperations.map(renderTableRow)
                 )}
               </tbody>
             </table>
@@ -904,7 +1031,7 @@ export default function Operations() {
                 </button>
               </div>
             ) : (
-              operations.map(renderOperationCard)
+              sortedOperations.map(renderOperationCard)
             )}
           </div>
         )}
