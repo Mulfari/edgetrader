@@ -45,9 +45,6 @@ type SubAccountManagerProps = {
 
 const exchangeOptions = [
   { value: "bybit", label: "Bybit" },
-  { value: "binance", label: "Binance" },
-  { value: "kucoin", label: "KuCoin" },
-  { value: "ftx", label: "FTX" },
 ]
 
 function getToken(): string | null {
@@ -242,16 +239,18 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
       
       setSuccess("¡Subcuenta creada exitosamente!");
       
+      // Llamar a onSuccess inmediatamente para actualizar la lista de subcuentas
+      if (onSuccess) onSuccess();
+      
       // Esperar un momento antes de cerrar el modal
       setTimeout(() => {
         setNewAccount({
-          exchange: "",
+          exchange: "bybit",
           name: "",
           apiKey: "",
           secretKey: "",
           isDemo: false
         });
-        if (onSuccess) onSuccess();
       }, 1500);
     } catch (error: unknown) {
       console.error("❌ Error al crear subcuenta:", error);
@@ -301,9 +300,13 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
       // Mostrar mensaje de éxito
       setSuccess(`Subcuenta "${accounts.find(a => a.id === selectedAccountId)?.name}" eliminada exitosamente`)
       
-      // Esperar un momento antes de llamar a onSuccess
+      // Llamar a onSuccess inmediatamente para actualizar la lista de subcuentas
+      if (onSuccess) onSuccess()
+      
+      // Esperar un momento antes de cerrar el modal
       setTimeout(() => {
-        if (onSuccess) onSuccess()
+        // Limpiar el estado
+        setSelectedAccountId(null);
       }, 500)
     } catch (error: Error | ApiError | unknown) {
       console.error("❌ Error al eliminar subcuenta:", error)
@@ -328,9 +331,9 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
         >
           <div className="flex flex-col space-y-1.5 p-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+              <Dialog.Title className="text-xl font-semibold text-slate-900 dark:text-white">
                 {mode === "create" ? "Agregar Nueva Subcuenta" : "Eliminar Subcuenta"}
-              </h2>
+              </Dialog.Title>
               <Dialog.Close asChild>
                 <Button
                   variant="ghost"
@@ -342,6 +345,12 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
                 </Button>
               </Dialog.Close>
             </div>
+            
+            <Dialog.Description className="sr-only">
+              {mode === "create" 
+                ? "Formulario para agregar una nueva subcuenta con información de exchange, credenciales API y tipo de cuenta." 
+                : "Formulario para eliminar una subcuenta existente del sistema."}
+            </Dialog.Description>
 
             {error && (
               <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 rounded-lg p-3 text-sm flex items-start gap-2 animate-in fade-in-50 slide-in-from-top-5 duration-200">
@@ -430,7 +439,7 @@ export default function SubAccountManager({ mode, onSuccess, onCancel }: SubAcco
                                 }}
                               >
                                 <SelectTrigger className={formErrors.exchange ? "border-red-300 focus-visible:ring-red-300" : "border-blue-200 dark:border-blue-800/30 focus-visible:ring-blue-300"}>
-                                  <SelectValue placeholder="Selecciona un exchange" />
+                                  <SelectValue placeholder="Seleccionar Exchange" />
                                 </SelectTrigger>
                                 <SelectContent className="dark:bg-slate-900 dark:border-blue-800/30">
                                   {exchangeOptions.map((option) => (

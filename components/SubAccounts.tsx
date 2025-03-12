@@ -445,8 +445,16 @@ export default React.memo(function SubAccounts({ onBalanceUpdate, onStatsUpdate,
       
       setIsLoading(true);
       
-      // Si no se fuerza la actualización, intentamos cargar desde el caché
-      if (!forceRefresh) {
+      // Si se fuerza la actualización, limpiamos el caché primero
+      if (forceRefresh) {
+        console.log("🔄 Forzando actualización de subcuentas desde el backend");
+        // Limpiar caché de subcuentas
+        const CACHE_KEY = 'subaccounts_cache';
+        safeLocalStorage.removeItem(CACHE_KEY);
+        // Limpiar caché de balances
+        clearCache();
+      } else {
+        // Si no se fuerza la actualización, intentamos cargar desde el caché
         // Primero intentamos cargar desde el caché de login
         const CACHE_KEY = 'subaccounts_cache';
         const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos en milisegundos
@@ -515,11 +523,10 @@ export default React.memo(function SubAccounts({ onBalanceUpdate, onStatsUpdate,
             console.error("❌ Error al parsear datos de usuario:", err);
           }
         }
-      } else {
-        console.log("🔄 Forzando actualización de subcuentas desde el backend");
       }
       
       // Si llegamos aquí, necesitamos hacer la petición al backend
+      console.log("🔄 Solicitando subcuentas frescas desde el backend");
       const response = await fetch(`${API_URL}/api/subaccounts`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -725,7 +732,10 @@ export default React.memo(function SubAccounts({ onBalanceUpdate, onStatsUpdate,
 
   const handleCreateSuccess = () => {
     setIsCreateModalOpen(false);
-    loadSubAccounts();
+    // Limpiar el caché para forzar una recarga fresca de datos
+    clearCache();
+    // Cargar las subcuentas con forzar=true para asegurar que se obtengan los datos más recientes
+    loadSubAccounts(true);
   };
 
   // Función para eliminar subcuentas seleccionadas
@@ -762,6 +772,12 @@ export default React.memo(function SubAccounts({ onBalanceUpdate, onStatsUpdate,
       setSelectedAccountsToDelete([]); // Limpiar selección
       setIsDeleteModalOpen(false); // Cerrar el modal
       setError(null);
+      
+      // Limpiar el caché para forzar una recarga fresca de datos
+      clearCache();
+      
+      // Cargar las subcuentas con forzar=true para asegurar que se obtengan los datos más recientes
+      loadSubAccounts(true);
     } catch (error) {
       setError("Error al eliminar las subcuentas seleccionadas");
       console.error("Error al eliminar subcuentas:", error);
@@ -784,8 +800,14 @@ export default React.memo(function SubAccounts({ onBalanceUpdate, onStatsUpdate,
     if (loadingAllBalances || subAccounts.length === 0) return;
     
     try {
+      console.log('🔄 Iniciando actualización completa de subcuentas y balances...');
+      
       // Limpiar el caché antes de actualizar
       clearCache();
+      
+      // Limpiar caché de subcuentas
+      const CACHE_KEY = 'subaccounts_cache';
+      safeLocalStorage.removeItem(CACHE_KEY);
       
       // Forzar la actualización desde el backend
       await loadSubAccounts(true);
@@ -1456,6 +1478,10 @@ export default React.memo(function SubAccounts({ onBalanceUpdate, onStatsUpdate,
       {/* Modal de Crear Subcuenta */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
         <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-2xl">
+          <DialogTitle className="sr-only">Agregar Nueva Subcuenta</DialogTitle>
+          <DialogDescription className="sr-only">
+            Formulario para agregar una nueva subcuenta con información de exchange, credenciales API y tipo de cuenta.
+          </DialogDescription>
           <SubAccountManager
             mode="create"
             onSuccess={handleCreateSuccess}
@@ -1467,11 +1493,18 @@ export default React.memo(function SubAccounts({ onBalanceUpdate, onStatsUpdate,
       {/* Modal de Eliminar Subcuenta */}
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
         <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-2xl">
+          <DialogTitle className="sr-only">Eliminar Subcuenta</DialogTitle>
+          <DialogDescription className="sr-only">
+            Formulario para eliminar una subcuenta existente del sistema.
+          </DialogDescription>
           <SubAccountManager
             mode="delete"
             onSuccess={() => {
               setIsDeleteModalOpen(false);
-              loadSubAccounts();
+              // Limpiar el caché para forzar una recarga fresca de datos
+              clearCache();
+              // Cargar las subcuentas con forzar=true para asegurar que se obtengan los datos más recientes
+              loadSubAccounts(true);
             }}
             onCancel={() => setIsDeleteModalOpen(false)}
           />
