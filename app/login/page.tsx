@@ -82,6 +82,90 @@ export default function LoginPage() {
       if (res.ok) {
         safeLocalStorage.setItem("token", data.access_token);
         
+        // Mostrar información completa de la respuesta en la consola
+        console.log("✅ Respuesta completa del login:", data);
+        
+        // Mostrar específicamente la información de posiciones perpetual
+        if (data.perpetualPositions) {
+          console.log("📊 Posiciones perpetual:", data.perpetualPositions);
+          console.log(`📈 Total de posiciones abiertas: ${data.perpetualPositions.totalPositions}`);
+          console.log(`📈 - En cuentas demo: ${data.perpetualPositions.totalDemoPositions}`);
+          console.log(`📈 - En cuentas reales: ${data.perpetualPositions.totalRealPositions}`);
+          
+          // Separar subcuentas demo y reales para mejor visualización
+          const demoSubaccounts = data.perpetualPositions.subaccountsWithPositions.filter((s: any) => s.isDemo);
+          const realSubaccounts = data.perpetualPositions.subaccountsWithPositions.filter((s: any) => !s.isDemo);
+          
+          // Mostrar desglose por subcuenta demo
+          if (demoSubaccounts.length > 0) {
+            console.log("📋 Subcuentas DEMO con posiciones abiertas:");
+            demoSubaccounts.forEach((subaccount: any) => {
+              console.log(`   - ${subaccount.name}: ${subaccount.openPositionsCount} posiciones abiertas`);
+            });
+          } else {
+            console.log("📋 No hay subcuentas DEMO con posiciones abiertas");
+          }
+          
+          // Mostrar desglose por subcuenta real
+          if (realSubaccounts.length > 0) {
+            console.log("📋 Subcuentas REALES con posiciones abiertas:");
+            realSubaccounts.forEach((subaccount: any) => {
+              console.log(`   - ${subaccount.name}: ${subaccount.openPositionsCount} posiciones abiertas`);
+            });
+          } else {
+            console.log("📋 No hay subcuentas REALES con posiciones abiertas");
+          }
+          
+          // Guardar información de posiciones perpetual en localStorage
+          const perpetualPositionsCache = {
+            data: data.perpetualPositions,
+            timestamp: Date.now(),
+            demoSubaccounts: demoSubaccounts,
+            realSubaccounts: realSubaccounts
+          };
+          safeLocalStorage.setItem("perpetual_positions_cache", JSON.stringify(perpetualPositionsCache));
+          console.log("✅ Información de posiciones perpetual guardada en caché");
+          
+          // Guardar información de posiciones por subcuenta individualmente
+          data.perpetualPositions.subaccountsWithPositions.forEach((subaccount: any) => {
+            const subaccountPositionsData = {
+              data: {
+                id: subaccount.id,
+                name: subaccount.name,
+                isDemo: subaccount.isDemo,
+                openPositionsCount: subaccount.openPositionsCount
+              },
+              timestamp: Date.now()
+            };
+            
+            // Guardar en localStorage con un prefijo para identificar fácilmente
+            const CACHE_PREFIX = subaccount.isDemo ? 'subaccount_positions_demo_' : 'subaccount_positions_real_';
+            safeLocalStorage.setItem(`${CACHE_PREFIX}${subaccount.id}`, JSON.stringify(subaccountPositionsData));
+            console.log(`✅ Posiciones guardadas en caché para subcuenta ${subaccount.name} (${subaccount.isDemo ? 'DEMO' : 'REAL'})`);
+          });
+          
+          // Guardar resúmenes separados para cuentas demo y reales
+          safeLocalStorage.setItem("perpetual_positions_demo", JSON.stringify({
+            data: {
+              totalPositions: data.perpetualPositions.totalDemoPositions,
+              subaccounts: demoSubaccounts
+            },
+            timestamp: Date.now()
+          }));
+          
+          safeLocalStorage.setItem("perpetual_positions_real", JSON.stringify({
+            data: {
+              totalPositions: data.perpetualPositions.totalRealPositions,
+              subaccounts: realSubaccounts
+            },
+            timestamp: Date.now()
+          }));
+          
+          console.log("✅ Información separada de posiciones demo y reales guardada en caché");
+        } else {
+          console.log("❌ No se recibió información de posiciones perpetual en la respuesta");
+        }
+        
         // Guardar información del usuario si está disponible
         if (data.user) {
           safeLocalStorage.setItem("user", JSON.stringify(data.user));
