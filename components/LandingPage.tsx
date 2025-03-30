@@ -98,7 +98,8 @@ export default function LandingPage() {
   const [language, setLanguage] = useState<Language>('es')
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
   
-  const languageMenuRef = useRef<HTMLDivElement>(null)
+  const desktopLanguageMenuRef = useRef<HTMLDivElement>(null)
+  const mobileLanguageMenuRef = useRef<HTMLDivElement>(null)
 
   // Efecto para cargar el idioma guardado al iniciar
   useEffect(() => {
@@ -137,7 +138,10 @@ export default function LandingPage() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (languageMenuRef.current && !languageMenuRef.current.contains(event.target as Node)) {
+      if (
+        (desktopLanguageMenuRef.current && !desktopLanguageMenuRef.current.contains(event.target as Node)) &&
+        (mobileLanguageMenuRef.current && !mobileLanguageMenuRef.current.contains(event.target as Node))
+      ) {
         setShowLanguageMenu(false)
       }
     }
@@ -731,7 +735,7 @@ export default function LandingPage() {
               >
                 {t.start}
               </Link>
-              <div className="relative" ref={languageMenuRef}>
+              <div className="relative" ref={desktopLanguageMenuRef}>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -772,7 +776,7 @@ export default function LandingPage() {
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center space-x-4">
-              <div className="relative" ref={languageMenuRef}>
+              <div className="relative" ref={mobileLanguageMenuRef}>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
