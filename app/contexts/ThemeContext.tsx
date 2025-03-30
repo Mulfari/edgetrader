@@ -38,17 +38,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}
-      <button
-        onClick={toggleTheme}
-        className="fixed bottom-4 right-4 p-3 rounded-full bg-white dark:bg-zinc-800 shadow-lg hover:shadow-xl transition-all duration-200 border border-zinc-200 dark:border-zinc-700"
-        aria-label="Cambiar tema"
-      >
-        {theme === 'light' ? (
-          <Moon className="h-5 w-5 text-zinc-600 dark:text-zinc-300" />
-        ) : (
-          <Sun className="h-5 w-5 text-zinc-600 dark:text-zinc-300" />
-        )}
-      </button>
     </ThemeContext.Provider>
   )
 }
