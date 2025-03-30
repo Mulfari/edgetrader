@@ -768,7 +768,7 @@ export default function LandingPage() {
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center space-x-4">
-              <div className="relative">
+              <div className="relative z-50">
                 <button
                   onClick={() => setShowLanguageMenu(!showLanguageMenu)}
                   className="px-2 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 flex items-center space-x-2 group"
@@ -777,7 +777,7 @@ export default function LandingPage() {
                   <span className="font-medium">{languageNames[language]}</span>
                 </button>
                 {showLanguageMenu && (
-                  <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 min-w-[160px] border border-gray-100 dark:border-gray-700 backdrop-blur-sm">
+                  <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 min-w-[160px] border border-gray-100 dark:border-gray-700 backdrop-blur-sm z-50">
                     {(['es', 'en', 'de'] as Language[]).map((lang) => (
                       <button
                         key={lang}
