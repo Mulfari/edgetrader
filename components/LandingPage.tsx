@@ -740,7 +740,7 @@ export default function LandingPage() {
                   <span className="font-medium">{languageNames[language]}</span>
                 </button>
                 {showLanguageMenu && (
-                  <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 min-w-[160px] border border-gray-100 dark:border-gray-700 backdrop-blur-sm">
+                  <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 min-w-[160px] border border-gray-100 dark:border-gray-700 backdrop-blur-sm z-50">
                     {(['es', 'en', 'de'] as Language[]).map((lang) => (
                       <button
                         key={lang}
@@ -768,36 +768,44 @@ export default function LandingPage() {
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center space-x-4">
-              <div className="relative">
+              <div className="relative" ref={languageMenuRef}>
                 <button
-                  onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowLanguageMenu(!showLanguageMenu);
+                  }}
                   className="px-2 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 flex items-center space-x-2 group"
                 >
                   <Globe className="h-4 w-4 text-violet-500 group-hover:rotate-12 transition-transform duration-300" />
                   <span className="font-medium">{languageNames[language]}</span>
                 </button>
                 {showLanguageMenu && (
-                  <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 min-w-[160px] border border-gray-100 dark:border-gray-700 backdrop-blur-sm z-50">
-                    {(['es', 'en', 'de'] as Language[]).map((lang) => (
-                      <button
-                        key={lang}
-                        onClick={() => {
-                          setLanguage(lang);
-                          setShowLanguageMenu(false);
-                          localStorage.setItem('preferredLanguage', lang);
-                        }}
-                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors duration-200 ${
-                          language === lang 
-                            ? 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 font-medium' 
-                            : 'text-gray-600 dark:text-gray-300'
-                        } flex items-center justify-between`}
-                      >
-                        <span>{languageNames[lang]}</span>
-                        {language === lang && (
-                          <Check className="h-4 w-4 text-violet-500" />
-                        )}
-                      </button>
-                    ))}
+                  <div 
+                    className="fixed left-0 right-0 bottom-0 bg-white dark:bg-gray-800 rounded-t-xl shadow-lg py-4 border-t border-gray-100 dark:border-gray-700 z-50"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="max-w-lg mx-auto px-4">
+                      {(['es', 'en', 'de'] as Language[]).map((lang) => (
+                        <button
+                          key={lang}
+                          onClick={() => {
+                            setLanguage(lang);
+                            setShowLanguageMenu(false);
+                            localStorage.setItem('preferredLanguage', lang);
+                          }}
+                          className={`w-full px-4 py-3 text-left text-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors duration-200 ${
+                            language === lang 
+                              ? 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 font-medium' 
+                              : 'text-gray-600 dark:text-gray-300'
+                          } flex items-center justify-between rounded-lg mb-2`}
+                        >
+                          <span>{languageNames[lang]}</span>
+                          {language === lang && (
+                            <Check className="h-5 w-5 text-violet-500" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
