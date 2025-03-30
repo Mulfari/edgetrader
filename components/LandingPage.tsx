@@ -777,7 +777,7 @@ export default function LandingPage() {
                   <span className="font-medium">{languageNames[language]}</span>
                 </button>
                 {showLanguageMenu && (
-                  <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 min-w-[160px] border border-gray-100 dark:border-gray-700 backdrop-blur-sm">
+                  <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 min-w-[160px] border border-gray-100 dark:border-gray-700 backdrop-blur-sm z-50">
                     {(['es', 'en', 'de'] as Language[]).map((lang) => (
                       <button
                         key={lang}
