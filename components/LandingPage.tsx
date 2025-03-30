@@ -12,6 +12,8 @@ type TranslationType = {
   [K in Language]: {
     features: string;
     pricingLink: string;
+    login: string;
+    signup: string;
     start: string;
     hero: {
       title: string;
@@ -150,11 +152,13 @@ export default function LandingPage() {
     es: {
       features: 'Características',
       pricingLink: 'Precios',
+      login: 'Iniciar Sesión',
+      signup: 'Registrarse',
       start: 'Comenzar',
       hero: {
         title: 'Trading Inteligente con',
         subtitle: 'Potencia tus operaciones con análisis avanzado, señales en tiempo real y gestión de riesgo inteligente.',
-        startNow: 'Empezar Ahora',
+        startNow: 'Registrarse Ahora',
         comingSoon: 'Próximamente'
       },
       mainFeatures: {
@@ -310,11 +314,13 @@ export default function LandingPage() {
     en: {
       features: 'Features',
       pricingLink: 'Pricing',
+      login: 'Log In',
+      signup: 'Sign Up',
       start: 'Start',
       hero: {
         title: 'Smart Trading with',
         subtitle: 'Power up your operations with advanced analysis, real-time signals and intelligent risk management.',
-        startNow: 'Start Now',
+        startNow: 'Sign Up Now',
         comingSoon: 'Coming Soon'
       },
       mainFeatures: {
@@ -470,11 +476,13 @@ export default function LandingPage() {
     de: {
       features: 'Funktionen',
       pricingLink: 'Preise',
+      login: 'Anmelden',
+      signup: 'Registrieren',
       start: 'Starten',
       hero: {
         title: 'Intelligentes Trading mit',
         subtitle: 'Optimieren Sie Ihre Trades mit fortschrittlicher Analyse, Echtzeit-Signalen und intelligentem Risikomanagement.',
-        startNow: 'Jetzt Starten',
+        startNow: 'Jetzt Registrieren',
         comingSoon: 'Demnächst'
       },
       mainFeatures: {
@@ -726,10 +734,16 @@ export default function LandingPage() {
                 {t.pricingLink}
               </Link>
               <Link
+                href="/login"
+                className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400"
+              >
+                {t.login}
+              </Link>
+              <Link
                 href="/signup"
                 className="px-4 py-2 text-white bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg hover:from-violet-600 hover:to-indigo-600 transition-all duration-300"
               >
-                {t.start}
+                {t.signup}
               </Link>
               <div className="relative" ref={languageMenuRef}>
                 <button
@@ -779,35 +793,68 @@ export default function LandingPage() {
                   <Globe className="h-4 w-4 text-violet-500 group-hover:rotate-12 transition-transform duration-300" />
                   <span className="font-medium">{languageNames[language]}</span>
                 </button>
-                {showLanguageMenu && (
-                  <div 
-                    className="fixed left-0 right-0 bottom-0 bg-white dark:bg-gray-800 rounded-t-xl shadow-lg py-4 border-t border-gray-100 dark:border-gray-700 z-50"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="max-w-lg mx-auto px-4">
-                      {(['es', 'en', 'de'] as Language[]).map((lang) => (
-                        <button
-                          key={lang}
-                          onClick={() => {
-                            setLanguage(lang);
-                            setShowLanguageMenu(false);
-                            localStorage.setItem('preferredLanguage', lang);
-                          }}
-                          className={`w-full px-4 py-3 text-left text-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors duration-200 ${
-                            language === lang 
-                              ? 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 font-medium' 
-                              : 'text-gray-600 dark:text-gray-300'
-                          } flex items-center justify-between rounded-lg mb-2`}
-                        >
-                          <span>{languageNames[lang]}</span>
-                          {language === lang && (
-                            <Check className="h-5 w-5 text-violet-500" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <AnimatePresence>
+                  {showLanguageMenu && (
+                    <>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowLanguageMenu(false)}
+                        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden"
+                      >
+                        <div className="p-6">
+                          <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                              <Globe className="h-5 w-5 text-violet-500 mr-2" />
+                              Seleccionar Idioma
+                            </h3>
+                            <button
+                              onClick={() => setShowLanguageMenu(false)}
+                              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                            >
+                              <X className="h-5 w-5 text-gray-500" />
+                            </button>
+                          </div>
+                          <div className="space-y-2">
+                            {(['es', 'en', 'de'] as Language[]).map((lang) => (
+                              <motion.button
+                                key={lang}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => {
+                                  setLanguage(lang);
+                                  setShowLanguageMenu(false);
+                                  localStorage.setItem('preferredLanguage', lang);
+                                }}
+                                className={`w-full p-3 flex items-center justify-between rounded-xl transition-all duration-200 ${
+                                  language === lang 
+                                    ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 font-medium' 
+                                    : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-600 dark:text-gray-300'
+                                }`}
+                              >
+                                <div className="flex items-center">
+                                  <span className="text-2xl mr-3">{languageIcons[lang]}</span>
+                                  <span className="text-base">{languageNames[lang]}</span>
+                                </div>
+                                {language === lang && (
+                                  <Check className="h-5 w-5 text-violet-500" />
+                                )}
+                              </motion.button>
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
               </div>
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -845,11 +892,18 @@ export default function LandingPage() {
                 {t.pricingLink}
               </Link>
               <Link
+                href="/login"
+                className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400 py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {t.login}
+              </Link>
+              <Link
                 href="/signup"
                 className="w-full py-2 text-center text-white bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg hover:from-violet-600 hover:to-indigo-600 transition-all duration-300"
                 onClick={() => setIsMenuOpen(false)}
               >
-                {t.start}
+                {t.signup}
               </Link>
             </nav>
           </motion.div>
