@@ -733,18 +733,22 @@ export default function LandingPage() {
               </Link>
               <div className="relative" ref={languageMenuRef}>
                 <button
-                  onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowLanguageMenu(!showLanguageMenu);
+                  }}
                   className="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 flex items-center space-x-2 group"
                 >
                   <Globe className="h-4 w-4 text-violet-500 group-hover:rotate-12 transition-transform duration-300" />
                   <span className="font-medium">{languageNames[language]}</span>
                 </button>
                 {showLanguageMenu && (
-                  <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 min-w-[160px] border border-gray-100 dark:border-gray-700 backdrop-blur-sm">
+                  <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 min-w-[160px] border border-gray-100 dark:border-gray-700 backdrop-blur-sm z-50">
                     {(['es', 'en', 'de'] as Language[]).map((lang) => (
                       <button
                         key={lang}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setLanguage(lang);
                           setShowLanguageMenu(false);
                           localStorage.setItem('preferredLanguage', lang);
