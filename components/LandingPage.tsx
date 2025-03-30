@@ -874,37 +874,40 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="md:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+            className="fixed inset-x-0 top-[64px] bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-lg z-40 md:hidden"
           >
-            <nav className="container mx-auto px-4 py-3 flex flex-col space-y-3">
-              <Link
-                href="#features"
-                className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400 py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {t.features}
-              </Link>
-              <Link
-                href="#pricing"
-                className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400 py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {t.pricingLink}
-              </Link>
-              <Link
-                href="/login"
-                className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400 py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {t.login}
-              </Link>
-              <Link
-                href="/signup"
-                className="w-full py-2 text-center text-white bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg hover:from-violet-600 hover:to-indigo-600 transition-all duration-300"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {t.signup}
-              </Link>
+            <nav className="container mx-auto px-4 py-4">
+              <div className="flex flex-col space-y-4">
+                <Link
+                  href="#features"
+                  className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400 py-3 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t.features}
+                </Link>
+                <Link
+                  href="#pricing"
+                  className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400 py-3 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t.pricingLink}
+                </Link>
+                <div className="h-px bg-gray-200 dark:bg-gray-700 my-2" />
+                <Link
+                  href="/login"
+                  className="text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400 py-3 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t.login}
+                </Link>
+                <Link
+                  href="/signup"
+                  className="w-full py-3 px-4 text-center text-white bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg hover:from-violet-600 hover:to-indigo-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-[1.02]"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t.signup}
+                </Link>
+              </div>
             </nav>
           </motion.div>
         )}
