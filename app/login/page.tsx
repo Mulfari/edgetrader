@@ -311,7 +311,7 @@ export default function LoginPage() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="sm:mx-auto sm:w-full sm:max-w-md"
             >
-              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm py-8 px-4 shadow-xl rounded-xl border border-gray-200 dark:border-gray-700 sm:px-10">
+              <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl py-6 px-4 shadow-2xl sm:rounded-xl sm:px-8 border border-gray-100 dark:border-gray-700">
                 <AnimatePresence mode="wait">
                   {isCheckingSession ? (
                     <motion.div
