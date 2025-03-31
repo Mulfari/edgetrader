@@ -94,6 +94,12 @@ type TranslationType = {
   };
 };
 
+const languageFlags = {
+  es: '/icons/flag-es.svg',
+  en: '/icons/flag-en.svg',
+  de: '/icons/flag-de.svg'
+}
+
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
@@ -776,7 +782,13 @@ export default function LandingPage() {
                   onClick={() => setShowLanguageMenu(!showLanguageMenu)}
                   className="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 flex items-center space-x-2 group"
                 >
-                  <Globe className="h-4 w-4 text-cyan-500 group-hover:rotate-12 transition-transform duration-300" />
+                  <Image 
+                    src={languageFlags[language]}
+                    alt={languageNames[language]}
+                    width={20}
+                    height={15}
+                    className="rounded-sm object-cover"
+                  />
                   <span className="font-medium">{languageNames[language]}</span>
                 </button>
                 {showLanguageMenu && (
@@ -793,11 +805,18 @@ export default function LandingPage() {
                           language === lang 
                             ? 'text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-900/20 font-medium' 
                             : 'text-gray-600 dark:text-gray-300'
-                        } flex items-center justify-between`}
+                        } flex items-center space-x-3`}
                       >
+                        <Image 
+                          src={languageFlags[lang]}
+                          alt={languageNames[lang]}
+                          width={20}
+                          height={15}
+                          className="rounded-sm object-cover"
+                        />
                         <span>{languageNames[lang]}</span>
                         {language === lang && (
-                          <Check className="h-4 w-4 text-cyan-500" />
+                          <Check className="h-4 w-4 text-cyan-500 ml-auto" />
                         )}
                       </button>
                     ))}
@@ -813,7 +832,13 @@ export default function LandingPage() {
                   onClick={() => setShowLanguageMenu(!showLanguageMenu)}
                   className="px-2 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 flex items-center space-x-2 group"
                 >
-                  <Globe className="h-4 w-4 text-cyan-500 group-hover:rotate-12 transition-transform duration-300" />
+                  <Image 
+                    src={languageFlags[language]}
+                    alt={languageNames[language]}
+                    width={20}
+                    height={15}
+                    className="rounded-sm object-cover"
+                  />
                   <span className="font-medium">{languageNames[language]}</span>
                 </button>
                 {showLanguageMenu && (
@@ -830,11 +855,18 @@ export default function LandingPage() {
                           language === lang 
                             ? 'text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-900/20 font-medium' 
                             : 'text-gray-600 dark:text-gray-300'
-                        } flex items-center justify-between`}
+                        } flex items-center space-x-3`}
                       >
+                        <Image 
+                          src={languageFlags[lang]}
+                          alt={languageNames[lang]}
+                          width={20}
+                          height={15}
+                          className="rounded-sm object-cover"
+                        />
                         <span>{languageNames[lang]}</span>
                         {language === lang && (
-                          <Check className="h-4 w-4 text-cyan-500" />
+                          <Check className="h-4 w-4 text-cyan-500 ml-auto" />
                         )}
                       </button>
                     ))}
