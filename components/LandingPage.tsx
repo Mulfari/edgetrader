@@ -703,13 +703,11 @@ export default function LandingPage() {
   }, [testimonials.length]);
 
   useEffect(() => {
-    if (window.innerWidth < 768) { // Solo para móviles
-      const featuresLength = t.mainFeatures.items.length;
-      const interval = setInterval(() => {
-        setCurrentFeature((prev) => (prev + 1) % featuresLength);
-      }, 4000);
-      return () => clearInterval(interval);
-    }
+    const featuresLength = t.mainFeatures.items.length;
+    const interval = setInterval(() => {
+      setCurrentFeature((prev) => (prev + 1) % featuresLength);
+    }, 5000);
+    return () => clearInterval(interval);
   }, [t.mainFeatures.items.length]);
 
   const faqItems = [
@@ -981,8 +979,44 @@ export default function LandingPage() {
         {/* Features Section */}
         <section id="features" className="py-20 bg-white dark:bg-gray-800">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Vista de escritorio: cuadrícula */}
-            <div className="hidden md:grid grid-cols-3 gap-8">
+            {/* Versión móvil */}
+            <div className="md:hidden">
+              <motion.div
+                key={currentFeature}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.5 }}
+                className="bg-gray-50 dark:bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 hover:border-cyan-100 dark:hover:border-cyan-900/30 group"
+              >
+                <div className="text-4xl mb-4 bg-gradient-to-r from-cyan-500/10 to-blue-600/10 p-4 rounded-xl inline-block group-hover:from-cyan-500/20 group-hover:to-blue-600/20 transition-all duration-300">
+                  {t.mainFeatures.items[currentFeature].icon}
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
+                  {t.mainFeatures.items[currentFeature].title}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {t.mainFeatures.items[currentFeature].description}
+                </p>
+                <div className="flex justify-center mt-6 space-x-2">
+                  {t.mainFeatures.items.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentFeature(index)}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        index === currentFeature 
+                          ? 'bg-cyan-500 w-4' 
+                          : 'bg-gray-300 dark:bg-gray-600'
+                      }`}
+                      aria-label={`Ver característica ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Versión desktop */}
+            <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-8">
               {t.mainFeatures.items.map((feature, index) => (
                 <motion.div
                   key={index}
@@ -997,48 +1031,6 @@ export default function LandingPage() {
                   <p className="text-gray-600 dark:text-gray-300">{feature.description}</p>
                 </motion.div>
               ))}
-            </div>
-
-            {/* Vista móvil: carrusel */}
-            <div className="md:hidden">
-              <div className="max-w-md mx-auto">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentFeature}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.5 }}
-                    className="bg-gray-50 dark:bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 min-h-[280px] flex flex-col items-center text-center"
-                  >
-                    <div className="text-5xl mb-5 bg-gradient-to-r from-cyan-500/10 to-blue-600/10 p-5 rounded-xl inline-block">
-                      {t.mainFeatures.items[currentFeature].icon}
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                      {t.mainFeatures.items[currentFeature].title}
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300">
-                      {t.mainFeatures.items[currentFeature].description}
-                    </p>
-                  </motion.div>
-                </AnimatePresence>
-
-                {/* Indicadores de posición */}
-                <div className="flex justify-center mt-6 gap-2">
-                  {t.mainFeatures.items.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentFeature(index)}
-                      className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                        currentFeature === index 
-                          ? 'bg-gradient-to-r from-cyan-500 to-blue-600 w-5' 
-                          : 'bg-gray-300 dark:bg-gray-700'
-                      }`}
-                      aria-label={`Ver característica ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
         </section>
