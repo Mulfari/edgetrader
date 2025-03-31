@@ -107,6 +107,7 @@ export default function LandingPage() {
   const [showScrollTop, setShowScrollTop] = useState(false)
   
   const languageMenuRef = useRef<HTMLDivElement>(null)
+  const mobileLanguageMenuRef = useRef<HTMLDivElement>(null)
 
   // Efecto para cargar el idioma guardado al iniciar
   useEffect(() => {
@@ -157,7 +158,10 @@ export default function LandingPage() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (languageMenuRef.current && !languageMenuRef.current.contains(event.target as Node)) {
+      if (
+        (languageMenuRef.current && !languageMenuRef.current.contains(event.target as Node)) &&
+        (mobileLanguageMenuRef.current && !mobileLanguageMenuRef.current.contains(event.target as Node))
+      ) {
         setShowLanguageMenu(false)
       }
     }
@@ -804,7 +808,7 @@ export default function LandingPage() {
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center space-x-4">
-              <div className="relative" ref={languageMenuRef}>
+              <div className="relative" ref={mobileLanguageMenuRef}>
                 <button
                   onClick={() => setShowLanguageMenu(!showLanguageMenu)}
                   className="px-2 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 flex items-center space-x-2 group"
