@@ -44,6 +44,77 @@ const safeLocalStorage = {
   }
 };
 
+type Language = 'es' | 'en' | 'de';
+
+const translations = {
+  es: {
+    welcomeBack: "Bienvenido de nuevo",
+    loginToContinue: "Inicia sesión para continuar con tu experiencia",
+    email: "Correo electrónico",
+    password: "Contraseña",
+    invalidEmail: "Introduce un formato de email válido",
+    invalidPassword: "Introduce una contraseña válida",
+    rememberMe: "Recordarme",
+    forgotPassword: "¿Olvidaste tu contraseña?",
+    login: "Iniciar sesión",
+    loggingIn: "Iniciando sesión...",
+    continueWith: "O continúa con",
+    noAccount: "¿No tienes una cuenta?",
+    signUp: "Regístrate",
+    backToHome: "Volver al inicio",
+    connectionError: "Error de conexión con el servidor.",
+    invalidCredentials: "Credenciales incorrectas.",
+    sessionDetected: "¡Sesión activa detectada!",
+    redirecting: "Te estamos redirigiendo al dashboard...",
+    verifyingSession: "Verificando sesión...",
+    pleaseWait: "Por favor, espera un momento"
+  },
+  en: {
+    welcomeBack: "Welcome back",
+    loginToContinue: "Log in to continue your experience",
+    email: "Email",
+    password: "Password",
+    invalidEmail: "Please enter a valid email format",
+    invalidPassword: "Please enter a valid password",
+    rememberMe: "Remember me",
+    forgotPassword: "Forgot your password?",
+    login: "Log in",
+    loggingIn: "Logging in...",
+    continueWith: "Or continue with",
+    noAccount: "Don't have an account?",
+    signUp: "Sign up",
+    backToHome: "Back to home",
+    connectionError: "Server connection error.",
+    invalidCredentials: "Invalid credentials.",
+    sessionDetected: "Active session detected!",
+    redirecting: "Redirecting you to dashboard...",
+    verifyingSession: "Verifying session...",
+    pleaseWait: "Please wait a moment"
+  },
+  de: {
+    welcomeBack: "Willkommen zurück",
+    loginToContinue: "Melden Sie sich an, um Ihr Erlebnis fortzusetzen",
+    email: "E-Mail",
+    password: "Passwort",
+    invalidEmail: "Bitte geben Sie ein gültiges E-Mail-Format ein",
+    invalidPassword: "Bitte geben Sie ein gültiges Passwort ein",
+    rememberMe: "Angemeldet bleiben",
+    forgotPassword: "Passwort vergessen?",
+    login: "Anmelden",
+    loggingIn: "Anmeldung läuft...",
+    continueWith: "Oder fortfahren mit",
+    noAccount: "Noch kein Konto?",
+    signUp: "Registrieren",
+    backToHome: "Zurück zur Startseite",
+    connectionError: "Verbindungsfehler zum Server.",
+    invalidCredentials: "Ungültige Anmeldedaten.",
+    sessionDetected: "Aktive Sitzung erkannt!",
+    redirecting: "Sie werden zum Dashboard weitergeleitet...",
+    verifyingSession: "Sitzung wird überprüft...",
+    pleaseWait: "Bitte warten Sie einen Moment"
+  }
+};
+
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -57,8 +128,15 @@ export default function LoginPage() {
   const router = useRouter();
   const [errors, setErrors] = useState<ValidationErrors>({ email: "", password: "" });
   const [touched, setTouched] = useState({ email: false, password: false });
+  const [language, setLanguage] = useState<Language>('en');
 
   useEffect(() => {
+    // Cargar el idioma guardado o usar inglés por defecto
+    const savedLanguage = localStorage.getItem('preferredLanguage') as Language;
+    if (savedLanguage && ['es', 'en', 'de'].includes(savedLanguage)) {
+      setLanguage(savedLanguage);
+    }
+
     // Verificar si ya hay una sesión activa
     const token = safeLocalStorage.getItem("token");
     if (token) {
@@ -66,7 +144,7 @@ export default function LoginPage() {
     }
     setIsCheckingSession(false);
 
-    // Rellena los campos de correo electrónico y contraseña si hay datos almacenados en localStorage
+    // Rellena los campos de correo electrónico y contraseña si hay datos almacenados
     const storedEmail = safeLocalStorage.getItem("email");
     const storedPassword = safeLocalStorage.getItem("password");
     if (storedEmail && storedPassword) {
@@ -75,6 +153,9 @@ export default function LoginPage() {
       setRememberMe(true);
     }
   }, []);
+
+  // Obtener las traducciones para el idioma actual
+  const t = translations[language];
 
   // Efecto para la redirección cuando se detecta una sesión activa
   useEffect(() => {
@@ -298,10 +379,10 @@ export default function LoginPage() {
               className="sm:mx-auto sm:w-full sm:max-w-md mb-6"
             >
               <h2 className="text-center text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
-                Bienvenido de nuevo
+                {t.welcomeBack}
               </h2>
               <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-                Inicia sesión para continuar con tu experiencia
+                {t.loginToContinue}
               </p>
             </motion.div>
 
@@ -340,7 +421,7 @@ export default function LoginPage() {
                         transition={{ delay: 0.2 }}
                         className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
                       >
-                        Verificando sesión...
+                        {t.verifyingSession}
                       </motion.h3>
                       <motion.p
                         initial={{ opacity: 0, y: 10 }}
@@ -348,7 +429,7 @@ export default function LoginPage() {
                         transition={{ delay: 0.3 }}
                         className="text-gray-600 dark:text-gray-300"
                       >
-                        Por favor, espera un momento
+                        {t.pleaseWait}
                       </motion.p>
                     </motion.div>
                   ) : isExistingSession ? (
@@ -380,7 +461,7 @@ export default function LoginPage() {
                         transition={{ delay: 0.2 }}
                         className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
                       >
-                        ¡Sesión activa detectada!
+                        {t.sessionDetected}
                       </motion.h3>
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -389,7 +470,7 @@ export default function LoginPage() {
                         className="text-center space-y-4"
                       >
                         <p className="text-gray-600 dark:text-gray-300">
-                          Te estamos redirigiendo al dashboard...
+                          {t.redirecting}
                         </p>
                         <div className="relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                           <motion.div
@@ -430,7 +511,7 @@ export default function LoginPage() {
                         transition={{ delay: 0.2 }}
                         className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
                       >
-                        ¡Inicio de sesión exitoso!
+                        {t.sessionDetected}
                       </motion.h3>
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -439,7 +520,7 @@ export default function LoginPage() {
                         className="text-center space-y-4"
                       >
                         <p className="text-gray-600 dark:text-gray-300">
-                          Te estamos redirigiendo al dashboard...
+                          {t.redirecting}
                         </p>
                         <div className="relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                           <motion.div
@@ -462,7 +543,7 @@ export default function LoginPage() {
                     >
                       <div>
                         <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Correo electrónico
+                          {t.email}
                         </label>
                         <div className="mt-1 relative">
                           <input
@@ -498,7 +579,7 @@ export default function LoginPage() {
                               exit={{ opacity: 0 }}
                               className="text-xs text-red-600 dark:text-red-500 mt-1"
                             >
-                              {errors.email}
+                              {t.invalidEmail}
                             </motion.p>
                           )}
                         </AnimatePresence>
@@ -506,7 +587,7 @@ export default function LoginPage() {
 
                       <div>
                         <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Contraseña
+                          {t.password}
                         </label>
                         <div className="mt-1 relative">
                           <input
@@ -541,7 +622,7 @@ export default function LoginPage() {
                               exit={{ opacity: 0 }}
                               className="text-xs text-red-600 dark:text-red-500 mt-1"
                             >
-                              {errors.password}
+                              {t.invalidPassword}
                             </motion.p>
                           )}
                         </AnimatePresence>
@@ -559,7 +640,7 @@ export default function LoginPage() {
                               className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0 transition-colors duration-200 ease-in-out cursor-pointer"
                             />
                             <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 dark:text-gray-300 select-none cursor-pointer">
-                              Recordarme
+                              {t.rememberMe}
                             </label>
                           </div>
                         </div>
@@ -569,7 +650,7 @@ export default function LoginPage() {
                             href="#"
                             className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
                           >
-                            ¿Olvidaste tu contraseña?
+                            {t.forgotPassword}
                           </Link>
                         </div>
                       </div>
@@ -598,10 +679,10 @@ export default function LoginPage() {
                           {isLoading ? (
                             <>
                               <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-                              Iniciando sesión...
+                              {t.loggingIn}
                             </>
                           ) : (
-                            "Iniciar sesión"
+                            t.login
                           )}
                         </button>
                       </div>
@@ -618,7 +699,7 @@ export default function LoginPage() {
                         </div>
                         <div className="relative flex justify-center text-sm">
                           <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                            O continúa con
+                            {t.continueWith}
                           </span>
                         </div>
                       </div>
@@ -644,12 +725,12 @@ export default function LoginPage() {
                       <div className="mt-6">
                         <div className="text-center">
                           <p className="text-sm text-gray-600 dark:text-gray-400">
-                            ¿No tienes una cuenta?{" "}
+                            {t.noAccount}{" "}
                               <Link
                                 href="/signup"
                                 className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
                               >
-                                Regístrate
+                                {t.signUp}
                               </Link>
                           </p>
                         </div>
@@ -667,15 +748,15 @@ export default function LoginPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="sm:mx-auto sm:w-full sm:max-w-md mt-4"
           >
-            <Link
+            <a
               href="/"
               className="group flex items-center justify-center px-4 py-2 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-lg transition-all duration-300 hover:shadow-xl"
             >
               <ArrowLeft className="mr-2 h-5 w-5 text-cyan-500 dark:text-cyan-400 transition-transform duration-300 group-hover:-translate-x-1" />
               <span className="text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500">
-                Volver al inicio
+                {t.backToHome}
               </span>
-            </Link>
+            </a>
           </motion.div>
         </div>
       </div>

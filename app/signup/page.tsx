@@ -19,6 +19,119 @@ const data = [
   { mes: 'Mes 7', rendimiento: 95 },
 ];
 
+type Language = 'es' | 'en' | 'de';
+
+const translations = {
+  es: {
+    createAccount: "Crea tu cuenta",
+    fullName: "Nombre completo",
+    email: "Correo electrónico",
+    password: "Contraseña",
+    confirmPassword: "Confirmar contraseña",
+    invalidName: "Introduce un nombre válido",
+    invalidEmail: "Introduce un formato de email válido",
+    invalidPassword: "Introduce una contraseña válida",
+    passwordsDontMatch: "Las contraseñas no coinciden",
+    acceptTerms: "Debes aceptar los términos y condiciones",
+    termsAndConditions: "términos y condiciones",
+    iAccept: "Acepto los",
+    createAccountButton: "Crear cuenta",
+    creatingAccount: "Creando cuenta...",
+    continueWith: "O continúa con",
+    alreadyHaveAccount: "¿Ya tienes una cuenta?",
+    login: "Inicia sesión",
+    backToHome: "Volver al inicio",
+    connectionError: "Error de conexión con el servidor.",
+    registrationError: "Error al registrar usuario.",
+    passwordRequirements: {
+      chars: "8+ caracteres",
+      uppercase: "Mayúscula",
+      lowercase: "Minúscula",
+      number: "Número"
+    },
+    terms: {
+      title: "Términos y Condiciones",
+      welcome: "Bienvenido a TradingDash. Al usar nuestros servicios, aceptas estos términos. Por favor, léelos cuidadosamente.",
+      usage: "1. Uso del Servicio: Debes seguir todas las políticas disponibles dentro de los Servicios.",
+      privacy: "2. Privacidad: Nuestras políticas de privacidad explican cómo tratamos tus datos personales y protegemos tu privacidad cuando usas nuestros Servicios.",
+      modifications: "3. Modificaciones: Podemos modificar estos términos o cualquier término adicional que aplique a un Servicio para, por ejemplo, reflejar cambios en la ley o en nuestros Servicios.",
+      close: "Cerrar"
+    }
+  },
+  en: {
+    createAccount: "Create your account",
+    fullName: "Full name",
+    email: "Email",
+    password: "Password",
+    confirmPassword: "Confirm password",
+    invalidName: "Please enter a valid name",
+    invalidEmail: "Please enter a valid email format",
+    invalidPassword: "Please enter a valid password",
+    passwordsDontMatch: "Passwords don't match",
+    acceptTerms: "You must accept the terms and conditions",
+    termsAndConditions: "terms and conditions",
+    iAccept: "I accept the",
+    createAccountButton: "Create account",
+    creatingAccount: "Creating account...",
+    continueWith: "Or continue with",
+    alreadyHaveAccount: "Already have an account?",
+    login: "Log in",
+    backToHome: "Back to home",
+    connectionError: "Server connection error.",
+    registrationError: "Error registering user.",
+    passwordRequirements: {
+      chars: "8+ characters",
+      uppercase: "Uppercase",
+      lowercase: "Lowercase",
+      number: "Number"
+    },
+    terms: {
+      title: "Terms and Conditions",
+      welcome: "Welcome to TradingDash. By using our services, you accept these terms. Please read them carefully.",
+      usage: "1. Service Usage: You must follow all policies available within the Services.",
+      privacy: "2. Privacy: Our privacy policies explain how we handle your personal data and protect your privacy when using our Services.",
+      modifications: "3. Modifications: We may modify these terms or any additional terms that apply to a Service to, for example, reflect changes in the law or our Services.",
+      close: "Close"
+    }
+  },
+  de: {
+    createAccount: "Konto erstellen",
+    fullName: "Vollständiger Name",
+    email: "E-Mail",
+    password: "Passwort",
+    confirmPassword: "Passwort bestätigen",
+    invalidName: "Bitte geben Sie einen gültigen Namen ein",
+    invalidEmail: "Bitte geben Sie ein gültiges E-Mail-Format ein",
+    invalidPassword: "Bitte geben Sie ein gültiges Passwort ein",
+    passwordsDontMatch: "Passwörter stimmen nicht überein",
+    acceptTerms: "Sie müssen die Allgemeinen Geschäftsbedingungen akzeptieren",
+    termsAndConditions: "Allgemeinen Geschäftsbedingungen",
+    iAccept: "Ich akzeptiere die",
+    createAccountButton: "Konto erstellen",
+    creatingAccount: "Konto wird erstellt...",
+    continueWith: "Oder fortfahren mit",
+    alreadyHaveAccount: "Haben Sie bereits ein Konto?",
+    login: "Anmelden",
+    backToHome: "Zurück zur Startseite",
+    connectionError: "Verbindungsfehler zum Server.",
+    registrationError: "Fehler bei der Benutzerregistrierung.",
+    passwordRequirements: {
+      chars: "8+ Zeichen",
+      uppercase: "Großbuchstabe",
+      lowercase: "Kleinbuchstabe",
+      number: "Nummer"
+    },
+    terms: {
+      title: "Allgemeine Geschäftsbedingungen",
+      welcome: "Willkommen bei TradingDash. Mit der Nutzung unserer Dienste akzeptieren Sie diese Bedingungen. Bitte lesen Sie sie sorgfältig.",
+      usage: "1. Nutzung des Dienstes: Sie müssen alle innerhalb der Dienste verfügbaren Richtlinien befolgen.",
+      privacy: "2. Datenschutz: Unsere Datenschutzrichtlinien erklären, wie wir Ihre persönlichen Daten verarbeiten und Ihre Privatsphäre bei der Nutzung unserer Dienste schützen.",
+      modifications: "3. Änderungen: Wir können diese Bedingungen oder zusätzliche Bedingungen, die für einen Dienst gelten, ändern, um beispielsweise Änderungen im Gesetz oder in unseren Diensten widerzuspiegeln.",
+      close: "Schließen"
+    }
+  }
+};
+
 export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -40,20 +153,32 @@ export default function SignUpPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [message, setMessage] = useState("")
   const router = useRouter()
+  const [language, setLanguage] = useState<Language>('en')
+
+  useEffect(() => {
+    // Cargar el idioma guardado o usar inglés por defecto
+    const savedLanguage = localStorage.getItem('preferredLanguage') as Language;
+    if (savedLanguage && ['es', 'en', 'de'].includes(savedLanguage)) {
+      setLanguage(savedLanguage);
+    }
+  }, []);
+
+  // Obtener las traducciones para el idioma actual
+  const t = translations[language];
 
   const validateField = (field: string, value: string) => {
     switch (field) {
       case 'name':
-        return !value.trim() ? "Introduce un nombre válido" : "";
+        return !value.trim() ? t.invalidName : "";
       case 'email':
         return !value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) 
-          ? "Introduce un formato de email válido" : "";
+          ? t.invalidEmail : "";
       case 'password':
         return !value || value.length < 8 || !/[A-Z]/.test(value) || 
                !/[a-z]/.test(value) || !/[0-9]/.test(value)
-          ? "Introduce una contraseña válida" : "";
+          ? t.invalidPassword : "";
       case 'confirmPassword':
-        return value !== password ? "Las contraseñas no coinciden" : "";
+        return value !== password ? t.passwordsDontMatch : "";
       default:
         return "";
     }
@@ -75,7 +200,7 @@ export default function SignUpPage() {
       email: validateField('email', email),
       password: validateField('password', password),
       confirmPassword: validateField('confirmPassword', confirmPassword),
-      terms: !agreedToTerms ? "Debes aceptar los términos y condiciones" : ""
+      terms: !agreedToTerms ? t.acceptTerms : ""
     };
 
     setErrors(newErrors);
@@ -107,11 +232,11 @@ export default function SignUpPage() {
         setSuccess(true);
         setTimeout(() => router.push("/login"), 2000);
       } else {
-        setMessage(data.message || "Error al registrar usuario.");
+        setMessage(data.message || t.registrationError);
       }
     } catch (error) {
       console.error("Error de registro:", error);
-      setMessage("Error al conectar con el servidor.");
+      setMessage(t.connectionError);
     } finally {
       setIsLoading(false);
     }
@@ -132,7 +257,7 @@ export default function SignUpPage() {
             className="sm:mx-auto sm:w-full sm:max-w-md"
           >
             <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-              Crea tu cuenta
+              {t.createAccount}
             </h2>
           </motion.div>
 
@@ -146,7 +271,7 @@ export default function SignUpPage() {
               <form className="space-y-6" onSubmit={handleSubmit} noValidate>
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Nombre completo
+                    {t.fullName}
                   </label>
                   <div className="mt-1 relative">
                     <input
@@ -190,7 +315,7 @@ export default function SignUpPage() {
 
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Correo electrónico
+                    {t.email}
                   </label>
                   <div className="mt-1 relative">
                     <input
@@ -234,7 +359,7 @@ export default function SignUpPage() {
 
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Contraseña
+                    {t.password}
                   </label>
                   <div className="mt-1 relative">
                     <input
@@ -284,10 +409,10 @@ export default function SignUpPage() {
                     >
                       <div className="flex gap-2">
                         {[
-                          { met: password.length >= 8, text: "8+ caracteres" },
-                          { met: /[A-Z]/.test(password), text: "Mayúscula" },
-                          { met: /[a-z]/.test(password), text: "Minúscula" },
-                          { met: /[0-9]/.test(password), text: "Número" }
+                          { met: password.length >= 8, text: t.passwordRequirements.chars },
+                          { met: /[A-Z]/.test(password), text: t.passwordRequirements.uppercase },
+                          { met: /[a-z]/.test(password), text: t.passwordRequirements.lowercase },
+                          { met: /[0-9]/.test(password), text: t.passwordRequirements.number }
                         ].map((requirement, index) => (
                           <div
                             key={index}
@@ -323,7 +448,7 @@ export default function SignUpPage() {
 
                 <div>
                   <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Confirmar contraseña
+                    {t.confirmPassword}
                   </label>
                   <div className="mt-1 relative">
                     <input
@@ -377,13 +502,13 @@ export default function SignUpPage() {
                     className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0 transition-colors duration-200 ease-in-out cursor-pointer"
                   />
                   <label htmlFor="terms" className="ml-2 block text-sm text-gray-700 dark:text-gray-300 select-none cursor-pointer">
-                    Acepto los{" "}
+                    {t.iAccept}{" "}
                     <button
                       type="button"
                       onClick={() => setShowTerms(true)}
                       className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
                     >
-                      términos y condiciones
+                      {t.termsAndConditions}
                     </button>
                   </label>
                 </div>
@@ -425,7 +550,7 @@ export default function SignUpPage() {
                     {isLoading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
-                      "Crear cuenta"
+                      t.createAccountButton
                     )}
                   </button>
                 </div>
@@ -438,7 +563,7 @@ export default function SignUpPage() {
                   </div>
                   <div className="relative flex justify-center text-sm">
                     <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">
-                      O continúa con
+                      {t.continueWith}
                     </span>
                   </div>
                 </div>
@@ -464,12 +589,12 @@ export default function SignUpPage() {
 
                 <div className="mt-6 text-center">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    ¿Ya tienes una cuenta?{" "}
+                    {t.alreadyHaveAccount}{" "}
                     <Link
                       href="/login"
                       className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
                     >
-                      Inicia sesión
+                      {t.login}
                     </Link>
                   </p>
                 </div>
@@ -483,15 +608,15 @@ export default function SignUpPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="sm:mx-auto sm:w-full sm:max-w-md mt-4"
           >
-            <Link
+            <a
               href="/"
               className="group w-2/5 flex items-center justify-center px-4 py-2 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-lg transition-all duration-300 hover:shadow-xl"
             >
               <ArrowLeft className="mr-2 h-5 w-5 text-cyan-500 dark:text-cyan-400 transition-transform duration-300 group-hover:-translate-x-1" />
               <span className="text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500">
-                Volver al inicio
+                {t.backToHome}
               </span>
-            </Link>
+            </a>
           </motion.div>
         </div>
       </div>
@@ -647,28 +772,20 @@ export default function SignUpPage() {
               onClick={e => e.stopPropagation()}
             >
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                Términos y Condiciones
+                {t.terms.title}
               </h3>
               <div className="text-sm text-gray-500 dark:text-gray-400 mb-4 max-h-60 overflow-y-auto space-y-4">
-                <p>
-                  Bienvenido a TradingDash. Al usar nuestros servicios, aceptas estos términos. Por favor, léelos cuidadosamente.
-                </p>
-                <p>
-                  1. Uso del Servicio: Debes seguir todas las políticas disponibles dentro de los Servicios.
-                </p>
-                <p>
-                  2. Privacidad: Nuestras políticas de privacidad explican cómo tratamos tus datos personales y protegemos tu privacidad cuando usas nuestros Servicios.
-                </p>
-                <p>
-                  3. Modificaciones: Podemos modificar estos términos o cualquier término adicional que aplique a un Servicio para, por ejemplo, reflejar cambios en la ley o en nuestros Servicios.
-                </p>
+                <p>{t.terms.welcome}</p>
+                <p>{t.terms.usage}</p>
+                <p>{t.terms.privacy}</p>
+                <p>{t.terms.modifications}</p>
               </div>
               <div className="flex justify-end">
                 <button
                   onClick={() => setShowTerms(false)}
                   className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-200"
                 >
-                  Cerrar
+                  {t.terms.close}
                 </button>
               </div>
             </motion.div>
