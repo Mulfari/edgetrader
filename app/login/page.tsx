@@ -364,9 +364,108 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-row-reverse overflow-hidden">
-      {/* Sección derecha - Login */}
-      <div className="w-full lg:w-1/2 bg-gradient-to-b from-slate-50 to-gray-100 dark:from-slate-900 dark:to-gray-900 flex flex-col justify-center px-6 lg:px-8 h-screen relative">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Fondo azul que ocupará toda la pantalla */}
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-600">
+        {/* Elementos decorativos de fondo */}
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(to_bottom,white,transparent)] opacity-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 to-blue-600/30 backdrop-blur-sm"></div>
+        
+        {/* Elementos decorativos flotantes con efecto de cristal */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -right-4 top-1/4 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+          <div className="absolute -left-4 top-3/4 w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
+          <div className="absolute right-1/4 bottom-1/4 w-48 h-48 bg-white/5 rounded-full blur-2xl"></div>
+        </div>
+      </div>
+
+      {/* Contenedor flex para las dos secciones principales */}
+      <div className="relative z-10 min-h-screen flex">
+        {/* Sección izquierda - Decorativa (visible solo en pantallas grandes) */}
+        <div className="hidden lg:flex lg:w-1/2 relative">
+          <div className="relative w-full flex flex-col items-center justify-center p-8 text-white">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="text-center relative z-10"
+            >
+              <h3 className="text-3xl font-bold mb-4 [text-shadow:0_2px_10px_rgba(0,0,0,0.1)]">
+                Trading Dashboard Pro
+              </h3>
+              <p className="text-lg mb-6 text-blue-50">
+                La plataforma más avanzada para el trading profesional
+              </p>
+              
+              <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-xl p-4 hover:from-white/15 hover:to-white/10 transition-all duration-300 border border-white/10 shadow-[0_0_15px_rgba(0,0,0,0.1)] hover:shadow-[0_0_20px_rgba(0,0,0,0.15)]"
+                >
+                  <div className="text-3xl mb-2">📊</div>
+                  <h4 className="text-lg font-semibold mb-1">Análisis Avanzado</h4>
+                  <p className="text-sm text-gray-200">Herramientas potentes para tomar mejores decisiones</p>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-xl p-4 hover:from-white/15 hover:to-white/10 transition-all duration-300 border border-white/10 shadow-[0_0_15px_rgba(0,0,0,0.1)] hover:shadow-[0_0_20px_rgba(0,0,0,0.15)]"
+                >
+                  <div className="text-3xl mb-2">⚡</div>
+                  <h4 className="text-lg font-semibold mb-1">Tiempo Real</h4>
+                  <p className="text-sm text-gray-200">Datos y alertas instantáneas del mercado</p>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                  className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-xl p-4 hover:from-white/15 hover:to-white/10 transition-all duration-300 border border-white/10 shadow-[0_0_15px_rgba(0,0,0,0.1)] hover:shadow-[0_0_20px_rgba(0,0,0,0.15)]"
+                >
+                  <div className="text-3xl mb-2">🛡️</div>
+                  <h4 className="text-lg font-semibold mb-1">Seguridad Total</h4>
+                  <p className="text-sm text-gray-200">Tu inversión protegida en todo momento</p>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.7 }}
+                  className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-xl p-4 hover:from-white/15 hover:to-white/10 transition-all duration-300 border border-white/10 shadow-[0_0_15px_rgba(0,0,0,0.1)] hover:shadow-[0_0_20px_rgba(0,0,0,0.15)]"
+                >
+                  <div className="text-3xl mb-2">🎯</div>
+                  <h4 className="text-lg font-semibold mb-1">Soporte 24/7</h4>
+                  <p className="text-sm text-gray-200">Estamos aquí para ayudarte siempre</p>
+                </motion.div>
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.8 }}
+                className="mt-6 bg-gradient-to-r from-white/10 to-white/5 rounded-xl p-3 backdrop-blur-md shadow-[0_0_15px_rgba(0,0,0,0.1)]"
+              >
+                <div className="flex items-center justify-center space-x-3">
+                  <div className="flex -space-x-2">
+                    <img className="w-8 h-8 rounded-full border-2 border-cyan-200 shadow-lg" src="https://randomuser.me/api/portraits/men/1.jpg" alt="Usuario" />
+                    <img className="w-8 h-8 rounded-full border-2 border-cyan-200 shadow-lg" src="https://randomuser.me/api/portraits/women/2.jpg" alt="Usuario" />
+                    <img className="w-8 h-8 rounded-full border-2 border-cyan-200 shadow-lg" src="https://randomuser.me/api/portraits/men/3.jpg" alt="Usuario" />
+                  </div>
+                  <p className="text-sm text-blue-50 [text-shadow:0_1px_2px_rgba(0,0,0,0.1)]">
+                    Más de 10,000 traders confían en nosotros
+                  </p>
+                </div>
+              </motion.div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Sección derecha - Login */}
+        <div className="w-full lg:w-1/2 bg-white dark:bg-gray-900 flex flex-col justify-center px-6 lg:px-12 h-screen relative rounded-tl-[40px] rounded-bl-[40px]">
         {/* Elementos decorativos de fondo */}
         <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-700/25 bg-[size:20px_20px] opacity-[0.05]"></div>
 
@@ -379,10 +478,10 @@ export default function LoginPage() {
               className="sm:mx-auto sm:w-full sm:max-w-md mb-6"
             >
               <h2 className="text-center text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
-                {t.welcomeBack}
+                  {t.welcomeBack}
               </h2>
               <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-                {t.loginToContinue}
+                  {t.loginToContinue}
               </p>
             </motion.div>
 
@@ -392,7 +491,7 @@ export default function LoginPage() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="sm:mx-auto sm:w-full sm:max-w-md"
             >
-              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm py-8 px-4 shadow-xl rounded-xl border border-gray-200 dark:border-gray-700 sm:px-10">
+                <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm py-8 px-4 shadow-xl rounded-xl border border-gray-200 dark:border-gray-700 sm:px-10">
                 <AnimatePresence mode="wait">
                   {isCheckingSession ? (
                     <motion.div
@@ -421,7 +520,7 @@ export default function LoginPage() {
                         transition={{ delay: 0.2 }}
                         className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
                       >
-                        {t.verifyingSession}
+                          {t.verifyingSession}
                       </motion.h3>
                       <motion.p
                         initial={{ opacity: 0, y: 10 }}
@@ -429,7 +528,7 @@ export default function LoginPage() {
                         transition={{ delay: 0.3 }}
                         className="text-gray-600 dark:text-gray-300"
                       >
-                        {t.pleaseWait}
+                          {t.pleaseWait}
                       </motion.p>
                     </motion.div>
                   ) : isExistingSession ? (
@@ -461,7 +560,7 @@ export default function LoginPage() {
                         transition={{ delay: 0.2 }}
                         className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
                       >
-                        {t.sessionDetected}
+                          {t.sessionDetected}
                       </motion.h3>
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -470,7 +569,7 @@ export default function LoginPage() {
                         className="text-center space-y-4"
                       >
                         <p className="text-gray-600 dark:text-gray-300">
-                          {t.redirecting}
+                            {t.redirecting}
                         </p>
                         <div className="relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                           <motion.div
@@ -511,7 +610,7 @@ export default function LoginPage() {
                         transition={{ delay: 0.2 }}
                         className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
                       >
-                        {t.sessionDetected}
+                          {t.sessionDetected}
                       </motion.h3>
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -520,7 +619,7 @@ export default function LoginPage() {
                         className="text-center space-y-4"
                       >
                         <p className="text-gray-600 dark:text-gray-300">
-                          {t.redirecting}
+                            {t.redirecting}
                         </p>
                         <div className="relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                           <motion.div
@@ -543,7 +642,7 @@ export default function LoginPage() {
                     >
                       <div>
                         <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {t.email}
+                            {t.email}
                         </label>
                         <div className="mt-1 relative">
                           <input
@@ -579,7 +678,7 @@ export default function LoginPage() {
                               exit={{ opacity: 0 }}
                               className="text-xs text-red-600 dark:text-red-500 mt-1"
                             >
-                              {t.invalidEmail}
+                                {t.invalidEmail}
                             </motion.p>
                           )}
                         </AnimatePresence>
@@ -587,7 +686,7 @@ export default function LoginPage() {
 
                       <div>
                         <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {t.password}
+                            {t.password}
                         </label>
                         <div className="mt-1 relative">
                           <input
@@ -622,7 +721,7 @@ export default function LoginPage() {
                               exit={{ opacity: 0 }}
                               className="text-xs text-red-600 dark:text-red-500 mt-1"
                             >
-                              {t.invalidPassword}
+                                {t.invalidPassword}
                             </motion.p>
                           )}
                         </AnimatePresence>
@@ -640,7 +739,7 @@ export default function LoginPage() {
                               className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0 transition-colors duration-200 ease-in-out cursor-pointer"
                             />
                             <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 dark:text-gray-300 select-none cursor-pointer">
-                              {t.rememberMe}
+                                {t.rememberMe}
                             </label>
                           </div>
                         </div>
@@ -650,7 +749,7 @@ export default function LoginPage() {
                             href="#"
                             className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
                           >
-                            {t.forgotPassword}
+                              {t.forgotPassword}
                           </Link>
                         </div>
                       </div>
@@ -679,10 +778,10 @@ export default function LoginPage() {
                           {isLoading ? (
                             <>
                               <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-                              {t.loggingIn}
+                                {t.loggingIn}
                             </>
                           ) : (
-                            t.login
+                              t.login
                           )}
                         </button>
                       </div>
@@ -699,7 +798,7 @@ export default function LoginPage() {
                         </div>
                         <div className="relative flex justify-center text-sm">
                           <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                            {t.continueWith}
+                              {t.continueWith}
                           </span>
                         </div>
                       </div>
@@ -725,12 +824,12 @@ export default function LoginPage() {
                       <div className="mt-6">
                         <div className="text-center">
                           <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {t.noAccount}{" "}
+                              {t.noAccount}{" "}
                               <Link
                                 href="/signup"
                                 className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
                               >
-                                {t.signUp}
+                                  {t.signUp}
                               </Link>
                           </p>
                         </div>
@@ -748,110 +847,17 @@ export default function LoginPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="sm:mx-auto sm:w-full sm:max-w-md mt-4"
           >
-            <a
+              <a
               href="/"
               className="group flex items-center justify-center px-4 py-2 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-lg transition-all duration-300 hover:shadow-xl"
             >
               <ArrowLeft className="mr-2 h-5 w-5 text-cyan-500 dark:text-cyan-400 transition-transform duration-300 group-hover:-translate-x-1" />
               <span className="text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500">
-                {t.backToHome}
+                  {t.backToHome}
               </span>
-            </a>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Sección izquierda - Decorativa */}
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-cyan-500 to-blue-600 relative overflow-hidden">
-        {/* Elementos decorativos de fondo */}
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(to_bottom,white,transparent)] opacity-10"></div>
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 to-blue-600/30 backdrop-blur-sm"></div>
-        
-        {/* Elementos decorativos flotantes con efecto de cristal */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -right-4 top-1/4 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
-          <div className="absolute -left-4 top-3/4 w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
-          <div className="absolute right-1/4 bottom-1/4 w-48 h-48 bg-white/5 rounded-full blur-2xl"></div>
-        </div>
-
-        <div className="relative w-full flex flex-col items-center justify-center p-8 text-white">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="text-center relative z-10"
-          >
-            <h3 className="text-3xl font-bold mb-4 [text-shadow:0_2px_10px_rgba(0,0,0,0.1)]">
-              Trading Dashboard Pro
-            </h3>
-            <p className="text-lg mb-6 text-blue-50">
-              La plataforma más avanzada para el trading profesional
-            </p>
-            
-            <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-xl p-4 hover:from-white/15 hover:to-white/10 transition-all duration-300 border border-white/10 shadow-[0_0_15px_rgba(0,0,0,0.1)] hover:shadow-[0_0_20px_rgba(0,0,0,0.15)]"
-              >
-                <div className="text-3xl mb-2">📊</div>
-                <h4 className="text-lg font-semibold mb-1">Análisis Avanzado</h4>
-                <p className="text-sm text-gray-200">Herramientas potentes para tomar mejores decisiones</p>
-              </motion.div>
-              
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-                className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-xl p-4 hover:from-white/15 hover:to-white/10 transition-all duration-300 border border-white/10 shadow-[0_0_15px_rgba(0,0,0,0.1)] hover:shadow-[0_0_20px_rgba(0,0,0,0.15)]"
-              >
-                <div className="text-3xl mb-2">⚡</div>
-                <h4 className="text-lg font-semibold mb-1">Tiempo Real</h4>
-                <p className="text-sm text-gray-200">Datos y alertas instantáneas del mercado</p>
-              </motion.div>
-              
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-                className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-xl p-4 hover:from-white/15 hover:to-white/10 transition-all duration-300 border border-white/10 shadow-[0_0_15px_rgba(0,0,0,0.1)] hover:shadow-[0_0_20px_rgba(0,0,0,0.15)]"
-              >
-                <div className="text-3xl mb-2">🛡️</div>
-                <h4 className="text-lg font-semibold mb-1">Seguridad Total</h4>
-                <p className="text-sm text-gray-200">Tu inversión protegida en todo momento</p>
-              </motion.div>
-              
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.7 }}
-                className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-xl p-4 hover:from-white/15 hover:to-white/10 transition-all duration-300 border border-white/10 shadow-[0_0_15px_rgba(0,0,0,0.1)] hover:shadow-[0_0_20px_rgba(0,0,0,0.15)]"
-              >
-                <div className="text-3xl mb-2">🎯</div>
-                <h4 className="text-lg font-semibold mb-1">Soporte 24/7</h4>
-                <p className="text-sm text-gray-200">Estamos aquí para ayudarte siempre</p>
-              </motion.div>
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.8 }}
-              className="mt-6 bg-gradient-to-r from-white/10 to-white/5 rounded-xl p-3 backdrop-blur-md shadow-[0_0_15px_rgba(0,0,0,0.1)]"
-            >
-              <div className="flex items-center justify-center space-x-3">
-                <div className="flex -space-x-2">
-                  <img className="w-8 h-8 rounded-full border-2 border-cyan-200 shadow-lg" src="https://randomuser.me/api/portraits/men/1.jpg" alt="Usuario" />
-                  <img className="w-8 h-8 rounded-full border-2 border-cyan-200 shadow-lg" src="https://randomuser.me/api/portraits/women/2.jpg" alt="Usuario" />
-                  <img className="w-8 h-8 rounded-full border-2 border-cyan-200 shadow-lg" src="https://randomuser.me/api/portraits/men/3.jpg" alt="Usuario" />
-                </div>
-                <p className="text-sm text-blue-50 [text-shadow:0_1px_2px_rgba(0,0,0,0.1)]">
-                  Más de 10,000 traders confían en nosotros
-                </p>
-              </div>
+              </a>
             </motion.div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </div>

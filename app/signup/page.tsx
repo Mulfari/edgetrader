@@ -243,397 +243,25 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-row-reverse">
-      {/* Sección derecha - Registro */}
-      <div className="w-full lg:w-1/2 bg-gradient-to-b from-slate-50 to-gray-100 dark:from-slate-900 dark:to-gray-900 flex flex-col justify-between p-6 lg:p-8 overflow-y-auto">
-        {/* Elementos decorativos de fondo */}
-        <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-700/25 bg-[size:20px_20px] opacity-[0.05] pointer-events-none"></div>
-
-        <div className="flex flex-col relative">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="sm:mx-auto sm:w-full sm:max-w-md"
-          >
-            <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-              {t.createAccount}
-            </h2>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
-          >
-            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm py-8 px-4 shadow-xl rounded-xl border border-gray-200 dark:border-gray-700 sm:px-10">
-              <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t.fullName}
-                  </label>
-                  <div className="mt-1 relative">
-                    <input
-                      id="name"
-                      name="name"
-                      type="text"
-                      autoComplete="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      onBlur={() => handleBlur('name', name)}
-                      className={`appearance-none block w-full px-3 py-2 border ${
-                        errors.name && touched.name ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                      } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
-                    />
-                    <AnimatePresence>
-                      {errors.name && touched.name && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
-                        >
-                          <AlertCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                  <AnimatePresence>
-                    {errors.name && touched.name && (
-                      <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="text-xs text-red-600 dark:text-red-500 mt-1"
-                      >
-                        {errors.name}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t.email}
-                  </label>
-                  <div className="mt-1 relative">
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      onBlur={() => handleBlur('email', email)}
-                      className={`appearance-none block w-full px-3 py-2 border ${
-                        errors.email && touched.email ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                      } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
-                    />
-                    <AnimatePresence>
-                      {errors.email && touched.email && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
-                        >
-                          <AlertCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                  <AnimatePresence>
-                    {errors.email && touched.email && (
-                      <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="text-xs text-red-600 dark:text-red-500 mt-1"
-                      >
-                        {errors.email}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t.password}
-                  </label>
-                  <div className="mt-1 relative">
-                    <input
-                      id="password"
-                      name="password"
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="new-password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      onBlur={() => handleBlur('password', password)}
-                      className={`appearance-none block w-full px-3 py-2 border ${
-                        errors.password && touched.password ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                      } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
-                      ) : (
-                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
-                      )}
-                    </button>
-                  </div>
-                  <AnimatePresence>
-                    {errors.password && touched.password && (
-                      <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="text-xs text-red-600 dark:text-red-500 mt-1"
-                      >
-                        {errors.password}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-                  
-                  {/* Validador de robustez de contraseña */}
-                  {password && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mt-2 space-y-2"
-                    >
-                      <div className="flex gap-2">
-                        {[
-                          { met: password.length >= 8, text: t.passwordRequirements.chars },
-                          { met: /[A-Z]/.test(password), text: t.passwordRequirements.uppercase },
-                          { met: /[a-z]/.test(password), text: t.passwordRequirements.lowercase },
-                          { met: /[0-9]/.test(password), text: t.passwordRequirements.number }
-                        ].map((requirement, index) => (
-                          <div
-                            key={index}
-                            className={`text-[10px] px-2 py-1 rounded-full ${
-                              requirement.met
-                                ? "bg-green-500/20 text-green-500 dark:bg-green-500/10 dark:text-green-400"
-                                : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
-                            }`}
-                          >
-                            {requirement.text}
-                          </div>
-                        ))}
-                      </div>
-                      <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                        <motion.div
-                          className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500"
-                          initial={{ width: "0%" }}
-                          animate={{
-                            width: `${
-                              ((password.length >= 8 ? 1 : 0) +
-                              (/[A-Z]/.test(password) ? 1 : 0) +
-                              (/[a-z]/.test(password) ? 1 : 0) +
-                              (/[0-9]/.test(password) ? 1 : 0)) *
-                              25
-                            }%`
-                          }}
-                          transition={{ duration: 0.3 }}
-                        />
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t.confirmPassword}
-                  </label>
-                  <div className="mt-1 relative">
-                    <input
-                      id="confirm-password"
-                      name="confirm-password"
-                      type={showConfirmPassword ? "text" : "password"}
-                      autoComplete="new-password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      onBlur={() => handleBlur('confirmPassword', confirmPassword)}
-                      className={`appearance-none block w-full px-3 py-2 border ${
-                        errors.confirmPassword && touched.confirmPassword ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                      } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
-                      ) : (
-                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
-                      )}
-                    </button>
-                  </div>
-                  <AnimatePresence>
-                    {errors.confirmPassword && touched.confirmPassword && (
-                      <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="text-xs text-red-600 dark:text-red-500 mt-1"
-                      >
-                        {errors.confirmPassword}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    id="terms"
-                    name="terms"
-                    type="checkbox"
-                    checked={agreedToTerms}
-                    onChange={(e) => {
-                      setAgreedToTerms(e.target.checked);
-                      handleBlur('terms', e.target.checked ? 'true' : '');
-                    }}
-                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0 transition-colors duration-200 ease-in-out cursor-pointer"
-                  />
-                  <label htmlFor="terms" className="ml-2 block text-sm text-gray-700 dark:text-gray-300 select-none cursor-pointer">
-                    {t.iAccept}{" "}
-                    <button
-                      type="button"
-                      onClick={() => setShowTerms(true)}
-                      className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
-                    >
-                      {t.termsAndConditions}
-                    </button>
-                  </label>
-                </div>
-                <AnimatePresence>
-                  {errors.terms && touched.terms && (
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="text-xs text-red-600 dark:text-red-500 mt-1"
-                    >
-                      {errors.terms}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-
-                {message && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="rounded-lg bg-red-50 dark:bg-red-900/50 p-3"
-                  >
-                    <div className="flex">
-                      <AlertCircle className="h-5 w-5 text-red-400" />
-                      <div className="ml-3">
-                        <p className="text-sm text-red-500 dark:text-red-200">{message}</p>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                <div>
-                  <button
-                    type="submit"
-                    disabled={isLoading || Object.values(errors).some(error => error !== "")}
-                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      t.createAccountButton
-                    )}
-                  </button>
-                </div>
-              </form>
-
-              <div className="mt-6">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300 dark:border-gray-600" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">
-                      {t.continueWith}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-6 grid grid-cols-2 gap-3">
-                  <div>
-                    <button
-                      type="button"
-                      className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
-                    >
-                      <Github className="h-5 w-5" />
-                    </button>
-                  </div>
-                  <div>
-                    <button
-                      type="button"
-                      className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
-                    >
-                      <Twitter className="h-5 w-5" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-6 text-center">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {t.alreadyHaveAccount}{" "}
-                    <Link
-                      href="/login"
-                      className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
-                    >
-                      {t.login}
-                    </Link>
-                  </p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="sm:mx-auto sm:w-full sm:max-w-md mt-4"
-          >
-            <a
-              href="/"
-              className="group w-2/5 flex items-center justify-center px-4 py-2 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-lg transition-all duration-300 hover:shadow-xl"
-            >
-              <ArrowLeft className="mr-2 h-5 w-5 text-cyan-500 dark:text-cyan-400 transition-transform duration-300 group-hover:-translate-x-1" />
-              <span className="text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500">
-                {t.backToHome}
-              </span>
-            </a>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Sección izquierda - Decorativa */}
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-cyan-500 to-blue-600 relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Fondo azul que ocupará toda la pantalla */}
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-600">
         {/* Elementos decorativos de fondo */}
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(to_bottom,white,transparent)] opacity-10"></div>
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 to-blue-600/30 backdrop-blur-sm"></div>
         
-        {/* Elementos decorativos flotantes */}
+        {/* Elementos decorativos flotantes con efecto de cristal */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -right-4 top-1/4 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
           <div className="absolute -left-4 top-3/4 w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
           <div className="absolute right-1/4 bottom-1/4 w-48 h-48 bg-white/5 rounded-full blur-2xl"></div>
         </div>
+        </div>
 
+      {/* Contenedor flex para las dos secciones principales */}
+      <div className="relative z-10 min-h-screen flex">
+        {/* Sección izquierda - Decorativa (visible solo en pantallas grandes) */}
+        <div className="hidden lg:flex lg:w-1/2 relative">
         <div className="relative w-full flex flex-col items-center justify-center p-8 text-white">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -752,6 +380,384 @@ export default function SignUpPage() {
               </motion.div>
             </div>
           </motion.div>
+          </div>
+        </div>
+
+        {/* Sección derecha - Registro */}
+        <div className="w-full lg:w-1/2 bg-white dark:bg-gray-900 flex flex-col justify-between p-6 lg:p-12 overflow-y-auto relative rounded-tl-[40px] rounded-bl-[40px]">
+          {/* Elementos decorativos de fondo */}
+          <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-700/25 bg-[size:20px_20px] opacity-[0.05]"></div>
+
+          <div className="flex flex-col relative">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="sm:mx-auto sm:w-full sm:max-w-md"
+            >
+              <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+                {t.createAccount}
+              </h2>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
+            >
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm py-8 px-4 shadow-xl rounded-xl border border-gray-200 dark:border-gray-700 sm:px-10">
+                <form className="space-y-6" onSubmit={handleSubmit} noValidate>
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {t.fullName}
+                    </label>
+                    <div className="mt-1 relative">
+                      <input
+                        id="name"
+                        name="name"
+                        type="text"
+                        autoComplete="name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        onBlur={() => handleBlur('name', name)}
+                        className={`appearance-none block w-full px-3 py-2 border ${
+                          errors.name && touched.name ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                        } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
+                      />
+                      <AnimatePresence>
+                        {errors.name && touched.name && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                          >
+                            <AlertCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                    <AnimatePresence>
+                      {errors.name && touched.name && (
+                        <motion.p
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="text-xs text-red-600 dark:text-red-500 mt-1"
+                        >
+                          {errors.name}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {t.email}
+                    </label>
+                    <div className="mt-1 relative">
+                      <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        onBlur={() => handleBlur('email', email)}
+                        className={`appearance-none block w-full px-3 py-2 border ${
+                          errors.email && touched.email ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                        } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
+                      />
+                      <AnimatePresence>
+                        {errors.email && touched.email && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                          >
+                            <AlertCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                    <AnimatePresence>
+                      {errors.email && touched.email && (
+                        <motion.p
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="text-xs text-red-600 dark:text-red-500 mt-1"
+                        >
+                          {errors.email}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {t.password}
+                    </label>
+                    <div className="mt-1 relative">
+                      <input
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onBlur={() => handleBlur('password', password)}
+                        className={`appearance-none block w-full px-3 py-2 border ${
+                          errors.password && touched.password ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                        } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
+                        ) : (
+                          <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
+                        )}
+                      </button>
+                    </div>
+                    <AnimatePresence>
+                      {errors.password && touched.password && (
+                        <motion.p
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="text-xs text-red-600 dark:text-red-500 mt-1"
+                        >
+                          {errors.password}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                    
+                    {/* Validador de robustez de contraseña */}
+                    {password && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-2 space-y-2"
+                      >
+                        <div className="flex gap-2">
+                          {[
+                            { met: password.length >= 8, text: t.passwordRequirements.chars },
+                            { met: /[A-Z]/.test(password), text: t.passwordRequirements.uppercase },
+                            { met: /[a-z]/.test(password), text: t.passwordRequirements.lowercase },
+                            { met: /[0-9]/.test(password), text: t.passwordRequirements.number }
+                          ].map((requirement, index) => (
+                            <div
+                              key={index}
+                              className={`text-[10px] px-2 py-1 rounded-full ${
+                                requirement.met
+                                  ? "bg-green-500/20 text-green-500 dark:bg-green-500/10 dark:text-green-400"
+                                  : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+                              }`}
+                            >
+                              {requirement.text}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <motion.div
+                            className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500"
+                            initial={{ width: "0%" }}
+                            animate={{
+                              width: `${
+                                ((password.length >= 8 ? 1 : 0) +
+                                (/[A-Z]/.test(password) ? 1 : 0) +
+                                (/[a-z]/.test(password) ? 1 : 0) +
+                                (/[0-9]/.test(password) ? 1 : 0)) *
+                                25
+                              }%`
+                            }}
+                            transition={{ duration: 0.3 }}
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {t.confirmPassword}
+                    </label>
+                    <div className="mt-1 relative">
+                      <input
+                        id="confirm-password"
+                        name="confirm-password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onBlur={() => handleBlur('confirmPassword', confirmPassword)}
+                        className={`appearance-none block w-full px-3 py-2 border ${
+                          errors.confirmPassword && touched.confirmPassword ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                        } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
+                        ) : (
+                          <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
+                        )}
+                      </button>
+                    </div>
+                    <AnimatePresence>
+                      {errors.confirmPassword && touched.confirmPassword && (
+                        <motion.p
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="text-xs text-red-600 dark:text-red-500 mt-1"
+                        >
+                          {errors.confirmPassword}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      id="terms"
+                      name="terms"
+                      type="checkbox"
+                      checked={agreedToTerms}
+                      onChange={(e) => {
+                        setAgreedToTerms(e.target.checked);
+                        handleBlur('terms', e.target.checked ? 'true' : '');
+                      }}
+                      className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0 transition-colors duration-200 ease-in-out cursor-pointer"
+                    />
+                    <label htmlFor="terms" className="ml-2 block text-sm text-gray-700 dark:text-gray-300 select-none cursor-pointer">
+                      {t.iAccept}{" "}
+                      <button
+                        type="button"
+                        onClick={() => setShowTerms(true)}
+                        className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
+                      >
+                        {t.termsAndConditions}
+                      </button>
+                    </label>
+                  </div>
+                  <AnimatePresence>
+                    {errors.terms && touched.terms && (
+                      <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="text-xs text-red-600 dark:text-red-500 mt-1"
+                      >
+                        {errors.terms}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+
+                  {message && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="rounded-lg bg-red-50 dark:bg-red-900/50 p-3"
+                    >
+                      <div className="flex">
+                        <AlertCircle className="h-5 w-5 text-red-400" />
+                        <div className="ml-3">
+                          <p className="text-sm text-red-500 dark:text-red-200">{message}</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  <div>
+                    <button
+                      type="submit"
+                      disabled={isLoading || Object.values(errors).some(error => error !== "")}
+                      className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        t.createAccountButton
+                      )}
+                    </button>
+                  </div>
+                </form>
+
+                <div className="mt-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">
+                        {t.continueWith}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-2 gap-3">
+                    <div>
+                      <button
+                        type="button"
+                        className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+                      >
+                        <Github className="h-5 w-5" />
+                      </button>
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+                      >
+                        <Twitter className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 text-center">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {t.alreadyHaveAccount}{" "}
+                      <Link
+                        href="/login"
+                        className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
+                      >
+                        {t.login}
+                      </Link>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="sm:mx-auto sm:w-full sm:max-w-md mt-4"
+            >
+              <a
+                href="/"
+                className="group w-2/5 flex items-center justify-center px-4 py-2 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-lg transition-all duration-300 hover:shadow-xl"
+              >
+                <ArrowLeft className="mr-2 h-5 w-5 text-cyan-500 dark:text-cyan-400 transition-transform duration-300 group-hover:-translate-x-1" />
+                <span className="text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500">
+                  {t.backToHome}
+                </span>
+              </a>
+            </motion.div>
+          </div>
         </div>
       </div>
 
