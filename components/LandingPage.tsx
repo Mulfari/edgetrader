@@ -99,10 +99,12 @@ export default function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [showVideo, setShowVideo] = useState(false)
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
+  const [currentFeature, setCurrentFeature] = useState(0)
   const [language, setLanguage] = useState<Language>('es')
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
   const [annualBilling, setAnnualBilling] = useState(false)
   const [showCookieMessage, setShowCookieMessage] = useState(true)
+  const [showScrollTop, setShowScrollTop] = useState(false)
   
   const languageMenuRef = useRef<HTMLDivElement>(null)
 
@@ -661,6 +663,7 @@ export default function LandingPage() {
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10)
+      setShowScrollTop(window.scrollY > 500)
     }
 
     window.addEventListener("scroll", handleScroll)
@@ -697,8 +700,17 @@ export default function LandingPage() {
       setCurrentTestimonial((prev) => (prev + 1) % testimonialsLength);
     }, 5000);
     return () => clearInterval(interval);
-  }, [testimonials.length]); // ✅ Se agregó dependencia  
+  }, [testimonials.length]);
 
+  useEffect(() => {
+    if (window.innerWidth < 768) { // Solo para móviles
+      const featuresLength = t.mainFeatures.items.length;
+      const interval = setInterval(() => {
+        setCurrentFeature((prev) => (prev + 1) % featuresLength);
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [t.mainFeatures.items.length]);
 
   const faqItems = [
     {
@@ -969,7 +981,8 @@ export default function LandingPage() {
         {/* Features Section */}
         <section id="features" className="py-20 bg-white dark:bg-gray-800">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Vista de escritorio: cuadrícula */}
+            <div className="hidden md:grid grid-cols-3 gap-8">
               {t.mainFeatures.items.map((feature, index) => (
                 <motion.div
                   key={index}
@@ -984,6 +997,48 @@ export default function LandingPage() {
                   <p className="text-gray-600 dark:text-gray-300">{feature.description}</p>
                 </motion.div>
               ))}
+            </div>
+
+            {/* Vista móvil: carrusel */}
+            <div className="md:hidden">
+              <div className="max-w-md mx-auto">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentFeature}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.5 }}
+                    className="bg-gray-50 dark:bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 min-h-[280px] flex flex-col items-center text-center"
+                  >
+                    <div className="text-5xl mb-5 bg-gradient-to-r from-cyan-500/10 to-blue-600/10 p-5 rounded-xl inline-block">
+                      {t.mainFeatures.items[currentFeature].icon}
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                      {t.mainFeatures.items[currentFeature].title}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-300">
+                      {t.mainFeatures.items[currentFeature].description}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Indicadores de posición */}
+                <div className="flex justify-center mt-6 gap-2">
+                  {t.mainFeatures.items.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentFeature(index)}
+                      className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                        currentFeature === index 
+                          ? 'bg-gradient-to-r from-cyan-500 to-blue-600 w-5' 
+                          : 'bg-gray-300 dark:bg-gray-700'
+                      }`}
+                      aria-label={`Ver característica ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -1013,12 +1068,12 @@ export default function LandingPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 {t.howItWorks.steps.map((step, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    viewport={{ once: true }}
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  viewport={{ once: true }}
                     className="relative bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-100 dark:border-gray-700 text-center group hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                   >
                     <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full p-3 text-white w-12 h-12 flex items-center justify-center z-10">
@@ -1031,8 +1086,8 @@ export default function LandingPage() {
                     <p className="text-gray-600 dark:text-gray-300">
                       {step.description}
                     </p>
-                  </motion.div>
-                ))}
+                </motion.div>
+              ))}
               </div>
             </div>
           </div>
@@ -1170,14 +1225,14 @@ export default function LandingPage() {
                 <h3 className="text-lg font-semibold mb-4 text-white">
                   {t.footer.legal.title}
                 </h3>
-                <ul className="space-y-2">
+              <ul className="space-y-2">
                   <li><Link href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">{t.footer.legal.privacy}</Link></li>
                   <li><Link href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">{t.footer.legal.terms}</Link></li>
                   <li><Link href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">{t.footer.legal.cookies}</Link></li>
                   <li><Link href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">{t.footer.legal.about}</Link></li>
                   <li><Link href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">{t.footer.legal.contact}</Link></li>
-                </ul>
-              </div>
+              </ul>
+            </div>
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-gray-800 text-center text-gray-400">
@@ -1186,6 +1241,22 @@ export default function LandingPage() {
         </div>
       </footer>
 
+      {/* Scroll to Top Button */}
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="fixed bottom-8 right-8 p-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl dark:shadow-cyan-500/20 transition-all duration-300 z-30 transform hover:scale-110 group"
+            aria-label="Volver arriba"
+          >
+            <ArrowUp className="h-5 w-5 group-hover:-translate-y-1 transition-transform duration-300" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       {/* Cookie Message */}
       <AnimatePresence>
         {showCookieMessage && (
@@ -1193,36 +1264,46 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-gray-900 to-gray-800 text-white p-5 shadow-xl z-50 border-t border-gray-700"
+            className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-gray-900 to-gray-800 text-white p-4 shadow-lg z-50 border-t border-gray-700"
           >
-            <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div className="flex items-center">
-                <div className="hidden sm:block mr-4 text-2xl">🍪</div>
-                <div>
-                  <h4 className="font-medium text-cyan-300 mb-1 text-base">Política de Cookies</h4>
-                  <p className="text-sm text-gray-200">
-                    {language === 'es' && "Utilizamos cookies para ofrecerte la mejor experiencia en nuestra web. Al navegar aceptas nuestra política de cookies."}
-                    {language === 'en' && "We use cookies to provide you with the best experience on our website. By browsing, you accept our cookie policy."}
-                    {language === 'de' && "Wir verwenden Cookies, um Ihnen die beste Erfahrung auf unserer Website zu bieten. Mit der Nutzung akzeptieren Sie unsere Cookie-Richtlinie."}
-                  </p>
-                </div>
+            <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="max-w-3xl">
+                <h4 className="font-medium text-cyan-300 mb-1 text-base">Política de Cookies</h4>
+                <p className="text-sm text-gray-200">
+                  {language === 'es' && (
+                    <>
+                      Utilizamos cookies para mejorar tu experiencia en nuestra plataforma. Al continuar navegando, aceptas el uso de cookies de acuerdo con nuestra política.{' '}
+                      <Link href="#" className="text-gray-300 hover:text-white underline">
+                        Más información
+                      </Link>
+                    </>
+                  )}
+                  {language === 'en' && (
+                    <>
+                      We use cookies to enhance your experience on our platform. By continuing to browse, you agree to the use of cookies in accordance with our policy.{' '}
+                      <Link href="#" className="text-gray-300 hover:text-white underline">
+                        More info
+                      </Link>
+                    </>
+                  )}
+                  {language === 'de' && (
+                    <>
+                      Wir verwenden Cookies, um Ihre Erfahrung auf unserer Plattform zu verbessern. Durch die weitere Nutzung stimmen Sie der Verwendung von Cookies gemäß unserer Richtlinie zu.{' '}
+                      <Link href="#" className="text-gray-300 hover:text-white underline">
+                        Mehr Informationen
+                      </Link>
+                    </>
+                  )}
+                </p>
               </div>
-              <div className="flex gap-3 mt-4 sm:mt-0">
-                <Link 
-                  href="#" 
-                  className="text-xs text-gray-300 hover:text-white underline whitespace-nowrap"
-                >
-                  {language === 'es' && "Más información"}
-                  {language === 'en' && "More info"}
-                  {language === 'de' && "Mehr Informationen"}
-                </Link>
+              <div>
                 <button
                   onClick={acceptCookies}
-                  className="py-2 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 text-sm whitespace-nowrap shadow-lg hover:shadow-cyan-500/20"
+                  className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 text-sm font-medium shadow-md hover:shadow-lg whitespace-nowrap"
                 >
-                  {language === 'es' && "Aceptar todas"}
-                  {language === 'en' && "Accept all"}
-                  {language === 'de' && "Alle akzeptieren"}
+                  {language === 'es' && "Aceptar cookies"}
+                  {language === 'en' && "Accept cookies"}
+                  {language === 'de' && "Cookies akzeptieren"}
                 </button>
               </div>
             </div>
