@@ -1324,14 +1324,25 @@ export default function LandingPage() {
               </Link>
               <Link
                 href="/login"
-                className="px-5 py-2.5 text-cyan-600 dark:text-cyan-400 border border-cyan-500 dark:border-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded-lg transition-all duration-300 text-sm font-medium hover:shadow-md"
+                className="px-5 py-2.5 text-cyan-600 dark:text-cyan-400 border border-cyan-500 dark:border-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded-lg transition-all duration-300 text-sm font-medium hover:shadow-md flex items-center"
               >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                  <polyline points="10 17 15 12 10 7"/>
+                  <line x1="15" y1="12" x2="3" y2="12"/>
+                </svg>
                 {t.login}
               </Link>
               <Link
                 href="/signup"
-                className="px-5 py-2.5 text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 text-sm font-medium shadow-md hover:shadow-lg hover:shadow-cyan-500/20 dark:hover:shadow-cyan-400/20"
+                className="px-5 py-2.5 text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 text-sm font-medium shadow-md hover:shadow-lg hover:shadow-cyan-500/20 dark:hover:shadow-cyan-400/20 flex items-center"
               >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <line x1="19" y1="8" x2="19" y2="14"/>
+                  <line x1="22" y1="11" x2="16" y2="11"/>
+                </svg>
                 {t.signup}
               </Link>
               <div className="relative" ref={languageMenuRef}>
@@ -1804,67 +1815,25 @@ export default function LandingPage() {
               </p>
             </motion.div>
             
-            {/* Versión móvil */}
-            <div className="md:hidden">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentFeature}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:border-cyan-200 dark:hover:border-cyan-900/30 group transition-all duration-300"
-                >
-                  <div className="flex flex-col items-center text-center">
-                    <div className="inline-block text-4xl mb-4 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 p-5 rounded-2xl group-hover:scale-110 transition-all duration-300">
-                      {t.mainFeatures.items[currentFeature].icon}
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-                      {t.mainFeatures.items[currentFeature].title}
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300">
-                      {t.mainFeatures.items[currentFeature].description}
-                    </p>
-                    <div className="flex justify-center mt-6 space-x-3">
-                      {t.mainFeatures.items.map((_, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setCurrentFeature(index)}
-                          className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                            index === currentFeature 
-                              ? 'bg-cyan-500 scale-125' 
-                              : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
-                          }`}
-                          aria-label={`Ver característica ${index + 1}`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            {/* Versión tablet - Nueva */}
-            <div className="hidden sm:block md:hidden">
-              <div className="grid grid-cols-2 gap-4">
-                {t.mainFeatures.items.map((feature, index) => index < 4 && (
+            {/* Versión móvil - Completamente rediseñada */}
+            <div className="block md:hidden">
+              <div className="space-y-6">
+                {t.mainFeatures.items.map((feature, index) => (
                   <motion.div
                     key={index}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 15 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.1 }}
-                    viewport={{ once: true }}
-                    className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 hover:border-cyan-200 dark:hover:border-cyan-800/50 group relative overflow-hidden"
+                    viewport={{ once: true, margin: "-50px" }}
+                    className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 hover:border-cyan-200 dark:hover:border-cyan-800/50 transition-all duration-300 flex items-start"
                   >
-                    <div className="flex flex-col items-center text-center">
-                      <div className="text-3xl mb-3 inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 rounded-xl group-hover:scale-110 transition-all duration-300">
-                        {feature.icon}
-                      </div>
-                      
-                      <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-300">
+                    <div className="text-3xl mr-4 flex-shrink-0 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 p-3 rounded-lg">
+                      {feature.icon}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-300">
                         {feature.title}
                       </h3>
-                      
                       <p className="text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors duration-300">
                         {feature.description}
                       </p>
@@ -1872,27 +1841,34 @@ export default function LandingPage() {
                   </motion.div>
                 ))}
               </div>
-              
-              {/* Ver todas las características - Para tablet */}
-              {t.mainFeatures.items.length > 4 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.4 }}
-                  viewport={{ once: true }}
-                  className="mt-6 text-center"
-                >
-                  <button
-                    onClick={() => setCurrentFeature((currentFeature + 1) % t.mainFeatures.items.length)}
-                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors"
+            </div>
+
+            {/* Versión tablet */}
+            <div className="hidden sm:block md:hidden">
+              <div className="grid grid-cols-2 gap-5">
+                {t.mainFeatures.items.map((feature, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 15 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                    viewport={{ once: true, margin: "-50px" }}
+                    className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 hover:border-cyan-200 dark:hover:border-cyan-800/50 transition-all duration-300 flex items-start"
                   >
-                    Ver más características
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1">
-                      <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                  </button>
-                </motion.div>
-              )}
+                    <div className="text-3xl mr-4 flex-shrink-0 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 p-3 rounded-lg">
+                      {feature.icon}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-300">
+                        {feature.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors duration-300">
+                        {feature.description}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
 
             {/* Versión desktop */}
