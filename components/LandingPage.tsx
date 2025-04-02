@@ -1806,38 +1806,93 @@ export default function LandingPage() {
             
             {/* Versión móvil */}
             <div className="md:hidden">
-              <motion.div
-                key={currentFeature}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.5 }}
-                className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:border-cyan-200 dark:hover:border-cyan-900/30 group transition-all duration-300"
-              >
-                <div className="inline-block text-4xl mb-4 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 p-5 rounded-2xl group-hover:scale-110 transition-all duration-300">
-                  {t.mainFeatures.items[currentFeature].icon}
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-                  {t.mainFeatures.items[currentFeature].title}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300">
-                  {t.mainFeatures.items[currentFeature].description}
-                </p>
-                <div className="flex justify-center mt-6 space-x-2">
-                  {t.mainFeatures.items.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentFeature(index)}
-                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                        index === currentFeature 
-                          ? 'bg-cyan-500 scale-125' 
-                          : 'bg-gray-300 dark:bg-gray-600'
-                      }`}
-                      aria-label={`Ver característica ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              </motion.div>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentFeature}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:border-cyan-200 dark:hover:border-cyan-900/30 group transition-all duration-300"
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="inline-block text-4xl mb-4 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 p-5 rounded-2xl group-hover:scale-110 transition-all duration-300">
+                      {t.mainFeatures.items[currentFeature].icon}
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
+                      {t.mainFeatures.items[currentFeature].title}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-300">
+                      {t.mainFeatures.items[currentFeature].description}
+                    </p>
+                    <div className="flex justify-center mt-6 space-x-3">
+                      {t.mainFeatures.items.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentFeature(index)}
+                          className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                            index === currentFeature 
+                              ? 'bg-cyan-500 scale-125' 
+                              : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
+                          }`}
+                          aria-label={`Ver característica ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Versión tablet - Nueva */}
+            <div className="hidden sm:block md:hidden">
+              <div className="grid grid-cols-2 gap-4">
+                {t.mainFeatures.items.map((feature, index) => index < 4 && (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                    viewport={{ once: true }}
+                    className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 hover:border-cyan-200 dark:hover:border-cyan-800/50 group relative overflow-hidden"
+                  >
+                    <div className="flex flex-col items-center text-center">
+                      <div className="text-3xl mb-3 inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 rounded-xl group-hover:scale-110 transition-all duration-300">
+                        {feature.icon}
+                      </div>
+                      
+                      <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-300">
+                        {feature.title}
+                      </h3>
+                      
+                      <p className="text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors duration-300">
+                        {feature.description}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+              
+              {/* Ver todas las características - Para tablet */}
+              {t.mainFeatures.items.length > 4 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.4 }}
+                  viewport={{ once: true }}
+                  className="mt-6 text-center"
+                >
+                  <button
+                    onClick={() => setCurrentFeature((currentFeature + 1) % t.mainFeatures.items.length)}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors"
+                  >
+                    Ver más características
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </button>
+                </motion.div>
+              )}
             </div>
 
             {/* Versión desktop */}
