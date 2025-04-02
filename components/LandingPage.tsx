@@ -1815,58 +1815,26 @@ export default function LandingPage() {
               </p>
             </motion.div>
             
-            {/* Versión móvil - Completamente rediseñada */}
-            <div className="block md:hidden">
-              <div className="space-y-6">
+            {/* Versión mobile y tablet - Diseño simple y minimalista */}
+            <div className="md:hidden">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {t.mainFeatures.items.map((feature, index) => (
-                  <motion.div
+                  <div 
                     key={index}
-                    initial={{ opacity: 0, y: 15 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                    viewport={{ once: true, margin: "-50px" }}
-                    className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 hover:border-cyan-200 dark:hover:border-cyan-800/50 transition-all duration-300 flex items-start"
+                    className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-100 dark:border-gray-700 text-center"
                   >
-                    <div className="text-3xl mr-4 flex-shrink-0 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 p-3 rounded-lg">
-                      {feature.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-300">
+                    <div className="flex flex-col items-center">
+                      <div className="text-3xl mb-4 rounded-full w-16 h-16 flex items-center justify-center bg-cyan-50 dark:bg-cyan-900/20 text-cyan-500 dark:text-cyan-400">
+                        {feature.icon}
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
                         {feature.title}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors duration-300">
+                      <p className="text-gray-600 dark:text-gray-300 text-sm">
                         {feature.description}
                       </p>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-            {/* Versión tablet */}
-            <div className="hidden sm:block md:hidden">
-              <div className="grid grid-cols-2 gap-5">
-                {t.mainFeatures.items.map((feature, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 15 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                    viewport={{ once: true, margin: "-50px" }}
-                    className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 hover:border-cyan-200 dark:hover:border-cyan-800/50 transition-all duration-300 flex items-start"
-                  >
-                    <div className="text-3xl mr-4 flex-shrink-0 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 p-3 rounded-lg">
-                      {feature.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-300">
-                        {feature.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors duration-300">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </div>
