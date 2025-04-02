@@ -1827,16 +1827,22 @@ export default function LandingPage() {
                     transition={{ duration: 0.4, ease: "easeOut" }}
                     className="w-full max-w-sm mx-auto"
                   >
-                    <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 text-center">
-                      <div className="inline-block text-5xl mb-6 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 p-5 rounded-full shadow-md">
-                        {t.mainFeatures.items[currentFeature].icon}
+                    <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:border-cyan-200 dark:hover:border-cyan-800/50 group relative overflow-hidden">
+                      <div className="absolute -right-16 -top-16 w-32 h-32 bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/20 dark:to-blue-900/20 rounded-full opacity-70"></div>
+                      
+                      <div className="relative z-10">
+                        <div className="text-4xl mb-4 inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 rounded-2xl">
+                          {t.mainFeatures.items[currentFeature].icon}
+                        </div>
+                        
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                          {t.mainFeatures.items[currentFeature].title}
+                        </h3>
+                        
+                        <p className="text-gray-600 dark:text-gray-300">
+                          {t.mainFeatures.items[currentFeature].description}
+                        </p>
                       </div>
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                        {t.mainFeatures.items[currentFeature].title}
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-300 text-lg">
-                        {t.mainFeatures.items[currentFeature].description}
-                      </p>
                     </div>
                   </motion.div>
                 </AnimatePresence>
