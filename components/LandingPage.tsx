@@ -677,7 +677,7 @@ export default function LandingPage() {
       start: 'Comenzar',
       login: 'Iniciar sesión',
       signup: 'Registrarse',
-      aiPowered: 'Potencia tu trading con nuestra avanzada Inteligencia Artificial',
+      aiPowered: 'Plataforma de trading potenciada con IA avanzada',
       hero: {
         title: 'Trading Inteligente con',
         subtitle: 'Potencia tus operaciones con análisis avanzado, señales en tiempo real y gestión de riesgo inteligente.',
@@ -857,7 +857,7 @@ export default function LandingPage() {
       start: 'Start',
       login: 'Login',
       signup: 'Sign up',
-      aiPowered: 'Power your trading with our advanced Artificial Intelligence',
+      aiPowered: 'Trading platform powered by advanced AI',
       hero: {
         title: 'Smart Trading with',
         subtitle: 'Boost your operations with advanced analysis, real-time signals, and intelligent risk management.',
@@ -1037,7 +1037,7 @@ export default function LandingPage() {
       start: 'Starten',
       login: 'Anmelden',
       signup: 'Registrieren',
-      aiPowered: 'Steigern Sie Ihr Trading mit unserer fortschrittlichen Künstlichen Intelligenz',
+      aiPowered: 'Trading-Plattform mit fortschrittlicher KI',
       hero: {
         title: 'Intelligentes Trading mit',
         subtitle: 'Steigern Sie Ihre Operationen mit fortschrittlicher Analyse, Echtzeit-Signalen und intelligentem Risikomanagement.',
@@ -1465,43 +1465,147 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Mobile Menu - Mejorado */}
+      {/* Mobile Menu - Mejorado para deslizarse desde la derecha */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-lg"
+            initial={{ opacity: 0, x: "100%" }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: "100%" }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="fixed md:hidden top-0 right-0 bottom-0 w-[85%] bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 shadow-2xl z-50 overflow-y-auto"
           >
-            <nav className="container mx-auto px-6 py-6 flex flex-col space-y-4">
-              <Link
-                href="#features"
-                className="text-gray-700 dark:text-gray-200 hover:text-cyan-600 dark:hover:text-cyan-400 py-3 text-lg font-medium flex items-center space-x-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Layers className="h-5 w-5" />
-                <span>{t.features}</span>
-              </Link>
-              <div className="pt-4 border-t border-gray-200 dark:border-gray-800 grid grid-cols-1 gap-3">
-              <Link
-                href="/login"
-                  className="w-full py-3 text-center text-cyan-600 dark:text-cyan-400 border border-cyan-500 dark:border-cyan-400 rounded-lg hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-all duration-300 font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {t.login}
-              </Link>
+            <div className="flex flex-col h-full">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 dark:border-gray-800">
+                <Link href="/" className="flex items-center space-x-3 group" onClick={() => setIsMenuOpen(false)}>
+                  <div className="w-9 h-9 bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
+                    <span className="text-lg text-white font-bold">TD</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-lg font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
+                      TradingDash
+                    </span>
+                  </div>
+                </Link>
+                <button
+                  onClick={() => setIsMenuOpen(false)}
+                  className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300 flex items-center justify-center"
+                  aria-label="Cerrar menú"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <nav className="flex-1 px-6 py-8">
+                <div className="space-y-6">
+                  <Link
+                    href="#features"
+                    className="flex items-center space-x-3 text-gray-700 dark:text-gray-200 hover:text-cyan-600 dark:hover:text-cyan-400 py-3 text-lg font-medium transition-colors duration-200 border-b border-gray-100 dark:border-gray-800 pb-3"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Layers className="h-5 w-5" />
+                    <span>{t.features}</span>
+                  </Link>
+                  <Link
+                    href="#pricing"
+                    className="flex items-center space-x-3 text-gray-700 dark:text-gray-200 hover:text-cyan-600 dark:hover:text-cyan-400 py-3 text-lg font-medium transition-colors duration-200 border-b border-gray-100 dark:border-gray-800 pb-3"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-tag">
+                      <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/>
+                      <path d="M7 7h.01"/>
+                    </svg>
+                    <span>{t.pricingLink}</span>
+                  </Link>
+                  <Link
+                    href="#faq"
+                    className="flex items-center space-x-3 text-gray-700 dark:text-gray-200 hover:text-cyan-600 dark:hover:text-cyan-400 py-3 text-lg font-medium transition-colors duration-200 border-b border-gray-100 dark:border-gray-800 pb-3"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-help-circle">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                      <path d="M12 17h.01"/>
+                    </svg>
+                    <span>FAQ</span>
+                  </Link>
+                </div>
+              </nav>
+
+              <div className="mt-auto p-6 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800 space-y-4">
                 <Link
-                  href="/signup"
-                  className="w-full py-3 text-center text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 font-medium shadow-md"
+                  href="/login"
+                  className="w-full py-3 text-center text-cyan-600 dark:text-cyan-400 border border-cyan-500 dark:border-cyan-400 rounded-lg hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-all duration-300 font-medium flex items-center justify-center"
                   onClick={() => setIsMenuOpen(false)}
                 >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                    <polyline points="10 17 15 12 10 7"/>
+                    <line x1="15" y1="12" x2="3" y2="12"/>
+                  </svg>
+                  {t.login}
+                </Link>
+                <Link
+                  href="/signup"
+                  className="w-full py-3 text-center text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 font-medium shadow-md flex items-center justify-center"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <line x1="19" y1="8" x2="19" y2="14"/>
+                    <line x1="22" y1="11" x2="16" y2="11"/>
+                  </svg>
                   {t.signup}
                 </Link>
               </div>
-            </nav>
+
+              {/* Selector de idioma móvil */}
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{t.language}</span>
+                  <div className="flex space-x-2">
+                    {(['es', 'en', 'de'] as Language[]).map((lang) => (
+                      <button
+                        key={lang}
+                        onClick={() => {
+                          setLanguage(lang);
+                          localStorage.setItem('preferredLanguage', lang);
+                        }}
+                        className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200 ${
+                          language === lang 
+                            ? 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400' 
+                            : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        <Image 
+                          src={languageFlags[lang]}
+                          alt={languageNames[lang]}
+                          width={20}
+                          height={15}
+                          className="rounded-sm object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Overlay oscuro cuando el menú está abierto */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.6 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 bg-black z-40 md:hidden"
+            onClick={() => setIsMenuOpen(false)}
+          />
         )}
       </AnimatePresence>
 
@@ -1543,12 +1647,18 @@ export default function LandingPage() {
                 transition={{ duration: 0.8 }}
                 className="lg:w-1/2 text-center lg:text-left pt-10 lg:pt-0"
               >
-                <div className="bg-gradient-to-r from-purple-600/10 to-indigo-600/10 dark:from-purple-600/20 dark:to-indigo-600/20 p-4 rounded-xl border border-purple-300 dark:border-purple-600/30 mb-8 max-w-xl mx-auto lg:mx-0 shadow-sm hover:shadow-md transition-shadow duration-300">
+                <div className="bg-gradient-to-r from-blue-600/10 to-purple-600/10 dark:from-blue-600/20 dark:to-purple-600/20 p-4 rounded-xl border border-blue-300/50 dark:border-purple-600/30 mb-8 max-w-xl mx-auto lg:mx-0 shadow-sm hover:shadow-md transition-shadow duration-300">
                   <p className="text-gray-800 dark:text-gray-100 flex items-center font-medium">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 mr-2 text-purple-600 dark:text-purple-400">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                      <path d="M3 9h18"></path>
-                      <path d="M9 21V9"></path>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 mr-2 text-blue-600 dark:text-purple-400">
+                      <path d="M12 2c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2s-2-.9-2-2V4c0-1.1.9-2 2-2z"/>
+                      <path d="M12 8v8"/>
+                      <path d="M3.2 14c-.4-1-.6-2-.6-3 0-4.4 3.6-8 8-8 .9 0 1.8.2 2.6.4"/>
+                      <path d="M17 6.6c.9 1.3 1.4 2.9 1.4 4.6 0 4.4-3.6 8-8 8-.9 0-1.8-.2-2.6-.4"/>
+                      <path d="M8.3 10A12 12 0 0 0 7 19"/>
+                      <path d="M20 19a12 12 0 0 0-3-9"/>
+                      <path d="M7.5 13.5 7 14l.5.5"/>
+                      <path d="M16.5 13.5l.5.5-.5.5"/>
+                      <path d="M12 16a3 3 0 0 1-2.1-.9"/>
                     </svg>
                     {t.aiPowered}
                   </p>
