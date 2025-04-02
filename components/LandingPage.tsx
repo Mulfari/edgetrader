@@ -108,6 +108,7 @@ const animationStyles = `
 
 .animate-marquee {
   animation: marquee 25s linear infinite;
+  width: fit-content;
 }
 
 .animation-delay-2000 {
@@ -247,239 +248,346 @@ const languageFlags = {
   de: '/icons/flag-de.svg'
 }
 
-// Componente para simular un dashboard de trading
-const DashboardPreview = () => {
-  // Valores fijos para las velas (en lugar de valores aleatorios)
-  const candleHeights = [40, 65, 30, 85, 55, 65, 40, 70, 50, 60, 75, 45, 65, 70, 60, 50, 75, 80, 65, 60, 85, 75, 50, 65, 70, 55, 65, 60, 70, 55, 60, 65, 70, 65, 55, 60];
-  const candleColors = [true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false];
-  const wickHeights = [15, 22, 18, 12, 25, 14, 18, 22, 16, 19, 24, 17, 13, 21, 16, 20, 15, 18, 22, 19, 14, 17, 21, 16, 18, 13, 19, 23, 17, 12, 20, 15, 18, 22, 16, 19];
+// Componente moderno y minimalista para la sección hero
+const ModernDashboardPreview = () => {
+  const [activeTab, setActiveTab] = useState(0);
+  
+  const tabs = [
+    { name: 'Análisis', icon: '📊' },
+    { name: 'Señales', icon: '⚡' },
+    { name: 'Portfolio', icon: '📈' }
+  ];
+  
+  // Efecto para cambiar automáticamente las pestañas
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveTab((prev) => (prev + 1) % tabs.length);
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  return (
+    <div className="relative w-full h-full bg-gradient-to-br from-gray-950 to-gray-900 rounded-xl overflow-hidden">
+      {/* Header con navegación */}
+      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-800">
+        <div className="flex items-center space-x-2">
+          <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-xs">TD</span>
+          </div>
+          <span className="text-white font-medium">TradingDash</span>
+        </div>
+        
+        <div className="flex items-center space-x-1">
+          {tabs.map((tab, idx) => (
+            <button 
+              key={idx}
+              onClick={() => setActiveTab(idx)}
+              className={`px-4 py-2 rounded-lg transition-all duration-300 ${
+                activeTab === idx 
+                  ? 'bg-gray-800 text-white' 
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              <span className="flex items-center">
+                <span className="mr-2">{tab.icon}</span>
+                <span>{tab.name}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
+            <span className="text-cyan-500">👤</span>
+          </div>
+          <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center relative">
+            <span className="text-gray-400">🔔</span>
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-cyan-500 rounded-full"></span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Contenido principal */}
+      <div className="grid grid-cols-3 gap-5 p-6 h-[calc(100%-70px)]">
+        {/* Panel izquierdo */}
+        <div className="col-span-2 space-y-5">
+          {/* Gráfico principal */}
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5 h-[220px] relative overflow-hidden">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-white font-medium">BTC/USDT</h3>
+              <span className="text-green-400 font-medium">$61,274.50 <span className="text-green-500">+2.4%</span></span>
+            </div>
+            
+            {/* Representación del gráfico con gradiente y línea */}
+            <div className="absolute bottom-0 left-0 right-0 h-[140px]">
+              {/* Área de gradiente bajo la línea */}
+              <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/20 to-transparent"></div>
+              
+              {/* Línea del gráfico */}
+              <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                <path 
+                  d="M0,100 C30,80 60,110 90,70 C120,30 150,60 180,40 C210,20 240,50 270,30 C300,10 330,40 360,20" 
+                  stroke="url(#grad1)" 
+                  strokeWidth="3"
+                  fill="none"
+                  strokeLinecap="round"
+                />
+                <defs>
+                  <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#06b6d4" />
+                    <stop offset="100%" stopColor="#3b82f6" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              
+              {/* Puntos de datos */}
+              <div className="absolute bottom-[70px] left-[180px] w-4 h-4 bg-white rounded-full shadow-lg shadow-cyan-500/30 border-2 border-cyan-500"></div>
+            </div>
+            
+            {/* Indicadores de intervalo de tiempo */}
+            <div className="absolute bottom-4 left-5 flex items-center space-x-2 text-xs">
+              <span className="px-3 py-1 bg-cyan-500 text-white rounded-md">1H</span>
+              <span className="px-3 py-1 bg-gray-700 text-gray-300 rounded-md">1D</span>
+              <span className="px-3 py-1 bg-gray-700 text-gray-300 rounded-md">1W</span>
+              <span className="px-3 py-1 bg-gray-700 text-gray-300 rounded-md">1M</span>
+            </div>
+            
+            {/* Indicador de IA */}
+            <div className="absolute top-5 right-5 px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-lg text-purple-400 text-xs flex items-center">
+              <span className="mr-1">IA</span>
+              <span className="inline-block w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
+            </div>
+          </div>
+          
+          {/* Sección de señales y alertas */}
+          <div className="grid grid-cols-2 gap-5">
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5">
+              <h3 className="text-gray-300 text-sm mb-3 flex items-center">
+                <span className="mr-2">⚡</span>
+                <span>Señales en Vivo</span>
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3 p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-white text-sm">Compra - BTC (4h)</span>
+                  <span className="text-green-400 text-xs ml-auto">+2.4%</span>
+                </div>
+                <div className="flex items-center space-x-3 p-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <span className="text-white text-sm">Venta - ETH (1h)</span>
+                  <span className="text-red-400 text-xs ml-auto">-1.2%</span>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5">
+              <h3 className="text-gray-300 text-sm mb-3 flex items-center">
+                <span className="mr-2">🔄</span>
+                <span>Operaciones Recientes</span>
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center p-2 border border-gray-700 rounded-lg">
+                  <span className="text-white text-sm">BTC</span>
+                  <span className="text-gray-400 mx-2 text-xs">0.034</span>
+                  <span className="text-green-400 text-xs ml-auto">$2,083.33</span>
+                </div>
+                <div className="flex items-center p-2 border border-gray-700 rounded-lg">
+                  <span className="text-white text-sm">ETH</span>
+                  <span className="text-gray-400 mx-2 text-xs">1.25</span>
+                  <span className="text-red-400 text-xs ml-auto">$3,456.78</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Panel derecho */}
+        <div className="space-y-5">
+          {/* Panel de Rendimiento */}
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5">
+            <h3 className="text-gray-300 text-sm mb-3">Rendimiento</h3>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-gray-400 text-xs">Hoy</span>
+              <span className="text-green-400 font-medium">+$1,240.50</span>
+            </div>
+            
+            {/* Gráfico circular */}
+            <div className="relative w-full h-[100px] flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-20 h-20 rounded-full border-[6px] border-gray-700"></div>
+                <div className="absolute w-20 h-20 rounded-full border-[6px] border-transparent border-t-cyan-500 border-r-cyan-500 transform rotate-45"></div>
+              </div>
+              <div className="text-white text-xl font-bold">78%</div>
+            </div>
+            
+            <div className="flex justify-between mt-3 text-xs">
+              <div className="text-center">
+                <p className="text-gray-400">Ganancia</p>
+                <p className="text-white font-medium">+12.4%</p>
+              </div>
+              <div className="text-center">
+                <p className="text-gray-400">Éxito</p>
+                <p className="text-white font-medium">24/31</p>
+              </div>
+              <div className="text-center">
+                <p className="text-gray-400">Tiempo</p>
+                <p className="text-white font-medium">-40%</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Panel IA */}
+          <div className="bg-gradient-to-br from-purple-900/30 to-purple-600/10 backdrop-blur-sm rounded-xl p-5 border border-purple-500/20">
+            <h3 className="text-purple-300 text-sm mb-3 flex items-center">
+              <span className="mr-2">🧠</span>
+              <span>Análisis IA</span>
+            </h3>
+            <p className="text-gray-300 text-sm">El mercado muestra señales alcistas para BTC en las próximas 4 horas.</p>
+            <div className="mt-3 flex items-center">
+              <span className="text-xs text-gray-400">Confianza:</span>
+              <div className="ml-2 h-2 flex-1 bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-full w-4/5 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full"></div>
+              </div>
+              <span className="ml-2 text-xs text-white">82%</span>
+            </div>
+          </div>
+          
+          {/* Panel de Tendencias */}
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5">
+            <h3 className="text-gray-300 text-sm mb-3">Tendencias</h3>
+            <div className="space-y-2">
+              <div className="flex items-center">
+                <span className="text-gray-200 text-sm mr-3">BTC</span>
+                <div className="h-1.5 flex-1 bg-gray-700 rounded-full overflow-hidden">
+                  <div className="h-full w-4/5 bg-green-500 rounded-full"></div>
+                </div>
+                <span className="ml-3 text-green-400 text-xs">+80%</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-200 text-sm mr-3">ETH</span>
+                <div className="h-1.5 flex-1 bg-gray-700 rounded-full overflow-hidden">
+                  <div className="h-full w-3/5 bg-green-500 rounded-full"></div>
+                </div>
+                <span className="ml-3 text-green-400 text-xs">+60%</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-200 text-sm mr-3">SOL</span>
+                <div className="h-1.5 flex-1 bg-gray-700 rounded-full overflow-hidden">
+                  <div className="h-full w-1/5 bg-red-500 rounded-full"></div>
+                </div>
+                <span className="ml-3 text-red-400 text-xs">-20%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Efectos decorativos */}
+      <div className="absolute top-20 right-20 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-10 left-10 w-40 h-40 bg-purple-500/10 rounded-full blur-2xl"></div>
+      
+      {/* Reflejos de luz */}
+      <div className="absolute top-0 left-1/4 w-px h-20 bg-gradient-to-b from-cyan-500/0 via-cyan-500/50 to-cyan-500/0"></div>
+      <div className="absolute top-1/3 right-1/3 w-px h-20 bg-gradient-to-b from-purple-500/0 via-purple-500/30 to-purple-500/0"></div>
+    </div>
+  );
+};
+
+// Componente para mostrar precios de cryptos en movimiento
+const CryptoTickerBar = () => {
+  const [tickerItems, setTickerItems] = useState([
+    { symbol: 'BTC', name: 'Bitcoin', price: '61,247.50', change: '+2.4%', positive: true, icon: '₿', color: 'from-orange-500 to-amber-600' },
+    { symbol: 'ETH', name: 'Ethereum', price: '3,234.80', change: '+1.8%', positive: true, icon: 'Ξ', color: 'from-indigo-500 to-blue-600' },
+    { symbol: 'SOL', name: 'Solana', price: '136.42', change: '-1.2%', positive: false, icon: 'S', color: 'from-fuchsia-500 to-purple-600' },
+    { symbol: 'BNB', name: 'Binance', price: '584.31', change: '+0.7%', positive: true, icon: 'B', color: 'from-yellow-400 to-yellow-600' },
+    { symbol: 'ADA', name: 'Cardano', price: '0.62', change: '+3.4%', positive: true, icon: 'A', color: 'from-blue-500 to-indigo-600' },
+    { symbol: 'DOGE', name: 'Dogecoin', price: '0.17', change: '-0.5%', positive: false, icon: 'D', color: 'from-yellow-500 to-amber-500' },
+    { symbol: 'XRP', name: 'Ripple', price: '0.52', change: '+1.1%', positive: true, icon: 'X', color: 'from-blue-500 to-cyan-600' },
+    { symbol: 'DOT', name: 'Polkadot', price: '7.85', change: '+0.8%', positive: true, icon: '•', color: 'from-pink-500 to-rose-600' },
+  ]);
+
+  // Simular cambios en los precios cada 3 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTickerItems(items => 
+        items.map(item => {
+          // Generar una fluctuación aleatoria entre -1.5% y +1.5%
+          const fluctuation = (Math.random() * 3 - 1.5) / 100;
+          const currentPrice = parseFloat(item.price.replace(',', ''));
+          const newPrice = currentPrice * (1 + fluctuation);
+          
+          // Calcular el nuevo cambio porcentual
+          const changeValue = parseFloat(item.change.replace('%', '').replace('+', '').replace('-', ''));
+          const newChangeValue = changeValue + (fluctuation * 100);
+          const newPositive = newChangeValue >= 0;
+          
+          return {
+            ...item,
+            price: newPrice < 1 ? newPrice.toFixed(2) : newPrice.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','),
+            change: `${newPositive ? '+' : '-'}${Math.abs(newChangeValue).toFixed(1)}%`,
+            positive: newPositive
+          };
+        })
+      );
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="w-full bg-gray-900 rounded-lg overflow-hidden border border-gray-800">
-      {/* Header del dashboard */}
-      <div className="bg-gray-800 px-4 py-3 flex items-center justify-between border-b border-gray-700">
-        <div className="flex items-center space-x-3">
-          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-          <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-        </div>
-        <div className="flex items-center space-x-4">
-          <div className="text-xs px-2 py-1 bg-blue-600 text-white rounded">BTCUSDT</div>
-          <div className="text-xs px-2 py-1 bg-gray-700 text-gray-300 rounded">ETHUSDT</div>
-          <div className="text-xs px-2 py-1 bg-gray-700 text-gray-300 rounded">SOLUSDT</div>
-        </div>
-        <div className="flex items-center space-x-2 text-gray-400">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
-          </svg>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        </div>
-      </div>
-      
-      {/* Panel principal */}
-      <div className="grid grid-cols-4 gap-0.5">
-        {/* Gráfico principal */}
-        <div className="col-span-3 bg-gray-850 p-2 relative h-[280px]">
-          {/* Gráfico de velas */}
-          <div className="absolute inset-0 flex items-end px-2">
-            <div className="flex items-end space-x-1 h-full w-full">
-              {candleHeights.map((height, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center">
-                  <div 
-                    className={`w-[3px] ${candleColors[i] ? 'bg-green-500' : 'bg-red-500'}`} 
-                    style={{ height: `${height * 2}px` }}
-                  ></div>
-                  <div 
-                    className={`w-[7px] ${candleColors[i] ? 'bg-green-500' : 'bg-red-500'}`} 
-                    style={{ height: `${wickHeights[i]}px` }}
-                  ></div>
+    <div className="bg-gradient-to-r from-gray-900 via-gray-950 to-gray-900 backdrop-blur-xl border-b border-gray-800/50 overflow-hidden">
+      <div className="container mx-auto relative">
+        {/* Eliminando la etiqueta "MERCADO" */}
+        
+        {/* Efecto de degradado en el lado derecho */}
+        <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-gray-900 to-transparent z-10"></div>
+        <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-gray-900 to-transparent z-10"></div>
+        
+        {/* Línea de separación */}
+        <div className="h-px w-full absolute top-0 bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent"></div>
+        <div className="h-px w-full absolute bottom-0 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent"></div>
+        
+        {/* Contenedor del ticker con animación - ajustando el padding izquierdo */}
+        <div className="py-3 overflow-hidden">
+          <div className="flex space-x-12 animate-marquee whitespace-nowrap">
+            {tickerItems.concat(tickerItems).map((item, index) => (
+              <div 
+                key={index} 
+                className="group relative flex items-center space-x-3 px-2 py-1.5 rounded-lg transition-all duration-300 hover:bg-white/5"
+              >
+                {/* Tooltip con nombre completo */}
+                <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap">
+                  {item.name}
                 </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Línea de tendencia */}
-          <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-            <path 
-              d="M0,150 C50,120 80,180 120,100 C160,40 200,90 240,70 C280,50 320,90 360,60 C400,30 440,80 500,60" 
-              fill="none" 
-              stroke="#3b82f6" 
-              strokeWidth="2"
-              strokeDasharray="5,5"
-            />
-          </svg>
-          
-          {/* Overlay de indicadores */}
-          <div className="absolute top-2 left-2 text-xs text-white space-y-1">
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span>MA(50): 61,247.80</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-              <span>MA(200): 59,872.40</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <span>RSI: 63.5</span>
-            </div>
-          </div>
-          
-          {/* Indicador de precio actual */}
-          <div className="absolute right-2 top-2 bg-blue-600 text-white text-sm px-2 py-1 rounded">
-            $61,247.80
-          </div>
-          
-          {/* Niveles de soporte/resistencia */}
-          <div className="absolute left-0 right-0 top-1/3 border-t border-dashed border-yellow-500/50 flex justify-end">
-            <span className="bg-yellow-500/20 text-yellow-300 text-xs px-1">R: $62,500</span>
-          </div>
-          <div className="absolute left-0 right-0 bottom-1/4 border-t border-dashed border-green-500/50 flex justify-end">
-            <span className="bg-green-500/20 text-green-300 text-xs px-1">S: $60,000</span>
-          </div>
-        </div>
-        
-        {/* Panel lateral */}
-        <div className="col-span-1 bg-gray-850 flex flex-col">
-          {/* Book de órdenes */}
-          <div className="flex-1 p-2 border-b border-gray-700">
-            <div className="text-xs text-gray-400 mb-1 flex justify-between">
-              <span>BOOK DE ÓRDENES</span>
-              <span className="text-gray-500">BTC/USDT</span>
-            </div>
-            <div className="space-y-1 text-xs">
-              <div className="flex justify-between">
-                <span className="text-red-500">61,250.00</span>
-                <span className="text-gray-400">0.354</span>
+                
+                {/* Icono */}
+                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${item.color} flex items-center justify-center shadow-lg shadow-${item.color.split(' ')[0]}/20`}>
+                  <span className="text-white text-sm font-bold">{item.icon}</span>
+                </div>
+                
+                {/* Símbolo */}
+                <div className="flex flex-col">
+                  <span className="text-gray-300 font-semibold text-sm">{item.symbol}</span>
+                  <span className="text-gray-500 text-xs">USDT</span>
+                </div>
+                
+                {/* Precio */}
+                <div className="flex flex-col">
+                  <span className="text-white font-medium">${item.price}</span>
+                  <span className={`text-xs font-medium ${item.positive ? 'text-green-400' : 'text-red-400'}`}>
+                    {item.change}
+                    <span className={`text-xs ml-1 ${item.positive ? 'text-green-500' : 'text-red-500'}`}>
+                      {item.positive ? '↑' : '↓'}
+                    </span>
+                  </span>
+                </div>
+                
+                {/* Línea de separación */}
+                {index < tickerItems.length * 2 - 1 && (
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 h-6 w-px bg-gray-700/30"></div>
+                )}
               </div>
-              <div className="flex justify-between">
-                <span className="text-red-500">61,245.50</span>
-                <span className="text-gray-400">1.254</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-red-500">61,240.25</span>
-                <span className="text-gray-400">2.845</span>
-              </div>
-              <div className="h-px bg-gray-700 my-1"></div>
-              <div className="text-center text-blue-500 text-sm">$61,247.80</div>
-              <div className="h-px bg-gray-700 my-1"></div>
-              <div className="flex justify-between">
-                <span className="text-green-500">61,230.50</span>
-                <span className="text-gray-400">0.927</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-green-500">61,225.00</span>
-                <span className="text-gray-400">1.682</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-green-500">61,220.75</span>
-                <span className="text-gray-400">3.104</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Trading info */}
-          <div className="flex-1 p-2 text-xs">
-            <div className="text-gray-400 mb-1">INFORMACIÓN</div>
-            <div className="space-y-1">
-              <div className="flex justify-between">
-                <span className="text-gray-500">24h Alto</span>
-                <span className="text-white">$62,586.20</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">24h Bajo</span>
-                <span className="text-white">$60,125.40</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">24h Vol (BTC)</span>
-                <span className="text-white">4,287.54</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">24h Vol (USDT)</span>
-                <span className="text-white">264.5M</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Cambio 24h</span>
-                <span className="text-green-500">+2.35%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Panel inferior */}
-      <div className="grid grid-cols-2 gap-0.5">
-        {/* Señales de trading */}
-        <div className="bg-gray-850 p-2">
-          <div className="text-xs text-gray-400 mb-1">SEÑALES DE TRADING IA</div>
-          <div className="space-y-1.5 text-xs">
-            <div className="flex items-center">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
-              <span className="text-white">Señal de compra (4h)</span>
-              <span className="ml-auto text-green-500">Fuerte</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full mr-1"></div>
-              <span className="text-white">RSI divergencia alcista (1d)</span>
-              <span className="ml-auto text-yellow-500">Neutral</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-2 h-2 bg-purple-500 rounded-full mr-1"></div>
-              <span className="text-white">Precio sobre MA200 (1h)</span>
-              <span className="ml-auto text-green-500">Fuerte</span>
-            </div>
-          </div>
-        </div>
-        
-        {/* Panel de operaciones */}
-        <div className="bg-gray-850 p-2">
-          <div className="text-xs text-gray-400 mb-1">OPERACIONES RECIENTES</div>
-          <div className="space-y-1.5 text-xs">
-            <div className="flex items-center">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
-              <span className="text-white">Compra</span>
-              <span className="mx-2 text-gray-400">0.12 BTC</span>
-              <span className="text-gray-300">$61,240.50</span>
-              <span className="ml-auto text-gray-400">12:45</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-2 h-2 bg-red-500 rounded-full mr-1"></div>
-              <span className="text-white">Venta</span>
-              <span className="mx-2 text-gray-400">0.35 BTC</span>
-              <span className="text-gray-300">$61,350.25</span>
-              <span className="ml-auto text-gray-400">11:32</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
-              <span className="text-white">Compra</span>
-              <span className="mx-2 text-gray-400">0.08 BTC</span>
-              <span className="text-gray-300">$61,175.80</span>
-              <span className="ml-auto text-gray-400">10:18</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Footer del dashboard */}
-      <div className="bg-gray-800 px-3 py-2 border-t border-gray-700 flex justify-between items-center">
-        <div className="flex space-x-3 text-xs text-gray-400">
-          <span>TradingDash v1.0</span>
-          <span className="text-green-500">Conectado</span>
-        </div>
-        <div className="flex space-x-3 text-xs text-gray-400">
-          <div className="flex items-center">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></div>
-            <span>API Binance</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></div>
-            <span>Tiempo Real</span>
+            ))}
           </div>
         </div>
       </div>
@@ -490,7 +598,6 @@ const DashboardPreview = () => {
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
-  const [showVideo, setShowVideo] = useState(false)
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
   const [currentFeature, setCurrentFeature] = useState(0)
   const [language, setLanguage] = useState<Language>('es')
@@ -1399,8 +1506,11 @@ export default function LandingPage() {
       </AnimatePresence>
 
       <main>
-        {/* Hero Section - Completely enhanced */}
-        <section ref={heroRef} className="relative pt-20 pb-32 overflow-hidden">
+        {/* Crypto Ticker Bar - NUEVO */}
+        <CryptoTickerBar />
+        
+        {/* Hero Section - Reduciendo aún más el padding top */}
+        <section ref={heroRef} className="relative pt-6 pb-32 overflow-hidden">
           {/* Background Elements */}
           <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
             {/* Grid pattern */}
@@ -1427,9 +1537,9 @@ export default function LandingPage() {
           <div className="container relative mx-auto px-4 sm:px-6 lg:px-8 z-10">
             <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
               {/* Hero Content */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={isHeroInView ? { opacity: 1, y: 0 } : {}}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={isHeroInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.8 }}
                 className="lg:w-1/2 text-center lg:text-left pt-10 lg:pt-0"
               >
@@ -1446,38 +1556,35 @@ export default function LandingPage() {
                 
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-6 lg:mb-8 leading-tight tracking-tight">
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600 animate-gradient">
-                  {t.hero.title}
-                </span>
+                    {t.hero.title}
+                  </span>
                   <br />
                   <span className="relative inline-block mt-2">
-                  TradingDash
+                    TradingDash
                     <div className="absolute -bottom-3 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
-                </span>
-              </h1>
+                  </span>
+                </h1>
                 
                 <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-xl mx-auto lg:mx-0">
-                {t.hero.subtitle}
-              </p>
+                  {t.hero.subtitle}
+                </p>
 
                 <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-                <Link
+                  {/* Botón de Empezar Ahora mejorado */}
+                  <Link
                     href="#"
-                    className="w-full sm:w-auto px-8 py-4 text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/20 dark:hover:shadow-blue-500/10 flex items-center justify-center gap-2 font-medium group"
-                >
-                  {t.hero.startNow}
-                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
-                </Link>
-                  
-                <button
-                  onClick={() => setShowVideo(true)}
-                    className="w-full sm:w-auto px-8 py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-750 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-gray-700 dark:text-gray-200 font-medium group"
-                >
-                    <span className="bg-cyan-500 text-white rounded-full p-1.5 flex items-center justify-center">
-                      <Play className="h-3.5 w-3.5" />
+                    className="w-full sm:w-auto px-8 py-4 text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/20 dark:hover:shadow-blue-500/10 flex items-center justify-center gap-2 font-medium group relative overflow-hidden"
+                  >
+                    <span className="relative z-10 flex items-center">
+                      {t.hero.startNow}
+                      <ArrowRight className="h-5 w-5 ml-1 group-hover:translate-x-1 transition-transform duration-300" />
                     </span>
-                  {t.hero.comingSoon}
-                </button>
-              </div>
+                    <span className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-0"></span>
+                    <span className="absolute -top-10 -right-10 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-700 z-0"></span>
+                  </Link>
+                  
+                  {/* Eliminado el botón "Próximamente" */}
+                </div>
                 
                 {/* Hero stats */}
                 <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1493,8 +1600,8 @@ export default function LandingPage() {
                     <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">87%</div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm">Mejora en resultados</p>
                   </div>
-              </div>
-            </motion.div>
+                </div>
+              </motion.div>
               
               {/* Dashboard Preview Enhanced */}
               <motion.div
@@ -1505,22 +1612,9 @@ export default function LandingPage() {
               >
                 <div className="relative">
                   {/* Main dashboard container */}
-                  <div className="relative bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="relative bg-gradient-to-br from-gray-950 to-gray-900 p-5 rounded-2xl shadow-2xl border border-gray-800 overflow-hidden">
                     {/* Dashboard header mockup */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <div className="h-3 w-3 rounded-full bg-red-500"></div>
-                        <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
-                        <div className="h-3 w-3 rounded-full bg-green-500"></div>
-          </div>
-                      <div className="flex items-center justify-center px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300">
-                        trading.dashboard.com
-                      </div>
-                      <div className="w-16"></div>
-                    </div>
-                    
-                    {/* Dashboard preview component */}
-                    <DashboardPreview />
+                    <ModernDashboardPreview />
                     
                     {/* Badges */}
                     <div className="absolute top-1/2 -left-2 transform -translate-y-1/2 -rotate-90 origin-left z-20">
@@ -1549,34 +1643,7 @@ export default function LandingPage() {
               </motion.div>
             </div>
             
-            {/* Mobile dashboard teaser */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={isHeroInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="mt-12 relative lg:hidden"
-            >
-              <div className="bg-white dark:bg-gray-800 p-3 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                <div className="absolute -top-3 -left-1 bg-gradient-to-r from-cyan-500 to-blue-600 px-3 py-1 text-white text-xs font-medium rounded-full shadow-md">
-                  Dashboard en vivo
-                </div>
-                
-                {/* Etiqueta de IA para móvil */}
-                <div className="absolute -top-3 right-1 bg-gradient-to-r from-purple-600 to-purple-800 px-3 py-1 text-white text-xs font-medium rounded-full shadow-md flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                    <line x1="3" y1="9" x2="21" y2="9"/>
-                    <line x1="9" y1="21" x2="9" y2="9"/>
-                  </svg>
-                  IA
-                </div>
-                
-                {/* Usando el componente dashboard simulado en versión más compacta para móvil */}
-                <div className="max-h-[200px] overflow-hidden">
-                  <DashboardPreview />
-                </div>
-              </div>
-            </motion.div>
+            {/* Mobile dashboard teaser - eliminando por completo para dispositivos móviles */}
             
             {/* Trust indicators */}
             <motion.div
@@ -1602,54 +1669,6 @@ export default function LandingPage() {
           {/* Bottom gradient fade */}
           <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white dark:from-gray-800 to-transparent" />
         </section>
-
-        {/* Video Modal */}
-        <AnimatePresence>
-          {showVideo && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowVideo(false)}
-              className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-            >
-              <motion.div
-                initial={{ scale: 0.95 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0.95 }}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-3xl w-full"
-              >
-                <div className="relative flex flex-col items-center justify-center min-h-[300px] bg-gradient-to-br from-cyan-500/10 to-blue-600/10 dark:from-cyan-500/20 dark:to-blue-600/20 rounded-xl p-8">
-                  <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10 dark:opacity-20 rounded-xl" />
-                  
-                  <h3 className="text-3xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600 mb-4">
-                    {t.hero.comingSoon}
-                  </h3>
-                  
-                  <p className="text-gray-600 dark:text-gray-300 text-center mb-6 max-w-md">
-                    {t.videoModal.description}
-                  </p>
-                  
-                  <div className="flex items-center justify-center space-x-2 text-cyan-500 dark:text-cyan-400 animate-pulse">
-                    <div className="w-3 h-3 rounded-full bg-cyan-500 dark:bg-cyan-400"></div>
-                    <div className="w-3 h-3 rounded-full bg-cyan-500 dark:bg-cyan-400 animation-delay-200"></div>
-                    <div className="w-3 h-3 rounded-full bg-cyan-500 dark:bg-cyan-400 animation-delay-500"></div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-center mt-6">
-                  <button
-                    onClick={() => setShowVideo(false)}
-                    className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 shadow-md hover:shadow-lg"
-                  >
-                    {t.testimonials.closeButton}
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* Features Section */}
         <section id="features" className="py-20 bg-white dark:bg-gray-900 relative">
@@ -2019,7 +2038,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* CTA Section */}
+        {/* CTA Section - Reestructurada para mostrar imagen arriba en móvil */}
         <section id="cta" className="py-24 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-600 animate-gradient"></div>
           
@@ -2034,30 +2053,49 @@ export default function LandingPage() {
           
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="max-w-5xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                viewport={{ once: true }}
                 className="bg-white/10 backdrop-blur-xl p-8 sm:p-12 rounded-3xl border border-white/20 shadow-2xl"
-            >
+              >
+                {/* Reestructuración para dispositivos móviles: imagen arriba, texto abajo */}
                 <div className="flex flex-col lg:flex-row gap-10 items-center">
+                  {/* Círculo con número - ahora primero en móvil pero último en desktop */}
+                  <div className="lg:hidden w-full flex justify-center mb-6">
+                    <div className="relative w-56 h-56">
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-white/5 rounded-full animate-pulse-glow"></div>
+                      <div className="absolute inset-4 bg-gradient-to-br from-white/30 to-white/10 rounded-full animate-pulse-glow animation-delay-1000"></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="bg-white/95 backdrop-blur-md text-cyan-600 rounded-2xl w-32 h-32 flex flex-col items-center justify-center shadow-lg transform -rotate-6 hover:rotate-0 transition-transform duration-300">
+                          <span className="text-3xl font-extrabold">14</span>
+                          <span className="text-sm font-medium mt-1">{t.cta.daysFreeTrial}</span>
+                          <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-lg shadow-md transform rotate-12">
+                            ¡AHORA!
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Contenido de texto */}
                   <div className="lg:w-2/3">
                     <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-6 leading-tight">
-                {t.cta.title}
-              </h2>
+                      {t.cta.title}
+                    </h2>
                     <p className="text-xl text-blue-50 mb-8 max-w-xl">
-                {t.cta.subtitle}
-              </p>
+                      {t.cta.subtitle}
+                    </p>
                     
                     <div className="flex flex-wrap gap-4">
-              <Link
-                href="/signup"
+                      <Link
+                        href="/signup"
                         className="px-8 py-4 bg-white text-cyan-600 rounded-xl hover:bg-gray-50 transition-all duration-300 shadow-lg hover:shadow-xl text-lg font-semibold flex items-center"
-              >
-                {t.cta.button}
+                      >
+                        {t.cta.button}
                         <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
+                      </Link>
                       
                       <Link
                         href="/login"
@@ -2079,7 +2117,8 @@ export default function LandingPage() {
                     </div>
                   </div>
                   
-                  <div className="lg:w-1/3 flex justify-center">
+                  {/* Círculo con número - solo visible en desktop, a la derecha */}
+                  <div className="lg:w-1/3 hidden lg:flex justify-center">
                     <div className="relative w-56 h-56">
                       <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-white/5 rounded-full animate-pulse-glow"></div>
                       <div className="absolute inset-4 bg-gradient-to-br from-white/30 to-white/10 rounded-full animate-pulse-glow animation-delay-1000"></div>
@@ -2095,7 +2134,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
-            </motion.div>
+              </motion.div>
             </div>
           </div>
         </section>
