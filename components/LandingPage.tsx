@@ -266,7 +266,7 @@ const ModernDashboardPreview = () => {
     
     return () => clearInterval(interval);
   }, []);
-  
+
   return (
     <div className="relative w-full h-full bg-gradient-to-br from-gray-950 to-gray-900 rounded-xl overflow-hidden">
       {/* Header con navegación */}
@@ -300,11 +300,11 @@ const ModernDashboardPreview = () => {
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
             <span className="text-cyan-500">👤</span>
-          </div>
+        </div>
           <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center relative">
             <span className="text-gray-400">🔔</span>
             <span className="absolute -top-1 -right-1 w-3 h-3 bg-cyan-500 rounded-full"></span>
-          </div>
+        </div>
         </div>
       </div>
       
@@ -312,25 +312,25 @@ const ModernDashboardPreview = () => {
       <div className="grid grid-cols-3 gap-5 p-6 h-[calc(100%-70px)]">
         {/* Panel izquierdo */}
         <div className="col-span-2 space-y-5">
-          {/* Gráfico principal */}
+        {/* Gráfico principal */}
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5 h-[220px] relative overflow-hidden">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-white font-medium">BTC/USDT</h3>
               <span className="text-green-400 font-medium">$61,274.50 <span className="text-green-500">+2.4%</span></span>
-            </div>
-            
+          </div>
+          
             {/* Representación del gráfico con gradiente y línea */}
             <div className="absolute bottom-0 left-0 right-0 h-[140px]">
               {/* Área de gradiente bajo la línea */}
               <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/20 to-transparent"></div>
               
               {/* Línea del gráfico */}
-              <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-                <path 
+          <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+            <path 
                   d="M0,100 C30,80 60,110 90,70 C120,30 150,60 180,40 C210,20 240,50 270,30 C300,10 330,40 360,20" 
                   stroke="url(#grad1)" 
                   strokeWidth="3"
-                  fill="none"
+              fill="none" 
                   strokeLinecap="round"
                 />
                 <defs>
@@ -339,8 +339,8 @@ const ModernDashboardPreview = () => {
                     <stop offset="100%" stopColor="#3b82f6" />
                   </linearGradient>
                 </defs>
-              </svg>
-              
+          </svg>
+          
               {/* Puntos de datos */}
               <div className="absolute bottom-[70px] left-[180px] w-4 h-4 bg-white rounded-full shadow-lg shadow-cyan-500/30 border-2 border-cyan-500"></div>
             </div>
@@ -372,14 +372,14 @@ const ModernDashboardPreview = () => {
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <span className="text-white text-sm">Compra - BTC (4h)</span>
                   <span className="text-green-400 text-xs ml-auto">+2.4%</span>
-                </div>
+          </div>
                 <div className="flex items-center space-x-3 p-2 bg-red-500/10 border border-red-500/20 rounded-lg">
                   <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                   <span className="text-white text-sm">Venta - ETH (1h)</span>
                   <span className="text-red-400 text-xs ml-auto">-1.2%</span>
-                </div>
-              </div>
-            </div>
+          </div>
+          </div>
+        </div>
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5">
               <h3 className="text-gray-300 text-sm mb-3 flex items-center">
                 <span className="mr-2">🔄</span>
@@ -390,16 +390,16 @@ const ModernDashboardPreview = () => {
                   <span className="text-white text-sm">BTC</span>
                   <span className="text-gray-400 mx-2 text-xs">0.034</span>
                   <span className="text-green-400 text-xs ml-auto">$2,083.33</span>
-                </div>
+            </div>
                 <div className="flex items-center p-2 border border-gray-700 rounded-lg">
                   <span className="text-white text-sm">ETH</span>
                   <span className="text-gray-400 mx-2 text-xs">1.25</span>
                   <span className="text-red-400 text-xs ml-auto">$3,456.78</span>
-                </div>
               </div>
-            </div>
-          </div>
-        </div>
+              </div>
+              </div>
+              </div>
+              </div>
         
         {/* Panel derecho */}
         <div className="space-y-5">
@@ -409,17 +409,17 @@ const ModernDashboardPreview = () => {
             <div className="flex items-center justify-between mb-3">
               <span className="text-gray-400 text-xs">Hoy</span>
               <span className="text-green-400 font-medium">+$1,240.50</span>
-            </div>
+              </div>
             
             {/* Gráfico circular */}
             <div className="relative w-full h-[100px] flex items-center justify-center">
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-20 h-20 rounded-full border-[6px] border-gray-700"></div>
                 <div className="absolute w-20 h-20 rounded-full border-[6px] border-transparent border-t-cyan-500 border-r-cyan-500 transform rotate-45"></div>
-              </div>
-              <div className="text-white text-xl font-bold">78%</div>
             </div>
-            
+              <div className="text-white text-xl font-bold">78%</div>
+          </div>
+          
             <div className="flex justify-between mt-3 text-xs">
               <div className="text-center">
                 <p className="text-gray-400">Ganancia</p>
@@ -433,8 +433,8 @@ const ModernDashboardPreview = () => {
                 <p className="text-gray-400">Tiempo</p>
                 <p className="text-white font-medium">-40%</p>
               </div>
-            </div>
-          </div>
+              </div>
+              </div>
           
           {/* Panel IA */}
           <div className="bg-gradient-to-br from-purple-900/30 to-purple-600/10 backdrop-blur-sm rounded-xl p-5 border border-purple-500/20">
@@ -447,40 +447,40 @@ const ModernDashboardPreview = () => {
               <span className="text-xs text-gray-400">Confianza:</span>
               <div className="ml-2 h-2 flex-1 bg-gray-700 rounded-full overflow-hidden">
                 <div className="h-full w-4/5 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full"></div>
-              </div>
-              <span className="ml-2 text-xs text-white">82%</span>
             </div>
-          </div>
-          
+              <span className="ml-2 text-xs text-white">82%</span>
+        </div>
+      </div>
+      
           {/* Panel de Tendencias */}
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5">
             <h3 className="text-gray-300 text-sm mb-3">Tendencias</h3>
             <div className="space-y-2">
-              <div className="flex items-center">
+            <div className="flex items-center">
                 <span className="text-gray-200 text-sm mr-3">BTC</span>
                 <div className="h-1.5 flex-1 bg-gray-700 rounded-full overflow-hidden">
                   <div className="h-full w-4/5 bg-green-500 rounded-full"></div>
                 </div>
                 <span className="ml-3 text-green-400 text-xs">+80%</span>
-              </div>
-              <div className="flex items-center">
+            </div>
+            <div className="flex items-center">
                 <span className="text-gray-200 text-sm mr-3">ETH</span>
                 <div className="h-1.5 flex-1 bg-gray-700 rounded-full overflow-hidden">
                   <div className="h-full w-3/5 bg-green-500 rounded-full"></div>
                 </div>
                 <span className="ml-3 text-green-400 text-xs">+60%</span>
-              </div>
-              <div className="flex items-center">
+            </div>
+            <div className="flex items-center">
                 <span className="text-gray-200 text-sm mr-3">SOL</span>
                 <div className="h-1.5 flex-1 bg-gray-700 rounded-full overflow-hidden">
                   <div className="h-full w-1/5 bg-red-500 rounded-full"></div>
-                </div>
-                <span className="ml-3 text-red-400 text-xs">-20%</span>
-              </div>
             </div>
+                <span className="ml-3 text-red-400 text-xs">-20%</span>
           </div>
         </div>
-      </div>
+            </div>
+            </div>
+            </div>
       
       {/* Efectos decorativos */}
       <div className="absolute top-20 right-20 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl"></div>
@@ -489,7 +489,7 @@ const ModernDashboardPreview = () => {
       {/* Reflejos de luz */}
       <div className="absolute top-0 left-1/4 w-px h-20 bg-gradient-to-b from-cyan-500/0 via-cyan-500/50 to-cyan-500/0"></div>
       <div className="absolute top-1/3 right-1/3 w-px h-20 bg-gradient-to-b from-purple-500/0 via-purple-500/30 to-purple-500/0"></div>
-    </div>
+          </div>
   );
 };
 
@@ -558,18 +558,18 @@ const CryptoTickerBar = () => {
                 {/* Tooltip con nombre completo */}
                 <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap">
                   {item.name}
-                </div>
+        </div>
                 
                 {/* Icono */}
                 <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${item.color} flex items-center justify-center shadow-lg shadow-${item.color.split(' ')[0]}/20`}>
                   <span className="text-white text-sm font-bold">{item.icon}</span>
-                </div>
-                
+      </div>
+      
                 {/* Símbolo */}
                 <div className="flex flex-col">
                   <span className="text-gray-300 font-semibold text-sm">{item.symbol}</span>
                   <span className="text-gray-500 text-xs">USDT</span>
-                </div>
+        </div>
                 
                 {/* Precio */}
                 <div className="flex flex-col">
@@ -580,7 +580,7 @@ const CryptoTickerBar = () => {
                       {item.positive ? '↑' : '↓'}
                     </span>
                   </span>
-                </div>
+          </div>
                 
                 {/* Línea de separación */}
                 {index < tickerItems.length * 2 - 1 && (
@@ -677,7 +677,7 @@ export default function LandingPage() {
       start: 'Comenzar',
       login: 'Iniciar sesión',
       signup: 'Registrarse',
-      aiPowered: 'Plataforma de trading potenciada con IA avanzada',
+      aiPowered: 'Plataforma trading potenciada con inteligencia artificial',
       hero: {
         title: 'Trading Inteligente con',
         subtitle: 'Potencia tus operaciones con análisis avanzado, señales en tiempo real y gestión de riesgo inteligente.',
@@ -857,7 +857,7 @@ export default function LandingPage() {
       start: 'Start',
       login: 'Login',
       signup: 'Sign up',
-      aiPowered: 'Trading platform powered by advanced AI',
+      aiPowered: 'Trading platform powered by artificial intelligence',
       hero: {
         title: 'Smart Trading with',
         subtitle: 'Boost your operations with advanced analysis, real-time signals, and intelligent risk management.',
@@ -1037,7 +1037,7 @@ export default function LandingPage() {
       start: 'Starten',
       login: 'Anmelden',
       signup: 'Registrieren',
-      aiPowered: 'Trading-Plattform mit fortschrittlicher KI',
+      aiPowered: 'Trading-Plattform mit künstlicher Intelligenz',
       hero: {
         title: 'Intelligentes Trading mit',
         subtitle: 'Steigern Sie Ihre Operationen mit fortschrittlicher Analyse, Echtzeit-Signalen und intelligentem Risikomanagement.',
@@ -1500,14 +1500,14 @@ export default function LandingPage() {
 
               <nav className="flex-1 px-6 py-8">
                 <div className="space-y-6">
-                  <Link
-                    href="#features"
+              <Link
+                href="#features"
                     className="flex items-center space-x-3 text-gray-700 dark:text-gray-200 hover:text-cyan-600 dark:hover:text-cyan-400 py-3 text-lg font-medium transition-colors duration-200 border-b border-gray-100 dark:border-gray-800 pb-3"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
+                onClick={() => setIsMenuOpen(false)}
+              >
                     <Layers className="h-5 w-5 text-cyan-500" />
-                    <span>{t.features}</span>
-                  </Link>
+                <span>{t.features}</span>
+              </Link>
                   <Link
                     href="#pricing"
                     className="flex items-center space-x-3 text-gray-700 dark:text-gray-200 hover:text-cyan-600 dark:hover:text-cyan-400 py-3 text-lg font-medium transition-colors duration-200 border-b border-gray-100 dark:border-gray-800 pb-3"
@@ -1577,18 +1577,18 @@ export default function LandingPage() {
               </div>
 
               <div className="mt-auto p-6 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800 space-y-4">
-                <Link
-                  href="/login"
+              <Link
+                href="/login"
                   className="w-full py-3 text-center text-cyan-600 dark:text-cyan-400 border border-cyan-500 dark:border-cyan-400 rounded-lg hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-all duration-300 font-medium flex items-center justify-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
+                onClick={() => setIsMenuOpen(false)}
+              >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
                     <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
                     <polyline points="10 17 15 12 10 7"/>
                     <line x1="15" y1="12" x2="3" y2="12"/>
                   </svg>
-                  {t.login}
-                </Link>
+                {t.login}
+              </Link>
                 <Link
                   href="/signup"
                   className="w-full py-3 text-center text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 font-medium shadow-md flex items-center justify-center"
@@ -1660,54 +1660,44 @@ export default function LandingPage() {
                 transition={{ duration: 0.8 }}
                 className="lg:w-1/2 text-center lg:text-left pt-10 lg:pt-0"
               >
-                <div className="bg-gradient-to-r from-blue-600/10 to-purple-600/10 dark:from-blue-600/20 dark:to-purple-600/20 p-4 rounded-xl border border-blue-300/50 dark:border-purple-600/30 mb-8 max-w-xl mx-auto lg:mx-0 shadow-sm hover:shadow-md transition-shadow duration-300">
-                  <p className="text-gray-800 dark:text-gray-100 flex items-center font-medium">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 mr-2 text-blue-600 dark:text-purple-400">
-                      <path d="M12 2c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2s-2-.9-2-2V4c0-1.1.9-2 2-2z"/>
-                      <path d="M12 8v8"/>
-                      <path d="M3.2 14c-.4-1-.6-2-.6-3 0-4.4 3.6-8 8-8 .9 0 1.8.2 2.6.4"/>
-                      <path d="M17 6.6c.9 1.3 1.4 2.9 1.4 4.6 0 4.4-3.6 8-8 8-.9 0-1.8-.2-2.6-.4"/>
-                      <path d="M8.3 10A12 12 0 0 0 7 19"/>
-                      <path d="M20 19a12 12 0 0 0-3-9"/>
-                      <path d="M7.5 13.5 7 14l.5.5"/>
-                      <path d="M16.5 13.5l.5.5-.5.5"/>
-                      <path d="M12 16a3 3 0 0 1-2.1-.9"/>
-                    </svg>
-                    {t.aiPowered}
-                  </p>
+                {/* Nuevo diseño simple para el banner */}
+                <div className="mb-8 max-w-xl mx-auto lg:mx-0">
+                  <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-3 px-6 rounded-lg shadow-md">
+                    <p className="font-medium">{t.aiPowered}</p>
+                  </div>
                 </div>
                 
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-6 lg:mb-8 leading-tight tracking-tight">
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600 animate-gradient">
-                    {t.hero.title}
-                  </span>
+                  {t.hero.title}
+                </span>
                   <br />
                   <span className="relative inline-block mt-2">
-                    TradingDash
+                  TradingDash
                     <div className="absolute -bottom-3 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
-                  </span>
-                </h1>
+                </span>
+              </h1>
                 
                 <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-xl mx-auto lg:mx-0">
-                  {t.hero.subtitle}
-                </p>
+                {t.hero.subtitle}
+              </p>
 
                 <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
                   {/* Botón de Empezar Ahora mejorado */}
-                  <Link
+                <Link
                     href="#"
                     className="w-full sm:w-auto px-8 py-4 text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/20 dark:hover:shadow-blue-500/10 flex items-center justify-center gap-2 font-medium group relative overflow-hidden"
-                  >
+                >
                     <span className="relative z-10 flex items-center">
-                      {t.hero.startNow}
+                  {t.hero.startNow}
                       <ArrowRight className="h-5 w-5 ml-1 group-hover:translate-x-1 transition-transform duration-300" />
                     </span>
                     <span className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-0"></span>
                     <span className="absolute -top-10 -right-10 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-700 z-0"></span>
-                  </Link>
+                </Link>
                   
                   {/* Eliminado el botón "Próximamente" */}
-                </div>
+              </div>
                 
                 {/* Hero stats */}
                 <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1723,8 +1713,8 @@ export default function LandingPage() {
                     <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">87%</div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm">Mejora en resultados</p>
                   </div>
-                </div>
-              </motion.div>
+              </div>
+            </motion.div>
               
               {/* Dashboard Preview Enhanced */}
               <motion.div
@@ -1819,10 +1809,10 @@ export default function LandingPage() {
             <div className="md:hidden">
               <div className="overflow-hidden pb-8">
                 <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentFeature}
+              <motion.div
+                key={currentFeature}
                     initial={{ opacity: 0, x: 100 }}
-                    animate={{ opacity: 1, x: 0 }}
+                animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -100 }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
                     className="w-full max-w-sm mx-auto"
@@ -1832,16 +1822,16 @@ export default function LandingPage() {
                       
                       <div className="relative z-10">
                         <div className="text-4xl mb-4 inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 rounded-2xl">
-                          {t.mainFeatures.items[currentFeature].icon}
-                        </div>
+                  {t.mainFeatures.items[currentFeature].icon}
+                </div>
                         
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
-                          {t.mainFeatures.items[currentFeature].title}
-                        </h3>
+                  {t.mainFeatures.items[currentFeature].title}
+                </h3>
                         
-                        <p className="text-gray-600 dark:text-gray-300">
-                          {t.mainFeatures.items[currentFeature].description}
-                        </p>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {t.mainFeatures.items[currentFeature].description}
+                </p>
                       </div>
                     </div>
                   </motion.div>
@@ -2189,13 +2179,13 @@ export default function LandingPage() {
           
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="max-w-5xl mx-auto">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-                viewport={{ once: true }}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
                 className="bg-white/10 backdrop-blur-xl p-8 sm:p-12 rounded-3xl border border-white/20 shadow-2xl"
-              >
+            >
                 {/* Reestructuración para dispositivos móviles: imagen arriba, texto abajo */}
                 <div className="flex flex-col lg:flex-row gap-10 items-center">
                   {/* Círculo con número - ahora primero en móvil pero último en desktop */}
@@ -2218,20 +2208,20 @@ export default function LandingPage() {
                   {/* Contenido de texto */}
                   <div className="lg:w-2/3">
                     <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-6 leading-tight">
-                      {t.cta.title}
-                    </h2>
+                {t.cta.title}
+              </h2>
                     <p className="text-xl text-blue-50 mb-8 max-w-xl">
-                      {t.cta.subtitle}
-                    </p>
+                {t.cta.subtitle}
+              </p>
                     
                     <div className="flex flex-wrap gap-4">
-                      <Link
-                        href="/signup"
+              <Link
+                href="/signup"
                         className="px-8 py-4 bg-white text-cyan-600 rounded-xl hover:bg-gray-50 transition-all duration-300 shadow-lg hover:shadow-xl text-lg font-semibold flex items-center"
-                      >
-                        {t.cta.button}
+              >
+                {t.cta.button}
                         <ArrowRight className="ml-2 h-5 w-5" />
-                      </Link>
+              </Link>
                       
                       <Link
                         href="/login"
@@ -2270,7 +2260,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+            </motion.div>
             </div>
           </div>
         </section>
