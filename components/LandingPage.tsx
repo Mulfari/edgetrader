@@ -1627,7 +1627,7 @@ export default function LandingPage() {
         <CryptoTickerBar />
         
         {/* Hero Section - Reduciendo aún más el padding top */}
-        <section ref={heroRef} className="relative pt-6 pb-32 overflow-hidden">
+        <section ref={heroRef} className="relative pt-0 pb-28 overflow-hidden">
           {/* Background Elements */}
           <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
             {/* Grid pattern */}
