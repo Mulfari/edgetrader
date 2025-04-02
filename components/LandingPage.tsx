@@ -1477,16 +1477,7 @@ export default function LandingPage() {
           >
             <div className="flex flex-col h-full">
               <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 dark:border-gray-800">
-                <Link href="/" className="flex items-center space-x-3 group" onClick={() => setIsMenuOpen(false)}>
-                  <div className="w-9 h-9 bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
-                    <span className="text-lg text-white font-bold">TD</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-lg font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
-                      TradingDash
-                    </span>
-                  </div>
-                </Link>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Menú</h2>
                 <button
                   onClick={() => setIsMenuOpen(false)}
                   className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300 flex items-center justify-center"
@@ -1503,7 +1494,7 @@ export default function LandingPage() {
                     className="flex items-center space-x-3 text-gray-700 dark:text-gray-200 hover:text-cyan-600 dark:hover:text-cyan-400 py-3 text-lg font-medium transition-colors duration-200 border-b border-gray-100 dark:border-gray-800 pb-3"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <Layers className="h-5 w-5" />
+                    <Layers className="h-5 w-5 text-cyan-500" />
                     <span>{t.features}</span>
                   </Link>
                   <Link
@@ -1511,18 +1502,29 @@ export default function LandingPage() {
                     className="flex items-center space-x-3 text-gray-700 dark:text-gray-200 hover:text-cyan-600 dark:hover:text-cyan-400 py-3 text-lg font-medium transition-colors duration-200 border-b border-gray-100 dark:border-gray-800 pb-3"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-tag">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-500">
                       <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/>
                       <path d="M7 7h.01"/>
                     </svg>
                     <span>{t.pricingLink}</span>
                   </Link>
                   <Link
+                    href="#testimonials"
+                    className="flex items-center space-x-3 text-gray-700 dark:text-gray-200 hover:text-cyan-600 dark:hover:text-cyan-400 py-3 text-lg font-medium transition-colors duration-200 border-b border-gray-100 dark:border-gray-800 pb-3"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-500">
+                      <path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2v5Z"/>
+                      <path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/>
+                    </svg>
+                    <span>Testimonios</span>
+                  </Link>
+                  <Link
                     href="#faq"
                     className="flex items-center space-x-3 text-gray-700 dark:text-gray-200 hover:text-cyan-600 dark:hover:text-cyan-400 py-3 text-lg font-medium transition-colors duration-200 border-b border-gray-100 dark:border-gray-800 pb-3"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-help-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-500">
                       <circle cx="12" cy="12" r="10"/>
                       <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
                       <path d="M12 17h.01"/>
@@ -1531,6 +1533,37 @@ export default function LandingPage() {
                   </Link>
                 </div>
               </nav>
+
+              {/* Selector de idioma móvil */}
+              <div className="px-6 py-4 mb-2">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t.language}</span>
+                  <div className="flex space-x-2">
+                    {(['es', 'en', 'de'] as Language[]).map((lang) => (
+                      <button
+                        key={lang}
+                        onClick={() => {
+                          setLanguage(lang);
+                          localStorage.setItem('preferredLanguage', lang);
+                        }}
+                        className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200 ${
+                          language === lang 
+                            ? 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-800/30' 
+                            : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        <Image 
+                          src={languageFlags[lang]}
+                          alt={languageNames[lang]}
+                          width={20}
+                          height={15}
+                          className="rounded-sm object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               <div className="mt-auto p-6 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800 space-y-4">
                 <Link
@@ -1558,37 +1591,6 @@ export default function LandingPage() {
                   </svg>
                   {t.signup}
                 </Link>
-              </div>
-
-              {/* Selector de idioma móvil */}
-              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">{t.language}</span>
-                  <div className="flex space-x-2">
-                    {(['es', 'en', 'de'] as Language[]).map((lang) => (
-                      <button
-                        key={lang}
-                        onClick={() => {
-                          setLanguage(lang);
-                          localStorage.setItem('preferredLanguage', lang);
-                        }}
-                        className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200 ${
-                          language === lang 
-                            ? 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400' 
-                            : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-                        }`}
-                      >
-                        <Image 
-                          src={languageFlags[lang]}
-                          alt={languageNames[lang]}
-                          width={20}
-                          height={15}
-                          className="rounded-sm object-cover"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
           </motion.div>
