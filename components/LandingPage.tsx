@@ -1,10 +1,139 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRight, Menu, X, Play, Check, Star, ArrowUp, Globe } from "lucide-react"
+import { ArrowRight, Menu, X, Play, Check, Star, ArrowUp, Globe, ChevronDown, Layers } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence, useInView } from "framer-motion"
 import Image from "next/image";
+
+// Estilos adicionales para animaciones
+const animationStyles = `
+@keyframes gradientBg {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes move-diagonal {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(10px, 10px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s infinite;
+}
+
+.animate-rotate {
+  animation: rotate 20s linear infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.animate-diagonal {
+  animation: move-diagonal 15s infinite alternate;
+}
+
+.animate-gradient {
+  animation: gradientBg 25s ease infinite;
+  background-size: 200% 200%;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+.animation-delay-1000 {
+  animation-delay: 1s;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.dark .glass-card {
+  background: rgba(17, 25, 40, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.125);
+}
+`;
 
 type Language = 'es' | 'en' | 'de';
 
@@ -15,11 +144,15 @@ type TranslationType = {
     start: string;
     login: string;
     signup: string;
+    aiPowered: string; // Nuevo texto para la sección de IA
     hero: {
       title: string;
       subtitle: string;
       startNow: string;
       comingSoon: string;
+      activeUsers: string; // Para estadísticas en hero
+      resultsImprovement: string;
+      support: string;
     };
     mainFeatures: {
       title: string;
@@ -57,18 +190,29 @@ type TranslationType = {
     };
     faq: {
       title: string;
+      subtitle: string; // Nuevo para el subtítulo de FAQ
       items: Array<{
         question: string;
         answer: string;
       }>;
+      moreQuestions: string; // Nuevo para preguntas adicionales
+      contactUs: string; // Enlace de contacto
     };
     cta: {
       title: string;
       subtitle: string;
       button: string;
+      noCreditCard: string; // Nuevos textos para la sección CTA
+      freeTrial: string;
+      easyCancel: string;
+      daysFreeTrial: string;
     };
     footer: {
       description: string;
+      newsletter: string; // Nuevos textos para el footer
+      newsletterPlaceholder: string;
+      newsletterButton: string;
+      quickLinks: string;
       legal: {
         title: string;
         privacy: string;
@@ -85,12 +229,15 @@ type TranslationType = {
     howItWorks: {
       title: string;
       subtitle: string;
+      stepLabel: string; // Para la etiqueta "Paso X"
       steps: Array<{
         title: string;
         description: string;
         icon: string;
       }>;
     };
+    usedByTraders: string; // Para la sección "Utilizado por traders de"
+    language: string; // Para la etiqueta de idioma
   };
 };
 
@@ -99,6 +246,246 @@ const languageFlags = {
   en: '/icons/flag-en.svg',
   de: '/icons/flag-de.svg'
 }
+
+// Componente para simular un dashboard de trading
+const DashboardPreview = () => {
+  // Valores fijos para las velas (en lugar de valores aleatorios)
+  const candleHeights = [40, 65, 30, 85, 55, 65, 40, 70, 50, 60, 75, 45, 65, 70, 60, 50, 75, 80, 65, 60, 85, 75, 50, 65, 70, 55, 65, 60, 70, 55, 60, 65, 70, 65, 55, 60];
+  const candleColors = [true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false];
+  const wickHeights = [15, 22, 18, 12, 25, 14, 18, 22, 16, 19, 24, 17, 13, 21, 16, 20, 15, 18, 22, 19, 14, 17, 21, 16, 18, 13, 19, 23, 17, 12, 20, 15, 18, 22, 16, 19];
+
+  return (
+    <div className="w-full bg-gray-900 rounded-lg overflow-hidden border border-gray-800">
+      {/* Header del dashboard */}
+      <div className="bg-gray-800 px-4 py-3 flex items-center justify-between border-b border-gray-700">
+        <div className="flex items-center space-x-3">
+          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+          <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="text-xs px-2 py-1 bg-blue-600 text-white rounded">BTCUSDT</div>
+          <div className="text-xs px-2 py-1 bg-gray-700 text-gray-300 rounded">ETHUSDT</div>
+          <div className="text-xs px-2 py-1 bg-gray-700 text-gray-300 rounded">SOLUSDT</div>
+        </div>
+        <div className="flex items-center space-x-2 text-gray-400">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+          </svg>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </div>
+      </div>
+      
+      {/* Panel principal */}
+      <div className="grid grid-cols-4 gap-0.5">
+        {/* Gráfico principal */}
+        <div className="col-span-3 bg-gray-850 p-2 relative h-[280px]">
+          {/* Gráfico de velas */}
+          <div className="absolute inset-0 flex items-end px-2">
+            <div className="flex items-end space-x-1 h-full w-full">
+              {candleHeights.map((height, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center">
+                  <div 
+                    className={`w-[3px] ${candleColors[i] ? 'bg-green-500' : 'bg-red-500'}`} 
+                    style={{ height: `${height * 2}px` }}
+                  ></div>
+                  <div 
+                    className={`w-[7px] ${candleColors[i] ? 'bg-green-500' : 'bg-red-500'}`} 
+                    style={{ height: `${wickHeights[i]}px` }}
+                  ></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Línea de tendencia */}
+          <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+            <path 
+              d="M0,150 C50,120 80,180 120,100 C160,40 200,90 240,70 C280,50 320,90 360,60 C400,30 440,80 500,60" 
+              fill="none" 
+              stroke="#3b82f6" 
+              strokeWidth="2"
+              strokeDasharray="5,5"
+            />
+          </svg>
+          
+          {/* Overlay de indicadores */}
+          <div className="absolute top-2 left-2 text-xs text-white space-y-1">
+            <div className="flex items-center space-x-1">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span>MA(50): 61,247.80</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <span>MA(200): 59,872.40</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+              <span>RSI: 63.5</span>
+            </div>
+          </div>
+          
+          {/* Indicador de precio actual */}
+          <div className="absolute right-2 top-2 bg-blue-600 text-white text-sm px-2 py-1 rounded">
+            $61,247.80
+          </div>
+          
+          {/* Niveles de soporte/resistencia */}
+          <div className="absolute left-0 right-0 top-1/3 border-t border-dashed border-yellow-500/50 flex justify-end">
+            <span className="bg-yellow-500/20 text-yellow-300 text-xs px-1">R: $62,500</span>
+          </div>
+          <div className="absolute left-0 right-0 bottom-1/4 border-t border-dashed border-green-500/50 flex justify-end">
+            <span className="bg-green-500/20 text-green-300 text-xs px-1">S: $60,000</span>
+          </div>
+        </div>
+        
+        {/* Panel lateral */}
+        <div className="col-span-1 bg-gray-850 flex flex-col">
+          {/* Book de órdenes */}
+          <div className="flex-1 p-2 border-b border-gray-700">
+            <div className="text-xs text-gray-400 mb-1 flex justify-between">
+              <span>BOOK DE ÓRDENES</span>
+              <span className="text-gray-500">BTC/USDT</span>
+            </div>
+            <div className="space-y-1 text-xs">
+              <div className="flex justify-between">
+                <span className="text-red-500">61,250.00</span>
+                <span className="text-gray-400">0.354</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-red-500">61,245.50</span>
+                <span className="text-gray-400">1.254</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-red-500">61,240.25</span>
+                <span className="text-gray-400">2.845</span>
+              </div>
+              <div className="h-px bg-gray-700 my-1"></div>
+              <div className="text-center text-blue-500 text-sm">$61,247.80</div>
+              <div className="h-px bg-gray-700 my-1"></div>
+              <div className="flex justify-between">
+                <span className="text-green-500">61,230.50</span>
+                <span className="text-gray-400">0.927</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-green-500">61,225.00</span>
+                <span className="text-gray-400">1.682</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-green-500">61,220.75</span>
+                <span className="text-gray-400">3.104</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Trading info */}
+          <div className="flex-1 p-2 text-xs">
+            <div className="text-gray-400 mb-1">INFORMACIÓN</div>
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <span className="text-gray-500">24h Alto</span>
+                <span className="text-white">$62,586.20</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">24h Bajo</span>
+                <span className="text-white">$60,125.40</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">24h Vol (BTC)</span>
+                <span className="text-white">4,287.54</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">24h Vol (USDT)</span>
+                <span className="text-white">264.5M</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Cambio 24h</span>
+                <span className="text-green-500">+2.35%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Panel inferior */}
+      <div className="grid grid-cols-2 gap-0.5">
+        {/* Señales de trading */}
+        <div className="bg-gray-850 p-2">
+          <div className="text-xs text-gray-400 mb-1">SEÑALES DE TRADING IA</div>
+          <div className="space-y-1.5 text-xs">
+            <div className="flex items-center">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+              <span className="text-white">Señal de compra (4h)</span>
+              <span className="ml-auto text-green-500">Fuerte</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full mr-1"></div>
+              <span className="text-white">RSI divergencia alcista (1d)</span>
+              <span className="ml-auto text-yellow-500">Neutral</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-2 h-2 bg-purple-500 rounded-full mr-1"></div>
+              <span className="text-white">Precio sobre MA200 (1h)</span>
+              <span className="ml-auto text-green-500">Fuerte</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Panel de operaciones */}
+        <div className="bg-gray-850 p-2">
+          <div className="text-xs text-gray-400 mb-1">OPERACIONES RECIENTES</div>
+          <div className="space-y-1.5 text-xs">
+            <div className="flex items-center">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+              <span className="text-white">Compra</span>
+              <span className="mx-2 text-gray-400">0.12 BTC</span>
+              <span className="text-gray-300">$61,240.50</span>
+              <span className="ml-auto text-gray-400">12:45</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-2 h-2 bg-red-500 rounded-full mr-1"></div>
+              <span className="text-white">Venta</span>
+              <span className="mx-2 text-gray-400">0.35 BTC</span>
+              <span className="text-gray-300">$61,350.25</span>
+              <span className="ml-auto text-gray-400">11:32</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+              <span className="text-white">Compra</span>
+              <span className="mx-2 text-gray-400">0.08 BTC</span>
+              <span className="text-gray-300">$61,175.80</span>
+              <span className="ml-auto text-gray-400">10:18</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Footer del dashboard */}
+      <div className="bg-gray-800 px-3 py-2 border-t border-gray-700 flex justify-between items-center">
+        <div className="flex space-x-3 text-xs text-gray-400">
+          <span>TradingDash v1.0</span>
+          <span className="text-green-500">Conectado</span>
+        </div>
+        <div className="flex space-x-3 text-xs text-gray-400">
+          <div className="flex items-center">
+            <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></div>
+            <span>API Binance</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></div>
+            <span>Tiempo Real</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -183,11 +570,15 @@ export default function LandingPage() {
       start: 'Comenzar',
       login: 'Iniciar sesión',
       signup: 'Registrarse',
+      aiPowered: 'Potencia tu trading con nuestra avanzada Inteligencia Artificial',
       hero: {
         title: 'Trading Inteligente con',
         subtitle: 'Potencia tus operaciones con análisis avanzado, señales en tiempo real y gestión de riesgo inteligente.',
         startNow: 'Empezar Ahora',
-        comingSoon: 'Próximamente'
+        comingSoon: 'Próximamente',
+        activeUsers: 'Usuarios activos',
+        resultsImprovement: 'Mejora en resultados',
+        support: 'Soporte dedicado'
       },
       mainFeatures: {
         title: 'Características Principales',
@@ -273,6 +664,7 @@ export default function LandingPage() {
       },
       faq: {
         title: "Preguntas Frecuentes",
+        subtitle: "Resolvemos tus dudas para que puedas comenzar con confianza",
         items: [
           {
             question: "¿Qué es TradingDash?",
@@ -290,15 +682,25 @@ export default function LandingPage() {
             question: "¿Puedo cancelar mi suscripción en cualquier momento?",
             answer: "Puedes cancelar tu suscripción cuando quieras. No creemos en contratos a largo plazo ni en cargos ocultos."
           }
-        ]
+        ],
+        moreQuestions: "¿Tienes alguna otra pregunta?",
+        contactUs: "Contáctanos"
       },
       cta: {
         title: "¿Listo para revolucionar tu trading?",
         subtitle: "Únete a miles de traders que ya están mejorando sus resultados con TradingDash",
-        button: "Comenzar Gratis"
+        button: "Comenzar Gratis",
+        noCreditCard: "Sin tarjeta de crédito",
+        freeTrial: "14 días de prueba gratuita",
+        easyCancel: "Cancelación sencilla",
+        daysFreeTrial: "días gratis"
       },
       footer: {
         description: "Plataforma líder en análisis y gestión de trading",
+        newsletter: "Boletín",
+        newsletterPlaceholder: "Tu email",
+        newsletterButton: "Suscribirse",
+        quickLinks: "Enlaces rápidos",
         legal: {
           title: "Legal y Compañía",
           privacy: "Privacidad",
@@ -315,6 +717,7 @@ export default function LandingPage() {
       howItWorks: {
         title: "Cómo Funciona",
         subtitle: "Comienza a operar de manera más inteligente en simples pasos",
+        stepLabel: "Paso",
         steps: [
           {
             title: "Regístrate",
@@ -337,19 +740,25 @@ export default function LandingPage() {
             icon: "📈"
           }
         ]
-      }
+      },
+      usedByTraders: "UTILIZADO POR TRADERS DE",
+      language: "Idioma"
     },
     en: {
       features: 'Features',
       pricingLink: 'Pricing',
       start: 'Start',
-      login: 'Log in',
+      login: 'Login',
       signup: 'Sign up',
+      aiPowered: 'Power your trading with our advanced Artificial Intelligence',
       hero: {
         title: 'Smart Trading with',
-        subtitle: 'Power up your operations with advanced analysis, real-time signals and intelligent risk management.',
+        subtitle: 'Boost your operations with advanced analysis, real-time signals, and intelligent risk management.',
         startNow: 'Start Now',
-        comingSoon: 'Coming Soon'
+        comingSoon: 'Coming Soon',
+        activeUsers: 'Active users',
+        resultsImprovement: 'Results improvement',
+        support: 'Dedicated support'
       },
       mainFeatures: {
         title: 'Main Features',
@@ -435,6 +844,7 @@ export default function LandingPage() {
       },
       faq: {
         title: "Frequently Asked Questions",
+        subtitle: "We solve your doubts so you can start with confidence",
         items: [
           {
             question: "What is TradingDash?",
@@ -452,15 +862,25 @@ export default function LandingPage() {
             question: "Can I cancel my subscription at any time?",
             answer: "You can cancel your subscription whenever you want. We don't believe in long-term contracts or hidden charges."
           }
-        ]
+        ],
+        moreQuestions: "Do you have any other questions?",
+        contactUs: "Contact us"
       },
       cta: {
         title: "Ready to revolutionize your trading?",
         subtitle: "Join thousands of traders who are already improving their results with TradingDash",
-        button: "Start Free"
+        button: "Start Free",
+        noCreditCard: "No credit card",
+        freeTrial: "14-day free trial",
+        easyCancel: "Easy cancellation",
+        daysFreeTrial: "free days"
       },
       footer: {
-        description: "Leading platform in trading analysis and management",
+        description: "Leading platform for trading analysis and management",
+        newsletter: "Newsletter",
+        newsletterPlaceholder: "Your email",
+        newsletterButton: "Subscribe",
+        quickLinks: "Quick Links",
         legal: {
           title: "Legal & Company",
           privacy: "Privacy",
@@ -477,6 +897,7 @@ export default function LandingPage() {
       howItWorks: {
         title: "How It Works",
         subtitle: "Start trading smarter in simple steps",
+        stepLabel: "Step",
         steps: [
           {
             title: "Sign up",
@@ -499,7 +920,9 @@ export default function LandingPage() {
             icon: "📈"
           }
         ]
-      }
+      },
+      usedByTraders: "USED BY TRADERS FROM",
+      language: "Language"
     },
     de: {
       features: 'Funktionen',
@@ -507,11 +930,15 @@ export default function LandingPage() {
       start: 'Starten',
       login: 'Anmelden',
       signup: 'Registrieren',
+      aiPowered: 'Steigern Sie Ihr Trading mit unserer fortschrittlichen Künstlichen Intelligenz',
       hero: {
         title: 'Intelligentes Trading mit',
-        subtitle: 'Optimieren Sie Ihre Trades mit fortschrittlicher Analyse, Echtzeit-Signalen und intelligentem Risikomanagement.',
+        subtitle: 'Steigern Sie Ihre Operationen mit fortschrittlicher Analyse, Echtzeit-Signalen und intelligentem Risikomanagement.',
         startNow: 'Jetzt Starten',
-        comingSoon: 'Demnächst'
+        comingSoon: 'Demnächst',
+        activeUsers: 'Aktive Benutzer',
+        resultsImprovement: 'Ergebnisverbesserung',
+        support: 'Dedizierter Support'
       },
       mainFeatures: {
         title: 'Hauptfunktionen',
@@ -597,6 +1024,7 @@ export default function LandingPage() {
       },
       faq: {
         title: "Häufig gestellte Fragen",
+        subtitle: "Wir lösen Ihre Zweifel, damit Sie mit Vertrauen beginnen können",
         items: [
           {
             question: "Was ist TradingDash?",
@@ -614,15 +1042,25 @@ export default function LandingPage() {
             question: "Kann ich mein Abonnement jederzeit kündigen?",
             answer: "Sie können Ihr Abonnement jederzeit kündigen. Wir glauben nicht an langfristige Verträge oder versteckte Gebühren."
           }
-        ]
+        ],
+        moreQuestions: "Haben Sie weitere Fragen?",
+        contactUs: "Kontaktieren Sie uns"
       },
       cta: {
         title: "Bereit, Ihr Trading zu revolutionieren?",
         subtitle: "Schließen Sie sich Tausenden von Tradern an, die ihre Ergebnisse bereits mit TradingDash verbessern",
-        button: "Kostenlos Starten"
+        button: "Kostenlos Starten",
+        noCreditCard: "Keine Kreditkarte",
+        freeTrial: "14 Tage kostenlose Testversion",
+        easyCancel: "Einfache Kündigung",
+        daysFreeTrial: "kostenlose Tage"
       },
       footer: {
         description: "Führende Plattform für Handelsanalyse und -management",
+        newsletter: "Newsletter",
+        newsletterPlaceholder: "Ihre E-Mail",
+        newsletterButton: "Abonnieren",
+        quickLinks: "Schnelllinks",
         legal: {
           title: "Rechtliches & Unternehmen",
           privacy: "Datenschutz",
@@ -639,6 +1077,7 @@ export default function LandingPage() {
       howItWorks: {
         title: "Wie es funktioniert",
         subtitle: "Beginnen Sie in einfachen Schritten intelligenter zu handeln",
+        stepLabel: "Schritt",
         steps: [
           {
             title: "Registrieren",
@@ -661,7 +1100,9 @@ export default function LandingPage() {
             icon: "📈"
           }
         ]
-      }
+      },
+      usedByTraders: "VERWENDET VON HÄNDLERN AUS",
+      language: "Sprache"
     }
   }
 
@@ -741,46 +1182,55 @@ export default function LandingPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Estilos de animación */}
+      <style jsx global>{animationStyles}</style>
+      
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${
+        className={`sticky top-0 z-50 transition-all duration-500 ${
           isScrolled 
-            ? "bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg shadow-lg" 
-            : "bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm"
+            ? "bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-md border-b border-gray-100 dark:border-gray-800" 
+            : "bg-white/80 dark:bg-gray-900/80 backdrop-blur-md"
         }`}
       >
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link href="/" className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-xl text-white">📈</span>
+          <div className="flex items-center justify-between h-20">
+            {/* Logo Mejorado */}
+            <Link href="/" className="flex items-center space-x-3 group">
+              <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:shadow-cyan-500/20 dark:group-hover:shadow-cyan-400/20">
+                <span className="text-xl text-white font-bold">TD</span>
               </div>
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
+              <div className="flex flex-col">
+                <span className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
                 TradingDash
               </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Trading Inteligente</span>
+              </div>
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-4">
-              <Link href="#features" className="text-gray-600 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400">
+            {/* Desktop Navigation - Mejorada */}
+            <div className="hidden md:flex items-center space-x-6">
+              <Link 
+                href="#features" 
+                className="text-gray-700 dark:text-gray-200 hover:text-cyan-600 dark:hover:text-cyan-400 text-sm font-medium relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-cyan-500 after:transition-all after:duration-300"
+              >
                 {t.features}
               </Link>
               <Link
                 href="/login"
-                className="px-4 py-2 text-cyan-600 dark:text-cyan-400 border border-cyan-500 dark:border-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded-lg transition-all duration-300"
+                className="px-5 py-2.5 text-cyan-600 dark:text-cyan-400 border border-cyan-500 dark:border-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded-lg transition-all duration-300 text-sm font-medium hover:shadow-md"
               >
                 {t.login}
               </Link>
               <Link
                 href="/signup"
-                className="px-4 py-2 text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300"
+                className="px-5 py-2.5 text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 text-sm font-medium shadow-md hover:shadow-lg hover:shadow-cyan-500/20 dark:hover:shadow-cyan-400/20"
               >
                 {t.signup}
               </Link>
               <div className="relative" ref={languageMenuRef}>
                 <button
                   onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-                  className="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 flex items-center space-x-2 group"
+                  className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 flex items-center space-x-2 group"
                 >
                   <Image 
                     src={languageFlags[language]}
@@ -790,9 +1240,16 @@ export default function LandingPage() {
                     className="rounded-sm object-cover"
                   />
                   <span className="font-medium">{languageNames[language]}</span>
+                  <ChevronDown className="h-4 w-4 text-gray-500 group-hover:text-cyan-500 transition-colors" />
                 </button>
                 {showLanguageMenu && (
-                  <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 min-w-[160px] border border-gray-100 dark:border-gray-700 backdrop-blur-sm">
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 5 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2 min-w-[160px] border border-gray-100 dark:border-gray-700 backdrop-blur-sm"
+                  >
                     {(['es', 'en', 'de'] as Language[]).map((lang) => (
                       <button
                         key={lang}
@@ -804,7 +1261,7 @@ export default function LandingPage() {
                         className={`w-full px-4 py-2.5 text-left text-sm hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-colors duration-200 ${
                           language === lang 
                             ? 'text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-900/20 font-medium' 
-                            : 'text-gray-600 dark:text-gray-300'
+                            : 'text-gray-700 dark:text-gray-200'
                         } flex items-center space-x-3`}
                       >
                         <Image 
@@ -820,17 +1277,17 @@ export default function LandingPage() {
                         )}
                       </button>
                     ))}
-                  </div>
+                  </motion.div>
                 )}
               </div>
             </div>
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Button - Mejorado */}
             <div className="md:hidden flex items-center space-x-4">
               <div className="relative" ref={mobileLanguageMenuRef}>
                 <button
                   onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-                  className="px-2 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 flex items-center space-x-2 group"
+                  className="px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 flex items-center space-x-2 group"
                 >
                   <Image 
                     src={languageFlags[language]}
@@ -840,9 +1297,16 @@ export default function LandingPage() {
                     className="rounded-sm object-cover"
                   />
                   <span className="font-medium">{languageNames[language]}</span>
+                  <ChevronDown className="h-4 w-4 text-gray-500 group-hover:text-cyan-500 transition-colors" />
                 </button>
                 {showLanguageMenu && (
-                  <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 min-w-[160px] border border-gray-100 dark:border-gray-700 backdrop-blur-sm z-50">
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 5 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2 min-w-[160px] border border-gray-100 dark:border-gray-700 backdrop-blur-sm z-50"
+                  >
                     {(['es', 'en', 'de'] as Language[]).map((lang) => (
                       <button
                         key={lang}
@@ -854,7 +1318,7 @@ export default function LandingPage() {
                         className={`w-full px-4 py-2.5 text-left text-sm hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-colors duration-200 ${
                           language === lang 
                             ? 'text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-900/20 font-medium' 
-                            : 'text-gray-600 dark:text-gray-300'
+                            : 'text-gray-700 dark:text-gray-200'
                         } flex items-center space-x-3`}
                       >
                         <Image 
@@ -870,97 +1334,272 @@ export default function LandingPage() {
                         )}
                       </button>
                     ))}
-                  </div>
+                  </motion.div>
                 )}
               </div>
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="p-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300"
+                aria-label="Toggle menu"
               >
-                {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                {isMenuOpen ? 
+                  <motion.div
+                    initial={{ rotate: 0 }}
+                    animate={{ rotate: 90 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <X className="h-6 w-6" />
+                  </motion.div> : 
+                  <Menu className="h-6 w-6" />
+                }
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Mejorado */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="md:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-lg"
           >
-            <nav className="container mx-auto px-4 py-3 flex flex-col space-y-3">
+            <nav className="container mx-auto px-6 py-6 flex flex-col space-y-4">
               <Link
                 href="#features"
-                className="text-gray-600 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 py-2"
+                className="text-gray-700 dark:text-gray-200 hover:text-cyan-600 dark:hover:text-cyan-400 py-3 text-lg font-medium flex items-center space-x-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                {t.features}
+                <Layers className="h-5 w-5" />
+                <span>{t.features}</span>
               </Link>
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-800 grid grid-cols-1 gap-3">
               <Link
                 href="/login"
-                className="w-full py-2 text-center text-cyan-600 dark:text-cyan-400 border border-cyan-500 dark:border-cyan-400 rounded-lg hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-all duration-300"
+                  className="w-full py-3 text-center text-cyan-600 dark:text-cyan-400 border border-cyan-500 dark:border-cyan-400 rounded-lg hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-all duration-300 font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t.login}
               </Link>
+                <Link
+                  href="/signup"
+                  className="w-full py-3 text-center text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 font-medium shadow-md"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t.signup}
+                </Link>
+              </div>
             </nav>
           </motion.div>
         )}
       </AnimatePresence>
 
       <main>
-        {/* Hero Section */}
-        <section ref={heroRef} className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-24 relative z-10">
+        {/* Hero Section - Completely enhanced */}
+        <section ref={heroRef} className="relative pt-20 pb-32 overflow-hidden">
+          {/* Background Elements */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
+            {/* Grid pattern */}
+            <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5 dark:opacity-15"></div>
+            
+            {/* Animated gradient blur */}
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-gradient-to-br from-cyan-400/30 to-blue-500/30 rounded-full blur-3xl opacity-70 dark:opacity-30 animate-pulse-glow"></div>
+            <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-gradient-to-br from-cyan-400/20 to-blue-500/20 rounded-full blur-3xl opacity-70 dark:opacity-20 animate-pulse-glow animation-delay-2000"></div>
+            
+            {/* Decorative elements */}
+            <div className="absolute top-1/4 left-10 w-64 h-64 border border-cyan-500/10 dark:border-cyan-500/5 rounded-full animate-rotate opacity-70"></div>
+            <div className="absolute bottom-1/3 right-10 w-40 h-40 border-2 border-blue-500/10 dark:border-blue-500/5 rounded-full animate-rotate opacity-70" style={{ animationDuration: '30s', animationDirection: 'reverse' }}></div>
+            
+            {/* Decorative dots grid */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-30">
+              <div className="w-full h-full max-w-7xl grid grid-cols-12 gap-8">
+                {Array.from({ length: 144 }).map((_, i) => (
+                  <div key={i} className="w-1.5 h-1.5 rounded-full bg-cyan-500/20 dark:bg-cyan-500/10"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="container relative mx-auto px-4 sm:px-6 lg:px-8 z-10">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
+              {/* Hero Content */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={isHeroInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="max-w-3xl mx-auto text-center"
-            >
-              <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl mb-8">
-                <span className="block text-gray-900 dark:text-white mb-4">
+                transition={{ duration: 0.8 }}
+                className="lg:w-1/2 text-center lg:text-left pt-10 lg:pt-0"
+              >
+                <div className="bg-gradient-to-r from-purple-600/10 to-indigo-600/10 dark:from-purple-600/20 dark:to-indigo-600/20 p-4 rounded-xl border border-purple-300 dark:border-purple-600/30 mb-8 max-w-xl mx-auto lg:mx-0 shadow-sm hover:shadow-md transition-shadow duration-300">
+                  <p className="text-gray-800 dark:text-gray-100 flex items-center font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 mr-2 text-purple-600 dark:text-purple-400">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <path d="M3 9h18"></path>
+                      <path d="M9 21V9"></path>
+                    </svg>
+                    {t.aiPowered}
+                  </p>
+                </div>
+                
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-6 lg:mb-8 leading-tight tracking-tight">
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600 animate-gradient">
                   {t.hero.title}
                 </span>
-                <span 
-                  className="block bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600 pb-3"
-                  style={{ 
-                    textShadow: "0 2px 4px rgba(0,0,0,0.1)", 
-                    letterSpacing: "-0.015em",
-                    padding: "0.1em 0",
-                    lineHeight: "1.2" 
-                  }}
-                >
+                  <br />
+                  <span className="relative inline-block mt-2">
                   TradingDash
+                    <div className="absolute -bottom-3 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
                 </span>
               </h1>
-              <p className="mt-6 text-xl leading-relaxed text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                
+                <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-xl mx-auto lg:mx-0">
                 {t.hero.subtitle}
               </p>
-              <div className="mt-10 flex flex-wrap justify-center gap-4">
+
+                <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
                 <Link
-                  href="/signup"
-                  className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                    href="#"
+                    className="w-full sm:w-auto px-8 py-4 text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/20 dark:hover:shadow-blue-500/10 flex items-center justify-center gap-2 font-medium group"
                 >
                   {t.hero.startNow}
-                  <ArrowRight className="ml-2 -mr-1 h-5 w-5" aria-hidden="true" />
+                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
                 </Link>
+                  
                 <button
                   onClick={() => setShowVideo(true)}
-                  className="inline-flex items-center px-8 py-3 border-2 border-cyan-500 text-base font-medium rounded-xl text-cyan-600 dark:text-cyan-400 bg-transparent hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-all duration-300 transform hover:scale-105"
+                    className="w-full sm:w-auto px-8 py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-750 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-gray-700 dark:text-gray-200 font-medium group"
                 >
-                  <Play className="mr-2 h-5 w-5" />
+                    <span className="bg-cyan-500 text-white rounded-full p-1.5 flex items-center justify-center">
+                      <Play className="h-3.5 w-3.5" />
+                    </span>
                   {t.hero.comingSoon}
                 </button>
               </div>
+                
+                {/* Hero stats */}
+                <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="glass-card rounded-xl p-4 text-center">
+                    <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">{t.hero.activeUsers}</div>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">{t.hero.resultsImprovement}</p>
+                  </div>
+                  <div className="glass-card rounded-xl p-4 text-center">
+                    <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">24/7</div>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">{t.hero.support}</p>
+                  </div>
+                  <div className="glass-card rounded-xl p-4 text-center">
+                    <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">87%</div>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">Mejora en resultados</p>
+                  </div>
+              </div>
+            </motion.div>
+              
+              {/* Dashboard Preview Enhanced */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={isHeroInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="lg:w-1/2 lg:pt-10 hidden lg:block relative"
+              >
+                <div className="relative">
+                  {/* Main dashboard container */}
+                  <div className="relative bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    {/* Dashboard header mockup */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="h-3 w-3 rounded-full bg-red-500"></div>
+                        <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
+                        <div className="h-3 w-3 rounded-full bg-green-500"></div>
+          </div>
+                      <div className="flex items-center justify-center px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300">
+                        trading.dashboard.com
+                      </div>
+                      <div className="w-16"></div>
+                    </div>
+                    
+                    {/* Dashboard preview component */}
+                    <DashboardPreview />
+                    
+                    {/* Badges */}
+                    <div className="absolute top-1/2 -left-2 transform -translate-y-1/2 -rotate-90 origin-left z-20">
+                      <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-1 px-3 text-xs font-medium tracking-wider uppercase shadow-md rounded-sm flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                          <circle cx="12" cy="12" r="10"/>
+                          <path d="M16 12l-4 4-4-4M12 8v7"/>
+                        </svg>
+                        Dashboard en vivo
+                      </div>
+                    </div>
+                    
+                    {/* AI Badge */}
+                    <div className="absolute top-1/2 -right-2 transform -translate-y-1/2 rotate-90 origin-right z-20">
+                      <div className="bg-gradient-to-r from-purple-600 to-purple-800 text-white py-1 px-3 text-xs font-medium tracking-wider uppercase shadow-md rounded-sm flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                          <line x1="3" y1="9" x2="21" y2="9"/>
+                          <line x1="9" y1="21" x2="9" y2="9"/>
+                        </svg>
+                        Inteligencia Artificial
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+            
+            {/* Mobile dashboard teaser */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={isHeroInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="mt-12 relative lg:hidden"
+            >
+              <div className="bg-white dark:bg-gray-800 p-3 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                <div className="absolute -top-3 -left-1 bg-gradient-to-r from-cyan-500 to-blue-600 px-3 py-1 text-white text-xs font-medium rounded-full shadow-md">
+                  Dashboard en vivo
+                </div>
+                
+                {/* Etiqueta de IA para móvil */}
+                <div className="absolute -top-3 right-1 bg-gradient-to-r from-purple-600 to-purple-800 px-3 py-1 text-white text-xs font-medium rounded-full shadow-md flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="3" y1="9" x2="21" y2="9"/>
+                    <line x1="9" y1="21" x2="9" y2="9"/>
+                  </svg>
+                  IA
+                </div>
+                
+                {/* Usando el componente dashboard simulado en versión más compacta para móvil */}
+                <div className="max-h-[200px] overflow-hidden">
+                  <DashboardPreview />
+                </div>
+              </div>
+            </motion.div>
+            
+            {/* Trust indicators */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={isHeroInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.8, delay: 0.8 }}
+              className="mt-16 text-center"
+            >
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-6">{t.usedByTraders}</p>
+              <div className="flex flex-wrap justify-center gap-x-12 gap-y-6">
+                {['Binance', 'Coinbase', 'Kraken', 'Bitfinex', 'Kucoin'].map((exchange, index) => (
+                  <div key={exchange} className="text-gray-400 dark:text-gray-500 font-semibold text-lg flex items-center">
+                    <div className="w-5 h-5 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-full mr-2 flex items-center justify-center text-xs">
+                      {index + 1}
+                    </div>
+                    {exchange}
+                  </div>
+                ))}
+              </div>
             </motion.div>
           </div>
-          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10 dark:opacity-20" />
+          
+          {/* Bottom gradient fade */}
           <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white dark:from-gray-800 to-transparent" />
         </section>
 
@@ -1013,8 +1652,27 @@ export default function LandingPage() {
         </AnimatePresence>
 
         {/* Features Section */}
-        <section id="features" className="py-20 bg-white dark:bg-gray-800">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="features" className="py-20 bg-white dark:bg-gray-900 relative">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5 dark:opacity-10"></div>
+          <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-gray-50 dark:from-gray-800 to-transparent"></div>
+          
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            {/* Section Header */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-4">
+                {t.mainFeatures.title}
+              </h2>
+              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+                {t.mainFeatures.subtitle}
+              </p>
+            </motion.div>
+            
             {/* Versión móvil */}
             <div className="md:hidden">
               <motion.div
@@ -1023,9 +1681,9 @@ export default function LandingPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.5 }}
-                className="bg-gray-50 dark:bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 hover:border-cyan-100 dark:hover:border-cyan-900/30 group"
+                className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:border-cyan-200 dark:hover:border-cyan-900/30 group transition-all duration-300"
               >
-                <div className="text-4xl mb-4 bg-gradient-to-r from-cyan-500/10 to-blue-600/10 p-4 rounded-xl inline-block group-hover:from-cyan-500/20 group-hover:to-blue-600/20 transition-all duration-300">
+                <div className="inline-block text-4xl mb-4 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 p-5 rounded-2xl group-hover:scale-110 transition-all duration-300">
                   {t.mainFeatures.items[currentFeature].icon}
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
@@ -1039,9 +1697,9 @@ export default function LandingPage() {
                     <button
                       key={index}
                       onClick={() => setCurrentFeature(index)}
-                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
                         index === currentFeature 
-                          ? 'bg-cyan-500 w-4' 
+                          ? 'bg-cyan-500 scale-125' 
                           : 'bg-gray-300 dark:bg-gray-600'
                       }`}
                       aria-label={`Ver característica ${index + 1}`}
@@ -1060,20 +1718,33 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   viewport={{ once: true }}
-                  className="bg-gray-50 dark:bg-gray-900 p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border border-gray-100 dark:border-gray-800 hover:border-cyan-100 dark:hover:border-cyan-900/30 group"
+                  className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-xl border border-gray-100 dark:border-gray-700 hover:border-cyan-200 dark:hover:border-cyan-800/50 group relative overflow-hidden"
                 >
-                  <div className="text-4xl mb-4 bg-gradient-to-r from-cyan-500/10 to-blue-600/10 p-4 rounded-xl inline-block group-hover:from-cyan-500/20 group-hover:to-blue-600/20 transition-all duration-300">{feature.icon}</div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">{feature.title}</h3>
-                  <p className="text-gray-600 dark:text-gray-300">{feature.description}</p>
+                  <div className="absolute -right-16 -top-16 w-32 h-32 bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/20 dark:to-blue-900/20 rounded-full opacity-70 group-hover:scale-150 transition-all duration-700 ease-in-out"></div>
+                  
+                  <div className="relative z-10">
+                    <div className="text-4xl mb-4 inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 rounded-2xl group-hover:scale-110 transition-all duration-300">
+                      {feature.icon}
+                    </div>
+                    
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-300">
+                      {feature.title}
+                    </h3>
+                    
+                    <p className="text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors duration-300">
+                      {feature.description}
+                    </p>
+                  </div>
                 </motion.div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* How It Works Section */}
-        <section className="py-20 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 relative">
-          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5 dark:opacity-10" />
+        {/* How It Works Section - Rediseño Minimalista */}
+        <section className="py-24 bg-white dark:bg-gray-900 relative">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5 dark:opacity-10"></div>
+          
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -1082,7 +1753,7 @@ export default function LandingPage() {
               viewport={{ once: true }}
               className="text-center mb-16"
             >
-              <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-4">
                 {t.howItWorks.title}
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
@@ -1090,40 +1761,74 @@ export default function LandingPage() {
               </p>
             </motion.div>
             
-            <div className="relative max-w-5xl mx-auto">
-              {/* Connecting Line */}
-              <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 transform -translate-y-1/2 hidden md:block" />
-              
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="max-w-4xl mx-auto">
+              <div className="relative">
+                {/* Línea vertical para conectar los pasos */}
+                <div className="absolute left-5 md:left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-500 via-blue-500 to-blue-600"></div>
+                
+                {/* Pasos */}
+                <div className="space-y-16">
                 {t.howItWorks.steps.map((step, index) => (
                 <motion.div
                   key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.5, delay: index * 0.15 }}
                   viewport={{ once: true }}
-                    className="relative bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-100 dark:border-gray-700 text-center group hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-                  >
-                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full p-3 text-white w-12 h-12 flex items-center justify-center z-10">
-                      <span className="text-xl">{index + 1}</span>
+                      className="flex"
+                    >
+                      {/* Icono del paso */}
+                      <div className="relative">
+                        {/* Número del paso */}
+                        <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white dark:bg-gray-900 flex items-center justify-center text-xs font-bold text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-800 z-10">
+                          {index + 1}
                     </div>
-                    <div className="mt-5 mb-4">
-                      <div className="text-4xl mb-4 bg-gradient-to-r from-cyan-500/10 to-blue-600/10 p-4 rounded-xl inline-block group-hover:from-cyan-500/20 group-hover:to-blue-600/20 transition-all duration-300">{step.icon}</div>
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{step.title}</h3>
+                        
+                        {/* Contenedor del icono */}
+                        <div className="w-10 h-10 md:w-16 md:h-16 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg z-20 relative">
+                          <span className="text-xl md:text-2xl">{step.icon}</span>
                     </div>
-                    <p className="text-gray-600 dark:text-gray-300">
+                      </div>
+                      
+                      {/* Contenido del paso */}
+                      <div className="ml-6 md:ml-8 pt-1">
+                        <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                          {step.title}
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-300 text-base md:text-lg leading-relaxed">
                       {step.description}
                     </p>
+                      </div>
                 </motion.div>
               ))}
               </div>
+              </div>
+              
+              {/* CTA final */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+                viewport={{ once: true }}
+                className="mt-16 text-center"
+              >
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl text-lg font-medium"
+                >
+                  {t.hero.startNow}
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </motion.div>
             </div>
           </div>
         </section>
 
         {/* Testimonials Section */}
-        <section id="testimonials" className="py-20 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5 dark:opacity-10" />
+        <section id="testimonials" className="py-24 bg-white dark:bg-gray-900 relative">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5 dark:opacity-10"></div>
+          <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-gray-50 dark:from-gray-800 to-transparent"></div>
+          
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -1132,42 +1837,105 @@ export default function LandingPage() {
               viewport={{ once: true }}
               className="text-center mb-16"
             >
-              <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-4">
                 {t.testimonials.title}
               </h2>
-              <p className="text-xl text-gray-600 dark:text-gray-300">
+              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
                 {t.testimonials.subtitle}
               </p>
             </motion.div>
-            <div className="max-w-4xl mx-auto">
+            
+            {/* Desktop Testimonials */}
+            <div className="hidden md:block">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {testimonials.map((testimonial, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    viewport={{ once: true }}
+                    className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-800/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl relative overflow-hidden"
+                  >
+                    <div className="absolute top-4 right-4 text-5xl text-purple-200 dark:text-purple-900/40 font-serif">"</div>
+                    
+                    <div className="flex items-center mb-6">
+                      <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                        {testimonial.name.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <div className="ml-4">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{testimonial.name}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{testimonial.role}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-4 flex">
+                      {[...Array(5)].map((_, i) => (
+                        <Star 
+                          key={i}
+                          className={`h-4 w-4 ${i < testimonial.rating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`} 
+                          fill={i < testimonial.rating ? 'currentColor' : 'none'} 
+                        />
+                      ))}
+                    </div>
+                    
+                    <p className="text-gray-600 dark:text-gray-300 relative z-10">
+                      "{testimonial.quote}"
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Mobile Testimonials */}
+            <div className="md:hidden">
               <motion.div
                 key={currentTestimonial}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.5 }}
-                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl flex flex-col items-center text-center border border-gray-100 dark:border-gray-700"
+                className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700"
               >
-                <div className="relative mb-6">
-                  <Image
-                    src={testimonials[currentTestimonial].avatar}
-                    alt={t.testimonials.items[currentTestimonial].name}
-                    width={100}
-                    height={100}
-                    className="w-24 h-24 rounded-full object-cover border-4 border-cyan-500"
-                  />
-                  <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full p-2">
-                    <Star className="h-4 w-4 text-white" fill="currentColor" />
+                <div className="text-5xl text-purple-200 dark:text-purple-900/40 font-serif absolute top-4 right-4">"</div>
+                
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    {testimonials[currentTestimonial].name.split(' ').map(n => n[0]).join('')}
                   </div>
+                  <div className="ml-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{testimonials[currentTestimonial].name}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{testimonials[currentTestimonial].role}</p>
                 </div>
-                <p className="text-xl text-gray-600 dark:text-gray-300 mb-6 italic">
-                  &ldquo;{t.testimonials.items[currentTestimonial].quote}&rdquo;
+                </div>
+                
+                <div className="mb-4 flex">
+                  {[...Array(5)].map((_, i) => (
+                    <Star 
+                      key={i}
+                      className={`h-4 w-4 ${i < testimonials[currentTestimonial].rating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`} 
+                      fill={i < testimonials[currentTestimonial].rating ? 'currentColor' : 'none'} 
+                    />
+                  ))}
+                </div>
+                
+                <p className="text-gray-600 dark:text-gray-300 relative z-10">
+                  "{testimonials[currentTestimonial].quote}"
                 </p>
-                <div className="font-medium text-gray-900 dark:text-white text-lg">
-                  {t.testimonials.items[currentTestimonial].name}
-                </div>
-                <div className="text-cyan-600 dark:text-cyan-400">
-                  {t.testimonials.items[currentTestimonial].role}
+                
+                <div className="flex justify-center mt-6 space-x-2">
+                  {testimonials.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentTestimonial(index)}
+                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                        index === currentTestimonial 
+                          ? 'bg-purple-500 scale-125' 
+                          : 'bg-gray-300 dark:bg-gray-600'
+                      }`}
+                      aria-label={`Ver testimonio ${index + 1}`}
+                    />
+                  ))}
                 </div>
               </motion.div>
             </div>
@@ -1175,13 +1943,30 @@ export default function LandingPage() {
         </section>
 
         {/* FAQ Section */}
-        <section id="faq" className="py-16 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 relative">
-          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5 dark:opacity-10" />
+        <section id="faq" className="py-24 bg-white dark:bg-gray-900 relative">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5 dark:opacity-10"></div>
+          
+          {/* Decorative elements */}
+          <div className="absolute top-20 right-10 w-64 h-64 bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/10 dark:to-blue-900/10 rounded-full blur-3xl opacity-70"></div>
+          <div className="absolute bottom-20 left-10 w-64 h-64 bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/10 dark:to-blue-900/10 rounded-full blur-3xl opacity-70"></div>
+          
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white text-center mb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-4">
               {t.faq.title}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
+              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+                {t.faq.subtitle}
+              </p>
+            </motion.div>
+            
+            <div className="max-w-4xl mx-auto">
               {t.faq.items.map((item, index) => (
                 <motion.div
                   key={index}
@@ -1189,71 +1974,189 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   viewport={{ once: true }}
-                  className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 h-full flex flex-col"
+                  className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 hover:border-cyan-200 dark:hover:border-cyan-800/50 transition-all duration-300 mb-4 group hover:-translate-y-1 hover:shadow-xl"
                 >
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 flex items-start">
-                    <span className="text-cyan-500 mr-2 shrink-0">Q:</span>
-                    <span>{item.question}</span>
+                  <div className="flex items-start">
+                    <div className="mr-4 mt-1 flex-shrink-0 flex items-center justify-center w-12 h-12 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 text-cyan-600 dark:text-cyan-400 rounded-xl group-hover:scale-110 transition-all duration-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:rotate-12 transition-transform duration-300">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-300">
+                        {item.question}
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-300 pl-6 mt-auto">
-                    <span className="text-cyan-500 mr-2">A:</span>
-                    <span>{item.answer}</span>
+                      <p className="text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors duration-300">
+                        {item.answer}
                   </p>
+                    </div>
+                  </div>
                 </motion.div>
               ))}
             </div>
+            
+            {/* Additional FAQ prompt */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              viewport={{ once: true }}
+              className="max-w-4xl mx-auto mt-12 text-center"
+            >
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                {t.faq.moreQuestions}
+              </p>
+              <Link
+                href="#"
+                className="inline-flex items-center text-cyan-600 dark:text-cyan-400 font-medium hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors"
+              >
+                {t.faq.contactUs}
+                <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
+            </motion.div>
           </div>
         </section>
 
         {/* CTA Section */}
-        <section id="cta" className="py-20 bg-gradient-to-r from-cyan-500 to-blue-600 relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10" />
-          <div className="absolute inset-0 bg-blue-500/20 backdrop-blur-[2px]"></div>
+        <section id="cta" className="py-24 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-600 animate-gradient"></div>
+          
+          {/* Grid pattern */}
+          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10"></div>
+          
+          {/* Floating elements */}
+          <div className="absolute top-10 left-10 w-24 h-24 bg-white/10 rounded-full blur-md animate-float"></div>
+          <div className="absolute bottom-10 right-10 w-32 h-32 bg-white/10 rounded-full blur-md animate-float animation-delay-2000"></div>
+          <div className="absolute bottom-20 left-1/3 w-12 h-12 bg-white/10 rounded-full blur-sm animate-float animation-delay-1000"></div>
+          <div className="absolute top-20 right-1/4 w-16 h-16 bg-white/10 rounded-full blur-sm animate-float animation-delay-4000"></div>
+          
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
-              className="max-w-3xl mx-auto text-center"
+                className="bg-white/10 backdrop-blur-xl p-8 sm:p-12 rounded-3xl border border-white/20 shadow-2xl"
             >
-              <h2 className="text-3xl font-extrabold text-white sm:text-4xl mb-6">
+                <div className="flex flex-col lg:flex-row gap-10 items-center">
+                  <div className="lg:w-2/3">
+                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-6 leading-tight">
                 {t.cta.title}
               </h2>
-              <p className="text-xl text-blue-50 mb-8">
+                    <p className="text-xl text-blue-50 mb-8 max-w-xl">
                 {t.cta.subtitle}
               </p>
+                    
+                    <div className="flex flex-wrap gap-4">
               <Link
                 href="/signup"
-                className="inline-flex items-center px-8 py-3 border-2 border-white text-lg font-medium rounded-xl text-white hover:bg-white hover:text-cyan-600 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/30"
+                        className="px-8 py-4 bg-white text-cyan-600 rounded-xl hover:bg-gray-50 transition-all duration-300 shadow-lg hover:shadow-xl text-lg font-semibold flex items-center"
               >
                 {t.cta.button}
-                <ArrowRight className="ml-2 -mr-1 h-5 w-5" aria-hidden="true" />
+                        <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
+                      
+                      <Link
+                        href="/login"
+                        className="px-8 py-4 bg-white/20 text-white border border-white/40 rounded-xl hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl text-lg font-semibold"
+                      >
+                        {t.login}
+                      </Link>
+                    </div>
+                    
+                    <div className="mt-8 flex items-center text-white/80 text-sm">
+                      <Check className="h-5 w-5 mr-2 text-white" />
+                      <span>{t.cta.noCreditCard}</span>
+                      <div className="mx-3 h-1 w-1 rounded-full bg-white/40"></div>
+                      <Check className="h-5 w-5 mr-2 text-white" />
+                      <span>{t.cta.freeTrial}</span>
+                      <div className="mx-3 h-1 w-1 rounded-full bg-white/40"></div>
+                      <Check className="h-5 w-5 mr-2 text-white" />
+                      <span>{t.cta.easyCancel}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="lg:w-1/3 flex justify-center">
+                    <div className="relative w-56 h-56">
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-white/5 rounded-full animate-pulse-glow"></div>
+                      <div className="absolute inset-4 bg-gradient-to-br from-white/30 to-white/10 rounded-full animate-pulse-glow animation-delay-1000"></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="bg-white/95 backdrop-blur-md text-cyan-600 rounded-2xl w-32 h-32 flex flex-col items-center justify-center shadow-lg transform -rotate-6 hover:rotate-0 transition-transform duration-300">
+                          <span className="text-3xl font-extrabold">14</span>
+                          <span className="text-sm font-medium mt-1">{t.cta.daysFreeTrial}</span>
+                          <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-lg shadow-md transform rotate-12">
+                            ¡AHORA!
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
             </motion.div>
+            </div>
           </div>
         </section>
-      </main>
 
-      <footer className="bg-gray-900 text-white py-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5" />
-        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-600"></div>
+        {/* Footer */}
+        <footer className="bg-gray-900 text-white pt-20 pb-10 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5"></div>
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-blue-600"></div>
+          
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-            <div className="max-w-lg">
-              <Link href="/" className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-start">
+              {/* Logo y descripción */}
+              <div className="md:col-span-5">
+                <Link href="/" className="inline-flex items-center space-x-3 group">
+                  <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:shadow-cyan-500/20 dark:group-hover:shadow-cyan-400/20">
+                    <span className="text-xl text-white font-bold">TD</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
                 TradingDash
+                    </span>
+                    <span className="text-xs text-gray-400">{t.language}</span>
+                  </div>
               </Link>
-              <p className="mt-4 text-gray-400">
+                <p className="mt-6 text-gray-400 leading-relaxed">
                 {t.footer.description}
               </p>
+                <div className="mt-8 flex space-x-4">
+                  <a href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+                      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                    </svg>
+                  </a>
+                  <a href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+                      <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+                    </svg>
+                  </a>
+                  <a href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                    </svg>
+                  </a>
+                  <a href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+                      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                      <rect x="2" y="9" width="4" height="12"></rect>
+                      <circle cx="4" cy="4" r="2"></circle>
+                    </svg>
+                  </a>
             </div>
-            <div className="flex justify-end">
-              <div className="w-full max-w-xs">
-                <h3 className="text-lg font-semibold mb-4 text-white">
+              </div>
+              
+              {/* Enlaces y mapa del sitio */}
+              <div className="md:col-span-3">
+                <h3 className="text-lg font-semibold mb-4 text-white bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-400">
                   {t.footer.legal.title}
                 </h3>
-              <ul className="space-y-2">
+                <ul className="space-y-3">
                   <li><Link href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">{t.footer.legal.privacy}</Link></li>
                   <li><Link href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">{t.footer.legal.terms}</Link></li>
                   <li><Link href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">{t.footer.legal.cookies}</Link></li>
@@ -1261,29 +2164,40 @@ export default function LandingPage() {
                   <li><Link href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">{t.footer.legal.contact}</Link></li>
               </ul>
             </div>
+              
+              {/* Enlaces rápidos */}
+              <div className="md:col-span-2">
+                <h3 className="text-lg font-semibold mb-4 text-white bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-400">
+                  {t.footer.quickLinks}
+                </h3>
+                <ul className="space-y-3">
+                  <li><Link href="#features" className="text-gray-400 hover:text-cyan-400 transition-colors">Características</Link></li>
+                  <li><Link href="#testimonials" className="text-gray-400 hover:text-cyan-400 transition-colors">Testimonios</Link></li>
+                  <li><Link href="#faq" className="text-gray-400 hover:text-cyan-400 transition-colors">FAQ</Link></li>
+                  <li><Link href="#cta" className="text-gray-400 hover:text-cyan-400 transition-colors">Comenzar</Link></li>
+                </ul>
             </div>
+              
+              {/* Boletín de noticias */}
+              <div className="md:col-span-2">
+                <h3 className="text-lg font-semibold mb-4 text-white bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-400">
+                  {t.footer.newsletter}
+                </h3>
+                <p className="text-gray-400 mb-4">{t.footer.description}</p>
+                <div className="flex">
+                  <input 
+                    type="email" 
+                    placeholder={t.footer.newsletterPlaceholder} 
+                    className="bg-gray-800 border border-gray-700 text-gray-300 rounded-l-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  />
+                  <button className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-r-lg px-4 py-2">
+                    {t.footer.newsletterButton}
+                  </button>
           </div>
-          <div className="mt-8 pt-8 border-t border-gray-800 text-center text-gray-400">
-            <p>© {new Date().getFullYear()} TradingDash. {t.footer.rights}</p>
+              </div>
           </div>
         </div>
       </footer>
-
-      {/* Scroll to Top Button */}
-      <AnimatePresence>
-        {showScrollTop && (
-          <motion.button
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="fixed bottom-8 right-8 p-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl dark:shadow-cyan-500/20 transition-all duration-300 z-30 transform hover:scale-110 group"
-            aria-label="Volver arriba"
-          >
-            <ArrowUp className="h-5 w-5 group-hover:-translate-y-1 transition-transform duration-300" />
-          </motion.button>
-        )}
-      </AnimatePresence>
 
       {/* Cookie Message */}
       <AnimatePresence>
@@ -1338,6 +2252,7 @@ export default function LandingPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      </main>
     </div>
   )
 }

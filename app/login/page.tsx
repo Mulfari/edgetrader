@@ -464,7 +464,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Sección derecha - Login */}
+      {/* Sección derecha - Login */}
         <div className="w-full lg:w-1/2 bg-white dark:bg-gray-900 flex flex-col justify-center px-6 lg:px-12 h-screen relative rounded-tl-[40px] rounded-bl-[40px]">
         {/* Elementos decorativos de fondo */}
         <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-700/25 bg-[size:20px_20px] opacity-[0.05]"></div>
