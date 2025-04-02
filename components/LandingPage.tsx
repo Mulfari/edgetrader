@@ -1815,13 +1815,19 @@ export default function LandingPage() {
               </p>
             </motion.div>
             
-            {/* Carrusel para mobile y tablet */}
+            {/* Carrusel automático para mobile y tablet */}
             <div className="md:hidden">
-              <div className="relative overflow-hidden">
-                <div className="flex items-center justify-center">
-                  <div className="relative w-full max-w-sm mx-auto">
-                    {/* Tarjeta de feature actual */}
-                    <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 text-center transition-all duration-300">
+              <div className="overflow-hidden pb-8">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentFeature}
+                    initial={{ opacity: 0, x: 100 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -100 }}
+                    transition={{ duration: 0.8, ease: "easeInOut" }}
+                    className="w-full max-w-sm mx-auto"
+                  >
+                    <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 text-center">
                       <div className="inline-block text-5xl mb-6 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 p-5 rounded-full shadow-md">
                         {t.mainFeatures.items[currentFeature].icon}
                       </div>
@@ -1832,41 +1838,20 @@ export default function LandingPage() {
                         {t.mainFeatures.items[currentFeature].description}
                       </p>
                     </div>
-                    
-                    {/* Flechas de navegación */}
-                    <button 
-                      onClick={() => setCurrentFeature((currentFeature - 1 + t.mainFeatures.items.length) % t.mainFeatures.items.length)}
-                      className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 bg-white dark:bg-gray-800 shadow-md rounded-full flex items-center justify-center text-gray-700 dark:text-gray-200 border border-gray-100 dark:border-gray-700 z-10"
-                      aria-label="Característica anterior"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                      </svg>
-                    </button>
-                    <button 
-                      onClick={() => setCurrentFeature((currentFeature + 1) % t.mainFeatures.items.length)}
-                      className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-10 h-10 bg-white dark:bg-gray-800 shadow-md rounded-full flex items-center justify-center text-gray-700 dark:text-gray-200 border border-gray-100 dark:border-gray-700 z-10"
-                      aria-label="Siguiente característica"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
+                  </motion.div>
+                </AnimatePresence>
                 
-                {/* Indicadores de navegación */}
+                {/* Indicadores pasivos (solo visuales) */}
                 <div className="flex justify-center mt-8 space-x-2">
                   {t.mainFeatures.items.map((_, index) => (
-                    <button
+                    <div
                       key={index}
-                      onClick={() => setCurrentFeature(index)}
-                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
                         index === currentFeature 
-                          ? 'bg-cyan-500 scale-125' 
-                          : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'
+                          ? 'bg-cyan-500' 
+                          : 'bg-gray-300 dark:bg-gray-600'
                       }`}
-                      aria-label={`Ver característica ${index + 1}`}
+                      aria-hidden="true"
                     />
                   ))}
                 </div>
