@@ -6,6 +6,7 @@ import { ArrowLeft, Eye, EyeOff, AlertCircle, Loader2, Github, Twitter } from "l
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/FirebaseAuthContext";
 
 // Tipos para los errores de validación
 interface ValidationErrors {
@@ -129,6 +130,7 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<ValidationErrors>({ email: "", password: "" });
   const [touched, setTouched] = useState({ email: false, password: false });
   const [language, setLanguage] = useState<Language>('en');
+  const { loginWithEmail, loginWithGoogle, error: authError } = useAuth();
 
   useEffect(() => {
     // Cargar el idioma guardado o usar inglés por defecto
@@ -190,7 +192,6 @@ export default function LoginPage() {
     e.preventDefault();
     setTouched({ email: true, password: true });
 
-    // Validación final antes de enviar
     if (!isValidEmail(email)) {
       setErrors(prev => ({ ...prev, email: "Introduce un formato de email válido" }));
       return;
@@ -210,154 +211,34 @@ export default function LoginPage() {
     setSuccess(false);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        safeLocalStorage.setItem("token", data.access_token);
-        
-        // Mostrar información completa de la respuesta en la consola
-        console.log("✅ Respuesta completa del login:", data);
-        
-        // Mostrar específicamente la información de posiciones perpetual
-        if (data.perpetualPositions) {
-          console.log("📊 Posiciones perpetual:", data.perpetualPositions);
-          console.log(`📈 Total de posiciones abiertas: ${data.perpetualPositions.totalPositions}`);
-          console.log(`📈 - En cuentas demo: ${data.perpetualPositions.totalDemoPositions}`);
-          console.log(`📈 - En cuentas reales: ${data.perpetualPositions.totalRealPositions}`);
-          
-          // Separar subcuentas demo y reales para mejor visualización
-          const demoSubaccounts = data.perpetualPositions.subaccountsWithPositions.filter((s: any) => s.isDemo);
-          const realSubaccounts = data.perpetualPositions.subaccountsWithPositions.filter((s: any) => !s.isDemo);
-          
-          // Mostrar desglose por subcuenta demo
-          if (demoSubaccounts.length > 0) {
-            console.log("📋 Subcuentas DEMO con posiciones abiertas:");
-            demoSubaccounts.forEach((subaccount: any) => {
-              console.log(`   - ${subaccount.name}: ${subaccount.openPositionsCount} posiciones abiertas`);
-            });
-          } else {
-            console.log("📋 No hay subcuentas DEMO con posiciones abiertas");
-          }
-          
-          // Mostrar desglose por subcuenta real
-          if (realSubaccounts.length > 0) {
-            console.log("📋 Subcuentas REALES con posiciones abiertas:");
-            realSubaccounts.forEach((subaccount: any) => {
-              console.log(`   - ${subaccount.name}: ${subaccount.openPositionsCount} posiciones abiertas`);
-            });
-          } else {
-            console.log("📋 No hay subcuentas REALES con posiciones abiertas");
-          }
-          
-          // Guardar información de posiciones perpetual en localStorage
-          const perpetualPositionsCache = {
-            data: data.perpetualPositions,
-            timestamp: Date.now(),
-            demoSubaccounts: demoSubaccounts,
-            realSubaccounts: realSubaccounts
-          };
-          safeLocalStorage.setItem("perpetual_positions_cache", JSON.stringify(perpetualPositionsCache));
-          console.log("✅ Información de posiciones perpetual guardada en caché");
-          
-          // Guardar información de posiciones por subcuenta individualmente
-          data.perpetualPositions.subaccountsWithPositions.forEach((subaccount: any) => {
-            const subaccountPositionsData = {
-              data: {
-                id: subaccount.id,
-                name: subaccount.name,
-                isDemo: subaccount.isDemo,
-                openPositionsCount: subaccount.openPositionsCount
-              },
-              timestamp: Date.now()
-            };
-            
-            // Guardar en localStorage con un prefijo para identificar fácilmente
-            const CACHE_PREFIX = subaccount.isDemo ? 'subaccount_positions_demo_' : 'subaccount_positions_real_';
-            safeLocalStorage.setItem(`${CACHE_PREFIX}${subaccount.id}`, JSON.stringify(subaccountPositionsData));
-            console.log(`✅ Posiciones guardadas en caché para subcuenta ${subaccount.name} (${subaccount.isDemo ? 'DEMO' : 'REAL'})`);
-          });
-          
-          // Guardar resúmenes separados para cuentas demo y reales
-          safeLocalStorage.setItem("perpetual_positions_demo", JSON.stringify({
-            data: {
-              totalPositions: data.perpetualPositions.totalDemoPositions,
-              subaccounts: demoSubaccounts
-            },
-            timestamp: Date.now()
-          }));
-          
-          safeLocalStorage.setItem("perpetual_positions_real", JSON.stringify({
-            data: {
-              totalPositions: data.perpetualPositions.totalRealPositions,
-              subaccounts: realSubaccounts
-            },
-            timestamp: Date.now()
-          }));
-          
-          console.log("✅ Información separada de posiciones demo y reales guardada en caché");
-        } else {
-          console.log("❌ No se recibió información de posiciones perpetual en la respuesta");
-        }
-        
-        // Guardar información del usuario si está disponible
-        if (data.user) {
-          safeLocalStorage.setItem("user", JSON.stringify(data.user));
-        }
-        
-        // Guardar subcuentas en caché si están disponibles
-        if (data.subAccounts) {
-          // Guardar todas las subcuentas en el caché principal
-          const cacheData = {
-            data: data.subAccounts,
-            timestamp: Date.now()
-          };
-          safeLocalStorage.setItem("subaccounts_cache", JSON.stringify(cacheData));
-          console.log("✅ Subcuentas guardadas en caché durante el login:", data.subAccounts.length);
-          
-          // Guardar los balances de cada subcuenta individualmente
-          data.subAccounts.forEach((subAccount: any) => {
-            if (subAccount.balance !== undefined || subAccount.assets) {
-              const balanceData = {
-                data: {
-                  balance: subAccount.balance || 0,
-                  assets: subAccount.assets || [],
-                  performance: subAccount.performance || 0,
-                  lastUpdate: subAccount.lastUpdate || Date.now(),
-                  accountName: subAccount.name
-                },
-                timestamp: Date.now(),
-                accountName: subAccount.name
-              };
-              
-              // Guardar en el formato que espera el componente SubAccounts
-              const CACHE_PREFIX = 'subaccount_balance_';
-              safeLocalStorage.setItem(`${CACHE_PREFIX}${subAccount.id}`, JSON.stringify(balanceData));
-              console.log(`✅ Balance guardado en caché para subcuenta ${subAccount.name}`);
-            }
-          });
-        }
-        
-        if (rememberMe) {
-          safeLocalStorage.setItem("email", email);
-          safeLocalStorage.setItem("password", password);
-        } else {
-          safeLocalStorage.removeItem("email");
-          safeLocalStorage.removeItem("password");
-        }
-        setSuccess(true);
-        setTimeout(() => router.push("/dashboard"), 2000);
+      const data = await loginWithEmail(email, password);
+      
+      if (rememberMe) {
+        safeLocalStorage.setItem("email", email);
+        safeLocalStorage.setItem("password", password);
       } else {
-        setError(data.message || "Credenciales incorrectas.");
+        safeLocalStorage.removeItem("email");
+        safeLocalStorage.removeItem("password");
       }
-    } catch (error) {
-      console.error("Error en login:", error);
-      setError("Error de conexión con el servidor.");
+      
+      setSuccess(true);
+      setTimeout(() => router.push("/dashboard"), 2000);
+    } catch (error: any) {
+      setError(error.message || "Error de autenticación");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+      const data = await loginWithGoogle();
+      setSuccess(true);
+      setTimeout(() => router.push("/dashboard"), 2000);
+    } catch (error: any) {
+      setError(error.message || "Error al iniciar sesión con Google");
     } finally {
       setIsLoading(false);
     }
@@ -803,6 +684,7 @@ export default function LoginPage() {
                       <div className="flex justify-center space-x-6">
                         <button
                           type="button"
+                          onClick={handleGoogleLogin}
                           aria-label="Iniciar sesión con Google"
                           className="flex items-center justify-center w-14 h-14 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl dark:shadow-gray-900/30 transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600 hover:transform hover:scale-105"
                         >
