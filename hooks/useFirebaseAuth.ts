@@ -67,6 +67,9 @@ export function useFirebaseAuth() {
     let errorMessage = 'Error al iniciar sesión';
     
     switch (error.code) {
+      case 'auth/invalid-credential':
+        errorMessage = 'El correo electrónico o la contraseña son incorrectos';
+        break;
       case 'auth/popup-closed-by-user':
         errorMessage = 'Ventana de inicio de sesión cerrada';
         break;
