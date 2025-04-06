@@ -8,6 +8,8 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import type React from "react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 const data = [
   { mes: 'Mes 1', rendimiento: 20 },
@@ -220,23 +222,44 @@ export default function SignUpPage() {
     setMessage("");
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+      // Crear usuario en Firebase
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Actualizar el perfil con el nombre
+      await updateProfile(userCredential.user, {
+        displayName: name
       });
 
-      const data = await res.json();
-
-      if (res.ok) {
-        setSuccess(true);
-        setTimeout(() => router.push("/login"), 2000);
-      } else {
-        setMessage(data.message || t.registrationError);
-      }
-    } catch (error) {
+      setSuccess(true);
+      setTimeout(() => router.push("/login"), 2000);
+    } catch (error: any) {
       console.error("Error de registro:", error);
-      setMessage(t.connectionError);
+      
+      // Manejar errores específicos de Firebase
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          setMessage(language === 'es' ? 'Este correo electrónico ya está registrado' :
+                    language === 'en' ? 'This email is already registered' :
+                    'Diese E-Mail ist bereits registriert');
+          break;
+        case 'auth/invalid-email':
+          setMessage(language === 'es' ? 'Correo electrónico inválido' :
+                    language === 'en' ? 'Invalid email address' :
+                    'Ungültige E-Mail-Adresse');
+          break;
+        case 'auth/operation-not-allowed':
+          setMessage(language === 'es' ? 'El registro con correo y contraseña no está habilitado' :
+                    language === 'en' ? 'Email/password registration is not enabled' :
+                    'E-Mail/Passwort-Registrierung ist nicht aktiviert');
+          break;
+        case 'auth/weak-password':
+          setMessage(language === 'es' ? 'La contraseña es demasiado débil' :
+                    language === 'en' ? 'The password is too weak' :
+                    'Das Passwort ist zu schwach');
+          break;
+        default:
+          setMessage(t.registrationError);
+      }
     } finally {
       setIsLoading(false);
     }
