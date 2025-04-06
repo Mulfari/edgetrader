@@ -222,43 +222,65 @@ export default function SignUpPage() {
     setMessage("");
 
     try {
+      // Verificar que auth está inicializado
+      if (!auth) {
+        throw new Error('Firebase Auth no está inicializado');
+      }
+
       // Crear usuario en Firebase
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
       // Actualizar el perfil con el nombre
-      await updateProfile(userCredential.user, {
-        displayName: name
-      });
+      if (userCredential.user) {
+        await updateProfile(userCredential.user, {
+          displayName: name
+        });
 
-      setSuccess(true);
-      setTimeout(() => router.push("/login"), 2000);
+        setSuccess(true);
+        setTimeout(() => router.push("/login"), 2000);
+      } else {
+        throw new Error('No se pudo crear el usuario');
+      }
     } catch (error: any) {
       console.error("Error de registro:", error);
       
       // Manejar errores específicos de Firebase
-      switch (error.code) {
-        case 'auth/email-already-in-use':
-          setMessage(language === 'es' ? 'Este correo electrónico ya está registrado' :
-                    language === 'en' ? 'This email is already registered' :
-                    'Diese E-Mail ist bereits registriert');
-          break;
-        case 'auth/invalid-email':
-          setMessage(language === 'es' ? 'Correo electrónico inválido' :
-                    language === 'en' ? 'Invalid email address' :
-                    'Ungültige E-Mail-Adresse');
-          break;
-        case 'auth/operation-not-allowed':
-          setMessage(language === 'es' ? 'El registro con correo y contraseña no está habilitado' :
-                    language === 'en' ? 'Email/password registration is not enabled' :
-                    'E-Mail/Passwort-Registrierung ist nicht aktiviert');
-          break;
-        case 'auth/weak-password':
-          setMessage(language === 'es' ? 'La contraseña es demasiado débil' :
-                    language === 'en' ? 'The password is too weak' :
-                    'Das Passwort ist zu schwach');
-          break;
-        default:
-          setMessage(t.registrationError);
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            setMessage(language === 'es' ? 'Este correo electrónico ya está registrado' :
+                      language === 'en' ? 'This email is already registered' :
+                      'Diese E-Mail ist bereits registriert');
+            break;
+          case 'auth/invalid-email':
+            setMessage(language === 'es' ? 'Correo electrónico inválido' :
+                      language === 'en' ? 'Invalid email address' :
+                      'Ungültige E-Mail-Adresse');
+            break;
+          case 'auth/operation-not-allowed':
+            setMessage(language === 'es' ? 'El registro con correo y contraseña no está habilitado' :
+                      language === 'en' ? 'Email/password registration is not enabled' :
+                      'E-Mail/Passwort-Registrierung ist nicht aktiviert');
+            break;
+          case 'auth/weak-password':
+            setMessage(language === 'es' ? 'La contraseña es demasiado débil' :
+                      language === 'en' ? 'The password is too weak' :
+                      'Das Passwort ist zu schwach');
+            break;
+          case 'auth/network-request-failed':
+            setMessage(language === 'es' ? 'Error de conexión. Por favor, verifica tu conexión a internet.' :
+                      language === 'en' ? 'Connection error. Please check your internet connection.' :
+                      'Verbindungsfehler. Bitte überprüfen Sie Ihre Internetverbindung.');
+            break;
+          default:
+            setMessage(language === 'es' ? 'Error al registrar usuario. Por favor, intenta de nuevo.' :
+                      language === 'en' ? 'Error registering user. Please try again.' :
+                      'Fehler bei der Benutzerregistrierung. Bitte versuchen Sie es erneut.');
+        }
+      } else {
+        setMessage(language === 'es' ? 'Error inesperado. Por favor, intenta de nuevo.' :
+                  language === 'en' ? 'Unexpected error. Please try again.' :
+                  'Unerwarteter Fehler. Bitte versuchen Sie es erneut.');
       }
     } finally {
       setIsLoading(false);

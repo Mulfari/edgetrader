@@ -20,29 +20,9 @@ const isValidEmail = (email: string): boolean => {
   return emailRegex.test(email);
 };
 
-// Función para validar contraseña
+// Función para validar contraseña - simplificada
 const validatePassword = (password: string): boolean => {
-  return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password);
-};
-
-// Función de utilidad para acceder a localStorage de forma segura
-const safeLocalStorage = {
-  getItem: (key: string, defaultValue: any = null): any => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem(key) || defaultValue;
-    }
-    return defaultValue;
-  },
-  setItem: (key: string, value: string): void => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(key, value);
-    }
-  },
-  removeItem: (key: string): void => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(key);
-    }
-  }
+  return password.length >= 6; // Solo verificamos longitud mínima
 };
 
 type Language = 'es' | 'en' | 'de';
@@ -140,15 +120,15 @@ export default function LoginPage() {
     }
 
     // Verificar si ya hay una sesión activa
-    const token = safeLocalStorage.getItem("token");
+    const token = localStorage.getItem("token");
     if (token) {
       setIsExistingSession(true);
     }
     setIsCheckingSession(false);
 
     // Rellena los campos de correo electrónico y contraseña si hay datos almacenados
-    const storedEmail = safeLocalStorage.getItem("email");
-    const storedPassword = safeLocalStorage.getItem("password");
+    const storedEmail = localStorage.getItem("email");
+    const storedPassword = localStorage.getItem("password");
     if (storedEmail && storedPassword) {
       setEmail(storedEmail);
       setPassword(storedPassword);
@@ -193,52 +173,39 @@ export default function LoginPage() {
     setTouched({ email: true, password: true });
 
     if (!isValidEmail(email)) {
-      setErrors(prev => ({ ...prev, email: "Introduce un formato de email válido" }));
+      setErrors(prev => ({ ...prev, email: t.invalidEmail }));
       return;
     }
 
-    if (!validatePassword(password)) {
-      setErrors(prev => ({ ...prev, password: "Introduce una contraseña válida" }));
-      return;
-    }
-
-    if (errors.email || errors.password) {
+    if (!password) {
+      setErrors(prev => ({ ...prev, password: t.invalidPassword }));
       return;
     }
 
     setIsLoading(true);
     setError("");
-    setSuccess(false);
 
     try {
-      const data = await loginWithEmail(email, password);
-      
-      if (rememberMe) {
-        safeLocalStorage.setItem("email", email);
-        safeLocalStorage.setItem("password", password);
-      } else {
-        safeLocalStorage.removeItem("email");
-        safeLocalStorage.removeItem("password");
-      }
-      
+      await loginWithEmail(email, password);
       setSuccess(true);
-      setTimeout(() => router.push("/dashboard"), 2000);
+      router.push("/dashboard");
     } catch (error: any) {
-      setError(error.message || "Error de autenticación");
+      setError(error.message);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    setError("");
+
     try {
-      setIsLoading(true);
-      setError("");
-      const data = await loginWithGoogle();
+      await loginWithGoogle();
       setSuccess(true);
-      setTimeout(() => router.push("/dashboard"), 2000);
+      router.push("/dashboard");
     } catch (error: any) {
-      setError(error.message || "Error al iniciar sesión con Google");
+      setError(error.message);
     } finally {
       setIsLoading(false);
     }

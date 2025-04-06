@@ -46,25 +46,29 @@ export function useFirebaseAuth() {
     try {
       setError(null);
       const result = await signInWithEmailAndPassword(auth, email, password);
-      const token = await result.user.getIdToken();
-      
-      // Llamar a tu backend con el token de Firebase
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/firebase`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token })
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al autenticar con el backend');
-      }
-
-      const data = await response.json();
-      return data;
+      return result.user;
     } catch (error: any) {
-      setError(error.message);
+      let errorMessage = 'Error al iniciar sesión';
+      
+      switch (error.code) {
+        case 'auth/user-not-found':
+          errorMessage = 'No existe una cuenta con este correo electrónico';
+          break;
+        case 'auth/wrong-password':
+          errorMessage = 'Contraseña incorrecta';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Correo electrónico inválido';
+          break;
+        case 'auth/user-disabled':
+          errorMessage = 'Esta cuenta ha sido deshabilitada';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Demasiados intentos fallidos. Por favor, intenta más tarde';
+          break;
+      }
+      
+      setError(errorMessage);
       throw error;
     }
   };
@@ -74,25 +78,26 @@ export function useFirebaseAuth() {
       setError(null);
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      const token = await result.user.getIdToken();
-      
-      // Llamar a tu backend con el token de Firebase
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/firebase`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token })
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al autenticar con el backend');
-      }
-
-      const data = await response.json();
-      return data;
+      return result.user;
     } catch (error: any) {
-      setError(error.message);
+      let errorMessage = 'Error al iniciar sesión con Google';
+      
+      switch (error.code) {
+        case 'auth/popup-closed-by-user':
+          errorMessage = 'Ventana de inicio de sesión cerrada';
+          break;
+        case 'auth/popup-blocked':
+          errorMessage = 'El navegador bloqueó la ventana emergente';
+          break;
+        case 'auth/cancelled-popup-request':
+          errorMessage = 'Operación cancelada';
+          break;
+        case 'auth/account-exists-with-different-credential':
+          errorMessage = 'Ya existe una cuenta con este correo electrónico';
+          break;
+      }
+      
+      setError(errorMessage);
       throw error;
     }
   };
