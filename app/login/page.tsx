@@ -202,7 +202,7 @@ export default function LoginPage() {
 
     try {
       await loginWithGoogle();
-      setSuccess(true);
+        setSuccess(true);
       router.push("/dashboard");
     } catch (error: any) {
       if (error.code !== 'auth/popup-closed-by-user') {
@@ -672,13 +672,13 @@ export default function LoginPage() {
                       <div className="mt-6">
                         <div className="text-center">
                           <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {t.noAccount}{" "}
-                            <Link
-                              href="/signup"
-                              className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
-                            >
-                              {t.signUp}
-                            </Link>
+                              {t.noAccount}{" "}
+                              <Link
+                                href="/signup"
+                                className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
+                              >
+                                  {t.signUp}
+                              </Link>
                           </p>
                         </div>
                       </div>

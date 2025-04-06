@@ -10,7 +10,8 @@ import {
   User as FirebaseUser,
   linkWithPopup,
   AuthErrorCodes,
-  getAuth
+  getAuth,
+  sendEmailVerification
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
@@ -19,6 +20,7 @@ export interface AuthUser {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
+  emailVerified: boolean;
   providerData: {
     providerId: string;
   }[];
@@ -47,6 +49,7 @@ export function useFirebaseAuth() {
     email: user.email,
     displayName: user.displayName,
     photoURL: user.photoURL,
+    emailVerified: user.emailVerified,
     providerData: user.providerData
   });
 
@@ -109,6 +112,15 @@ export function useFirebaseAuth() {
     try {
       setError(null);
       const result = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Verificar si el correo está verificado
+      if (!result.user.emailVerified) {
+        setError('Por favor, verifica tu correo electrónico antes de iniciar sesión');
+        await sendEmailVerification(result.user);
+        await signOut(auth);
+        throw new Error('email-not-verified');
+      }
+      
       return formatUser(result.user);
     } catch (error: any) {
       handleAuthError(error);
@@ -177,12 +189,46 @@ export function useFirebaseAuth() {
     }
   };
 
+  const sendVerificationEmail = async () => {
+    const auth = getAuth();
+    if (auth.currentUser && !auth.currentUser.emailVerified) {
+      try {
+        await sendEmailVerification(auth.currentUser, {
+          url: window.location.origin + '/login', // URL a la que se redirigirá después de verificar
+          handleCodeInApp: true,
+        });
+        return true;
+      } catch (error: any) {
+        handleAuthError(error);
+        return false;
+      }
+    }
+    return false;
+  };
+
+  // Función para recargar el usuario y obtener el estado de verificación actualizado
+  const reloadUser = async () => {
+    if (auth.currentUser) {
+      try {
+        await auth.currentUser.reload();
+        setUser(formatUser(auth.currentUser));
+        return auth.currentUser.emailVerified;
+      } catch (error: any) {
+        handleAuthError(error);
+        return false;
+      }
+    }
+    return false;
+  };
+
   return {
     user,
     loading,
     error,
     loginWithEmail,
     loginWithGoogle,
-    logout
+    logout,
+    sendVerificationEmail,
+    reloadUser
   };
 } 

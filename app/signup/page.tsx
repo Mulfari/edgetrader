@@ -8,7 +8,7 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import type React from "react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
 const data = [
@@ -222,7 +222,6 @@ export default function SignUpPage() {
     setMessage("");
 
     try {
-      // Verificar que auth está inicializado
       if (!auth) {
         throw new Error('Firebase Auth no está inicializado');
       }
@@ -236,10 +235,20 @@ export default function SignUpPage() {
           displayName: name
         });
 
+        // Enviar correo de verificación
+        await sendEmailVerification(userCredential.user);
+
         setSuccess(true);
-        setTimeout(() => router.push("/login"), 2000);
-      } else {
-        throw new Error('No se pudo crear el usuario');
+        setMessage(
+          language === 'es' 
+            ? 'Registro exitoso. Por favor, verifica tu correo electrónico.' 
+            : language === 'en' 
+              ? 'Registration successful. Please verify your email.'
+              : 'Registrierung erfolgreich. Bitte bestätigen Sie Ihre E-Mail.'
+        );
+        
+        // Redirigir después de 3 segundos
+        setTimeout(() => router.push("/login"), 3000);
       }
     } catch (error: any) {
       console.error("Error de registro:", error);
