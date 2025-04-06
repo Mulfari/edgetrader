@@ -11,7 +11,8 @@ import {
   linkWithPopup,
   AuthErrorCodes,
   getAuth,
-  sendEmailVerification
+  sendEmailVerification,
+  fetchSignInMethodsForEmail
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
@@ -71,7 +72,12 @@ export function useFirebaseAuth() {
     
     switch (error.code) {
       case 'auth/invalid-credential':
-        errorMessage = 'El correo electrónico o la contraseña son incorrectos';
+        // Verificar si el usuario existe pero con otro método de autenticación
+        if (error.customData?.email) {
+          errorMessage = 'Esta cuenta fue creada con Google. Por favor, usa el botón "Continuar con Google" para iniciar sesión.';
+        } else {
+          errorMessage = 'El correo electrónico o la contraseña son incorrectos';
+        }
         break;
       case 'auth/popup-closed-by-user':
         errorMessage = 'Ventana de inicio de sesión cerrada';
@@ -80,7 +86,7 @@ export function useFirebaseAuth() {
         errorMessage = 'El navegador bloqueó la ventana emergente';
         break;
       case 'auth/account-exists-with-different-credential':
-        errorMessage = 'Ya existe una cuenta con este correo electrónico. Por favor, use otro método de inicio de sesión.';
+        errorMessage = 'Ya existe una cuenta con este correo electrónico. Por favor, use el método con el que se registró originalmente.';
         break;
       case 'auth/invalid-email':
         errorMessage = 'Correo electrónico inválido';
@@ -92,7 +98,7 @@ export function useFirebaseAuth() {
         errorMessage = 'Este método de inicio de sesión no está habilitado';
         break;
       case 'auth/wrong-password':
-        errorMessage = 'Contraseña incorrecta';
+        errorMessage = 'Esta cuenta fue creada con Google. Por favor, usa el botón "Continuar con Google" para iniciar sesión.';
         break;
       case 'auth/user-not-found':
         errorMessage = 'No existe una cuenta con este correo electrónico';
@@ -133,9 +139,21 @@ export function useFirebaseAuth() {
       const provider = new GoogleAuthProvider();
       provider.addScope('profile');
       provider.addScope('email');
+
       const result = await signInWithPopup(auth, provider);
       return formatUser(result.user);
     } catch (error: any) {
+      // Si el error es que ya existe una cuenta con ese email
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        const email = error.customData?.email;
+        if (email) {
+          // Obtener los métodos de inicio de sesión disponibles para este email
+          const methods = await fetchSignInMethodsForEmail(auth, email);
+          if (methods.includes('password')) {
+            setError('Ya existe una cuenta con este correo. Por favor, inicia sesión con tu contraseña y luego vincula tu cuenta de Google.');
+          }
+        }
+      }
       handleAuthError(error);
     }
   };
@@ -221,12 +239,37 @@ export function useFirebaseAuth() {
     return false;
   };
 
+  const linkGoogleAccount = async () => {
+    try {
+      setError(null);
+      if (!auth.currentUser) {
+        throw new Error('Debes iniciar sesión primero');
+      }
+
+      const provider = new GoogleAuthProvider();
+      provider.addScope('profile');
+      provider.addScope('email');
+
+      const result = await linkWithPopup(auth.currentUser, provider);
+      setUser(formatUser(result.user));
+      return true;
+    } catch (error: any) {
+      if (error.code === 'auth/credential-already-in-use') {
+        setError('Esta cuenta de Google ya está vinculada a otra cuenta');
+      } else {
+        handleAuthError(error);
+      }
+      return false;
+    }
+  };
+
   return {
     user,
     loading,
     error,
     loginWithEmail,
     loginWithGoogle,
+    linkGoogleAccount,
     logout,
     sendVerificationEmail,
     reloadUser

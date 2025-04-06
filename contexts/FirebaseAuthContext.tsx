@@ -8,7 +8,10 @@ interface FirebaseAuthContextType {
   error: string | null;
   loginWithEmail: (email: string, password: string) => Promise<any>;
   loginWithGoogle: () => Promise<any>;
+  linkGoogleAccount: () => Promise<boolean>;
   logout: () => Promise<void>;
+  sendVerificationEmail: () => Promise<boolean>;
+  reloadUser: () => Promise<boolean>;
 }
 
 const FirebaseAuthContext = createContext<FirebaseAuthContextType | undefined>(undefined);
