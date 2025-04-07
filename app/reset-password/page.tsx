@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { updatePassword, getSession } from "@/lib/supabase";
 import { toast } from "react-hot-toast";
+import { supabase } from "@/lib/supabase";
 
 type Language = 'es' | 'en' | 'de';
 
@@ -145,7 +146,14 @@ function ResetPasswordContent() {
         setCountdown((prevCountdown) => {
           if (prevCountdown <= 1) {
             clearInterval(timer);
-            router.push('/login');
+            // Asegurarse de que no haya sesión activa al redirigir
+            supabase.auth.signOut().then(() => {
+              localStorage.removeItem('token');
+              router.push('/login');
+            }).catch(error => {
+              console.error("Error al cerrar sesión:", error);
+              router.push('/login');
+            });
             return 0;
           }
           return prevCountdown - 1;

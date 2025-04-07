@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CheckCircle } from 'lucide-react';
 import Link from "next/link";
+import { supabase } from '@/lib/supabase';
 
 type Language = 'es' | 'en' | 'de';
 
@@ -65,6 +66,19 @@ function ConfirmEmailContent() {
     if (savedLanguage && ['es', 'en', 'de'].includes(savedLanguage)) {
       setLanguage(savedLanguage);
     }
+
+    // Si hay una sesión activa por la confirmación de correo, cerrarla
+    const clearSession = async () => {
+      try {
+        await supabase.auth.signOut();
+        // Limpiar token del localStorage
+        localStorage.removeItem('token');
+      } catch (error) {
+        console.error('Error clearing session:', error);
+      }
+    };
+    
+    clearSession();
   }, []);
 
   useEffect(() => {
