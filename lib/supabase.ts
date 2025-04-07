@@ -163,4 +163,72 @@ export const getUser = async () => {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error) throw error;
   return user;
+};
+
+export const signInWithGoogle = async () => {
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+        skipBrowserRedirect: true,
+        queryParams: {
+          prompt: 'select_account',
+          access_type: 'offline',
+          hd: 'domain.com', // Opcional: para restringir a un dominio específico
+        },
+      },
+    });
+
+    if (error) throw error;
+    
+    return { data, url: data.url };
+  } catch (error) {
+    console.error('Error en signInWithGoogle:', error);
+    return { error };
+  }
+};
+
+export const resetPassword = async (email: string) => {
+  try {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) throw error;
+    return { data, success: true };
+  } catch (error) {
+    console.error('Error en resetPassword:', error);
+    return { error, success: false };
+  }
+};
+
+export const updatePassword = async (password: string) => {
+  try {
+    // Si estamos en el navegador, intentar obtener el token de recuperación
+    if (typeof window !== 'undefined') {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      
+      if (accessToken) {
+        // Si tenemos un token de recuperación, establecerlo antes de actualizar
+        const { data: { session }, error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: '',
+        });
+        
+        if (sessionError) throw sessionError;
+      }
+    }
+
+    const { data, error } = await supabase.auth.updateUser({
+      password: password
+    });
+
+    if (error) throw error;
+    return { data, success: true };
+  } catch (error) {
+    console.error('Error en updatePassword:', error);
+    return { error, success: false };
+  }
 }; 
