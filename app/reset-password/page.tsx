@@ -223,158 +223,156 @@ function ResetPasswordContent() {
         </div>
 
         {/* Sección derecha - Contenido de restablecimiento */}
-        <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-8">
-          <div className="w-full max-w-md">
-            <div className="bg-white dark:bg-gray-900 shadow-xl rounded-2xl p-8 space-y-8 relative overflow-hidden">
-              {/* Elementos decorativos de fondo */}
-              <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-700/25 bg-[size:20px_20px] opacity-[0.05]"></div>
-              
-              <AnimatePresence mode="wait">
-                {isSuccess ? (
+        <div className="w-full lg:w-1/2 flex flex-col items-center justify-center bg-white dark:bg-gray-900 p-8 relative rounded-tl-[40px] rounded-bl-[40px]">
+          {/* Elementos decorativos de fondo */}
+          <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-700/25 bg-[size:20px_20px] opacity-[0.05] rounded-tl-[40px] rounded-bl-[40px]"></div>
+
+          <div className="w-full max-w-md space-y-8 relative">
+            <AnimatePresence mode="wait">
+              {isSuccess ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="text-center space-y-6"
+                >
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="text-center space-y-6 relative"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                    className="mx-auto"
                   >
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                      className="mx-auto"
-                    >
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full blur-xl opacity-50"></div>
-                        <div className="relative bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full p-4 w-20 h-20 mx-auto flex items-center justify-center">
-                          <CheckCircle className="h-10 w-10 text-white" />
-                        </div>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full blur-xl opacity-50"></div>
+                      <div className="relative bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full p-4 w-20 h-20 mx-auto flex items-center justify-center">
+                        <CheckCircle className="h-10 w-10 text-white" />
                       </div>
-                    </motion.div>
-                    
-                    <div className="space-y-2">
-                      <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">
-                        {t.resetSuccess}
-                      </h2>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <Link
-                        href="/login"
-                        className="w-full inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25"
-                      >
-                        {t.loginNow}
-                      </Link>
                     </div>
                   </motion.div>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="space-y-6 relative"
-                  >
-                    <div className="text-center">
-                      <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">
-                        {t.resetPassword}
-                      </h1>
-                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        {t.resetPasswordDesc}
-                      </p>
-                    </div>
-                    
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                      <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {t.newPassword}
-                        </label>
-                        <div className="mt-1 relative">
-                          <input
-                            id="password"
-                            name="password"
-                            type={showPassword ? "text" : "password"}
-                            autoComplete="new-password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className={`appearance-none block w-full px-3 py-2 border ${
-                              errors.password ? 'border-red-300 dark:border-red-700' : 'border-gray-300 dark:border-gray-700'
-                            } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-800 dark:text-white text-sm`}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
-                            ) : (
-                              <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
-                            )}
-                          </button>
-                        </div>
-                        {errors.password && (
-                          <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
-                            <AlertCircle size={14} className="mr-1" /> {errors.password}
-                          </p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {t.confirmPassword}
-                        </label>
-                        <div className="mt-1 relative">
-                          <input
-                            id="confirm-password"
-                            name="confirm-password"
-                            type={showConfirmPassword ? "text" : "password"}
-                            autoComplete="new-password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            className={`appearance-none block w-full px-3 py-2 border ${
-                              errors.confirmPassword ? 'border-red-300 dark:border-red-700' : 'border-gray-300 dark:border-gray-700'
-                            } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-800 dark:text-white text-sm`}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                          >
-                            {showConfirmPassword ? (
-                              <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
-                            ) : (
-                              <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
-                            )}
-                          </button>
-                        </div>
-                        {errors.confirmPassword && (
-                          <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
-                            <AlertCircle size={14} className="mr-1" /> {errors.confirmPassword}
-                          </p>
-                        )}
-                      </div>
-                      
-                      <div>
+                  
+                  <div className="space-y-2">
+                    <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">
+                      {t.resetSuccess}
+                    </h2>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <Link
+                      href="/login"
+                      className="w-full inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25"
+                    >
+                      {t.loginNow}
+                    </Link>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-6"
+                >
+                  <div className="text-center">
+                    <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">
+                      {t.resetPassword}
+                    </h1>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      {t.resetPasswordDesc}
+                    </p>
+                  </div>
+                  
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div>
+                      <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t.newPassword}
+                      </label>
+                      <div className="mt-1 relative">
+                        <input
+                          id="password"
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          autoComplete="new-password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className={`appearance-none block w-full px-3 py-2 border ${
+                            errors.password ? 'border-red-300 dark:border-red-700' : 'border-gray-300 dark:border-gray-700'
+                          } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-800 dark:text-white text-sm`}
+                        />
                         <button
-                          type="submit"
-                          disabled={isLoading}
-                          className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25 disabled:opacity-70"
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
                         >
-                          {isLoading ? (
-                            <>
-                              <Loader2 size={16} className="mr-2 animate-spin" />
-                              {t.resetting}
-                            </>
+                          {showPassword ? (
+                            <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
                           ) : (
-                            t.resetBtn
+                            <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
                           )}
                         </button>
                       </div>
-                    </form>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            
+                      {errors.password && (
+                        <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+                          <AlertCircle size={14} className="mr-1" /> {errors.password}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t.confirmPassword}
+                      </label>
+                      <div className="mt-1 relative">
+                        <input
+                          id="confirm-password"
+                          name="confirm-password"
+                          type={showConfirmPassword ? "text" : "password"}
+                          autoComplete="new-password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className={`appearance-none block w-full px-3 py-2 border ${
+                            errors.confirmPassword ? 'border-red-300 dark:border-red-700' : 'border-gray-300 dark:border-gray-700'
+                          } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-800 dark:text-white text-sm`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
+                          ) : (
+                            <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
+                          )}
+                        </button>
+                      </div>
+                      {errors.confirmPassword && (
+                        <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+                          <AlertCircle size={14} className="mr-1" /> {errors.confirmPassword}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25 disabled:opacity-70"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 size={16} className="mr-2 animate-spin" />
+                            {t.resetting}
+                          </>
+                        ) : (
+                          t.resetBtn
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Botón para volver al inicio */}
             {!isSuccess && (
               <motion.div
