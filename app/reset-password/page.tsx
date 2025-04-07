@@ -31,7 +31,13 @@ const translations = {
     availability: "Disponibilidad",
     backToLogin: "Volver al inicio de sesión",
     invalidLink: "El enlace es inválido o ha expirado",
-    redirectingIn: "Redirigiendo en {seconds} segundos"
+    redirectingIn: "Redirigiendo en {seconds} segundos",
+    passwordRequirements: {
+      chars: "8+ caracteres",
+      uppercase: "Mayúscula",
+      lowercase: "Minúscula",
+      number: "Número"
+    }
   },
   en: {
     resetPassword: "Reset Password",
@@ -53,7 +59,13 @@ const translations = {
     availability: "Availability",
     backToLogin: "Back to login",
     invalidLink: "Invalid or expired link",
-    redirectingIn: "Redirecting in {seconds} seconds"
+    redirectingIn: "Redirecting in {seconds} seconds",
+    passwordRequirements: {
+      chars: "8+ characters",
+      uppercase: "Uppercase",
+      lowercase: "Lowercase",
+      number: "Number"
+    }
   },
   de: {
     resetPassword: "Passwort zurücksetzen",
@@ -75,13 +87,19 @@ const translations = {
     availability: "Verfügbarkeit",
     backToLogin: "Zurück zur Anmeldung",
     invalidLink: "Ungültiger oder abgelaufener Link",
-    redirectingIn: "Umleitung in {seconds} Sekunden"
+    redirectingIn: "Umleitung in {seconds} Sekunden",
+    passwordRequirements: {
+      chars: "8+ Zeichen",
+      uppercase: "Großbuchstabe",
+      lowercase: "Kleinbuchstabe",
+      number: "Nummer"
+    }
   }
 };
 
 // Validación de contraseña
 const isValidPassword = (password: string): boolean => {
-  return password.length >= 8;
+  return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password);
 };
 
 function ResetPasswordContent() {
@@ -348,8 +366,16 @@ function ResetPasswordContent() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className={`appearance-none block w-full px-3 py-2 border ${
-                              errors.password ? 'border-red-300 dark:border-red-700' : 'border-gray-300 dark:border-gray-700'
-                            } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white`}
+                              errors.password 
+                                ? 'border-red-300 dark:border-red-700' 
+                                : password && isValidPassword(password)
+                                  ? 'border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/20 text-gray-800 dark:text-cyan-50 font-medium'
+                                  : 'border-gray-300 dark:border-gray-700'
+                            } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white transition-all duration-200 ${
+                              password && isValidPassword(password)
+                                ? 'hover:border-cyan-400 dark:hover:border-cyan-600 hover:shadow-md dark:hover:shadow-cyan-900/10' 
+                                : 'hover:border-gray-400 dark:hover:border-gray-500'
+                            } pr-10`}
                           />
                           <button
                             type="button"
@@ -362,11 +388,69 @@ function ResetPasswordContent() {
                               <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
                             )}
                           </button>
+                          {password && isValidPassword(password) && !errors.password && (
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="absolute inset-y-0 right-10 flex items-center pointer-events-none"
+                            >
+                              <svg className="h-5 w-5 text-cyan-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </motion.div>
+                          )}
                         </div>
                         {errors.password && (
                           <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
                             <AlertCircle size={14} className="mr-1" /> {errors.password}
                           </p>
+                        )}
+
+                        {/* Validador de robustez de contraseña */}
+                        {password && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mt-2 space-y-2"
+                          >
+                            <div className="flex gap-2 flex-wrap">
+                              {[
+                                { met: password.length >= 8, text: t.passwordRequirements.chars },
+                                { met: /[A-Z]/.test(password), text: t.passwordRequirements.uppercase },
+                                { met: /[a-z]/.test(password), text: t.passwordRequirements.lowercase },
+                                { met: /[0-9]/.test(password), text: t.passwordRequirements.number }
+                              ].map((requirement, index) => (
+                                <div
+                                  key={index}
+                                  className={`text-[10px] px-2 py-1 rounded-full ${
+                                    requirement.met
+                                      ? "bg-green-500/20 text-green-500 dark:bg-green-500/10 dark:text-green-400"
+                                      : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+                                  }`}
+                                >
+                                  {requirement.text}
+                                </div>
+                              ))}
+                            </div>
+                            <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <motion.div
+                                className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500"
+                                initial={{ width: "0%" }}
+                                animate={{
+                                  width: `${
+                                    ((password.length >= 8 ? 1 : 0) +
+                                    (/[A-Z]/.test(password) ? 1 : 0) +
+                                    (/[a-z]/.test(password) ? 1 : 0) +
+                                    (/[0-9]/.test(password) ? 1 : 0)) *
+                                    25
+                                  }%`
+                                }}
+                                transition={{ duration: 0.3 }}
+                              />
+                            </div>
+                          </motion.div>
                         )}
                       </div>
                       
@@ -383,8 +467,16 @@ function ResetPasswordContent() {
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             className={`appearance-none block w-full px-3 py-2 border ${
-                              errors.confirmPassword ? 'border-red-300 dark:border-red-700' : 'border-gray-300 dark:border-gray-700'
-                            } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white`}
+                              errors.confirmPassword 
+                                ? 'border-red-300 dark:border-red-700' 
+                                : confirmPassword && confirmPassword === password && isValidPassword(password)
+                                  ? 'border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/20 text-gray-800 dark:text-cyan-50 font-medium'
+                                  : 'border-gray-300 dark:border-gray-700'
+                            } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white transition-all duration-200 ${
+                              confirmPassword && confirmPassword === password && isValidPassword(password)
+                                ? 'hover:border-cyan-400 dark:hover:border-cyan-600 hover:shadow-md dark:hover:shadow-cyan-900/10' 
+                                : 'hover:border-gray-400 dark:hover:border-gray-500'
+                            } pr-10`}
                           />
                           <button
                             type="button"
@@ -397,6 +489,18 @@ function ResetPasswordContent() {
                               <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
                             )}
                           </button>
+                          {confirmPassword && confirmPassword === password && isValidPassword(password) && !errors.confirmPassword && (
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="absolute inset-y-0 right-10 flex items-center pointer-events-none"
+                            >
+                              <svg className="h-5 w-5 text-cyan-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </motion.div>
+                          )}
                         </div>
                         {errors.confirmPassword && (
                           <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
