@@ -29,7 +29,8 @@ const translations = {
     activeUsers: "Usuarios Activos",
     operations: "Operaciones",
     availability: "Disponibilidad",
-    backToLogin: "Volver al inicio de sesión"
+    backToLogin: "Volver al inicio de sesión",
+    invalidLink: "El enlace es inválido o ha expirado"
   },
   en: {
     resetPassword: "Reset Password",
@@ -49,7 +50,8 @@ const translations = {
     activeUsers: "Active Users",
     operations: "Operations",
     availability: "Availability",
-    backToLogin: "Back to login"
+    backToLogin: "Back to login",
+    invalidLink: "Invalid or expired link"
   },
   de: {
     resetPassword: "Passwort zurücksetzen",
@@ -57,7 +59,7 @@ const translations = {
     newPassword: "Neues Passwort",
     confirmPassword: "Passwort bestätigen",
     resetBtn: "Passwort zurücksetzen",
-    resetting: "Zurücksetzen...",
+    resetting: "Wird zurückgesetzt...",
     invalidPassword: "Das Passwort muss mindestens 8 Zeichen lang sein",
     passwordsNotMatch: "Passwörter stimmen nicht überein",
     resetSuccess: "Ihr Passwort wurde erfolgreich zurückgesetzt!",
@@ -69,7 +71,8 @@ const translations = {
     activeUsers: "Aktive Nutzer",
     operations: "Operationen",
     availability: "Verfügbarkeit",
-    backToLogin: "Zurück zur Anmeldung"
+    backToLogin: "Zurück zur Anmeldung",
+    invalidLink: "Ungültiger oder abgelaufener Link"
   }
 };
 
@@ -94,6 +97,12 @@ function ResetPasswordContent() {
     const savedLanguage = localStorage.getItem('preferredLanguage') as Language;
     if (savedLanguage && ['es', 'en', 'de'].includes(savedLanguage)) {
       setLanguage(savedLanguage);
+    } else {
+      // Si no hay idioma guardado, intentar detectar el idioma del navegador
+      const browserLanguage = navigator.language.split('-')[0];
+      const supportedLanguage = ['es', 'en', 'de'].includes(browserLanguage) ? browserLanguage as Language : 'en';
+      setLanguage(supportedLanguage);
+      localStorage.setItem('preferredLanguage', supportedLanguage);
     }
 
     // Verificar el hash de la URL para el token
@@ -102,7 +111,7 @@ function ResetPasswordContent() {
     const type = hashParams.get('type');
 
     if (!accessToken || type !== 'recovery') {
-      toast.error("Link inválido o expirado");
+      toast.error(translations[language].invalidLink);
       router.push("/login");
     }
   }, [router]);

@@ -88,6 +88,9 @@ export default function RootLayout({
   const pathname = usePathname();
   const { user, isAuthenticated, loading } = useSupabaseAuth();
 
+  // Definir las rutas públicas una sola vez al inicio del componente
+  const publicRoutes = ['/', '/login', '/signup', '/confirm-email', '/reset-password'];
+
   // Efecto para detectar scroll
   useEffect(() => {
     const handleScroll = () => {
@@ -114,7 +117,6 @@ export default function RootLayout({
     };
 
     // Solo ejecutar si no estamos en una página pública
-    const publicRoutes = ['/', '/login', '/signup', '/confirm-email'];
     const isPublicPage = publicRoutes.includes(pathname);
     
     if (!isPublicPage && isAuthenticated) {
@@ -155,7 +157,6 @@ export default function RootLayout({
   };
 
   // Verificar si estamos en páginas públicas
-  const publicRoutes = ['/', '/login', '/signup', '/confirm-email'];
   const isPublicPage = publicRoutes.includes(pathname);
 
   return (
