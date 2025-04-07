@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CheckCircle } from 'lucide-react';
 
-export default function ConfirmEmailPage() {
+function ConfirmEmailContent() {
   const [countdown, setCountdown] = useState(5);
   const router = useRouter();
 
@@ -66,5 +66,17 @@ export default function ConfirmEmailPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function ConfirmEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-cyan-500"></div>
+      </div>
+    }>
+      <ConfirmEmailContent />
+    </Suspense>
   );
 } 
