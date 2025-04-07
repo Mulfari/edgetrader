@@ -228,15 +228,6 @@ function ResetPasswordContent() {
           <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-700/25 bg-[size:20px_20px] opacity-[0.05] rounded-tl-[40px] rounded-bl-[40px]"></div>
 
           <div className="w-full max-w-md flex flex-col">
-            <div className="flex justify-between items-center mb-6">
-              <Link href="/login" className="group w-2/5 flex items-center justify-center px-4 py-2 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-lg transition-all duration-300 hover:shadow-xl">
-                <ArrowLeft className="mr-2 h-5 w-5 text-cyan-500 dark:text-cyan-400 transition-transform duration-300 group-hover:-translate-x-1" />
-                <span className="text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500">
-                  {t.backToLogin}
-                </span>
-              </Link>
-            </div>
-            
             <AnimatePresence mode="wait">
               {isSuccess ? (
                 <motion.div
@@ -389,6 +380,23 @@ function ResetPasswordContent() {
                       </div>
                     </form>
                   </div>
+                  
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                    className="mt-4 flex justify-start"
+                  >
+                    <Link
+                      href="/login"
+                      className="group w-2/5 flex items-center justify-center px-4 py-2 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-lg transition-all duration-300 hover:shadow-xl"
+                    >
+                      <ArrowLeft className="mr-2 h-5 w-5 text-cyan-500 dark:text-cyan-400 transition-transform duration-300 group-hover:-translate-x-1" />
+                      <span className="text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500">
+                        {t.backToLogin}
+                      </span>
+                    </Link>
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
