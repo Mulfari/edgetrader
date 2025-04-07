@@ -2,14 +2,15 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Eye, EyeOff, Loader2, Github, Twitter, AlertCircle } from "lucide-react"
+import { ArrowLeft, Eye, EyeOff, Loader2, AlertCircle, Calendar } from "lucide-react"
 import { ThemeToggle } from "@/components/ThemeToggle"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import type React from "react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { signUpWithEmail } from "@/lib/supabase";
 
 const data = [
   { mes: 'Mes 1', rendimiento: 20 },
@@ -26,7 +27,8 @@ type Language = 'es' | 'en' | 'de';
 const translations = {
   es: {
     createAccount: "Crea tu cuenta",
-    fullName: "Nombre completo",
+    fullName: "Nombre",
+    lastName: "Apellido",
     email: "Correo electrónico",
     password: "Contraseña",
     confirmPassword: "Confirmar contraseña",
@@ -58,11 +60,15 @@ const translations = {
       privacy: "2. Privacidad: Nuestras políticas de privacidad explican cómo tratamos tus datos personales y protegemos tu privacidad cuando usas nuestros Servicios.",
       modifications: "3. Modificaciones: Podemos modificar estos términos o cualquier término adicional que aplique a un Servicio para, por ejemplo, reflejar cambios en la ley o en nuestros Servicios.",
       close: "Cerrar"
-    }
+    },
+    dateOfBirth: "Fecha de nacimiento",
+    invalidDateOfBirth: "Debes tener al menos 18 años",
+    dateFormat: "DD/MM/AAAA",
   },
   en: {
     createAccount: "Create your account",
-    fullName: "Full name",
+    fullName: "First Name",
+    lastName: "Last Name",
     email: "Email",
     password: "Password",
     confirmPassword: "Confirm password",
@@ -94,11 +100,15 @@ const translations = {
       privacy: "2. Privacy: Our privacy policies explain how we handle your personal data and protect your privacy when using our Services.",
       modifications: "3. Modifications: We may modify these terms or any additional terms that apply to a Service to, for example, reflect changes in the law or our Services.",
       close: "Close"
-    }
+    },
+    dateOfBirth: "Date of birth",
+    invalidDateOfBirth: "You must be at least 18 years old",
+    dateFormat: "DD/MM/YYYY",
   },
   de: {
     createAccount: "Konto erstellen",
-    fullName: "Vollständiger Name",
+    fullName: "Vorname",
+    lastName: "Nachname",
     email: "E-Mail",
     password: "Passwort",
     confirmPassword: "Passwort bestätigen",
@@ -130,8 +140,22 @@ const translations = {
       privacy: "2. Datenschutz: Unsere Datenschutzrichtlinien erklären, wie wir Ihre persönlichen Daten verarbeiten und Ihre Privatsphäre bei der Nutzung unserer Dienste schützen.",
       modifications: "3. Änderungen: Wir können diese Bedingungen oder zusätzliche Bedingungen, die für einen Dienst gelten, ändern, um beispielsweise Änderungen im Gesetz oder in unseren Diensten widerzuspiegeln.",
       close: "Schließen"
-    }
+    },
+    dateOfBirth: "Geburtsdatum",
+    invalidDateOfBirth: "Sie müssen mindestens 18 Jahre alt sein",
+    dateFormat: "TT/MM/JJJJ",
   }
+};
+
+// Función para verificar si un email es válido
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+// Función para verificar si una contraseña es válida
+const isValidPassword = (password: string): boolean => {
+  return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password);
 };
 
 export default function SignUpPage() {
@@ -139,15 +163,18 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [name, setName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [touched, setTouched] = useState({
     name: false,
+    lastName: false,
     email: false,
     password: false,
     confirmPassword: false,
+    dateOfBirth: false,
     terms: false
   })
   const [success, setSuccess] = useState(false)
@@ -158,6 +185,12 @@ export default function SignUpPage() {
   const [language, setLanguage] = useState<Language>('en')
   const [countdown, setCountdown] = useState(5);
   const [messageType, setMessageType] = useState<'success' | 'error'>('error');
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [dobDay, setDobDay] = useState("");
+  const [dobMonth, setDobMonth] = useState("");
+  const [dobYear, setDobYear] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const datePickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Cargar el idioma guardado o usar inglés por defecto
@@ -182,19 +215,43 @@ export default function SignUpPage() {
   // Obtener las traducciones para el idioma actual
   const t = translations[language];
 
+  // Calcular la fecha máxima (18 años atrás)
+  const maxDate = new Date();
+  maxDate.setFullYear(maxDate.getFullYear() - 18);
+  const maxDateString = maxDate.toISOString().split('T')[0];
+  
+  // Función para validar la edad (al menos 18 años)
+  const validateAge = (dateString: string): boolean => {
+    if (!dateString) return false;
+    
+    const today = new Date();
+    const birthDate = new Date(dateString);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age >= 18;
+  };
+
   const validateField = (field: string, value: string) => {
     switch (field) {
       case 'name':
         return !value.trim() ? t.invalidName : "";
+      case 'lastName':
+        return !value.trim() ? t.invalidName : "";
       case 'email':
-        return !value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) 
+        return !value.trim() || !isValidEmail(value) 
           ? t.invalidEmail : "";
       case 'password':
-        return !value || value.length < 8 || !/[A-Z]/.test(value) || 
-               !/[a-z]/.test(value) || !/[0-9]/.test(value)
+        return !value || !isValidPassword(value)
           ? t.invalidPassword : "";
       case 'confirmPassword':
         return value !== password ? t.passwordsDontMatch : "";
+      case 'dateOfBirth':
+        return !value ? t.invalidDateOfBirth : !validateAge(value) ? t.invalidDateOfBirth : "";
       default:
         return "";
     }
@@ -207,104 +264,167 @@ export default function SignUpPage() {
     }
   };
 
+  // Generar opciones para los selectores de fecha
+  const days = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
+  const months = [
+    { value: "01", label: "Enero" },
+    { value: "02", label: "Febrero" },
+    { value: "03", label: "Marzo" },
+    { value: "04", label: "Abril" },
+    { value: "05", label: "Mayo" },
+    { value: "06", label: "Junio" },
+    { value: "07", label: "Julio" },
+    { value: "08", label: "Agosto" },
+    { value: "09", label: "Septiembre" },
+    { value: "10", label: "Octubre" },
+    { value: "11", label: "Noviembre" },
+    { value: "12", label: "Diciembre" }
+  ];
+  const monthLabels = {
+    es: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+    en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+    de: ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]
+  };
+  
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 100 }, (_, i) => String(currentYear - 18 - i));
+
+  // Cerrar el selector de fecha al hacer clic fuera
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
+        setShowDatePicker(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [datePickerRef]);
+
+  // Actualizar dateOfBirth cuando cambian los componentes individuales
+  useEffect(() => {
+    if (dobYear && dobMonth && dobDay) {
+      setDateOfBirth(`${dobYear}-${dobMonth}-${dobDay}`);
+      
+      // Cerrar automáticamente el selector cuando se han seleccionado los 3 valores
+      setTimeout(() => {
+        setShowDatePicker(false);
+      }, 300); // Pequeño retraso para permitir ver la selección antes de cerrar
+    } else {
+      setDateOfBirth("");
+    }
+  }, [dobDay, dobMonth, dobYear]);
+
+  // Formatear fecha para mostrar
+  const getFormattedDate = () => {
+    if (!dobDay || !dobMonth || !dobYear) return "";
+    
+    // Asegurarse de que los valores tengan dos dígitos
+    const day = dobDay.padStart(2, '0');
+    const month = dobMonth.padStart(2, '0');
+    
+    // Devolver en formato DD/MM/YYYY
+    return `${day}/${month}/${dobYear}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    // Validar todos los campos
-    const newErrors = {
-      name: validateField('name', name),
-      email: validateField('email', email),
-      password: validateField('password', password),
-      confirmPassword: validateField('confirmPassword', confirmPassword),
-      terms: !agreedToTerms ? t.acceptTerms : ""
-    };
-
-    setErrors(newErrors);
+    // Marcar todos los campos como tocados para mostrar errores
     setTouched({
       name: true,
+      lastName: true,
       email: true,
       password: true,
       confirmPassword: true,
+      dateOfBirth: true,
       terms: true
     });
 
-    if (Object.values(newErrors).some(error => error !== "")) {
+    // Validar todos los campos
+    if (!name || name.length < 2) {
+      setErrors(prev => ({ ...prev, name: t.invalidName }));
+      return;
+    }
+
+    if (!lastName || lastName.length < 2) {
+      setErrors(prev => ({ ...prev, lastName: t.invalidName }));
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setErrors(prev => ({ ...prev, email: t.invalidEmail }));
+      return;
+    }
+
+    if (!isValidPassword(password)) {
+      setErrors(prev => ({ ...prev, password: t.invalidPassword }));
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrors(prev => ({ ...prev, confirmPassword: t.passwordsDontMatch }));
+      return;
+    }
+
+    if (!agreedToTerms) {
+      setErrors(prev => ({ ...prev, terms: t.acceptTerms }));
+      return;
+    }
+
+    const formattedDate = getFormattedDate();
+    if (!formattedDate) {
+      setErrors(prev => ({ ...prev, dateOfBirth: t.invalidDateOfBirth }));
       return;
     }
 
     setIsLoading(true);
     setMessage("");
+    setErrors({});
 
     try {
-      // Verificar que auth está inicializado
-      if (!auth) {
-        throw new Error('Firebase Auth no está inicializado');
-      }
-
-      // Crear usuario en Firebase
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const fullName = `${name} ${lastName}`.trim();
+      const { user } = await signUpWithEmail(email, password, fullName, formattedDate);
       
-      // Actualizar el perfil con el nombre
-      if (userCredential.user) {
-        await updateProfile(userCredential.user, {
-          displayName: name
-        });
-
-        // Enviar correo de verificación
-        await sendEmailVerification(userCredential.user);
-
-        setSuccess(true);
+      if (user) {
         setMessageType('success');
-        setCountdown(5);
-        setMessage(
-          language === 'es' 
-            ? '¡Registro exitoso! 🎉\n\nHemos enviado un correo de verificación a tu dirección de email. Por favor, revisa tu bandeja de entrada y la carpeta de spam.\n\nSerás redirigido al login en' 
-            : language === 'en' 
-              ? 'Registration successful! 🎉\n\nWe have sent a verification email to your address. Please check your inbox and spam folder.\n\nYou will be redirected to login in'
-              : 'Registrierung erfolgreich! 🎉\n\nWir haben eine Bestätigungs-E-Mail an Ihre Adresse gesendet. Bitte überprüfen Sie Ihren Posteingang und Spam-Ordner.\n\nSie werden weitergeleitet zur Anmeldung in'
-        );
+        setMessage('¡Registro exitoso! Por favor, verifica tu correo electrónico para confirmar tu cuenta.');
+        setSuccess(true);
+        
+        // Iniciar cuenta regresiva para redirección
+        let count = 5;
+        setCountdown(count);
+        const interval = setInterval(() => {
+          count--;
+          setCountdown(count);
+          if (count === 0) {
+            clearInterval(interval);
+            router.push('/login');
+          }
+        }, 1000);
       }
     } catch (error: any) {
-      console.error("Error de registro:", error);
       setMessageType('error');
-      
-      // Manejar errores específicos de Firebase
-      if (error.code) {
-        switch (error.code) {
-          case 'auth/email-already-in-use':
-            setMessage(language === 'es' ? 'Este correo electrónico ya está registrado' :
-                      language === 'en' ? 'This email is already registered' :
-                      'Diese E-Mail ist bereits registriert');
-            break;
-          case 'auth/invalid-email':
-            setMessage(language === 'es' ? 'Correo electrónico inválido' :
-                      language === 'en' ? 'Invalid email address' :
-                      'Ungültige E-Mail-Adresse');
-            break;
-          case 'auth/operation-not-allowed':
-            setMessage(language === 'es' ? 'El registro con correo y contraseña no está habilitado' :
-                      language === 'en' ? 'Email/password registration is not enabled' :
-                      'E-Mail/Passwort-Registrierung ist nicht aktiviert');
-            break;
-          case 'auth/weak-password':
-            setMessage(language === 'es' ? 'La contraseña es demasiado débil' :
-                      language === 'en' ? 'The password is too weak' :
-                      'Das Passwort ist zu schwach');
-            break;
-          case 'auth/network-request-failed':
-            setMessage(language === 'es' ? 'Error de conexión. Por favor, verifica tu conexión a internet.' :
-                      language === 'en' ? 'Connection error. Please check your internet connection.' :
-                      'Verbindungsfehler. Bitte überprüfen Sie Ihre Internetverbindung.');
-            break;
-          default:
-            setMessage(language === 'es' ? 'Error al registrar usuario. Por favor, intenta de nuevo.' :
-                      language === 'en' ? 'Error registering user. Please try again.' :
-                      'Fehler bei der Benutzerregistrierung. Bitte versuchen Sie es erneut.');
-        }
+      console.error("Error detallado:", error);
+
+      // Manejar diferentes tipos de errores
+      if (error.message?.includes('User already registered') || 
+          error.message?.includes('already exists') ||
+          error.code === '23505') {
+        setMessage('Este correo electrónico ya está registrado. Por favor, utiliza otro o inicia sesión.');
+        setErrors(prev => ({ ...prev, email: 'Este correo electrónico ya está registrado' }));
+      } else if (error.message?.includes('Password should be at least 6 characters')) {
+        setMessage('La contraseña debe tener al menos 6 caracteres.');
+        setErrors(prev => ({ ...prev, password: 'La contraseña debe tener al menos 6 caracteres' }));
+      } else if (error.message?.includes('Invalid email')) {
+        setMessage('El formato del correo electrónico no es válido.');
+        setErrors(prev => ({ ...prev, email: 'El formato del correo electrónico no es válido' }));
+      } else if (error.message?.includes('rate limit')) {
+        setMessage('Has excedido el límite de intentos. Por favor, espera unos minutos.');
       } else {
-        setMessage(language === 'es' ? 'Error inesperado. Por favor, intenta de nuevo.' :
-                  language === 'en' ? 'Unexpected error. Please try again.' :
-                  'Unerwarteter Fehler. Bitte versuchen Sie es erneut.');
+        setMessage(t.registrationError);
       }
     } finally {
       setIsLoading(false);
@@ -565,48 +685,135 @@ export default function SignUpPage() {
               >
                 <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm py-8 px-4 shadow-xl rounded-xl border border-gray-200 dark:border-gray-700 sm:px-10">
                   <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {t.fullName}
-                      </label>
-                      <div className="mt-1 relative">
-                        <input
-                          id="name"
-                          name="name"
-                          type="text"
-                          autoComplete="name"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          onBlur={() => handleBlur('name', name)}
-                          className={`appearance-none block w-full px-3 py-2 border ${
-                            errors.name && touched.name ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                          } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
-                        />
+                    {/* Grid para nombre y apellido */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t.fullName}
+                        </label>
+                        <div className="mt-1 relative">
+                          <input
+                            id="name"
+                            name="name"
+                            type="text"
+                            autoComplete="given-name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            onBlur={() => handleBlur('name', name)}
+                            className={`appearance-none block w-full px-3 py-2 border ${
+                              errors.name && touched.name 
+                                ? 'border-red-300 dark:border-red-600' 
+                                : touched.name && name.trim().length >= 2
+                                  ? 'border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/20 text-gray-800 dark:text-cyan-50 font-medium'
+                                  : 'border-gray-300 dark:border-gray-600'
+                            } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 ${
+                              touched.name && name.trim().length >= 2
+                                ? 'hover:border-cyan-400 dark:hover:border-cyan-600 hover:shadow-md dark:hover:shadow-cyan-900/10' 
+                                : 'hover:border-gray-400 dark:hover:border-gray-500'
+                            } dark:bg-gray-700 dark:text-white`}
+                          />
+                          <AnimatePresence>
+                            {errors.name && touched.name && (
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                              >
+                                <AlertCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
+                              </motion.div>
+                            )}
+                            {touched.name && name.trim().length >= 2 && !errors.name && (
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                              >
+                                <svg className="h-5 w-5 text-cyan-500" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
                         <AnimatePresence>
                           {errors.name && touched.name && (
-                            <motion.div
+                            <motion.p
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
                               exit={{ opacity: 0 }}
-                              className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                              className="text-xs text-red-600 dark:text-red-500 mt-1"
                             >
-                              <AlertCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
-                            </motion.div>
+                              {errors.name}
+                            </motion.p>
                           )}
                         </AnimatePresence>
                       </div>
-                      <AnimatePresence>
-                        {errors.name && touched.name && (
-                          <motion.p
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="text-xs text-red-600 dark:text-red-500 mt-1"
-                          >
-                            {errors.name}
-                          </motion.p>
-                        )}
-                      </AnimatePresence>
+
+                      <div>
+                        <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t.lastName}
+                        </label>
+                        <div className="mt-1 relative">
+                          <input
+                            id="lastName"
+                            name="lastName"
+                            type="text"
+                            autoComplete="family-name"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            onBlur={() => handleBlur('lastName', lastName)}
+                            className={`appearance-none block w-full px-3 py-2 border ${
+                              errors.lastName && touched.lastName 
+                                ? 'border-red-300 dark:border-red-600' 
+                                : touched.lastName && lastName.trim().length >= 2
+                                  ? 'border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/20 text-gray-800 dark:text-cyan-50 font-medium'
+                                  : 'border-gray-300 dark:border-gray-600'
+                            } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 ${
+                              touched.lastName && lastName.trim().length >= 2
+                                ? 'hover:border-cyan-400 dark:hover:border-cyan-600 hover:shadow-md dark:hover:shadow-cyan-900/10' 
+                                : 'hover:border-gray-400 dark:hover:border-gray-500'
+                            } dark:bg-gray-700 dark:text-white`}
+                          />
+                          <AnimatePresence>
+                            {errors.lastName && touched.lastName && (
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                              >
+                                <AlertCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
+                              </motion.div>
+                            )}
+                            {touched.lastName && lastName.trim().length >= 2 && !errors.lastName && (
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                              >
+                                <svg className="h-5 w-5 text-cyan-500" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                        <AnimatePresence>
+                          {errors.lastName && touched.lastName && (
+                            <motion.p
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="text-xs text-red-600 dark:text-red-500 mt-1"
+                            >
+                              {errors.lastName}
+                            </motion.p>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </div>
 
                     <div>
@@ -623,8 +830,16 @@ export default function SignUpPage() {
                           onChange={(e) => setEmail(e.target.value)}
                           onBlur={() => handleBlur('email', email)}
                           className={`appearance-none block w-full px-3 py-2 border ${
-                            errors.email && touched.email ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                          } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
+                            errors.email && touched.email 
+                              ? 'border-red-300 dark:border-red-600' 
+                              : touched.email && isValidEmail(email)
+                                ? 'border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/20 text-gray-800 dark:text-cyan-50 font-medium'
+                                : 'border-gray-300 dark:border-gray-600'
+                          } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 ${
+                            touched.email && isValidEmail(email)
+                              ? 'hover:border-cyan-400 dark:hover:border-cyan-600 hover:shadow-md dark:hover:shadow-cyan-900/10' 
+                              : 'hover:border-gray-400 dark:hover:border-gray-500'
+                          } dark:bg-gray-700 dark:text-white`}
                         />
                         <AnimatePresence>
                           {errors.email && touched.email && (
@@ -635,6 +850,18 @@ export default function SignUpPage() {
                               className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
                             >
                               <AlertCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
+                            </motion.div>
+                          )}
+                          {touched.email && isValidEmail(email) && !errors.email && (
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                            >
+                              <svg className="h-5 w-5 text-cyan-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -654,6 +881,170 @@ export default function SignUpPage() {
                     </div>
 
                     <div>
+                      <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t.dateOfBirth}
+                      </label>
+                      <div className="mt-1 relative">
+                        {/* Campo que muestra la fecha seleccionada */}
+                        <div 
+                          className={`flex items-center justify-between w-full px-3 py-2 border ${
+                            errors.dateOfBirth && touched.dateOfBirth 
+                              ? 'border-red-300 dark:border-red-600' 
+                              : touched.dateOfBirth && dateOfBirth
+                                ? 'border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/20 text-gray-800 dark:text-cyan-50 font-medium'
+                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                          } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 ${
+                            touched.dateOfBirth && dateOfBirth
+                              ? 'hover:border-cyan-400 dark:hover:border-cyan-600 hover:shadow-md dark:hover:shadow-cyan-900/10' 
+                              : 'hover:border-gray-400 dark:hover:border-gray-500'
+                          } text-gray-700 dark:text-gray-200 cursor-pointer active:scale-[0.98]`}
+                          onClick={() => setShowDatePicker(!showDatePicker)}
+                        >
+                          <div>
+                            <span className={`text-sm ${!dateOfBirth ? 'text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-cyan-50 font-medium'}`}>
+                              {dateOfBirth ? getFormattedDate() : t.dateFormat}
+                            </span>
+                          </div>
+                          <div className="flex items-center">
+                            <Calendar className={`h-5 w-5 ${dateOfBirth ? 'text-cyan-600 dark:text-cyan-300' : 'text-gray-400 dark:text-gray-500'} transition-colors duration-200`} />
+                          </div>
+                        </div>
+                        
+                        {/* Selector de fecha desplegable */}
+                        <AnimatePresence>
+                          {showDatePicker && (
+                            <motion.div
+                              ref={datePickerRef}
+                              initial={{ opacity: 0, y: -5, scale: 0.98 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -5, scale: 0.98 }}
+                              transition={{ duration: 0.2, type: "spring", stiffness: 400, damping: 25 }}
+                              className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-3 px-4"
+                            >
+                              <div className="grid grid-cols-3 gap-3">
+                                {/* Selector de día */}
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{language === 'es' ? 'Día' : language === 'en' ? 'Day' : 'Tag'}</label>
+                                  <div className="relative overflow-hidden rounded-md border border-gray-200 dark:border-gray-700 h-28 hover:border-cyan-300 dark:hover:border-cyan-700 transition-colors duration-200 shadow-sm hover:shadow-md dark:hover:shadow-cyan-900/10">
+                                    <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-white dark:from-gray-800 to-transparent z-10 pointer-events-none"></div>
+                                    <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white dark:from-gray-800 to-transparent z-10 pointer-events-none"></div>
+                                    <div className="h-full overflow-y-auto custom-scrollbar px-2 py-10">
+                                      {days.map(day => (
+                                        <motion.div
+                                          key={day}
+                                          whileHover={{ scale: 1.08, translateX: 1 }}
+                                          whileTap={{ scale: 0.95 }}
+                                          onClick={() => setDobDay(day)}
+                                          className={`py-1 px-2 mb-1 text-center rounded-md cursor-pointer transition-all duration-200 ${
+                                            dobDay === day 
+                                              ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium shadow-sm'
+                                              : 'hover:bg-cyan-50 dark:hover:bg-cyan-900/30 hover:text-cyan-600 dark:hover:text-cyan-300'
+                                          }`}
+                                        >
+                                          {day}
+                                        </motion.div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Selector de mes */}
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{language === 'es' ? 'Mes' : language === 'en' ? 'Month' : 'Monat'}</label>
+                                  <div className="relative overflow-hidden rounded-md border border-gray-200 dark:border-gray-700 h-28 hover:border-cyan-300 dark:hover:border-cyan-700 transition-colors duration-200 shadow-sm hover:shadow-md dark:hover:shadow-cyan-900/10">
+                                    <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-white dark:from-gray-800 to-transparent z-10 pointer-events-none"></div>
+                                    <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white dark:from-gray-800 to-transparent z-10 pointer-events-none"></div>
+                                    <div className="h-full overflow-y-auto custom-scrollbar px-2 py-10">
+                                      {months.map(month => (
+                                        <motion.div
+                                          key={month.value}
+                                          whileHover={{ scale: 1.08, translateX: 1 }}
+                                          whileTap={{ scale: 0.95 }}
+                                          onClick={() => setDobMonth(month.value)}
+                                          className={`py-1 px-2 mb-1 text-center rounded-md cursor-pointer transition-all duration-200 ${
+                                            dobMonth === month.value
+                                              ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium shadow-sm'
+                                              : 'hover:bg-cyan-50 dark:hover:bg-cyan-900/30 hover:text-cyan-600 dark:hover:text-cyan-300'
+                                          }`}
+                                        >
+                                          {language === 'es' ? month.label : month.value}
+                                        </motion.div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Selector de año */}
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{language === 'es' ? 'Año' : language === 'en' ? 'Year' : 'Jahr'}</label>
+                                  <div className="relative overflow-hidden rounded-md border border-gray-200 dark:border-gray-700 h-28 hover:border-cyan-300 dark:hover:border-cyan-700 transition-colors duration-200 shadow-sm hover:shadow-md dark:hover:shadow-cyan-900/10">
+                                    <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-white dark:from-gray-800 to-transparent z-10 pointer-events-none"></div>
+                                    <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white dark:from-gray-800 to-transparent z-10 pointer-events-none"></div>
+                                    <div className="h-full overflow-y-auto custom-scrollbar px-2 py-10">
+                                      {years.map(year => (
+                                        <motion.div
+                                          key={year}
+                                          whileHover={{ scale: 1.08, translateX: 1 }}
+                                          whileTap={{ scale: 0.95 }}
+                                          onClick={() => setDobYear(year)}
+                                          className={`py-1 px-2 mb-1 text-center rounded-md cursor-pointer transition-all duration-200 ${
+                                            dobYear === year
+                                              ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium shadow-sm'
+                                              : 'hover:bg-cyan-50 dark:hover:bg-cyan-900/30 hover:text-cyan-600 dark:hover:text-cyan-300'
+                                          }`}
+                                        >
+                                          {year}
+                                        </motion.div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="mt-3 flex justify-between">
+                                <motion.button
+                                  whileHover={{ scale: 1.03 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  type="button"
+                                  onClick={() => {
+                                    setDobDay("");
+                                    setDobMonth("");
+                                    setDobYear("");
+                                  }}
+                                  className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors rounded px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                >
+                                  {language === 'es' ? 'Limpiar' : language === 'en' ? 'Clear' : 'Löschen'}
+                                </motion.button>
+                                <motion.button
+                                  whileHover={{ scale: 1.03 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  type="button"
+                                  onClick={() => setShowDatePicker(false)}
+                                  className="text-xs font-medium text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300 transition-colors px-2 py-1 rounded bg-cyan-50 hover:bg-cyan-100 dark:bg-cyan-900/20 dark:hover:bg-cyan-900/30"
+                                >
+                                  {language === 'es' ? 'Aceptar' : language === 'en' ? 'Accept' : 'Akzeptieren'}
+                                </motion.button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                        
+                        <AnimatePresence>
+                          {errors.dateOfBirth && touched.dateOfBirth && (
+                            <motion.p
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="text-xs text-red-600 dark:text-red-500 mt-1"
+                            >
+                              {errors.dateOfBirth}
+                            </motion.p>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </div>
+
+                    <div>
                       <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         {t.password}
                       </label>
@@ -667,8 +1058,16 @@ export default function SignUpPage() {
                           onChange={(e) => setPassword(e.target.value)}
                           onBlur={() => handleBlur('password', password)}
                           className={`appearance-none block w-full px-3 py-2 border ${
-                            errors.password && touched.password ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                          } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
+                            errors.password && touched.password 
+                              ? 'border-red-300 dark:border-red-600' 
+                              : touched.password && isValidPassword(password)
+                                ? 'border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/20 text-gray-800 dark:text-cyan-50 font-medium'
+                                : 'border-gray-300 dark:border-gray-600'
+                          } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 ${
+                            touched.password && isValidPassword(password)
+                              ? 'hover:border-cyan-400 dark:hover:border-cyan-600 hover:shadow-md dark:hover:shadow-cyan-900/10' 
+                              : 'hover:border-gray-400 dark:hover:border-gray-500'
+                          } dark:bg-gray-700 dark:text-white pr-10`}
                         />
                         <button
                           type="button"
@@ -681,6 +1080,18 @@ export default function SignUpPage() {
                             <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
                           )}
                         </button>
+                        {touched.password && isValidPassword(password) && !errors.password && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-y-0 right-10 flex items-center pointer-events-none"
+                          >
+                            <svg className="h-5 w-5 text-cyan-500" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          </motion.div>
+                        )}
                       </div>
                       <AnimatePresence>
                         {errors.password && touched.password && (
@@ -756,8 +1167,16 @@ export default function SignUpPage() {
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           onBlur={() => handleBlur('confirmPassword', confirmPassword)}
                           className={`appearance-none block w-full px-3 py-2 border ${
-                            errors.confirmPassword && touched.confirmPassword ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                          } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
+                            errors.confirmPassword && touched.confirmPassword 
+                              ? 'border-red-300 dark:border-red-600' 
+                              : touched.confirmPassword && confirmPassword === password && password.length >= 8
+                                ? 'border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/20 text-gray-800 dark:text-cyan-50 font-medium'
+                                : 'border-gray-300 dark:border-gray-600'
+                          } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 ${
+                            touched.confirmPassword && confirmPassword === password && password.length >= 8
+                              ? 'hover:border-cyan-400 dark:hover:border-cyan-600 hover:shadow-md dark:hover:shadow-cyan-900/10' 
+                              : 'hover:border-gray-400 dark:hover:border-gray-500'
+                          } dark:bg-gray-700 dark:text-white pr-10`}
                         />
                         <button
                           type="button"
@@ -770,6 +1189,18 @@ export default function SignUpPage() {
                             <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
                           )}
                         </button>
+                        {touched.confirmPassword && confirmPassword === password && password.length >= 8 && !errors.confirmPassword && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-y-0 right-10 flex items-center pointer-events-none"
+                          >
+                            <svg className="h-5 w-5 text-cyan-500" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          </motion.div>
+                        )}
                       </div>
                       <AnimatePresence>
                         {errors.confirmPassword && touched.confirmPassword && (
@@ -868,36 +1299,6 @@ export default function SignUpPage() {
                   </form>
 
                   <div className="mt-6">
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-gray-300 dark:border-gray-600" />
-                      </div>
-                      <div className="relative flex justify-center text-sm">
-                        <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">
-                          {t.continueWith}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 grid grid-cols-2 gap-3">
-                      <div>
-                        <button
-                          type="button"
-                          className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
-                        >
-                          <Github className="h-5 w-5" />
-                        </button>
-                      </div>
-                      <div>
-                        <button
-                          type="button"
-                          className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
-                        >
-                          <Twitter className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </div>
-
                     <div className="mt-6 text-center">
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         {t.alreadyHaveAccount}{" "}
@@ -975,6 +1376,28 @@ export default function SignUpPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(156, 163, 175, 0.5);
+          border-radius: 20px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(156, 163, 175, 0.8);
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(75, 85, 99, 0.5);
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(75, 85, 99, 0.8);
+        }
+      `}</style>
     </div>
   )
 }

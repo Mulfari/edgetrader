@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Eye, EyeOff, AlertCircle, Loader2, Github, Twitter } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/FirebaseAuthContext";
+import { signInWithEmail, getSession } from "@/lib/supabase";
+import { toast } from 'react-hot-toast';
 
 // Tipos para los errores de validación
 interface ValidationErrors {
@@ -33,66 +34,60 @@ const translations = {
     loginToContinue: "Inicia sesión para continuar con tu experiencia",
     email: "Correo electrónico",
     password: "Contraseña",
-    invalidEmail: "Introduce un formato de email válido",
-    invalidPassword: "Introduce una contraseña válida",
-    rememberMe: "Recordarme",
-    forgotPassword: "¿Olvidaste tu contraseña?",
     login: "Iniciar sesión",
     loggingIn: "Iniciando sesión...",
+    rememberMe: "Recordarme",
+    forgotPassword: "¿Olvidaste tu contraseña?",
+    invalidEmail: "Introduce un formato de email válido",
+    invalidPassword: "Introduce una contraseña válida",
     continueWith: "O continúa con",
+    verifyingSession: "Verificando sesión",
+    pleaseWait: "Por favor espera...",
+    sessionDetected: "Sesión detectada",
+    redirecting: "Redirigiendo...",
     noAccount: "¿No tienes una cuenta?",
     signUp: "Regístrate",
-    backToHome: "Volver al inicio",
-    connectionError: "Error de conexión con el servidor.",
-    invalidCredentials: "Credenciales incorrectas.",
-    sessionDetected: "¡Sesión activa detectada!",
-    redirecting: "Te estamos redirigiendo al dashboard...",
-    verifyingSession: "Verificando sesión...",
-    pleaseWait: "Por favor, espera un momento"
+    backToHome: "Volver al inicio"
   },
   en: {
     welcomeBack: "Welcome back",
     loginToContinue: "Log in to continue your experience",
     email: "Email",
     password: "Password",
-    invalidEmail: "Please enter a valid email format",
-    invalidPassword: "Please enter a valid password",
-    rememberMe: "Remember me",
-    forgotPassword: "Forgot your password?",
     login: "Log in",
     loggingIn: "Logging in...",
+    rememberMe: "Remember me",
+    forgotPassword: "Forgot your password?",
+    invalidEmail: "Please enter a valid email format",
+    invalidPassword: "Please enter a valid password",
     continueWith: "Or continue with",
+    verifyingSession: "Verifying session",
+    pleaseWait: "Please wait...",
+    sessionDetected: "Session detected",
+    redirecting: "Redirecting...",
     noAccount: "Don't have an account?",
     signUp: "Sign up",
-    backToHome: "Back to home",
-    connectionError: "Server connection error.",
-    invalidCredentials: "Invalid credentials.",
-    sessionDetected: "Active session detected!",
-    redirecting: "Redirecting you to dashboard...",
-    verifyingSession: "Verifying session...",
-    pleaseWait: "Please wait a moment"
+    backToHome: "Back to home"
   },
   de: {
     welcomeBack: "Willkommen zurück",
-    loginToContinue: "Melden Sie sich an, um Ihr Erlebnis fortzusetzen",
+    loginToContinue: "Melden Sie sich an, um fortzufahren",
     email: "E-Mail",
     password: "Passwort",
-    invalidEmail: "Bitte geben Sie ein gültiges E-Mail-Format ein",
-    invalidPassword: "Bitte geben Sie ein gültiges Passwort ein",
+    login: "Anmelden",
+    loggingIn: "Anmeldung...",
     rememberMe: "Angemeldet bleiben",
     forgotPassword: "Passwort vergessen?",
-    login: "Anmelden",
-    loggingIn: "Anmeldung läuft...",
-    continueWith: "Oder fortfahren mit",
+    invalidEmail: "Bitte geben Sie ein gültiges E-Mail-Format ein",
+    invalidPassword: "Bitte geben Sie ein gültiges Passwort ein",
+    continueWith: "Oder weiter mit",
+    verifyingSession: "Sitzung wird überprüft",
+    pleaseWait: "Bitte warten...",
+    sessionDetected: "Sitzung erkannt",
+    redirecting: "Weiterleitung...",
     noAccount: "Noch kein Konto?",
     signUp: "Registrieren",
-    backToHome: "Zurück zur Startseite",
-    connectionError: "Verbindungsfehler zum Server.",
-    invalidCredentials: "Ungültige Anmeldedaten.",
-    sessionDetected: "Aktive Sitzung erkannt!",
-    redirecting: "Sie werden zum Dashboard weitergeleitet...",
-    verifyingSession: "Sitzung wird überprüft...",
-    pleaseWait: "Bitte warten Sie einen Moment"
+    backToHome: "Zurück zur Startseite"
   }
 };
 
@@ -110,21 +105,14 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<ValidationErrors>({ email: "", password: "" });
   const [touched, setTouched] = useState({ email: false, password: false });
   const [language, setLanguage] = useState<Language>('en');
-  const { loginWithEmail, loginWithGoogle } = useAuth();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Cargar el idioma guardado o usar inglés por defecto
+    // Cargar el idioma guardado o usar español por defecto
     const savedLanguage = localStorage.getItem('preferredLanguage') as Language;
     if (savedLanguage && ['es', 'en', 'de'].includes(savedLanguage)) {
       setLanguage(savedLanguage);
     }
-
-    // Verificar si ya hay una sesión activa
-    const token = localStorage.getItem("token");
-    if (token) {
-      setIsExistingSession(true);
-    }
-    setIsCheckingSession(false);
 
     // Rellena los campos de correo electrónico y contraseña si hay datos almacenados
     const storedEmail = localStorage.getItem("email");
@@ -134,17 +122,38 @@ export default function LoginPage() {
       setPassword(storedPassword);
       setRememberMe(true);
     }
+
+    setIsCheckingSession(false);
   }, []);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const session = await getSession();
+        if (session) {
+          setIsExistingSession(true);
+          setTimeout(() => router.push("/dashboard"), 2000);
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      } finally {
+        setIsCheckingSession(false);
+      }
+    };
+
+    checkSession();
+  }, [router]);
+
+  useEffect(() => {
+    // Mostrar mensaje si el usuario viene de confirmar su email
+    const fromConfirmation = searchParams.get('fromConfirmation');
+    if (fromConfirmation === 'true') {
+      toast.success('¡Tu email ha sido confirmado! Por favor, inicia sesión.');
+    }
+  }, [searchParams]);
 
   // Obtener las traducciones para el idioma actual
   const t = translations[language];
-
-  // Efecto para la redirección cuando se detecta una sesión activa
-  useEffect(() => {
-    if (!isCheckingSession && isExistingSession) {
-      setTimeout(() => router.push("/dashboard"), 2000);
-    }
-  }, [isCheckingSession, isExistingSession, router]);
 
   // Validación en tiempo real del email
   useEffect(() => {
@@ -186,11 +195,26 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await loginWithEmail(email, password);
-      setSuccess(true);
-      router.push("/dashboard");
+      const response = await signInWithEmail(email, password);
+      
+      if (response?.session) {
+        if (rememberMe) {
+          localStorage.setItem("email", email);
+          localStorage.setItem("password", password);
+        } else {
+          localStorage.removeItem("email");
+          localStorage.removeItem("password");
+        }
+
+        setSuccess(true);
+        toast.success('¡Inicio de sesión exitoso!');
+        router.push("/dashboard");
+      } else {
+        throw new Error("No se pudo iniciar sesión");
+      }
     } catch (error: any) {
-      setError(error.message);
+      setError(error.message || "Error al iniciar sesión. Por favor, verifica tus credenciales.");
+      toast.error(error.message || 'Error al iniciar sesión');
     } finally {
       setIsLoading(false);
     }
@@ -201,13 +225,16 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await loginWithGoogle();
-        setSuccess(true);
+      // TODO: Implementar autenticación social con Supabase
+      // const { data, error } = await supabase.auth.signInWithOAuth({
+      //   provider: provider
+      // });
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setSuccess(true);
       router.push("/dashboard");
     } catch (error: any) {
-      if (error.code !== 'auth/popup-closed-by-user') {
-        setError(error.message);
-      }
+      setError("Error al iniciar sesión con proveedor social.");
     } finally {
       setIsLoading(false);
     }

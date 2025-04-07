@@ -20,6 +20,7 @@ import {
 import SubAccounts from "@/components/SubAccounts";
 import SubAccountManager from "@/components/SubAccountManager";
 import { useRouter } from "next/navigation";
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 // Tipo para las opciones de balance
 type BalanceDisplayType = 'total' | 'real' | 'demo' | 'detailed';
@@ -83,14 +84,46 @@ export default function DashboardPage() {
   const [tooltipContent, setTooltipContent] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const router = useRouter();
+  const { requireAuth, user } = useSupabaseAuth();
 
   useEffect(() => {
-    const token = safeLocalStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-  }, [router]);
+    // Proteger esta ruta con Supabase Auth
+    const tokenInStorage = localStorage.getItem('token');
+    console.log('Dashboard: Token en localStorage:', !!tokenInStorage);
+    console.log('Dashboard: Usuario autenticado:', !!user);
+    
+    // Comentar temporalmente para probar sin redirección
+    // requireAuth();
+    
+    // En su lugar, solo loguear el resultado sin redireccionar
+    const isAuth = requireAuth(() => {
+      console.log('Se intentaría redirigir a login, pero está temporalmente deshabilitado');
+      // No hacemos nada para evitar la redirección
+      return false; // Evita que se ejecute la redirección
+    });
+    console.log('¿Usuario autenticado según requireAuth?:', isAuth);
+  }, []);
+
+  // Establecer valores predeterminados ya que SubAccounts está deshabilitado
+  useEffect(() => {
+    // Simular la carga de datos después de un breve retraso
+    const timer = setTimeout(() => {
+      // Establecer valores de ejemplo
+      setTotalBalance(25000);
+      setRealBalance(15000);
+      setDemoBalance(10000);
+      setActiveSubAccounts(5);
+      setRealAccounts(3);
+      setDemoAccounts(2);
+      setExchanges(120);
+      setOpenOperations(30);
+      setClosedOperations(90);
+      setIsLoading(false);
+      setLastUpdate(new Date());
+    }, 1500);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     // Cargar datos iniciales al montar el componente
@@ -311,10 +344,14 @@ export default function DashboardPage() {
   // Memorizamos el componente SubAccounts para evitar renderizados innecesarios
   const subAccountsComponent = useMemo(() => {
     return (
-      <SubAccounts 
-        onStatsUpdate={handleStatsUpdate} 
-        showBalance={showBalance} 
-      />
+      // <SubAccounts 
+      //   onStatsUpdate={handleStatsUpdate} 
+      //   showBalance={showBalance} 
+      // />
+      <div className="p-8 rounded-lg border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700">
+        <h2 className="text-xl font-semibold mb-4">Componente de Subcuentas deshabilitado temporalmente</h2>
+        <p>El componente SubAccounts ha sido deshabilitado para pruebas.</p>
+      </div>
     );
   }, [handleStatsUpdate, showBalance]);
 
