@@ -30,7 +30,8 @@ const translations = {
     operations: "Operaciones",
     availability: "Disponibilidad",
     backToLogin: "Volver al inicio de sesión",
-    invalidLink: "El enlace es inválido o ha expirado"
+    invalidLink: "El enlace es inválido o ha expirado",
+    redirectingIn: "Redirigiendo en {seconds} segundos"
   },
   en: {
     resetPassword: "Reset Password",
@@ -51,7 +52,8 @@ const translations = {
     operations: "Operations",
     availability: "Availability",
     backToLogin: "Back to login",
-    invalidLink: "Invalid or expired link"
+    invalidLink: "Invalid or expired link",
+    redirectingIn: "Redirecting in {seconds} seconds"
   },
   de: {
     resetPassword: "Passwort zurücksetzen",
@@ -72,7 +74,8 @@ const translations = {
     operations: "Operationen",
     availability: "Verfügbarkeit",
     backToLogin: "Zurück zur Anmeldung",
-    invalidLink: "Ungültiger oder abgelaufener Link"
+    invalidLink: "Ungültiger oder abgelaufener Link",
+    redirectingIn: "Umleitung in {seconds} Sekunden"
   }
 };
 
@@ -90,6 +93,7 @@ function ResetPasswordContent() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [errors, setErrors] = useState({ password: "", confirmPassword: "" });
   const [language, setLanguage] = useState<Language>('es');
+  const [countdown, setCountdown] = useState(5);
   const router = useRouter();
 
   useEffect(() => {
@@ -115,6 +119,23 @@ function ResetPasswordContent() {
       router.push("/login");
     }
   }, [router]);
+
+  // Efecto para el contador de redirección
+  useEffect(() => {
+    if (isSuccess) {
+      const timer = setInterval(() => {
+        setCountdown((prevCountdown) => {
+          if (prevCountdown <= 1) {
+            clearInterval(timer);
+            router.push('/login');
+            return 0;
+          }
+          return prevCountdown - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [isSuccess, router]);
 
   // Obtener las traducciones para el idioma actual
   const t = translations[language];
@@ -231,48 +252,70 @@ function ResetPasswordContent() {
             <AnimatePresence mode="wait">
               {isSuccess ? (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.3 }}
-                  className="flex flex-col items-center"
+                  className="flex flex-col items-center justify-center p-6"
                 >
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ 
-                      type: "spring",
-                      stiffness: 200,
-                      damping: 20,
-                      delay: 0.1 
-                    }}
-                    className="w-16 h-16 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center mb-4"
-                  >
-                    <CheckCircle className="h-8 w-8 text-white" />
-                  </motion.div>
+                  <div className="w-20 h-20 mb-6 relative">
+                    <div className="absolute inset-0 bg-cyan-200 dark:bg-cyan-900/50 rounded-full animate-ping opacity-25"></div>
+                    <div className="relative w-full h-full bg-gradient-to-br from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                      <svg className="w-10 h-10 text-white" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  </div>
                   
-                  <motion.h3 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
-                  >
-                    {t.resetSuccess}
-                  </motion.h3>
-                  
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="mt-6 text-center"
-                  >
-                    <Link
-                      href="/login"
-                      className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transform transition-all duration-200 hover:scale-[1.02]"
-                    >
-                      {t.loginNow}
-                    </Link>
-                  </motion.div>
+                  <div className="max-w-md bg-gradient-to-br from-white/80 to-white/60 dark:from-gray-800/80 dark:to-gray-800/60 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-100 dark:border-gray-700">
+                    <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500 text-center mb-3">
+                      {t.resetSuccess}
+                    </h3>
+                    
+                    <div className="flex flex-col items-center">
+                      <div className="relative w-16 h-16 mb-2">
+                        <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 100 100">
+                          <circle 
+                            cx="50" cy="50" r="45" 
+                            fill="none" 
+                            stroke="#e5e7eb" 
+                            strokeWidth="8" 
+                            className="dark:stroke-gray-700"
+                          />
+                          <circle 
+                            cx="50" cy="50" r="45" 
+                            fill="none" 
+                            stroke="url(#countdown-gradient)" 
+                            strokeWidth="8" 
+                            strokeDasharray="283" 
+                            strokeDashoffset={283 - (283 * countdown / 5)}
+                            className="transition-all duration-1000"
+                          />
+                          <defs>
+                            <linearGradient id="countdown-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor="#0ea5e9" />
+                              <stop offset="100%" stopColor="#2563eb" />
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-2xl font-bold text-cyan-500 dark:text-cyan-400">
+                            {countdown}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {t.redirectingIn.replace('{seconds}', '')}
+                      </p>
+                    </div>
+                    
+                    <div className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-700">
+                      <Link 
+                        href="/login" 
+                        className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transform transition-all duration-200 hover:scale-[1.02]"
+                      >
+                        {t.loginNow}
+                      </Link>
+                    </div>
+                  </div>
                 </motion.div>
               ) : (
                 <motion.div
