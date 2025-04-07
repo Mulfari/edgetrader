@@ -223,12 +223,12 @@ function ResetPasswordContent() {
         </div>
 
         {/* Sección derecha - Contenido de restablecimiento */}
-        <div className="w-full lg:w-1/2 bg-white dark:bg-gray-900 flex items-center justify-center p-8 relative rounded-tl-[40px] rounded-bl-[40px]">
+        <div className="w-full lg:w-1/2 flex flex-col items-center justify-center bg-white dark:bg-gray-900 p-8 relative rounded-tl-[40px] rounded-bl-[40px]">
           {/* Elementos decorativos de fondo */}
           <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-700/25 bg-[size:20px_20px] opacity-[0.05] rounded-tl-[40px] rounded-bl-[40px]"></div>
 
-          <div className="w-full max-w-md space-y-8 relative">
-            <div className="flex justify-between items-center">
+          <div className="w-full max-w-md flex flex-col">
+            <div className="flex justify-between items-center mb-6">
               <Link href="/login" className="group w-2/5 flex items-center justify-center px-4 py-2 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-lg transition-all duration-300 hover:shadow-xl">
                 <ArrowLeft className="mr-2 h-5 w-5 text-cyan-500 dark:text-cyan-400 transition-transform duration-300 group-hover:-translate-x-1" />
                 <span className="text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500">
@@ -240,49 +240,58 @@ function ResetPasswordContent() {
             <AnimatePresence mode="wait">
               {isSuccess ? (
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="text-center space-y-6"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex flex-col items-center"
                 >
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                    className="mx-auto"
+                    transition={{ 
+                      type: "spring",
+                      stiffness: 200,
+                      damping: 20,
+                      delay: 0.1 
+                    }}
+                    className="w-16 h-16 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center mb-4"
                   >
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full blur-xl opacity-50"></div>
-                      <div className="relative bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full p-4 w-20 h-20 mx-auto flex items-center justify-center">
-                        <CheckCircle className="h-10 w-10 text-white" />
-                      </div>
-                    </div>
+                    <CheckCircle className="h-8 w-8 text-white" />
                   </motion.div>
                   
-                  <div className="space-y-2">
-                    <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">
-                      {t.resetSuccess}
-                    </h2>
-                  </div>
+                  <motion.h3 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
+                  >
+                    {t.resetSuccess}
+                  </motion.h3>
                   
-                  <div className="space-y-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="mt-6 text-center"
+                  >
                     <Link
                       href="/login"
-                      className="w-full inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25"
+                      className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transform transition-all duration-200 hover:scale-[1.02]"
                     >
                       {t.loginNow}
                     </Link>
-                  </div>
+                  </motion.div>
                 </motion.div>
               ) : (
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="space-y-6"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  <div className="text-center">
-                    <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">
+                  <div className="text-center mb-8">
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                       {t.resetPassword}
                     </h1>
                     <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
@@ -293,7 +302,7 @@ function ResetPasswordContent() {
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                       <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {t.newPassword}
+                        {t.newPassword} <span className="text-rose-500">*</span>
                       </label>
                       <div className="mt-1 relative">
                         <input
@@ -305,7 +314,7 @@ function ResetPasswordContent() {
                           onChange={(e) => setPassword(e.target.value)}
                           className={`appearance-none block w-full px-3 py-2 border ${
                             errors.password ? 'border-red-300 dark:border-red-700' : 'border-gray-300 dark:border-gray-700'
-                          } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-800 dark:text-white text-sm`}
+                          } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white`}
                         />
                         <button
                           type="button"
@@ -328,7 +337,7 @@ function ResetPasswordContent() {
                     
                     <div>
                       <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {t.confirmPassword}
+                        {t.confirmPassword} <span className="text-rose-500">*</span>
                       </label>
                       <div className="mt-1 relative">
                         <input
@@ -340,7 +349,7 @@ function ResetPasswordContent() {
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           className={`appearance-none block w-full px-3 py-2 border ${
                             errors.confirmPassword ? 'border-red-300 dark:border-red-700' : 'border-gray-300 dark:border-gray-700'
-                          } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-800 dark:text-white text-sm`}
+                          } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white`}
                         />
                         <button
                           type="button"
@@ -365,7 +374,7 @@ function ResetPasswordContent() {
                       <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25 disabled:opacity-70"
+                        className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isLoading ? (
                           <>
