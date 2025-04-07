@@ -299,94 +299,96 @@ function ResetPasswordContent() {
                     </p>
                   </div>
                   
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                      <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {t.newPassword} <span className="text-rose-500">*</span>
-                      </label>
-                      <div className="mt-1 relative">
-                        <input
-                          id="password"
-                          name="password"
-                          type={showPassword ? "text" : "password"}
-                          autoComplete="new-password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className={`appearance-none block w-full px-3 py-2 border ${
-                            errors.password ? 'border-red-300 dark:border-red-700' : 'border-gray-300 dark:border-gray-700'
-                          } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white`}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
-                          ) : (
-                            <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
-                          )}
-                        </button>
-                      </div>
-                      {errors.password && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
-                          <AlertCircle size={14} className="mr-1" /> {errors.password}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {t.confirmPassword} <span className="text-rose-500">*</span>
-                      </label>
-                      <div className="mt-1 relative">
-                        <input
-                          id="confirm-password"
-                          name="confirm-password"
-                          type={showConfirmPassword ? "text" : "password"}
-                          autoComplete="new-password"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          className={`appearance-none block w-full px-3 py-2 border ${
-                            errors.confirmPassword ? 'border-red-300 dark:border-red-700' : 'border-gray-300 dark:border-gray-700'
-                          } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white`}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                        >
-                          {showConfirmPassword ? (
-                            <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
-                          ) : (
-                            <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
-                          )}
-                        </button>
-                      </div>
-                      {errors.confirmPassword && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
-                          <AlertCircle size={14} className="mr-1" /> {errors.confirmPassword}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isLoading ? (
-                          <>
-                            <Loader2 size={16} className="mr-2 animate-spin" />
-                            {t.resetting}
-                          </>
-                        ) : (
-                          t.resetBtn
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                      <div>
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t.newPassword} <span className="text-rose-500">*</span>
+                        </label>
+                        <div className="mt-1 relative">
+                          <input
+                            id="password"
+                            name="password"
+                            type={showPassword ? "text" : "password"}
+                            autoComplete="new-password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className={`appearance-none block w-full px-3 py-2 border ${
+                              errors.password ? 'border-red-300 dark:border-red-700' : 'border-gray-300 dark:border-gray-700'
+                            } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
+                            ) : (
+                              <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
+                            )}
+                          </button>
+                        </div>
+                        {errors.password && (
+                          <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+                            <AlertCircle size={14} className="mr-1" /> {errors.password}
+                          </p>
                         )}
-                      </button>
-                    </div>
-                  </form>
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t.confirmPassword} <span className="text-rose-500">*</span>
+                        </label>
+                        <div className="mt-1 relative">
+                          <input
+                            id="confirm-password"
+                            name="confirm-password"
+                            type={showConfirmPassword ? "text" : "password"}
+                            autoComplete="new-password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            className={`appearance-none block w-full px-3 py-2 border ${
+                              errors.confirmPassword ? 'border-red-300 dark:border-red-700' : 'border-gray-300 dark:border-gray-700'
+                            } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
+                            ) : (
+                              <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
+                            )}
+                          </button>
+                        </div>
+                        {errors.confirmPassword && (
+                          <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+                            <AlertCircle size={14} className="mr-1" /> {errors.confirmPassword}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <button
+                          type="submit"
+                          disabled={isLoading}
+                          className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isLoading ? (
+                            <>
+                              <Loader2 size={16} className="mr-2 animate-spin" />
+                              {t.resetting}
+                            </>
+                          ) : (
+                            t.resetBtn
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
