@@ -272,10 +272,15 @@ const ModernDashboardPreview = () => {
       {/* Header con navegación */}
       <div className="flex items-center justify-between px-6 py-5 border-b border-gray-800">
         <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xs">TD</span>
+          <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:shadow-cyan-500/20 dark:group-hover:shadow-cyan-400/20">
+            <span className="text-xl text-white font-bold">MT</span>
           </div>
-          <span className="text-white font-medium">TradingDash</span>
+          <div className="flex flex-col">
+            <span className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
+            Mulfex Trader
+            </span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Trading Inteligente</span>
+          </div>
         </div>
         
         <div className="flex items-center space-x-1">
@@ -1304,11 +1309,11 @@ export default function LandingPage() {
             {/* Logo Mejorado */}
             <Link href="/" className="flex items-center space-x-3 group">
               <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:shadow-cyan-500/20 dark:group-hover:shadow-cyan-400/20">
-                <span className="text-xl text-white font-bold">TD</span>
+                <span className="text-xl text-white font-bold">MT</span>
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
-                TradingDash
+                Mulfex Trader
               </span>
                 <span className="text-xs text-gray-500 dark:text-gray-400">Trading Inteligente</span>
               </div>
@@ -1673,10 +1678,10 @@ export default function LandingPage() {
                 </span>
                   <br />
                   <span className="relative inline-block mt-2">
-                  TradingDash
+                  Mulfex Trader
                     <div className="absolute -bottom-3 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
-                </span>
-              </h1>
+                  </span>
+                </h1>
                 
                 <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-xl mx-auto lg:mx-0">
                 {t.hero.subtitle}
@@ -2276,11 +2281,11 @@ export default function LandingPage() {
               <div className="md:col-span-5">
                 <Link href="/" className="inline-flex items-center space-x-3 group">
                   <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:shadow-cyan-500/20 dark:group-hover:shadow-cyan-400/20">
-                    <span className="text-xl text-white font-bold">TD</span>
+                    <span className="text-xl text-white font-bold">MT</span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
-                TradingDash
+                Mulfex Trader
                     </span>
                     <span className="text-xs text-gray-400">{t.language}</span>
                   </div>

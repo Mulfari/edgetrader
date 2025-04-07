@@ -131,9 +131,9 @@ function ConfirmEmailContent() {
             <div>
               <div className="flex items-center gap-2 text-white">
                 <div className="h-8 w-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <span className="font-bold text-xl">TD</span>
+                  <span className="font-bold text-xl">MT</span>
                 </div>
-                <span className="text-lg font-medium">TradingDash</span>
+                <span className="text-lg font-medium">Mulfex Trader</span>
               </div>
             </div>
             

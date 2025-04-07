@@ -195,10 +195,10 @@ export default function RootLayout({
                       </div>
                       <div className={`transition-all duration-300 transform whitespace-nowrap ${isMobileMenuOpen ? 'opacity-100 lg:opacity-0 lg:group-hover:opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                         <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
-                          TradingDash
+                          Mulfex Trader
                         </h1>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          Panel de Control
+                          Plataforma de Trading
                         </p>
                       </div>
                     </div>

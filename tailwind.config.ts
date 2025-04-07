@@ -77,19 +77,12 @@ export default {
   				'0%': { transform: 'translateX(-100%) scale(0.5)', opacity: '0' },
   				'50%': { transform: 'translateX(0%) scale(1)', opacity: '1' },
   				'100%': { transform: 'translateX(100%) scale(0.5)', opacity: '0' }
-  			},
-  			wave: {
-  				'0%, 100%': { transform: 'translateY(0%) scale(1.0)' },
-  				'50%': { transform: 'translateY(2%) scale(1.05)' },
-  			},
+  			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
-  			'pulse-circle': 'pulse-circle 1.5s infinite',
-  			'wave-slow': 'wave 7s ease-in-out infinite',
-  			'wave-medium': 'wave 5s ease-in-out infinite',
-  			'wave-fast': 'wave 3s ease-in-out infinite',
+  			'pulse-circle': 'pulse-circle 1.5s infinite'
   		}
   	}
   },

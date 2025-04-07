@@ -55,7 +55,7 @@ const translations = {
     },
     terms: {
       title: "Términos y Condiciones",
-      welcome: "Bienvenido a TradingDash. Al usar nuestros servicios, aceptas estos términos. Por favor, léelos cuidadosamente.",
+      welcome: "Bienvenido a Mulfex Trader. Al usar nuestros servicios, aceptas estos términos. Por favor, léelos cuidadosamente.",
       usage: "1. Uso del Servicio: Debes seguir todas las políticas disponibles dentro de los Servicios.",
       privacy: "2. Privacidad: Nuestras políticas de privacidad explican cómo tratamos tus datos personales y protegemos tu privacidad cuando usas nuestros Servicios.",
       modifications: "3. Modificaciones: Podemos modificar estos términos o cualquier término adicional que aplique a un Servicio para, por ejemplo, reflejar cambios en la ley o en nuestros Servicios.",
@@ -64,6 +64,24 @@ const translations = {
     dateOfBirth: "Fecha de nacimiento",
     invalidDateOfBirth: "Debes tener al menos 18 años",
     dateFormat: "DD/MM/AAAA",
+    leftSection: {
+      userImprovement: "Mejora de Usuarios",
+      monthlyProgress: "Progreso mensual",
+      satisfaction: "Satisfacción",
+      activeUsers: "Usuarios activos",
+      testimonials: {
+        designer: {
+          name: "María González",
+          role: "Diseñadora UX",
+          quote: "La interfaz es increíblemente intuitiva y fácil de usar. Me encanta la simplicidad y el diseño moderno."
+        },
+        developer: {
+          name: "Juan Rodríguez",
+          role: "Desarrollador",
+          quote: "La velocidad y eficiencia de la plataforma son excepcionales. El soporte técnico es muy profesional."
+        }
+      }
+    }
   },
   en: {
     createAccount: "Create your account",
@@ -95,7 +113,7 @@ const translations = {
     },
     terms: {
       title: "Terms and Conditions",
-      welcome: "Welcome to TradingDash. By using our services, you accept these terms. Please read them carefully.",
+      welcome: "Welcome to Mulfex Trader. By using our services, you accept these terms. Please read them carefully.",
       usage: "1. Service Usage: You must follow all policies available within the Services.",
       privacy: "2. Privacy: Our privacy policies explain how we handle your personal data and protect your privacy when using our Services.",
       modifications: "3. Modifications: We may modify these terms or any additional terms that apply to a Service to, for example, reflect changes in the law or our Services.",
@@ -104,6 +122,24 @@ const translations = {
     dateOfBirth: "Date of birth",
     invalidDateOfBirth: "You must be at least 18 years old",
     dateFormat: "DD/MM/YYYY",
+    leftSection: {
+      userImprovement: "User Improvement",
+      monthlyProgress: "Monthly progress",
+      satisfaction: "Satisfaction",
+      activeUsers: "Active users",
+      testimonials: {
+        designer: {
+          name: "Mary González",
+          role: "UX Designer",
+          quote: "The interface is incredibly intuitive and easy to use. I love the simplicity and modern design."
+        },
+        developer: {
+          name: "John Rodriguez",
+          role: "Developer",
+          quote: "The speed and efficiency of the platform are exceptional. The technical support is very professional."
+        }
+      }
+    }
   },
   de: {
     createAccount: "Konto erstellen",
@@ -135,7 +171,7 @@ const translations = {
     },
     terms: {
       title: "Allgemeine Geschäftsbedingungen",
-      welcome: "Willkommen bei TradingDash. Mit der Nutzung unserer Dienste akzeptieren Sie diese Bedingungen. Bitte lesen Sie sie sorgfältig.",
+      welcome: "Willkommen bei Mulfex Trader. Mit der Nutzung unserer Dienste akzeptieren Sie diese Bedingungen. Bitte lesen Sie sie sorgfältig.",
       usage: "1. Nutzung des Dienstes: Sie müssen alle innerhalb der Dienste verfügbaren Richtlinien befolgen.",
       privacy: "2. Datenschutz: Unsere Datenschutzrichtlinien erklären, wie wir Ihre persönlichen Daten verarbeiten und Ihre Privatsphäre bei der Nutzung unserer Dienste schützen.",
       modifications: "3. Änderungen: Wir können diese Bedingungen oder zusätzliche Bedingungen, die für einen Dienst gelten, ändern, um beispielsweise Änderungen im Gesetz oder in unseren Diensten widerzuspiegeln.",
@@ -144,6 +180,24 @@ const translations = {
     dateOfBirth: "Geburtsdatum",
     invalidDateOfBirth: "Sie müssen mindestens 18 Jahre alt sein",
     dateFormat: "TT/MM/JJJJ",
+    leftSection: {
+      userImprovement: "Benutzerverbesserung",
+      monthlyProgress: "Monatlicher Fortschritt",
+      satisfaction: "Zufriedenheit",
+      activeUsers: "Aktive Benutzer",
+      testimonials: {
+        designer: {
+          name: "Maria González",
+          role: "UX-Designerin",
+          quote: "Die Benutzeroberfläche ist unglaublich intuitiv und einfach zu bedienen. Ich liebe die Einfachheit und das moderne Design."
+        },
+        developer: {
+          name: "Juan Rodríguez",
+          role: "Entwickler",
+          quote: "Die Geschwindigkeit und Effizienz der Plattform sind außergewöhnlich. Der technische Support ist sehr professionell."
+        }
+      }
+    }
   }
 };
 
@@ -462,8 +516,8 @@ export default function SignUpPage() {
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <h4 className="text-base font-semibold">Mejora de Usuarios</h4>
-                    <p className="text-xs text-blue-50/80">Progreso mensual</p>
+                    <h4 className="text-base font-semibold">{t.leftSection.userImprovement}</h4>
+                    <p className="text-xs text-blue-50/80">{t.leftSection.monthlyProgress}</p>
                   </div>
                 </div>
                 <div className="h-40">
@@ -518,11 +572,11 @@ export default function SignUpPage() {
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
                   <div className="text-2xl font-bold text-blue-50">95%</div>
-                  <div className="text-xs text-blue-50/80">Satisfacción</div>
+                  <div className="text-xs text-blue-50/80">{t.leftSection.satisfaction}</div>
                 </div>
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
                   <div className="text-2xl font-bold text-blue-50">+10k</div>
-                  <div className="text-xs text-blue-50/80">Usuarios activos</div>
+                  <div className="text-xs text-blue-50/80">{t.leftSection.activeUsers}</div>
                 </div>
               </div>
 
@@ -539,12 +593,12 @@ export default function SignUpPage() {
                       MG
                     </div>
                     <div className="ml-4">
-                      <p className="font-medium">María González</p>
-                      <p className="text-sm text-blue-50/80">Diseñadora UX</p>
+                      <p className="font-medium">{t.leftSection.testimonials.designer.name}</p>
+                      <p className="text-sm text-blue-50/80">{t.leftSection.testimonials.designer.role}</p>
                     </div>
                   </div>
                   <p className="text-sm text-blue-50 italic">
-                    "La interfaz es increíblemente intuitiva y fácil de usar. Me encanta la simplicidad y el diseño moderno."
+                    "{t.leftSection.testimonials.designer.quote}"
                   </p>
                 </motion.div>
 
@@ -559,12 +613,12 @@ export default function SignUpPage() {
                       JR
                     </div>
                     <div className="ml-4">
-                      <p className="font-medium">Juan Rodríguez</p>
-                      <p className="text-sm text-blue-50/80">Desarrollador</p>
+                      <p className="font-medium">{t.leftSection.testimonials.developer.name}</p>
+                      <p className="text-sm text-blue-50/80">{t.leftSection.testimonials.developer.role}</p>
                     </div>
                   </div>
                   <p className="text-sm text-blue-50 italic">
-                    "La velocidad y eficiencia de la plataforma son excepcionales. El soporte técnico es muy profesional."
+                    "{t.leftSection.testimonials.developer.quote}"
                   </p>
                 </motion.div>
               </div>

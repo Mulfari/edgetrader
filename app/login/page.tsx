@@ -64,7 +64,11 @@ const translations = {
     resetEmailSent: "Enlace enviado",
     checkEmail: "Revisa tu correo electrónico para continuar con el proceso de restablecimiento de contraseña.",
     redirectingIn: "Redirigiendo en {seconds} segundos",
-    resetEmailError: "Error al enviar el correo de restablecimiento. Por favor, inténtalo de nuevo."
+    resetEmailError: "Error al enviar el correo de restablecimiento. Por favor, inténtalo de nuevo.",
+    goDashboard: "Ir al dashboard",
+    loginSuccess: "¡Inicio de sesión exitoso!",
+    preparingDashboard: "Preparando tu dashboard...",
+    welcomeUser: "¡Bienvenido(a) a Mulfex Trader!"
   },
   en: {
     welcomeBack: "Welcome back",
@@ -101,7 +105,11 @@ const translations = {
     resetEmailSent: "Link sent",
     checkEmail: "Check your email for further instructions to reset your password.",
     redirectingIn: "Redirecting in {seconds} seconds",
-    resetEmailError: "Error sending reset email. Please try again."
+    resetEmailError: "Error sending reset email. Please try again.",
+    goDashboard: "Go to dashboard",
+    loginSuccess: "Login successful!",
+    preparingDashboard: "Preparing your dashboard...",
+    welcomeUser: "Welcome to Mulfex Trader!"
   },
   de: {
     welcomeBack: "Willkommen zurück",
@@ -138,39 +146,13 @@ const translations = {
     resetEmailSent: "Link gesendet",
     checkEmail: "Überprüfen Sie Ihre E-Mail für weitere Anweisungen zum Zurücksetzen Ihres Passworts.",
     redirectingIn: "Weiterleitung in {seconds} Sekunden",
-    resetEmailError: "Fehler beim Senden der Reset-E-Mail. Bitte versuchen Sie es erneut."
+    resetEmailError: "Fehler beim Senden der Reset-E-Mail. Bitte versuchen Sie es erneut.",
+    goDashboard: "Zum Dashboard",
+    loginSuccess: "Anmeldung erfolgreich!",
+    preparingDashboard: "Dashboard wird vorbereitet...",
+    welcomeUser: "Willkommen bei Mulfex Trader!"
   }
 };
-
-// Definir un nuevo componente para las partículas
-function ParticleBackground() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(20)].map((_, i) => (
-        <motion.div 
-          key={i}
-          initial={{ 
-            x: Math.random() * 100 + "%", 
-            y: Math.random() * 100 + "%", 
-            scale: Math.random() * 0.5 + 0.5,
-            opacity: Math.random() * 0.5 + 0.3
-          }}
-          animate={{ 
-            y: [null, Math.random() * 100 + "%"],
-            x: [null, Math.random() * 100 + "%"],
-            opacity: [null, Math.random() > 0.5 ? 0.2 : 0.5]
-          }}
-          transition={{ 
-            repeat: Infinity, 
-            duration: Math.random() * 15 + 10,
-            ease: "linear"
-          }}
-          className="absolute w-2 h-2 rounded-full bg-cyan-500/30"
-        />
-      ))}
-    </div>
-  );
-}
 
 function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -190,8 +172,7 @@ function LoginForm() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [showCountdown, setShowCountdown] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [redirectCountdown, setRedirectCountdown] = useState(5);
 
   useEffect(() => {
     // Cargar el idioma guardado o usar español por defecto
@@ -218,7 +199,17 @@ function LoginForm() {
         const session = await getSession();
         if (session) {
           setIsExistingSession(true);
-          setTimeout(() => router.push("/dashboard"), 2000);
+          setRedirectCountdown(5);
+          
+          const timer = setInterval(() => {
+            setRedirectCountdown((prev) => {
+              if (prev <= 1) {
+                clearInterval(timer);
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
         }
       } catch (error) {
         console.error("Error checking session:", error);
@@ -228,7 +219,19 @@ function LoginForm() {
     };
 
     checkSession();
-  }, [router]);
+  }, []);
+
+  // Efecto separado para la redirección cuando el contador llega a cero
+  useEffect(() => {
+    if (redirectCountdown === 0 && (isExistingSession || success)) {
+      // Usamos un timeout para asegurar que la redirección ocurra después del renderizado
+      const redirectTimeout = setTimeout(() => {
+        router.push("/dashboard");
+      }, 100);
+      
+      return () => clearTimeout(redirectTimeout);
+    }
+  }, [redirectCountdown, isExistingSession, success, router]);
 
   useEffect(() => {
     // Mostrar mensaje si el usuario viene de confirmar su email
@@ -284,7 +287,7 @@ function LoginForm() {
       return;
     }
 
-    if (!validatePassword(password)) {
+    if (!password) {
       setErrors(prev => ({ ...prev, password: t.invalidPassword }));
       return;
     }
@@ -293,93 +296,97 @@ function LoginForm() {
     setError("");
 
     try {
-      // Simular progreso de carga visual
-      const progressInterval = setInterval(() => {
-        setLoadingProgress(prev => {
-          const newProgress = prev + (95 - prev) * 0.1;
-          return newProgress > 90 ? 90 : newProgress;
-        });
-      }, 100);
+      const response = await signInWithEmail(email, password);
+      
+      if (response?.session) {
+        if (rememberMe) {
+          localStorage.setItem("email", email);
+          localStorage.setItem("password", password);
+        } else {
+          localStorage.removeItem("email");
+          localStorage.removeItem("password");
+        }
 
-      // Realizar el inicio de sesión
-      const data = await signInWithEmail(email, password);
-
-      // Simular la finalización de la carga
-      clearInterval(progressInterval);
-      setLoadingProgress(100);
-
-      // Si se marca "Recordarme", guardar el email y la contraseña
-      if (rememberMe) {
-        localStorage.setItem("email", email);
-        localStorage.setItem("password", password);
+        setSuccess(true);
+        toast.success('¡Inicio de sesión exitoso!');
+        
+        setRedirectCountdown(5);
+        
+        const timer = setInterval(() => {
+          setRedirectCountdown((prev) => {
+            if (prev <= 1) {
+              clearInterval(timer);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
       } else {
-        localStorage.removeItem("email");
-        localStorage.removeItem("password");
+        throw new Error("No se pudo iniciar sesión");
       }
-
-      // Efectos visuales de inicio de sesión exitoso
-      setSuccess(true);
-      setIsRedirecting(true);
-      
-      // Redirección elegante
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1500);
-      
-    } catch (error) {
-      console.error("Error de inicio de sesión:", error);
-      setLoadingProgress(0);
-      setError((error as Error).message);
+    } catch (error: any) {
+      setError(error.message || "Error al iniciar sesión. Por favor, verifica tus credenciales.");
+      toast.error(error.message || 'Error al iniciar sesión');
+    } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
     try {
-      // Configurar dimensiones para la ventana popup
+      const { data, error, url } = await signInWithGoogle();
+      
+      if (error || !url) {
+        console.error('Error al obtener URL de autenticación:', error);
+        toast.error(t.googleLoginError);
+        return;
+      }
+
+      // Calcular dimensiones y posición del popup
       const width = 500;
       const height = 600;
       const left = window.screenX + (window.outerWidth - width) / 2;
-      const top = window.screenY + (window.outerHeight - height) / 2;
-      
-      const { data, url, error } = await signInWithGoogle();
-      
-      if (error) throw error;
-      if (url) {
-        const popup = window.open(
-          url,
-          'googleAuth',
-          `width=${width},height=${height},left=${left},top=${top}`
-        );
-        
-        if (!popup) {
-          toast.error(t.popupBlocked);
-          return;
-        }
-        
-        // Esperar a que el usuario complete el login
-        const checkPopup = setInterval(async () => {
-          try {
-            if (popup.closed) {
-              clearInterval(checkPopup);
-              
-              // Verificar si hay una sesión activa
-              const session = await getSession();
-              if (session) {
-                setIsRedirecting(true);
-                setLoadingProgress(100);
-                setTimeout(() => {
-                  router.push("/dashboard");
-                }, 1000);
-              }
-            }
-          } catch (e) {
-            clearInterval(checkPopup);
-          }
-        }, 500);
+      const top = window.screenY + (window.outerHeight - height) / 2.5;
+
+      // Abrir el popup con la URL de autenticación
+      const popup = window.open(
+        url,
+        'Google Login',
+        `width=${width},height=${height},left=${left},top=${top}`
+      );
+
+      if (!popup) {
+        toast.error(t.popupBlocked);
+        return;
       }
+
+      // Escuchar cambios en la sesión
+      const checkSession = setInterval(async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            clearInterval(checkSession);
+            if (!popup.closed) {
+              popup.close();
+            }
+            window.location.href = '/dashboard';
+          }
+        } catch (err) {
+          console.error('Error al verificar sesión:', err);
+        }
+      }, 1000);
+
+      // Limpiar el intervalo después de 2 minutos
+      setTimeout(() => {
+        clearInterval(checkSession);
+        if (!popup.closed) {
+          popup.close();
+        }
+        toast.error(t.googleLoginError);
+      }, 120000);
+
     } catch (error) {
-      console.error("Error en Google Login:", error);
+      console.error('Error en handleGoogleLogin:', error);
       toast.error(t.googleLoginError);
     }
   };
@@ -411,87 +418,6 @@ function LoginForm() {
     setShowCountdown(false);
   };
 
-  // Renderizar formulario de login o indicador de redirección
-  if (isRedirecting) {
-    return (
-      <div className="flex flex-col items-center justify-center space-y-6 p-8 min-h-[400px]">
-        {/* Ondas animadas en el fondo */}
-        <div className="absolute inset-0 overflow-hidden rounded-tl-[40px] rounded-bl-[40px]">
-          <div className="absolute inset-x-0 top-0 -translate-y-1/2 h-[500px] w-full">
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/40 to-blue-600/40 animate-wave-slow rounded-[100%] opacity-20"></div>
-          </div>
-          <div className="absolute inset-x-0 top-[5%] -translate-y-1/2 h-[500px] w-full">
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/30 to-blue-500/30 animate-wave-medium rounded-[100%] opacity-20"></div>
-          </div>
-          <div className="absolute inset-x-0 top-[10%] -translate-y-1/2 h-[500px] w-full">
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 to-blue-700/20 animate-wave-fast rounded-[100%] opacity-20"></div>
-          </div>
-        </div>
-
-        {/* Partículas animadas */}
-        <ParticleBackground />
-
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, type: "spring" }}
-          className="relative z-10"
-        >
-          <div className="relative w-24 h-24">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 animate-pulse opacity-20"></div>
-            <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
-              <circle 
-                cx="50" cy="50" r="45" 
-                fill="none" 
-                stroke="#e5e7eb" 
-                strokeWidth="8" 
-                className="dark:stroke-gray-700"
-              />
-              <circle 
-                cx="50" cy="50" r="45" 
-                fill="none" 
-                stroke="url(#redirect-gradient)" 
-                strokeWidth="8" 
-                strokeDasharray="283" 
-                strokeDashoffset={283 - (283 * loadingProgress / 100)}
-                className="transition-all duration-300"
-              />
-              <defs>
-                <linearGradient id="redirect-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#0ea5e9" />
-                  <stop offset="100%" stopColor="#2563eb" />
-                </linearGradient>
-              </defs>
-            </svg>
-            <motion.div 
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="absolute inset-0 flex items-center justify-center"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-cyan-500" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-            </motion.div>
-          </div>
-        </motion.div>
-        
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-center z-10"
-        >
-          <h3 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600 mb-2">
-            {t.sessionDetected}
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            {t.redirecting}
-          </p>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Fondo azul que ocupará toda la pantalla */}
@@ -519,10 +445,10 @@ function LoginForm() {
               className="text-center relative z-10"
             >
               <h3 className="text-3xl font-bold mb-4 [text-shadow:0_2px_10px_rgba(0,0,0,0.1)]">
-                Trading Dashboard Pro
+                Mulfex Trader
               </h3>
               <p className="text-lg mb-6 text-blue-50">
-                La plataforma más avanzada para el trading profesional
+                La plataforma más avanzada para trading profesional
               </p>
               
               <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
@@ -644,26 +570,52 @@ function LoginForm() {
                             damping: 20,
                             delay: 0.1 
                           }}
-                          className="w-16 h-16 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center mb-4"
+                          className="mx-auto mb-4"
                         >
-                          <Loader2 className="w-8 h-8 text-white animate-spin" />
+                          <div className="relative">
+                            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full blur-xl opacity-50"></div>
+                            <div className="relative bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full p-4 w-20 h-20 mx-auto flex items-center justify-center">
+                              <Loader2 className="w-10 h-10 text-white animate-spin" />
+                            </div>
+                          </div>
                         </motion.div>
                         <motion.h3 
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.2 }}
-                          className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
+                          className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600 mb-2"
                         >
                             {t.verifyingSession}
                         </motion.h3>
-                        <motion.p
+                        <motion.div
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.3 }}
-                          className="text-gray-600 dark:text-gray-300"
+                          className="text-center space-y-4"
                         >
-                            {t.pleaseWait}
-                        </motion.p>
+                          <p className="text-base text-gray-600 dark:text-gray-400">
+                              {t.pleaseWait}
+                          </p>
+                          <div className="space-y-4">
+                            <p className="text-sm text-gray-500 dark:text-gray-500">
+                              {t.redirectingIn.replace('{seconds}', redirectCountdown.toString())} 
+                            </p>
+                            <div className="relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: "0%" }}
+                                animate={{ width: "100%" }}
+                                transition={{ duration: 5, ease: "linear" }}
+                                className="absolute left-0 top-0 h-full bg-gradient-to-r from-cyan-500 to-blue-600"
+                              />
+                            </div>
+                            <button
+                              onClick={() => router.push("/dashboard")}
+                              className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25"
+                            >
+                              {t.goDashboard}
+                            </button>
+                          </div>
+                        </motion.div>
                       </motion.div>
                     ) : isExistingSession ? (
                       <motion.div
@@ -682,19 +634,24 @@ function LoginForm() {
                             damping: 20,
                             delay: 0.1 
                           }}
-                          className="w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mb-4"
+                          className="mx-auto mb-4"
                         >
-                          <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
+                          <div className="relative">
+                            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full blur-xl opacity-50"></div>
+                            <div className="relative bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full p-4 w-20 h-20 mx-auto flex items-center justify-center">
+                              <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          </div>
                         </motion.div>
                         <motion.h3 
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.2 }}
-                          className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
+                          className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600 mb-2"
                         >
-                            {t.sessionDetected}
+                            {t.loginSuccess}
                         </motion.h3>
                         <motion.div
                           initial={{ opacity: 0, y: 10 }}
@@ -702,16 +659,37 @@ function LoginForm() {
                           transition={{ delay: 0.3 }}
                           className="text-center space-y-4"
                         >
-                          <p className="text-gray-600 dark:text-gray-300">
-                              {t.redirecting}
-                          </p>
-                          <div className="relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                            <motion.div
-                              initial={{ width: "0%" }}
-                              animate={{ width: "100%" }}
-                              transition={{ duration: 2, ease: "easeInOut" }}
-                              className="absolute left-0 top-0 h-full bg-gradient-to-r from-cyan-500 to-blue-600"
-                            />
+                          <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.4 }}
+                            className="mb-2"
+                          >
+                            <h4 className="text-xl font-medium text-gray-700 dark:text-gray-300">
+                              {t.welcomeUser}
+                            </h4>
+                            <p className="text-base text-gray-600 dark:text-gray-400 mt-1">
+                              {t.preparingDashboard}
+                            </p>
+                          </motion.div>
+                          <div className="space-y-4">
+                            <p className="text-sm text-gray-500 dark:text-gray-500">
+                              {t.redirectingIn.replace('{seconds}', redirectCountdown.toString())} 
+                            </p>
+                            <div className="relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: "0%" }}
+                                animate={{ width: "100%" }}
+                                transition={{ duration: 5, ease: "linear" }}
+                                className="absolute left-0 top-0 h-full bg-gradient-to-r from-cyan-500 to-blue-600"
+                              />
+                            </div>
+                            <button
+                              onClick={() => router.push("/dashboard")}
+                              className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25"
+                            >
+                              {t.goDashboard}
+                            </button>
                           </div>
                         </motion.div>
                       </motion.div>
@@ -732,19 +710,24 @@ function LoginForm() {
                             damping: 20,
                             delay: 0.1 
                           }}
-                          className="w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mb-4"
+                          className="mx-auto mb-4"
                         >
-                          <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
+                          <div className="relative">
+                            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full blur-xl opacity-50"></div>
+                            <div className="relative bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full p-4 w-20 h-20 mx-auto flex items-center justify-center">
+                              <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          </div>
                         </motion.div>
                         <motion.h3 
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.2 }}
-                          className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
+                          className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600 mb-2"
                         >
-                            {t.sessionDetected}
+                            {t.loginSuccess}
                         </motion.h3>
                         <motion.div
                           initial={{ opacity: 0, y: 10 }}
@@ -752,16 +735,37 @@ function LoginForm() {
                           transition={{ delay: 0.3 }}
                           className="text-center space-y-4"
                         >
-                          <p className="text-gray-600 dark:text-gray-300">
-                              {t.redirecting}
-                          </p>
-                          <div className="relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                            <motion.div
-                              initial={{ width: "0%" }}
-                              animate={{ width: "100%" }}
-                              transition={{ duration: 2, ease: "easeInOut" }}
-                              className="absolute left-0 top-0 h-full bg-gradient-to-r from-cyan-500 to-blue-600"
-                            />
+                          <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.4 }}
+                            className="mb-2"
+                          >
+                            <h4 className="text-xl font-medium text-gray-700 dark:text-gray-300">
+                              {t.welcomeUser}
+                            </h4>
+                            <p className="text-base text-gray-600 dark:text-gray-400 mt-1">
+                              {t.preparingDashboard}
+                            </p>
+                          </motion.div>
+                          <div className="space-y-4">
+                            <p className="text-sm text-gray-500 dark:text-gray-500">
+                              {t.redirectingIn.replace('{seconds}', redirectCountdown.toString())} 
+                            </p>
+                            <div className="relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: "0%" }}
+                                animate={{ width: "100%" }}
+                                transition={{ duration: 5, ease: "linear" }}
+                                className="absolute left-0 top-0 h-full bg-gradient-to-r from-cyan-500 to-blue-600"
+                              />
+                            </div>
+                            <button
+                              onClick={() => router.push("/dashboard")}
+                              className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25"
+                            >
+                              {t.goDashboard}
+                            </button>
                           </div>
                         </motion.div>
                       </motion.div>
@@ -791,17 +795,22 @@ function LoginForm() {
                                   damping: 20,
                                   delay: 0.1 
                                 }}
-                                className="w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mb-4"
+                                className="mx-auto mb-4"
                               >
-                                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
+                                <div className="relative">
+                                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full blur-xl opacity-50"></div>
+                                  <div className="relative bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full p-4 w-20 h-20 mx-auto flex items-center justify-center">
+                                    <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </div>
+                                </div>
                               </motion.div>
                               <motion.h3 
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.2 }}
-                                className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
+                                className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600 mb-2"
                               >
                                 {t.resetEmailSent}
                               </motion.h3>
@@ -809,7 +818,7 @@ function LoginForm() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.3 }}
-                                className="text-gray-600 dark:text-gray-300 text-center mb-4"
+                                className="text-base text-gray-600 dark:text-gray-400 text-center mb-4"
                               >
                                 {t.checkEmail}
                               </motion.p>
@@ -817,22 +826,22 @@ function LoginForm() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.4 }}
-                                className="w-full space-y-3"
+                                className="w-full space-y-4"
                               >
-                                <p className="text-sm text-center text-gray-500 dark:text-gray-400">
-                                  {t.redirectingIn.replace('{seconds}', countdown.toString())}
+                                <p className="text-sm text-gray-500 dark:text-gray-500">
+                                  {t.redirectingIn.replace('{seconds}', redirectCountdown.toString())}
                                 </p>
                                 <div className="relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                   <motion.div
                                     initial={{ width: "0%" }}
                                     animate={{ width: "100%" }}
                                     transition={{ duration: 5, ease: "linear" }}
-                                    className="absolute left-0 top-0 h-full bg-gradient-to-r from-green-400 to-emerald-500"
+                                    className="absolute left-0 top-0 h-full bg-gradient-to-r from-cyan-500 to-blue-600"
                                   />
                                 </div>
                                 <button
                                   onClick={showLoginForm}
-                                  className="w-full flex justify-center py-2 px-4 mt-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transform transition-all duration-200 hover:scale-[1.02]"
+                                  className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25"
                                 >
                                   {t.backToLogin}
                                 </button>
@@ -1047,18 +1056,13 @@ function LoginForm() {
                             <div>
                               <button
                                 type="submit"
-                                disabled={isLoading}
-                                className="relative w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
+                                disabled={isLoading || (touched.email && touched.password && (!!errors.email || !!errors.password))}
+                                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-[1.02]"
                               >
                                 {isLoading ? (
                                   <>
-                                    <div className="absolute inset-0 w-full bg-gradient-to-r from-cyan-500 to-blue-600">
-                                      <div className="h-full bg-white/20" style={{width: `${loadingProgress}%`, transition: 'width 0.3s ease-in-out'}}></div>
-                                    </div>
-                                    <span className="relative z-10 flex items-center">
-                                      <Loader2 size={16} className="mr-2 animate-spin" />
+                                    <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
                                       {t.loggingIn}
-                                    </span>
                                   </>
                                 ) : (
                                     t.login
@@ -1074,52 +1078,45 @@ function LoginForm() {
                   {(!success && !showForgotPassword) && (
                     <>
                       <div className="mt-8">
-                        <div className="relative">
-                          <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
-                          </div>
-                          <div className="relative flex justify-center text-sm">
-                            <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">
-                              {t.continueWith}
-                            </span>
-                          </div>
+                        <div className="flex items-center justify-center gap-4 my-6">
+                          <div className="w-16 h-px bg-gray-300 dark:bg-gray-600"></div>
+                          <span className="uppercase text-xs tracking-wider font-medium text-gray-500 dark:text-gray-400">
+                            {t.continueWith}
+                          </span>
+                          <div className="w-16 h-px bg-gray-300 dark:bg-gray-600"></div>
                         </div>
 
-                        <div className="mt-6">
+                        <div className="flex justify-center">
                           <button
                             type="button"
                             onClick={handleGoogleLogin}
-                            className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] relative overflow-hidden group"
+                            disabled={isLoading}
+                            className="flex items-center justify-center w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl dark:shadow-gray-900/30 transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600 hover:transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed gap-3"
                           >
-                            <div className="absolute inset-0 w-3 bg-gradient-to-r from-blue-400 to-blue-600 opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-x-full group-hover:translate-x-0"></div>
-                            <div className="relative z-10 flex items-center justify-center">
-                              <div className="flex-shrink-0 mr-4">
-                                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                  <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
-                                    <path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z"/>
-                                    <path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z"/>
-                                    <path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z"/>
-                                    <path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z"/>
-                                  </g>
-                                </svg>
-                              </div>
-                              <span className="font-medium text-sm">{t.continueWithGoogle}</span>
-                            </div>
+                            <svg className="w-6 h-6" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                            </svg>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                              {t.continueWithGoogle}
+                            </span>
                           </button>
                         </div>
-                      </div>
 
-                      <div className="mt-6">
-                        <div className="text-center">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {t.noAccount}{" "}
-                              <Link
-                                href="/signup"
-                                className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
-                              >
-                                  {t.signUp}
-                              </Link>
-                          </p>
+                        <div className="mt-6">
+                          <div className="text-center">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                {t.noAccount}{" "}
+                                <Link
+                                  href="/signup"
+                                  className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
+                                >
+                                    {t.signUp}
+                                </Link>
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </>
