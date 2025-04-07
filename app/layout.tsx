@@ -114,7 +114,7 @@ export default function RootLayout({
     };
 
     // Solo ejecutar si no estamos en una página pública
-    const publicRoutes = ['/', '/login', '/signup'];
+    const publicRoutes = ['/', '/login', '/signup', '/confirm-email'];
     const isPublicPage = publicRoutes.includes(pathname);
     
     if (!isPublicPage && isAuthenticated) {
@@ -155,7 +155,7 @@ export default function RootLayout({
   };
 
   // Verificar si estamos en páginas públicas
-  const publicRoutes = ['/', '/login', '/signup'];
+  const publicRoutes = ['/', '/login', '/signup', '/confirm-email'];
   const isPublicPage = publicRoutes.includes(pathname);
 
   return (
