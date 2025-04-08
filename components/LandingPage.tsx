@@ -5,6 +5,9 @@ import { ArrowRight, Menu, X, Play, Check, Star, ArrowUp, Globe, ChevronDown, La
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence, useInView } from "framer-motion"
 import Image from "next/image";
+// @ts-ignore
+import { scaleTime, scaleLinear, line as d3line, max, area as d3area, curveMonotoneX } from "d3";
+import React from "react";
 
 // Estilos adicionales para animaciones
 const animationStyles = `
@@ -248,252 +251,521 @@ const languageFlags = {
   de: '/icons/flag-de.svg'
 }
 
-// Componente moderno y minimalista para la sección hero
-const ModernDashboardPreview = () => {
-  const [activeTab, setActiveTab] = useState(0);
+// Datos para el gráfico
+interface ChartData {
+  date: string;
+  value: number;
+}
+
+// Datos para los diferentes gráficos
+// Primer conjunto de datos (el existente)
+const dataset1: ChartData[] = [
+  { date: "2023-04-30", value: 4 },
+  { date: "2023-05-01", value: 6 },
+  { date: "2023-05-02", value: 8 },
+  { date: "2023-05-03", value: 7 },
+  { date: "2023-05-04", value: 10 },
+  { date: "2023-05-05", value: 12 },
+  { date: "2023-05-06", value: 10.5 },
+  { date: "2023-05-07", value: 6 },
+  { date: "2023-05-08", value: 8 },
+  { date: "2023-05-09", value: 7.5 },
+  { date: "2023-05-10", value: 6 },
+  { date: "2023-05-11", value: 8 },
+  { date: "2023-05-12", value: 9 },
+  { date: "2023-05-13", value: 10 },
+  { date: "2023-05-14", value: 17 },
+  { date: "2023-05-15", value: 14 },
+  { date: "2023-05-16", value: 15 },
+  { date: "2023-05-17", value: 20 },
+  { date: "2023-05-18", value: 18 },
+  { date: "2023-05-19", value: 16 },
+  { date: "2023-05-20", value: 15 },
+  { date: "2023-05-21", value: 16 },
+  { date: "2023-05-22", value: 13 },
+  { date: "2023-05-23", value: 11 },
+  { date: "2023-05-24", value: 11 },
+  { date: "2023-05-25", value: 13 },
+  { date: "2023-05-26", value: 12 },
+  { date: "2023-05-27", value: 9 },
+  { date: "2023-05-28", value: 8 },
+  { date: "2023-05-29", value: 10 },
+  { date: "2023-05-30", value: 11 },
+  { date: "2023-05-31", value: 8 },
+  { date: "2023-06-01", value: 9 },
+  { date: "2023-06-02", value: 10 },
+  { date: "2023-06-03", value: 12 },
+  { date: "2023-06-04", value: 13 },
+  { date: "2023-06-05", value: 15 },
+  { date: "2023-06-06", value: 13.5 },
+  { date: "2023-06-07", value: 13 },
+  { date: "2023-06-08", value: 13 },
+  { date: "2023-06-09", value: 14 },
+  { date: "2023-06-10", value: 13 },
+  { date: "2023-06-11", value: 12.5 },
+];
+
+// Segundo conjunto de datos (patrón diferente)
+const dataset2: ChartData[] = [
+  { date: "2023-04-30", value: 12 },
+  { date: "2023-05-01", value: 14 },
+  { date: "2023-05-02", value: 13 },
+  { date: "2023-05-03", value: 15 },
+  { date: "2023-05-04", value: 16 },
+  { date: "2023-05-05", value: 14 },
+  { date: "2023-05-06", value: 12 },
+  { date: "2023-05-07", value: 10 },
+  { date: "2023-05-08", value: 8 },
+  { date: "2023-05-09", value: 6 },
+  { date: "2023-05-10", value: 5 },
+  { date: "2023-05-11", value: 7 },
+  { date: "2023-05-12", value: 9 },
+  { date: "2023-05-13", value: 10 },
+  { date: "2023-05-14", value: 12 },
+  { date: "2023-05-15", value: 14 },
+  { date: "2023-05-16", value: 16 },
+  { date: "2023-05-17", value: 15 },
+  { date: "2023-05-18", value: 13 },
+  { date: "2023-05-19", value: 11 },
+  { date: "2023-05-20", value: 9 },
+  { date: "2023-05-21", value: 8 },
+  { date: "2023-05-22", value: 7 },
+  { date: "2023-05-23", value: 9 },
+  { date: "2023-05-24", value: 11 },
+  { date: "2023-05-25", value: 13 },
+  { date: "2023-05-26", value: 15 },
+  { date: "2023-05-27", value: 17 },
+  { date: "2023-05-28", value: 19 },
+  { date: "2023-05-29", value: 18 },
+  { date: "2023-05-30", value: 16 },
+  { date: "2023-05-31", value: 14 },
+  { date: "2023-06-01", value: 12 },
+  { date: "2023-06-02", value: 10 },
+  { date: "2023-06-03", value: 8 },
+  { date: "2023-06-04", value: 6 },
+  { date: "2023-06-05", value: 8 },
+  { date: "2023-06-06", value: 10 },
+  { date: "2023-06-07", value: 12 },
+  { date: "2023-06-08", value: 14 },
+  { date: "2023-06-09", value: 16 },
+  { date: "2023-06-10", value: 15 },
+  { date: "2023-06-11", value: 14 },
+];
+
+// Tercer conjunto de datos (otro patrón)
+const dataset3: ChartData[] = [
+  { date: "2023-04-30", value: 8 },
+  { date: "2023-05-01", value: 9 },
+  { date: "2023-05-02", value: 10 },
+  { date: "2023-05-03", value: 11 },
+  { date: "2023-05-04", value: 12 },
+  { date: "2023-05-05", value: 11 },
+  { date: "2023-05-06", value: 12 },
+  { date: "2023-05-07", value: 13 },
+  { date: "2023-05-08", value: 14 },
+  { date: "2023-05-09", value: 15 },
+  { date: "2023-05-10", value: 16 },
+  { date: "2023-05-11", value: 17 },
+  { date: "2023-05-12", value: 18 },
+  { date: "2023-05-13", value: 17 },
+  { date: "2023-05-14", value: 16 },
+  { date: "2023-05-15", value: 15 },
+  { date: "2023-05-16", value: 14 },
+  { date: "2023-05-17", value: 13 },
+  { date: "2023-05-18", value: 12 },
+  { date: "2023-05-19", value: 11 },
+  { date: "2023-05-20", value: 10 },
+  { date: "2023-05-21", value: 9 },
+  { date: "2023-05-22", value: 8 },
+  { date: "2023-05-23", value: 7 },
+  { date: "2023-05-24", value: 8 },
+  { date: "2023-05-25", value: 9 },
+  { date: "2023-05-26", value: 10 },
+  { date: "2023-05-27", value: 11 },
+  { date: "2023-05-28", value: 12 },
+  { date: "2023-05-29", value: 13 },
+  { date: "2023-05-30", value: 14 },
+  { date: "2023-05-31", value: 15 },
+  { date: "2023-06-01", value: 16 },
+  { date: "2023-06-02", value: 17 },
+  { date: "2023-06-03", value: 18 },
+  { date: "2023-06-04", value: 19 },
+  { date: "2023-06-05", value: 18 },
+  { date: "2023-06-06", value: 17 },
+  { date: "2023-06-07", value: 16 },
+  { date: "2023-06-08", value: 15 },
+  { date: "2023-06-09", value: 14 },
+  { date: "2023-06-10", value: 13 },
+  { date: "2023-06-11", value: 12 },
+];
+
+// Colores para los diferentes conjuntos de datos
+const chartColors = [
+  { 
+    areaFrom: "#0EA5E9", 
+    areaTo: "#0EA5E9", 
+    lineFrom: "#0EA5E9", 
+    lineTo: "#2563EB",
+    accentColor: "#38BDF8" 
+  },
+  { 
+    areaFrom: "#8B5CF6", 
+    areaTo: "#8B5CF6", 
+    lineFrom: "#8B5CF6", 
+    lineTo: "#D946EF",
+    accentColor: "#A78BFA" 
+  },
+  { 
+    areaFrom: "#10B981", 
+    areaTo: "#10B981", 
+    lineFrom: "#10B981", 
+    lineTo: "#059669",
+    accentColor: "#34D399" 
+  }
+];
+
+// Componente del gráfico de área
+function AreaChartSemiFilled(): React.ReactNode {
+  // Estado para controlar qué conjunto de datos mostrar
+  const [datasetIndex, setDatasetIndex] = useState(0);
+  const [previousDatasetIndex, setPreviousDatasetIndex] = useState(-1);
+  const [transitionEffect, setTransitionEffect] = useState(false);
   
-  const tabs = [
-    { name: 'Análisis', icon: '📊' },
-    { name: 'Señales', icon: '⚡' },
-    { name: 'Portfolio', icon: '📈' }
-  ];
+  // Elegir el conjunto de datos actual y el anterior
+  const dataSets = [dataset1, dataset2, dataset3];
+  const currentDataset = dataSets[datasetIndex];
+  const currentColors = chartColors[datasetIndex];
   
-  // Efecto para cambiar automáticamente las pestañas
+  const previousDataset = previousDatasetIndex >= 0 ? dataSets[previousDatasetIndex] : null;
+  const previousColors = previousDatasetIndex >= 0 ? chartColors[previousDatasetIndex] : null;
+  
+  // Estado para la animación
+  const [progress, setProgress] = useState(0);
+  
+  // Efecto para la animación con easing
   useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveTab((prev) => (prev + 1) % tabs.length);
-    }, 5000);
+    // Función de easing para una transición más natural (ease-out)
+    const easeOutQuad = (t: number): number => t * (2 - t);
     
-    return () => clearInterval(interval);
-  }, []);
+    const duration = 4000; // 4 segundos para una animación más lenta y natural
+    const interval = 16; // ~60fps para una animación muy fluida
+    const steps = duration / interval;
+    let currentStep = 0;
+    
+    const timer = setInterval(() => {
+      currentStep += 1;
+      const rawProgress = Math.min(currentStep / steps, 1);
+      // Aplicar función de easing para una transición más natural
+      setProgress(easeOutQuad(rawProgress));
+      
+      if (currentStep >= steps) {
+        clearInterval(timer);
+        
+        // Mostrar efecto de transición
+        setTransitionEffect(true);
+        
+        // Cuando termina la animación, cambiar al siguiente conjunto de datos
+        setTimeout(() => {
+          setPreviousDatasetIndex(datasetIndex);
+          setDatasetIndex((prevIndex) => (prevIndex + 1) % dataSets.length);
+          setProgress(0); // Reiniciar el progreso
+          setTransitionEffect(false);
+        }, 300); // Pequeña pausa entre animaciones
+      }
+    }, interval);
+    
+    return () => clearInterval(timer);
+  }, [datasetIndex]);
+
+  // Convertir fechas de string a objeto Date para el conjunto actual
+  interface DataPoint {
+    date: Date;
+    value: number;
+  }
+  
+  const data: DataPoint[] = currentDataset.map((d: ChartData) => ({ 
+    ...d, 
+    date: new Date(d.date) 
+  }));
+  
+  // Convertir fechas de string a objeto Date para el conjunto anterior si existe
+  const previousData: DataPoint[] | null = previousDataset 
+    ? previousDataset.map((d: ChartData) => ({ 
+        ...d, 
+        date: new Date(d.date) 
+      }))
+    : null;
+
+  // Configurar escalas para el conjunto actual
+  const xScale = scaleTime()
+    .domain([data[0].date, data[data.length - 1].date])
+    .range([0, 100]);
+
+  const yScale = scaleLinear()
+    .domain([0, max(data.map((d: DataPoint) => d.value)) ?? 0])
+    .range([98, 10]); // Ajustar para dejar espacio arriba y abajo
+    
+  // Configurar escalas para el conjunto anterior (usando las mismas para mantener consistencia)
+  const previousYScale = previousData 
+    ? scaleLinear()
+        .domain([0, max(previousData.map((d: DataPoint) => d.value)) ?? 0])
+        .range([98, 10])
+    : null;
+
+  // Función para dividir los datos en segmentos para controlar mejor la animación
+  const getAnimatedData = () => {
+    if (progress >= 1) return data;
+    
+    // Calcular el índice máximo basado en el progreso actual
+    const maxIndex = Math.floor(data.length * progress);
+    
+    // Incluir un punto adicional con interpolación para suavizar la transición
+    if (maxIndex < data.length - 1) {
+      const nextPoint = data[maxIndex + 1];
+      const currentPoint = data[maxIndex];
+      const segmentProgress = (data.length * progress) - maxIndex;
+      
+      // Crear un punto interpolado para una transición más suave
+      const interpolatedDate = new Date(
+        currentPoint.date.getTime() + 
+        segmentProgress * (nextPoint.date.getTime() - currentPoint.date.getTime())
+      );
+      
+      const interpolatedValue = 
+        currentPoint.value + 
+        segmentProgress * (nextPoint.value - currentPoint.value);
+      
+      // Devolver los datos actuales más el punto interpolado
+      return [
+        ...data.slice(0, maxIndex + 1),
+        { date: interpolatedDate, value: interpolatedValue }
+      ];
+    }
+    
+    return data.slice(0, maxIndex + 1);
+  };
+  
+  // Función para el gráfico anterior que se va "borrando" de forma más precisa
+  const getFadingData = () => {
+    if (!previousData || progress <= 0) return null;
+    
+    // Obtener el índice exacto donde se está dibujando el nuevo gráfico
+    const currentIndexProgress = data.length * progress;
+    
+    // Mapear ese índice al rango del gráfico anterior para asegurar alineación perfecta
+    const fadeStartIndexRatio = currentIndexProgress / data.length;
+    const fadeStartIndex = Math.ceil(previousData.length * fadeStartIndexRatio);
+    
+    if (fadeStartIndex >= previousData.length) return null;
+    
+    // Para una transición más suave, incluir un punto de interpolación en el borde de corte
+    if (fadeStartIndex > 0 && fadeStartIndex < previousData.length) {
+      const fadeRatio = (previousData.length * fadeStartIndexRatio) - (fadeStartIndex - 1);
+      
+      if (fadeRatio > 0 && fadeRatio < 1) {
+        const prevPoint = previousData[fadeStartIndex - 1];
+        const currPoint = previousData[fadeStartIndex];
+        
+        // Interpolar un punto en el borde exacto
+        const interpolatedDate = new Date(
+          prevPoint.date.getTime() + 
+          fadeRatio * (currPoint.date.getTime() - prevPoint.date.getTime())
+        );
+        
+        const interpolatedValue = 
+          prevPoint.value + 
+          fadeRatio * (currPoint.value - prevPoint.value);
+        
+        // Devolver los datos que deben seguir visibles más el punto interpolado
+        return [
+          { date: interpolatedDate, value: interpolatedValue },
+          ...previousData.slice(fadeStartIndex)
+        ];
+      }
+    }
+    
+    return previousData.slice(fadeStartIndex);
+  };
+
+  // Obtener los datos actuales basados en la animación
+  const currentAnimatedData = getAnimatedData();
+  const fadingData = getFadingData();
+
+  // Crear la línea para el conjunto actual
+  const line = d3line<DataPoint>()
+    .x((d: DataPoint) => xScale(d.date))
+    .y((d: DataPoint) => yScale(d.value))
+    .curve(curveMonotoneX);
+
+  // Crear el área para el conjunto actual
+  const area = d3area<DataPoint>()
+    .x((d: DataPoint) => xScale(d.date))
+    .y0(yScale(0))
+    .y1((d: DataPoint) => yScale(d.value))
+    .curve(curveMonotoneX);
+    
+  // Crear la línea para el conjunto anterior
+  const previousLine = previousData && previousYScale
+    ? d3line<DataPoint>()
+        .x((d: DataPoint) => xScale(d.date))
+        .y((d: DataPoint) => previousYScale(d.value))
+        .curve(curveMonotoneX)
+    : null;
+    
+  // Crear el área para el conjunto anterior
+  const previousArea = previousData && previousYScale
+    ? d3area<DataPoint>()
+        .x((d: DataPoint) => xScale(d.date))
+        .y0(previousYScale(0))
+        .y1((d: DataPoint) => previousYScale(d.value))
+        .curve(curveMonotoneX)
+    : null;
+
+  const areaPath = area(currentAnimatedData) ?? undefined;
+  const d = line(currentAnimatedData);
+  
+  const fadingAreaPath = fadingData && previousArea ? previousArea(fadingData) : undefined;
+  const fadingD = fadingData && previousLine ? previousLine(fadingData) : undefined;
+
+  if (!d) {
+    return null;
+  }
 
   return (
-    <div className="relative w-full h-full bg-gradient-to-br from-gray-950 to-gray-900 rounded-xl overflow-hidden">
-      {/* Header con navegación */}
-      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-800">
-        <div className="flex items-center space-x-2">
-          <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:shadow-cyan-500/20 dark:group-hover:shadow-cyan-400/20">
-            <span className="text-xl text-white font-bold">MT</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
-            Mulfex Trader
-            </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">Trading Inteligente</span>
+    <div className="relative h-full w-full">
+      <div className="absolute inset-0 h-full w-full">
+        {/* Patrones de fondo */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="h-full w-full grid grid-cols-10 gap-0">
+            {Array.from({ length: 200 }).map((_, i) => (
+              <div key={i} className="border-r border-t border-gray-400 dark:border-gray-600"></div>
+            ))}
           </div>
         </div>
         
-        <div className="flex items-center space-x-1">
-          {tabs.map((tab, idx) => (
-            <button 
-              key={idx}
-              onClick={() => setActiveTab(idx)}
-              className={`px-4 py-2 rounded-lg transition-all duration-300 ${
-                activeTab === idx 
-                  ? 'bg-gray-800 text-white' 
-                  : 'text-gray-400 hover:text-gray-300'
-              }`}
-            >
-              <span className="flex items-center">
-                <span className="mr-2">{tab.icon}</span>
-                <span>{tab.name}</span>
-              </span>
-            </button>
-          ))}
-        </div>
-        
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
-            <span className="text-cyan-500">👤</span>
-        </div>
-          <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center relative">
-            <span className="text-gray-400">🔔</span>
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-cyan-500 rounded-full"></span>
-        </div>
-        </div>
-      </div>
-      
-      {/* Contenido principal */}
-      <div className="grid grid-cols-3 gap-5 p-6 h-[calc(100%-70px)]">
-        {/* Panel izquierdo */}
-        <div className="col-span-2 space-y-5">
-        {/* Gráfico principal */}
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5 h-[220px] relative overflow-hidden">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-white font-medium">BTC/USDT</h3>
-              <span className="text-green-400 font-medium">$61,274.50 <span className="text-green-500">+2.4%</span></span>
-          </div>
-          
-            {/* Representación del gráfico con gradiente y línea */}
-            <div className="absolute bottom-0 left-0 right-0 h-[140px]">
-              {/* Área de gradiente bajo la línea */}
-              <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/20 to-transparent"></div>
-              
-              {/* Línea del gráfico */}
-          <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-            <path 
-                  d="M0,100 C30,80 60,110 90,70 C120,30 150,60 180,40 C210,20 240,50 270,30 C300,10 330,40 360,20" 
-                  stroke="url(#grad1)" 
-                  strokeWidth="3"
-              fill="none" 
-                  strokeLinecap="round"
-                />
-                <defs>
-                  <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#06b6d4" />
-                    <stop offset="100%" stopColor="#3b82f6" />
+        {/* Chart area */}
+        <svg
+          viewBox="0 0 100 100"
+          className="w-full h-full"
+          preserveAspectRatio="none"
+        >
+          {/* Área */}
+          <defs>
+            {/* Definición del gradiente vertical actual */}
+            <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor={currentColors.areaFrom} stopOpacity="0.3" />
+              <stop offset="100%" stopColor={currentColors.areaTo} stopOpacity="0.02" />
+            </linearGradient>
+            
+            {/* Definición del gradiente para la línea actual */}
+            <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor={currentColors.lineFrom} />
+              <stop offset="100%" stopColor={currentColors.lineTo} />
+            </linearGradient>
+            
+            {/* Definición del gradiente vertical anterior */}
+            {previousColors && (
+              <linearGradient id="previousAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor={previousColors.areaFrom} stopOpacity="0.3" />
+                <stop offset="100%" stopColor={previousColors.areaTo} stopOpacity="0.02" />
+              </linearGradient>
+            )}
+            
+            {/* Definición del gradiente para la línea anterior */}
+            {previousColors && (
+              <linearGradient id="previousLineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor={previousColors.lineFrom} />
+                <stop offset="100%" stopColor={previousColors.lineTo} />
                   </linearGradient>
-                </defs>
-          </svg>
-          
-              {/* Puntos de datos */}
-              <div className="absolute bottom-[70px] left-[180px] w-4 h-4 bg-white rounded-full shadow-lg shadow-cyan-500/30 border-2 border-cyan-500"></div>
-            </div>
+            )}
             
-            {/* Indicadores de intervalo de tiempo */}
-            <div className="absolute bottom-4 left-5 flex items-center space-x-2 text-xs">
-              <span className="px-3 py-1 bg-cyan-500 text-white rounded-md">1H</span>
-              <span className="px-3 py-1 bg-gray-700 text-gray-300 rounded-md">1D</span>
-              <span className="px-3 py-1 bg-gray-700 text-gray-300 rounded-md">1W</span>
-              <span className="px-3 py-1 bg-gray-700 text-gray-300 rounded-md">1M</span>
-            </div>
+            {/* Filtro de brillo para la línea */}
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="1.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
             
-            {/* Indicador de IA */}
-            <div className="absolute top-5 right-5 px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-lg text-purple-400 text-xs flex items-center">
-              <span className="mr-1">IA</span>
-              <span className="inline-block w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
-            </div>
-          </div>
+            {/* Máscara para crear un efecto de corte más preciso entre los gráficos */}
+            <mask id="graphMask">
+              <rect x="0" y="0" width={`${progress * 100}%`} height="100" fill="white" />
+            </mask>
+            
+            <mask id="fadeGraphMask">
+              <rect x={`${progress * 100}%`} y="0" width={`${100 - (progress * 100)}%`} height="100" fill="white" />
+            </mask>
+          </defs>
           
-          {/* Sección de señales y alertas */}
-          <div className="grid grid-cols-2 gap-5">
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5">
-              <h3 className="text-gray-300 text-sm mb-3 flex items-center">
-                <span className="mr-2">⚡</span>
-                <span>Señales en Vivo</span>
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3 p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-white text-sm">Compra - BTC (4h)</span>
-                  <span className="text-green-400 text-xs ml-auto">+2.4%</span>
-          </div>
-                <div className="flex items-center space-x-3 p-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  <span className="text-white text-sm">Venta - ETH (1h)</span>
-                  <span className="text-red-400 text-xs ml-auto">-1.2%</span>
-          </div>
-          </div>
+          {/* Gráfico anterior que se está desvaneciendo */}
+          {fadingAreaPath && (
+            <path 
+              d={fadingAreaPath} 
+              fill="url(#previousAreaGradient)" 
+              mask="url(#fadeGraphMask)"
+              className="transition-opacity duration-300"
+            />
+          )}
+          
+          {fadingD && (
+            <path
+              d={fadingD}
+              fill="none"
+              stroke="url(#previousLineGradient)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+              filter="url(#glow)"
+              mask="url(#fadeGraphMask)"
+              className="transition-opacity duration-300"
+            />
+          )}
+          
+          {/* Área bajo la curva actual */}
+          <path 
+            d={areaPath} 
+            fill="url(#areaGradient)" 
+            mask="url(#graphMask)"
+            className="transition-all duration-300"
+          />
+          
+          {/* Línea principal con efecto de brillo */}
+          <path
+            d={d}
+            fill="none"
+            stroke="url(#lineGradient)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+            filter="url(#glow)"
+            mask="url(#graphMask)"
+            className="transition-all duration-300"
+          />
+          
+          {/* Efecto de flash en toda la pantalla durante la transición entre gráficos */}
+          <rect 
+            x="0" 
+            y="0" 
+            width="100" 
+            height="100" 
+            fill="white" 
+            className={`transition-opacity duration-300 ${transitionEffect ? 'opacity-10' : 'opacity-0'}`} 
+          />
+        </svg>
+            </div>
         </div>
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5">
-              <h3 className="text-gray-300 text-sm mb-3 flex items-center">
-                <span className="mr-2">🔄</span>
-                <span>Operaciones Recientes</span>
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center p-2 border border-gray-700 rounded-lg">
-                  <span className="text-white text-sm">BTC</span>
-                  <span className="text-gray-400 mx-2 text-xs">0.034</span>
-                  <span className="text-green-400 text-xs ml-auto">$2,083.33</span>
-            </div>
-                <div className="flex items-center p-2 border border-gray-700 rounded-lg">
-                  <span className="text-white text-sm">ETH</span>
-                  <span className="text-gray-400 mx-2 text-xs">1.25</span>
-                  <span className="text-red-400 text-xs ml-auto">$3,456.78</span>
-              </div>
-              </div>
-              </div>
-              </div>
-              </div>
-        
-        {/* Panel derecho */}
-        <div className="space-y-5">
-          {/* Panel de Rendimiento */}
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5">
-            <h3 className="text-gray-300 text-sm mb-3">Rendimiento</h3>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-gray-400 text-xs">Hoy</span>
-              <span className="text-green-400 font-medium">+$1,240.50</span>
-              </div>
-            
-            {/* Gráfico circular */}
-            <div className="relative w-full h-[100px] flex items-center justify-center">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-20 h-20 rounded-full border-[6px] border-gray-700"></div>
-                <div className="absolute w-20 h-20 rounded-full border-[6px] border-transparent border-t-cyan-500 border-r-cyan-500 transform rotate-45"></div>
-            </div>
-              <div className="text-white text-xl font-bold">78%</div>
-          </div>
-          
-            <div className="flex justify-between mt-3 text-xs">
-              <div className="text-center">
-                <p className="text-gray-400">Ganancia</p>
-                <p className="text-white font-medium">+12.4%</p>
-              </div>
-              <div className="text-center">
-                <p className="text-gray-400">Éxito</p>
-                <p className="text-white font-medium">24/31</p>
-              </div>
-              <div className="text-center">
-                <p className="text-gray-400">Tiempo</p>
-                <p className="text-white font-medium">-40%</p>
-              </div>
-              </div>
-              </div>
-          
-          {/* Panel IA */}
-          <div className="bg-gradient-to-br from-purple-900/30 to-purple-600/10 backdrop-blur-sm rounded-xl p-5 border border-purple-500/20">
-            <h3 className="text-purple-300 text-sm mb-3 flex items-center">
-              <span className="mr-2">🧠</span>
-              <span>Análisis IA</span>
-            </h3>
-            <p className="text-gray-300 text-sm">El mercado muestra señales alcistas para BTC en las próximas 4 horas.</p>
-            <div className="mt-3 flex items-center">
-              <span className="text-xs text-gray-400">Confianza:</span>
-              <div className="ml-2 h-2 flex-1 bg-gray-700 rounded-full overflow-hidden">
-                <div className="h-full w-4/5 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full"></div>
-            </div>
-              <span className="ml-2 text-xs text-white">82%</span>
-        </div>
-      </div>
-      
-          {/* Panel de Tendencias */}
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5">
-            <h3 className="text-gray-300 text-sm mb-3">Tendencias</h3>
-            <div className="space-y-2">
-            <div className="flex items-center">
-                <span className="text-gray-200 text-sm mr-3">BTC</span>
-                <div className="h-1.5 flex-1 bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full w-4/5 bg-green-500 rounded-full"></div>
+  );
+}
+
+// Componente moderno y minimalista para la sección hero
+const ModernDashboardPreview = () => {
+  return (
+    <div className="relative w-full h-[600px] bg-gray-950 rounded-xl overflow-hidden shadow-md border border-gray-800">
+      {/* Área principal con el gráfico */}
+      <div className="absolute inset-0">
+        <AreaChartSemiFilled />
                 </div>
-                <span className="ml-3 text-green-400 text-xs">+80%</span>
-            </div>
-            <div className="flex items-center">
-                <span className="text-gray-200 text-sm mr-3">ETH</span>
-                <div className="h-1.5 flex-1 bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full w-3/5 bg-green-500 rounded-full"></div>
-                </div>
-                <span className="ml-3 text-green-400 text-xs">+60%</span>
-            </div>
-            <div className="flex items-center">
-                <span className="text-gray-200 text-sm mr-3">SOL</span>
-                <div className="h-1.5 flex-1 bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full w-1/5 bg-red-500 rounded-full"></div>
-            </div>
-                <span className="ml-3 text-red-400 text-xs">-20%</span>
-          </div>
-        </div>
-            </div>
-            </div>
-            </div>
-      
-      {/* Efectos decorativos */}
-      <div className="absolute top-20 right-20 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-10 left-10 w-40 h-40 bg-purple-500/10 rounded-full blur-2xl"></div>
-      
-      {/* Reflejos de luz */}
-      <div className="absolute top-0 left-1/4 w-px h-20 bg-gradient-to-b from-cyan-500/0 via-cyan-500/50 to-cyan-500/0"></div>
-      <div className="absolute top-1/3 right-1/3 w-px h-20 bg-gradient-to-b from-purple-500/0 via-purple-500/30 to-purple-500/0"></div>
           </div>
   );
 };
@@ -1313,7 +1585,7 @@ export default function LandingPage() {
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
-                Mulfex Trader
+            Mulfex Trader
               </span>
                 <span className="text-xs text-gray-500 dark:text-gray-400">Trading Inteligente</span>
               </div>
@@ -1680,8 +1952,8 @@ export default function LandingPage() {
                   <span className="relative inline-block mt-2">
                   Mulfex Trader
                     <div className="absolute -bottom-3 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"></div>
-                  </span>
-                </h1>
+                </span>
+              </h1>
                 
                 <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-xl mx-auto lg:mx-0">
                 {t.hero.subtitle}

@@ -88,9 +88,6 @@ export default function RootLayout({
   const pathname = usePathname();
   const { user, isAuthenticated, loading } = useSupabaseAuth();
 
-  // Definir las rutas públicas una sola vez al inicio del componente
-  const publicRoutes = ['/', '/login', '/signup', '/confirm-email', '/reset-password'];
-
   // Efecto para detectar scroll
   useEffect(() => {
     const handleScroll = () => {
@@ -117,6 +114,7 @@ export default function RootLayout({
     };
 
     // Solo ejecutar si no estamos en una página pública
+    const publicRoutes = ['/', '/login', '/signup'];
     const isPublicPage = publicRoutes.includes(pathname);
     
     if (!isPublicPage && isAuthenticated) {
@@ -157,6 +155,7 @@ export default function RootLayout({
   };
 
   // Verificar si estamos en páginas públicas
+  const publicRoutes = ['/', '/login', '/signup'];
   const isPublicPage = publicRoutes.includes(pathname);
 
   return (
@@ -195,10 +194,10 @@ export default function RootLayout({
                       </div>
                       <div className={`transition-all duration-300 transform whitespace-nowrap ${isMobileMenuOpen ? 'opacity-100 lg:opacity-0 lg:group-hover:opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                         <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">
-                          Mulfex Trader
+                          TradingDash
                         </h1>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          Plataforma de Trading
+                          Panel de Control
                         </p>
                       </div>
                     </div>

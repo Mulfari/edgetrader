@@ -174,47 +174,47 @@ function ConfirmEmailContent() {
           {/* Elementos decorativos de fondo */}
           <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-700/25 bg-[size:20px_20px] opacity-[0.05] rounded-tl-[40px] rounded-bl-[40px]"></div>
 
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
             className="w-full max-w-md space-y-8 relative"
-          >
+      >
             <div className="text-center space-y-6">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                className="mx-auto"
-              >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            className="mx-auto"
+          >
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full blur-xl opacity-50"></div>
                   <div className="relative bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full p-4 w-20 h-20 mx-auto flex items-center justify-center">
                     <CheckCircle className="h-10 w-10 text-white" />
                   </div>
                 </div>
-              </motion.div>
-              
+          </motion.div>
+          
               <div className="space-y-2">
                 <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">
                   {t.emailConfirmed}
-                </h2>
-                
+          </h2>
+          
                 <p className="text-base text-gray-600 dark:text-gray-400">
                   {t.emailVerified}
-                </p>
+          </p>
               </div>
-              
+          
               <div className="space-y-4">
                 <p className="text-sm text-gray-500 dark:text-gray-500">
                   {t.redirectingIn} {countdown} {t.seconds}
-                </p>
+          </p>
 
-                <button
-                  onClick={handleManualRedirect}
+          <button
+            onClick={handleManualRedirect}
                   className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25"
-                >
+          >
                   {t.clickHere}
-                </button>
+          </button>
               </div>
             </div>
           </motion.div>
