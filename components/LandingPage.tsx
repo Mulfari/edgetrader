@@ -390,22 +390,22 @@ export default function LandingPage() {
       },
       testimonials: {
         title: "Lo que dicen nuestros usuarios",
-        subtitle: "Traders que han transformado sus resultados con TradingDash",
+        subtitle: "Traders que han transformado sus resultados",
         items: [
           {
             name: "Juan Pérez",
             role: "Trader Profesional",
-            quote: "TradingDash ha revolucionado completamente mi forma de operar. ¡Altamente recomendado!"
+            quote: "La herramienta para traders de Mulfex ha revolucionado completamente mi forma de operar."
           },
           {
             name: "María García",
             role: "Gestora de Fondos",
-            quote: "Las características que ofrece TradingDash son incomparables. Es un cambio radical para nuestro equipo."
+            quote: "Las características que ofrece Mulfex Trader son incomparables. Es un cambio radical para nuestro equipo."
           },
           {
             name: "Carlos Rodríguez",
             role: "Analista de Mercados",
-            quote: "No puedo imaginar gestionar mis operaciones sin TradingDash. Es intuitivo y potente."
+            quote: "No puedo imaginar gestionar mis operaciones sin Mulfex Trader. Es intuitivo y potente."
           }
         ],
         closeButton: "Cerrar"
@@ -439,24 +439,20 @@ export default function LandingPage() {
         subtitle: "Resolvemos tus dudas para que comiences con confianza",
         items: [
           {
-            question: "¿Qué es TradingDash?",
-            answer: "TradingDash es una plataforma integral de trading que combina análisis técnico avanzado, señales en tiempo real y gestión de riesgo automatizada para optimizar tus operaciones."
+            question: "¿Qué es Mulfex?",
+            answer: "Mulfex es una plataforma integral de trading que combina análisis técnico avanzado, señales en tiempo real y gestión de riesgo automatizada para optimizar tus operaciones."
           },
           {
             question: "¿Cómo funciona el sistema de precios?",
-            answer: "Ofrecemos planes flexibles que se adaptan a diferentes niveles de trading. Los planes comienzan desde 29€/mes para funciones básicas, con soluciones personalizadas para enterprise."
-          },
-          {
-            question: "¿Ofrecen un periodo de prueba gratuito?",
-            answer: "Sí, ofrecemos un periodo de prueba gratuito en todos nuestros planes. No se requiere tarjeta de crédito para comenzar."
-          },
-          {
-            question: "¿Cuántos días incluye la prueba gratuita?",
-            answer: "Nuestra prueba gratuita incluye acceso completo a todas las funcionalidades premium de la plataforma."
+            answer: "Es bajo suscripción, pero ofrecemos una versión demo gratuita temporal para que puedas probar todas las funcionalidades antes de decidirte."
           },
           {
             question: "¿Puedo cancelar mi suscripción en cualquier momento?",
-            answer: "Puedes cancelar tu suscripción cuando quieras. No creemos en contratos a largo plazo ni en cargos ocultos."
+            answer: "Puedes cancelar tu suscripción cuando quieras. No creemos en contratos a largo plazo ni en cargos ocultos.",
+          },
+          {
+            question: "¿Tienes alguna otra pregunta?",
+            answer: "¿Tienes alguna otra pregunta? Puedes contactarnos para obtener más información."
           }
         ],
         moreQuestions: "¿Tienes alguna otra pregunta?",
@@ -623,20 +619,20 @@ export default function LandingPage() {
         subtitle: "We solve your doubts so you can start with confidence",
         items: [
           {
-            question: "What is TradingDash?",
-            answer: "TradingDash is a comprehensive trading platform that combines advanced technical analysis, real-time signals, and automated risk management to optimize your operations."
+            question: "What is Mulfex?",
+            answer: "Mulfex is a comprehensive trading platform that combines advanced technical analysis, real-time signals, and automated risk management to optimize your operations."
           },
           {
             question: "How does the pricing system work?",
-            answer: "We offer flexible plans that adapt to different trading levels. Plans start from €29/month for basic features, with custom solutions for enterprise."
-          },
-          {
-            question: "Is there a free trial?",
-            answer: "Yes, we offer a free trial on all our plans. No credit card required to start."
+            answer: "It's a subscription-based platform, but we offer a temporary free demo version so you can try all the features before making a decision."
           },
           {
             question: "Can I cancel my subscription at any time?",
             answer: "You can cancel your subscription whenever you want. We don't believe in long-term contracts or hidden charges."
+          },
+          {
+            question: "Is there a free trial?",
+            answer: "Yes, we offer a free trial for all our plans. No credit card required to start."
           }
         ],
         moreQuestions: "Do you have any other questions?",
@@ -759,17 +755,17 @@ export default function LandingPage() {
           {
             name: "Hans Schmidt",
             role: "Professioneller Trader",
-            quote: "TradingDash hat meine Art zu handeln komplett revolutioniert. Sehr empfehlenswert!"
+            quote: "Das Trading-Tool von Mulfex hat meine Art zu handeln komplett revolutioniert."
           },
           {
             name: "Maria Weber",
             role: "Fondsmanagerin",
-            quote: "Die Funktionen von TradingDash sind unvergleichlich. Ein echter Durchbruch für unser Team."
+            quote: "Die Funktionen von Mulfex Trader sind unvergleichlich. Ein echter Durchbruch für unser Team."
           },
           {
             name: "Karl Fischer",
             role: "Marktanalyst",
-            quote: "Ich kann mir nicht vorstellen, meine Operationen ohne TradingDash zu verwalten. Es ist intuitiv und leistungsstark."
+            quote: "Ich kann mir nicht vorstellen, meine Operationen ohne Mulfex Trader zu verwalten. Es ist intuitiv und leistungsstark."
           }
         ],
         closeButton: "Schließen"
@@ -803,24 +799,20 @@ export default function LandingPage() {
         subtitle: "Wir lösen Ihre Zweifel, damit Sie mit Vertrauen beginnen können",
         items: [
           {
-            question: "Was ist TradingDash?",
-            answer: "TradingDash ist eine umfassende Handelsplattform, die fortschrittliche technische Analyse, Echtzeit-Signale und automatisiertes Risikomanagement kombiniert, um Ihre Operationen zu optimieren."
+            question: "Was ist Mulfex?",
+            answer: "Mulfex ist eine umfassende Handelsplattform, die fortschrittliche technische Analyse, Echtzeit-Signale und automatisiertes Risikomanagement kombiniert, um Ihre Operationen zu optimieren."
           },
           {
             question: "Wie funktioniert das Preissystem?",
-            answer: "Wir bieten flexible Pläne, die sich an verschiedene Handelsstufen anpassen. Die Pläne beginnen bei 29€/Monat für Basisfunktionen, mit individuellen Lösungen für Unternehmen."
-          },
-          {
-            question: "Gibt es eine kostenlose Testversion?",
-            answer: "Ja, wir bieten eine kostenlose Testversion für alle unsere Pläne an. Keine Kreditkarte erforderlich zum Start."
-          },
-          {
-            question: "Wie viele Tage umfasst die kostenlose Testversion?",
-            answer: "Unsere kostenlose Testversion umfasst Zugang zu allen Premium-Funktionen der Plattform."
+            answer: "Es ist ein Abonnement-basiertes System, aber wir bieten eine temporäre kostenlose Demo-Version an, damit Sie alle Funktionen testen können, bevor Sie eine Entscheidung treffen."
           },
           {
             question: "Kann ich mein Abonnement jederzeit kündigen?",
             answer: "Sie können Ihr Abonnement jederzeit kündigen. Wir glauben nicht an langfristige Verträge oder versteckte Gebühren."
+          },
+          {
+            question: "Gibt es eine kostenlose Testversion?",
+            answer: "Ja, wir bieten eine kostenlose Testversion für alle unsere Pläne an. Keine Kreditkarte erforderlich zum Start."
           }
         ],
         moreQuestions: "Haben Sie weitere Fragen?",
@@ -902,21 +894,21 @@ export default function LandingPage() {
     {
       name: "Juan Pérez",
       role: "Trader Profesional",
-      quote: "TradingDash ha revolucionado completamente mi forma de operar. ¡Altamente recomendado!",
+      quote: "La herramienta para traders de Mulfex ha revolucionado completamente mi forma de operar.",
       avatar: "/placeholder.svg",
       rating: 5,
     },
     {
       name: "María García",
       role: "Gestora de Fondos",
-      quote: "Las características que ofrece TradingDash son incomparables. Es un cambio radical para nuestro equipo.",
+      quote: "Las características que ofrece Mulfex Trader son incomparables. Es un cambio radical para nuestro equipo.",
       avatar: "/placeholder.svg",
       rating: 5,
     },
     {
       name: "Carlos Rodríguez",
       role: "Analista de Mercados",
-      quote: "No puedo imaginar gestionar mis operaciones sin TradingDash. Es intuitivo y potente.",
+      quote: "No puedo imaginar gestionar mis operaciones sin Mulfex Trader. Es intuitivo y potente.",
       avatar: "/placeholder.svg",
       rating: 4,
     },
@@ -940,25 +932,21 @@ export default function LandingPage() {
 
   const faqItems = [
     {
-      question: "¿Qué es TradingDash?",
-      answer: "TradingDash es una plataforma integral de trading que combina análisis técnico avanzado, señales en tiempo real y gestión de riesgo automatizada para optimizar tus operaciones.",
+      question: "¿Qué es Mulfex?",
+      answer: "Mulfex es una plataforma integral de trading que combina análisis técnico avanzado, señales en tiempo real y gestión de riesgo automatizada para optimizar tus operaciones.",
     },
     {
       question: "¿Cómo funciona el sistema de precios?",
-      answer: "Ofrecemos planes flexibles que se adaptan a diferentes niveles de trading. Los planes comienzan desde 29€/mes para funciones básicas, con soluciones personalizadas para enterprise.",
-    },
-    {
-      question: "¿Ofrecen un periodo de prueba gratuito?",
-      answer: "Sí, ofrecemos un periodo de prueba gratuito en todos nuestros planes. No se requiere tarjeta de crédito para comenzar.",
-    },
-    {
-      question: "¿Cuántos días incluye la prueba gratuita?",
-      answer: "Nuestra prueba gratuita incluye acceso completo a todas las funcionalidades premium de la plataforma.",
+      answer: "Es bajo suscripción, pero ofrecemos una versión demo gratuita temporal para que puedas probar todas las funcionalidades antes de decidirte."
     },
     {
       question: "¿Puedo cancelar mi suscripción en cualquier momento?",
       answer: "Puedes cancelar tu suscripción cuando quieras. No creemos en contratos a largo plazo ni en cargos ocultos.",
     },
+    {
+      question: "¿Tienes alguna otra pregunta?",
+      answer: "¿Tienes alguna otra pregunta? Puedes contactarnos para obtener más información."
+    }
   ]
 
   return (
@@ -1709,10 +1697,10 @@ export default function LandingPage() {
                       <div className="absolute inset-4 bg-gradient-to-br from-white/30 to-white/10 rounded-full animate-pulse-glow animation-delay-1000"></div>
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="bg-white/95 backdrop-blur-md text-cyan-600 rounded-2xl w-32 h-32 flex flex-col items-center justify-center shadow-lg transform -rotate-6 hover:rotate-0 transition-transform duration-300">
-                          <span className="text-3xl font-extrabold">14</span>
+                          <span className="text-2xl font-extrabold">DEMO</span>
                           <span className="text-sm font-medium mt-1">{t.cta.daysFreeTrial}</span>
                           <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-lg shadow-md transform rotate-12">
-                            ¡AHORA!
+                            ¡GRATIS!
                           </div>
                         </div>
                       </div>
@@ -1764,10 +1752,10 @@ export default function LandingPage() {
                       <div className="absolute inset-4 bg-gradient-to-br from-white/30 to-white/10 rounded-full animate-pulse-glow animation-delay-1000"></div>
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="bg-white/95 backdrop-blur-md text-cyan-600 rounded-2xl w-32 h-32 flex flex-col items-center justify-center shadow-lg transform -rotate-6 hover:rotate-0 transition-transform duration-300">
-                          <span className="text-3xl font-extrabold">14</span>
+                          <span className="text-2xl font-extrabold">DEMO</span>
                           <span className="text-sm font-medium mt-1">{t.cta.daysFreeTrial}</span>
                           <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-lg shadow-md transform rotate-12">
-                            ¡AHORA!
+                            ¡GRATIS!
                           </div>
                         </div>
                       </div>

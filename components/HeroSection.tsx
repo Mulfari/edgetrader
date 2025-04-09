@@ -290,7 +290,7 @@ const HeroSection = ({ t }: HeroSectionProps) => {
               </div>
               <div className="glass-card rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">87%</div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Mejora en resultados</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">{t.hero.resultsImprovement}</p>
               </div>
             </div>
           </motion.div>
