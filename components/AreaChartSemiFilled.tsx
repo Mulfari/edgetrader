@@ -64,53 +64,6 @@ const dataset1: ChartData[] = [
   { date: "2023-06-11", value: 12.5 },
 ];
 
-// Segundo conjunto de datos (patrón diferente)
-const dataset2: ChartData[] = [
-  { date: "2023-04-30", value: 12 },
-  { date: "2023-05-01", value: 14 },
-  { date: "2023-05-02", value: 13 },
-  { date: "2023-05-03", value: 15 },
-  { date: "2023-05-04", value: 16 },
-  { date: "2023-05-05", value: 14 },
-  { date: "2023-05-06", value: 12 },
-  { date: "2023-05-07", value: 10 },
-  { date: "2023-05-08", value: 8 },
-  { date: "2023-05-09", value: 6 },
-  { date: "2023-05-10", value: 5 },
-  { date: "2023-05-11", value: 7 },
-  { date: "2023-05-12", value: 9 },
-  { date: "2023-05-13", value: 10 },
-  { date: "2023-05-14", value: 12 },
-  { date: "2023-05-15", value: 14 },
-  { date: "2023-05-16", value: 16 },
-  { date: "2023-05-17", value: 15 },
-  { date: "2023-05-18", value: 13 },
-  { date: "2023-05-19", value: 11 },
-  { date: "2023-05-20", value: 9 },
-  { date: "2023-05-21", value: 8 },
-  { date: "2023-05-22", value: 7 },
-  { date: "2023-05-23", value: 9 },
-  { date: "2023-05-24", value: 11 },
-  { date: "2023-05-25", value: 13 },
-  { date: "2023-05-26", value: 15 },
-  { date: "2023-05-27", value: 17 },
-  { date: "2023-05-28", value: 19 },
-  { date: "2023-05-29", value: 18 },
-  { date: "2023-05-30", value: 16 },
-  { date: "2023-05-31", value: 14 },
-  { date: "2023-06-01", value: 12 },
-  { date: "2023-06-02", value: 10 },
-  { date: "2023-06-03", value: 8 },
-  { date: "2023-06-04", value: 6 },
-  { date: "2023-06-05", value: 8 },
-  { date: "2023-06-06", value: 10 },
-  { date: "2023-06-07", value: 12 },
-  { date: "2023-06-08", value: 14 },
-  { date: "2023-06-09", value: 16 },
-  { date: "2023-06-10", value: 15 },
-  { date: "2023-06-11", value: 14 },
-];
-
 // Datos para gráfico de velas japonesas - Datos más realistas y coherentes de mercado financiero
 const candlestickDataset: CandlestickData[] = [
   { date: "2023-04-30", open: 142.50, high: 145.80, low: 141.20, close: 143.75 },
@@ -166,13 +119,6 @@ const chartColors = [
     lineFrom: "#0EA5E9", 
     lineTo: "#2563EB",
     accentColor: "#38BDF8" 
-  },
-  { 
-    areaFrom: "#8B5CF6", 
-    areaTo: "#8B5CF6", 
-    lineFrom: "#8B5CF6", 
-    lineTo: "#D946EF",
-    accentColor: "#A78BFA" 
   }
 ];
 
@@ -199,19 +145,19 @@ const candlestickColors = {
 // Componente del gráfico de área
 function AreaChartSemiFilled(): React.ReactNode {
   // Estado para controlar qué conjunto de datos mostrar
-  const [datasetIndex, setDatasetIndex] = useState(2);
+  const [datasetIndex, setDatasetIndex] = useState(0);
   const [previousDatasetIndex, setPreviousDatasetIndex] = useState(-1);
   const [transitionEffect, setTransitionEffect] = useState(false);
   
   // Elegir el conjunto de datos actual y el anterior
-  const dataSets = [dataset1, dataset2, candlestickDataset];
-  const isCandlestick = datasetIndex === 2; // El dataset 2 ahora es el de velas japonesas
+  const dataSets = [dataset1, candlestickDataset];
+  const isCandlestick = datasetIndex === 1;
   
   const currentDataset = dataSets[datasetIndex];
   const currentColors = chartColors[datasetIndex % chartColors.length];
   
   const previousDataset = previousDatasetIndex >= 0 ? dataSets[previousDatasetIndex] : null;
-  const previousIsCandlestick = previousDatasetIndex === 2;
+  const previousIsCandlestick = previousDatasetIndex === 1;
   const previousColors = previousDatasetIndex >= 0 ? chartColors[previousDatasetIndex % chartColors.length] : null;
   
   // Estado para la animación
@@ -236,16 +182,12 @@ function AreaChartSemiFilled(): React.ReactNode {
       if (currentStep >= steps) {
         clearInterval(timer);
         
-        // Mostrar efecto de transición
-        setTransitionEffect(true);
-        
-        // Cuando termina la animación, cambiar al siguiente conjunto de datos
+        // Cuando termina la animación, agregar un pequeño retraso antes de cambiar al siguiente conjunto de datos
         setTimeout(() => {
           setPreviousDatasetIndex(datasetIndex);
           setDatasetIndex((prevIndex) => (prevIndex + 1) % dataSets.length);
           setProgress(0); // Reiniciar el progreso
-          setTransitionEffect(false);
-        }, 300); // Pequeña pausa entre animaciones
+        }, 300); // Pequeño retraso para permitir que el sombreado se desvanezca
       }
     }, interval);
     
@@ -356,6 +298,20 @@ function AreaChartSemiFilled(): React.ReactNode {
   const getFadingData = () => {
     if (!previousData || progress <= 0) return null;
     
+    // Para la transición suave entre velas japonesas, mantenemos más datos visibles durante más tiempo
+    if (previousIsCandlestick) {
+      // Si estamos al 80% o más del progreso, comenzamos a desvanecer gradualmente
+      if (progress >= 0.8) {
+        // Calcular cuántos datos mostrar basados en el progreso restante
+        const remainingProgress = (1 - progress) * 5; // Factor 5 para hacer más lento el desvanecimiento
+        // Asegurar que al menos se muestren algunos datos hasta el final
+        return previousData.slice(0, Math.max(3, Math.floor(previousData.length * remainingProgress)));
+      }
+      // Antes del 80%, mostrar todos los datos
+      return previousData;
+    }
+    
+    // Para otros tipos de gráficos, mantener la lógica existente
     // Obtener el índice exacto donde se está dibujando el nuevo gráfico
     const currentIndexProgress = data.length * progress;
     
@@ -445,12 +401,12 @@ function AreaChartSemiFilled(): React.ReactNode {
 
   return (
     <div className="relative h-full w-full">
-      <div className="absolute inset-0 h-full w-full">
+      <div className="absolute inset-0 h-full w-full bg-[#0D1117]">
         {/* Patrones de fondo */}
-        <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 opacity-[0.03]">
           <div className="h-full w-full grid grid-cols-10 gap-0">
             {Array.from({ length: 200 }).map((_, i) => (
-              <div key={i} className="border-r border-t border-gray-400 dark:border-gray-600"></div>
+              <div key={i} className="border-r border-t border-gray-600 dark:border-gray-700"></div>
             ))}
           </div>
         </div>
@@ -460,13 +416,22 @@ function AreaChartSemiFilled(): React.ReactNode {
           viewBox="0 0 100 100"
           className="w-full h-full"
           preserveAspectRatio="none"
+          style={{ background: 'linear-gradient(180deg, #0D1117 0%, #161B22 100%)' }}
         >
-          {/* Área */}
+          {/* Definiciones actualizadas */}
           <defs>
             {/* Definición del gradiente vertical actual */}
             <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
               <stop offset="0%" stopColor={currentColors.areaFrom} stopOpacity="0.3" />
-              <stop offset="100%" stopColor={currentColors.areaTo} stopOpacity="0.02" />
+              <stop offset="50%" stopColor={currentColors.areaTo} stopOpacity="0.15" />
+              <stop offset="100%" stopColor={currentColors.areaTo} stopOpacity="0.05" />
+            </linearGradient>
+            
+            {/* Definición del gradiente verde para el área bajo las velas japonesas */}
+            <linearGradient id="candlestickAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#0ECB81" stopOpacity="0.4" />
+              <stop offset="50%" stopColor="#0ECB81" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="#0ECB81" stopOpacity="0.05" />
             </linearGradient>
             
             {/* Definición del gradiente para la línea actual */}
@@ -474,6 +439,18 @@ function AreaChartSemiFilled(): React.ReactNode {
               <stop offset="0%" stopColor={currentColors.lineFrom} />
               <stop offset="100%" stopColor={currentColors.lineTo} />
             </linearGradient>
+            
+            {/* Filtros actualizados para mejor contraste en fondo oscuro */}
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="0.8" result="blur" />
+              <feComponentTransfer>
+                <feFuncA type="linear" slope="1.5" />
+              </feComponentTransfer>
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
             
             {/* Definición del gradiente vertical anterior */}
             {previousColors && (
@@ -490,15 +467,6 @@ function AreaChartSemiFilled(): React.ReactNode {
                 <stop offset="100%" stopColor={previousColors.lineTo} />
               </linearGradient>
             )}
-            
-            {/* Filtros para un brillo más suave y elegante */}
-            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="0.8" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
             
             {/* Filtro para las mechas con mayor nitidez */}
             <filter id="wickGlow" x="-30%" y="-30%" width="160%" height="160%">
@@ -698,9 +666,6 @@ function AreaChartSemiFilled(): React.ReactNode {
             />
           )}
           
-          {/* Líneas de rejilla para el modo de velas (solo si es candlestick) */}
-          {/* Se eliminan completamente las líneas verticales */}
-          
           {/* Área bajo la curva para velas (similar a otros gráficos) */}
           {isCandlestick && (
             <path 
@@ -709,10 +674,25 @@ function AreaChartSemiFilled(): React.ReactNode {
                  ${currentAnimatedData.map((d, i) => `L${xScale(d.date)},${yScale(d.close || 0)}`).join(' ')} 
                  L100,${yScale(currentAnimatedData[currentAnimatedData.length - 1]?.close || 0)} 
                  L100,98 Z`}
-              fill="url(#areaGradient)" 
+              fill="url(#candlestickAreaGradient)" 
               mask="url(#graphMask)"
-              opacity="0.15"
-              className="transition-all duration-300"
+              opacity={0.25}
+              className="transition-opacity duration-500"
+            />
+          )}
+          
+          {/* Área bajo la curva para velas que se está desvaneciendo */}
+          {previousIsCandlestick && previousData && fadingData && (
+            <path 
+              d={`M0,98 
+                 L0,${previousYScale ? previousYScale(fadingData[0]?.close || 0) : 0} 
+                 ${fadingData.map((d, i) => `L${xScale(d.date)},${previousYScale ? previousYScale(d.close || 0) : 0}`).join(' ')} 
+                 L100,${previousYScale ? previousYScale(fadingData[fadingData.length - 1]?.close || 0) : 0} 
+                 L100,98 Z`}
+              fill="url(#candlestickAreaGradient)" 
+              mask="url(#fadeGraphMask)"
+              opacity={0.15 * (1 - progress)}
+              className="transition-opacity duration-500"
             />
           )}
           
@@ -830,16 +810,6 @@ function AreaChartSemiFilled(): React.ReactNode {
               })}
             </g>
           )}
-          
-          {/* Efecto de flash en toda la pantalla durante la transición entre gráficos */}
-          <rect 
-            x="0" 
-            y="0" 
-            width="100" 
-            height="100" 
-            fill="white" 
-            className={`transition-opacity duration-300 ${transitionEffect ? 'opacity-10' : 'opacity-0'}`} 
-          />
         </svg>
       </div>
     </div>

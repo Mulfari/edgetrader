@@ -3,6 +3,11 @@ import { useRef } from "react"
 import { motion, useInView } from "framer-motion"
 import Link from "next/link"
 import ModernDashboardPreview from "./ModernDashboardPreview"
+import AreaChartSemiFilled from "./AreaChartSemiFilled"
+import BitcoinIcon from './BitcoinIcon'
+import EthereumIcon from './EthereumIcon'
+import USDTIcon from './USDTIcon'
+import USDCIcon from './USDCIcon'
 
 type HeroSectionProps = {
   t: {
@@ -27,26 +32,155 @@ const HeroSection = ({ t }: HeroSectionProps) => {
   return (
     <section ref={heroRef} className="relative pt-0 pb-28 overflow-hidden">
       {/* Background Elements */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
-        {/* Grid pattern */}
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5 dark:opacity-15"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-white via-gray-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden">
+        {/* Grid pattern - optimizado */}
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center bg-repeat-space opacity-5 dark:opacity-10"></div>
         
-        {/* Animated gradient blur */}
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-gradient-to-br from-cyan-400/30 to-blue-500/30 rounded-full blur-3xl opacity-70 dark:opacity-30 animate-pulse-glow"></div>
-        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-gradient-to-br from-cyan-400/20 to-blue-500/20 rounded-full blur-3xl opacity-70 dark:opacity-20 animate-pulse-glow animation-delay-2000"></div>
+        {/* Animación de gradiente suave */}
+        <motion.div 
+          className="absolute -top-48 -right-48 w-96 h-96 rounded-full blur-3xl opacity-50 dark:opacity-20"
+          style={{ background: 'linear-gradient(135deg, rgba(34,211,238,0.4) 0%, rgba(37,99,235,0.4) 100%)' }}
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: [0.5, 0.6, 0.5]
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
         
-        {/* Decorative elements */}
-        <div className="absolute top-1/4 left-10 w-64 h-64 border border-cyan-500/10 dark:border-cyan-500/5 rounded-full animate-rotate opacity-70"></div>
-        <div className="absolute bottom-1/3 right-10 w-40 h-40 border-2 border-blue-500/10 dark:border-blue-500/5 rounded-full animate-rotate opacity-70" style={{ animationDuration: '30s', animationDirection: 'reverse' }}></div>
+        <motion.div 
+          className="absolute -bottom-48 -left-48 w-96 h-96 rounded-full blur-3xl opacity-40 dark:opacity-15"
+          style={{ background: 'linear-gradient(135deg, rgba(34,211,238,0.3) 0%, rgba(37,99,235,0.3) 100%)' }}
+          animate={{
+            scale: [1, 1.15, 1],
+            opacity: [0.4, 0.5, 0.4]
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 2
+          }}
+        />
         
-        {/* Decorative dots grid */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-30">
-          <div className="w-full h-full max-w-7xl grid grid-cols-12 gap-8">
-            {Array.from({ length: 144 }).map((_, i) => (
-              <div key={i} className="w-1.5 h-1.5 rounded-full bg-cyan-500/20 dark:bg-cyan-500/10"></div>
-            ))}
+        {/* Sutiles líneas de diseño */}
+        <motion.div 
+          className="absolute top-1/4 left-10 w-64 h-64 border border-cyan-500/10 dark:border-cyan-500/5 rounded-full"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+          style={{ opacity: 0.6 }}
+        />
+        
+        <motion.div 
+          className="absolute bottom-1/3 right-10 w-48 h-48 border border-blue-500/10 dark:border-blue-500/5 rounded-full"
+          animate={{ rotate: -360 }}
+          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+          style={{ opacity: 0.6 }}
+        />
+        
+        {/* Iconos de criptomonedas en el fondo */}
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Bitcoin - Esquina superior derecha */}
+          <motion.div 
+            className="absolute top-20 right-20 opacity-5 dark:opacity-3"
+            style={{
+              filter: 'blur(1px)'
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.05 }}
+            transition={{ duration: 1.2, delay: 0.2 }}
+          >
+            <BitcoinIcon size={120} rotation={15} />
+          </motion.div>
+          
+          {/* Ethereum - Esquina inferior izquierda */}
+          <motion.div 
+            className="absolute bottom-20 left-20 opacity-5 dark:opacity-3"
+            style={{
+              filter: 'blur(1px)'
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.05 }}
+            transition={{ duration: 1.2, delay: 0.4 }}
+          >
+            <EthereumIcon size={100} rotation={-10} />
+          </motion.div>
+          
+          {/* USDT - Centro superior */}
+          <motion.div 
+            className="absolute top-10 left-1/2 transform -translate-x-1/2 opacity-5 dark:opacity-3"
+            style={{
+              filter: 'blur(1px)'
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.05 }}
+            transition={{ duration: 1.2, delay: 0.6 }}
+          >
+            <USDTIcon size={90} rotation={5} />
+          </motion.div>
+          
+          {/* USDC - Centro inferior */}
+          <motion.div 
+            className="absolute bottom-10 left-1/2 transform -translate-x-1/2 opacity-5 dark:opacity-3"
+            style={{
+              filter: 'blur(1px)'
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.05 }}
+            transition={{ duration: 1.2, delay: 0.8 }}
+          >
+            <USDCIcon size={80} rotation={-5} />
+          </motion.div>
+          
+          {/* Bitcoin adicional - Esquina superior izquierda */}
+          <motion.div 
+            className="absolute top-40 left-40 opacity-5 dark:opacity-3"
+            style={{
+              filter: 'blur(1px)'
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.05 }}
+            transition={{ duration: 1.2, delay: 1.0 }}
+          >
+            <BitcoinIcon size={110} rotation={30} />
+          </motion.div>
+          
+          {/* Ethereum adicional - Esquina inferior derecha */}
+          <motion.div 
+            className="absolute bottom-40 right-40 opacity-5 dark:opacity-3"
+            style={{
+              filter: 'blur(1px)'
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.05 }}
+            transition={{ duration: 1.2, delay: 1.2 }}
+          >
+            <EthereumIcon size={90} rotation={-20} />
+          </motion.div>
+        </div>
+        
+        {/* Dots grid optimizado */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-full h-full max-w-7xl mx-auto px-4">
+            <div className="w-full h-full grid grid-cols-12 md:grid-cols-24 gap-8">
+              {Array.from({ length: 48 }).map((_, i) => (
+                <motion.div 
+                  key={i} 
+                  className="w-1 h-1 rounded-full bg-cyan-500/10 dark:bg-cyan-500/5"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: i * 0.01 }}
+                />
+              ))}
+            </div>
           </div>
         </div>
+        
+        {/* Efecto de gradiente superior sutil */}
+        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-white dark:from-gray-900 to-transparent" />
       </div>
       
       <div className="container relative mx-auto px-4 sm:px-6 lg:px-8 z-10">
@@ -110,6 +244,70 @@ const HeroSection = ({ t }: HeroSectionProps) => {
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Mejora en resultados</p>
               </div>
             </div>
+            
+            {/* Iconos de criptomonedas movidos al lado izquierdo */}
+            <div className="relative mt-8 h-40">
+              {/* Bitcoin flotante con rotación 3D y efectos visuales mejorados */}
+              <div 
+                className="absolute -left-4 top- z-10"
+                style={{
+                  animation: 'float 6s ease-in-out infinite',
+                  filter: 'drop-shadow(0 0 15px rgba(247, 147, 26, 0.35))',
+                  perspective: '1000px'
+                }}
+              >
+                <BitcoinIcon 
+                  size={90} 
+                  rotation={20}
+                />
+              </div>
+              
+              {/* Ethereum con diferente timing y rotación */}
+              <div 
+                className="absolute left-16 top-10 z-10"
+                style={{
+                  animation: 'float 7s ease-in-out 0.5s infinite',
+                  filter: 'drop-shadow(0 0 12px rgba(114, 137, 255, 0.3))',
+                  perspective: '1000px'
+                }}
+              >
+                <EthereumIcon 
+                  size={70} 
+                  rotation={-15}
+                />
+              </div>
+              
+              {/* USDT con diferente animación */}
+              <div 
+                className="absolute left-4 top-20 z-10"
+                style={{
+                  animation: 'float 6.5s ease-in-out 1s infinite',
+                  filter: 'drop-shadow(0 0 12px rgba(38, 161, 123, 0.4))',
+                  perspective: '1000px'
+                }}
+              >
+                <USDTIcon 
+                  size={60} 
+                  rotation={12}
+                />
+              </div>
+              
+              {/* USDC más pequeño */}
+              <div 
+                className="absolute left-24 top-30 z-10"
+                style={{
+                  animation: 'float 5.5s ease-in-out 1.5s infinite',
+                  filter: 'drop-shadow(0 0 12px rgba(42, 117, 187, 0.4))',
+                  transform: 'scale(0.9)',
+                  perspective: '1000px'
+                }}
+              >
+                <USDCIcon 
+                  size={50} 
+                  rotation={-10}
+                />
+              </div>
+            </div>
           </motion.div>
           
           {/* Dashboard Preview Enhanced */}
@@ -121,7 +319,7 @@ const HeroSection = ({ t }: HeroSectionProps) => {
           >
             <div className="relative">
               {/* Main dashboard container */}
-              <div className="relative bg-gradient-to-br from-gray-950 to-gray-900 p-5 rounded-2xl shadow-2xl border border-gray-800 overflow-hidden">
+              <div className="relative bg-[#0D1117] p-5 rounded-2xl shadow-2xl border border-gray-800/30 overflow-hidden backdrop-blur-sm">
                 {/* Dashboard header mockup */}
                 <ModernDashboardPreview />
                 
