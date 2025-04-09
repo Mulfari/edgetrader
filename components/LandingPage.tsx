@@ -964,16 +964,10 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
             {/* Logo Mejorado */}
-            <Link href="/" className="flex items-center space-x-3 group">
-              <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:shadow-cyan-500/20 dark:group-hover:shadow-cyan-400/20">
-                <span className="text-xl text-white font-bold">MT</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
-            Mulfex Trader
+            <Link href="/" className="flex items-center group">
+              <span className="text-2xl font-extrabold text-[#16243a] dark:text-white tracking-[0.25em]">
+                MULFEX
               </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">Trading Inteligente</span>
-              </div>
             </Link>
 
             {/* Desktop Navigation - Mejorada */}
@@ -1782,17 +1776,11 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-start">
               {/* Logo y descripción */}
               <div className="md:col-span-5">
-                <Link href="/" className="inline-flex items-center space-x-3 group">
-                  <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:shadow-cyan-500/20 dark:group-hover:shadow-cyan-400/20">
-                    <span className="text-xl text-white font-bold">MT</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
-                Mulfex Trader
-                    </span>
-                    <span className="text-xs text-gray-400">{t.language}</span>
-                  </div>
-              </Link>
+                <Link href="/" className="flex items-center space-x-3 group">
+                  <span className="text-2xl font-extrabold text-white tracking-[0.25em]">
+                    MULFEX
+                  </span>
+                </Link>
                 <p className="mt-6 text-gray-400 leading-relaxed">
                 {t.footer.description}
               </p>

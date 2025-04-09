@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react"
 import { useRef } from "react"
 import { motion, useInView } from "framer-motion"
 import Link from "next/link"
+import Image from "next/image"
 import ModernDashboardPreview from "./ModernDashboardPreview"
 import AreaChartSemiFilled from "./AreaChartSemiFilled"
 import BitcoinIcon from './BitcoinIcon'
@@ -265,7 +266,7 @@ const HeroSection = ({ t }: HeroSectionProps) => {
             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
               {/* Botón de Empezar Ahora mejorado */}
               <Link
-                href="#"
+                href="/login"
                 className="w-full sm:w-auto px-8 py-4 text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/20 dark:hover:shadow-blue-500/10 flex items-center justify-center gap-2 font-medium group relative overflow-hidden"
               >
                 <span className="relative z-10 flex items-center">
@@ -341,16 +342,31 @@ const HeroSection = ({ t }: HeroSectionProps) => {
           transition={{ duration: 0.8, delay: 0.8 }}
           className="mt-16 text-center"
         >
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-6">{t.usedByTraders}</p>
-          <div className="flex flex-wrap justify-center gap-x-12 gap-y-6">
-            {['Binance', 'Coinbase', 'Kraken', 'Bitfinex', 'Kucoin'].map((exchange, index) => (
-              <div key={exchange} className="text-gray-400 dark:text-gray-500 font-semibold text-lg flex items-center">
-                <div className="w-5 h-5 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-full mr-2 flex items-center justify-center text-xs">
-                  {index + 1}
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">{t.usedByTraders}</p>
+          <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 p-5 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800">
+            <div className="w-full grid grid-cols-3 md:grid-cols-6 gap-x-4 gap-y-6">
+              {[
+                { name: 'Bybit', logo: '/images/bybit.svg' },
+                { name: 'Kucoin', logo: '/images/kucoin.svg' },
+                { name: 'Coinbase', logo: '/images/coinbase.svg' },
+                { name: 'Binance', logo: '/images/binance.svg' },
+                { name: 'Kraken', logo: '/images/kraken.svg' },
+                { name: 'Bitfinex', logo: '/images/bitfinex.svg' }
+              ].map((exchange) => (
+                <div key={exchange.name} className="flex flex-col items-center">
+                  <div className="h-10 w-32 relative flex items-center justify-center">
+                    <Image 
+                      src={exchange.logo} 
+                      alt={exchange.name}
+                      width={120}
+                      height={40}
+                      className="object-contain max-h-10"
+                      unoptimized
+                    />
+                  </div>
                 </div>
-                {exchange}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </motion.div>
       </div>
