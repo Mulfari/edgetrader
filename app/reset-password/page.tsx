@@ -115,6 +115,22 @@ function ResetPasswordContent() {
   const [countdown, setCountdown] = useState(5);
   const router = useRouter();
 
+  // Función para limpiar la sesión
+  const clearSession = async () => {
+    try {
+      await supabase.auth.signOut();
+      localStorage.removeItem('token');
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
+  };
+
+  // Limpiar sesión inmediatamente si estamos en el cliente
+  if (typeof window !== 'undefined') {
+    supabase.auth.signOut().catch(error => console.error('Error al limpiar sesión inicial:', error));
+    localStorage.removeItem('token');
+  }
+
   useEffect(() => {
     // Cargar el idioma guardado
     const savedLanguage = localStorage.getItem('preferredLanguage') as Language;
@@ -137,6 +153,9 @@ function ResetPasswordContent() {
       toast.error(translations[language].invalidLink);
       router.push("/login");
     }
+
+    // Limpiar cualquier sesión que se haya creado automáticamente
+    clearSession();
   }, [router]);
 
   // Efecto para el contador de redirección

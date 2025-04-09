@@ -213,6 +213,7 @@ export const updatePassword = async (password: string) => {
       if (accessToken) {
         // Si tenemos un token de recuperación, establecerlo antes de actualizar
         // Esto es necesario para que la API nos permita actualizar la contraseña
+        // Pero NO queremos crear una sesión persistente, solo usar el token
         const { data: { session }, error: sessionError } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: '',
@@ -229,12 +230,14 @@ export const updatePassword = async (password: string) => {
 
     if (error) throw error;
     
-    // Cerrar la sesión para que el usuario tenga que iniciar sesión explícitamente
+    // Cerrar inmediatamente la sesión temporal que se creó
     await supabase.auth.signOut();
     
-    // Limpiar los tokens del localStorage
+    // Limpiar los tokens del localStorage para asegurar que no hay sesión activa
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
+      // Eliminar también los datos de sesión que Supabase guarda en localStorage
+      localStorage.removeItem('supabase.auth.token');
     }
     
     return { data, success: true };

@@ -60,6 +60,24 @@ function ConfirmEmailContent() {
   const [shouldRedirect, setShouldRedirect] = useState(false);
   const router = useRouter();
 
+  // Función para limpiar sesión
+  const clearSession = async () => {
+    try {
+      await supabase.auth.signOut();
+      // Limpiar token del localStorage
+      localStorage.removeItem('token');
+    } catch (error) {
+      console.error('Error clearing session:', error);
+    }
+  };
+
+  // Ejecutar limpieza de sesión inmediatamente
+  if (typeof window !== 'undefined') {
+    // Esta línea ejecuta la limpieza de la sesión antes de que se monte el componente
+    supabase.auth.signOut().catch(error => console.error('Error al limpiar sesión inicial:', error));
+    localStorage.removeItem('token');
+  }
+
   useEffect(() => {
     // Intentar obtener el idioma guardado
     const savedLanguage = localStorage.getItem('preferredLanguage') as Language;
@@ -67,17 +85,7 @@ function ConfirmEmailContent() {
       setLanguage(savedLanguage);
     }
 
-    // Si hay una sesión activa por la confirmación de correo, cerrarla
-    const clearSession = async () => {
-      try {
-        await supabase.auth.signOut();
-        // Limpiar token del localStorage
-        localStorage.removeItem('token');
-      } catch (error) {
-        console.error('Error clearing session:', error);
-      }
-    };
-    
+    // Asegurarnos de que no hay sesión activa 
     clearSession();
   }, []);
 
