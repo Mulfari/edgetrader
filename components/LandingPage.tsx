@@ -436,7 +436,7 @@ export default function LandingPage() {
       },
       faq: {
         title: "Preguntas Frecuentes",
-        subtitle: "Resolvemos tus dudas para que puedas comenzar con confianza",
+        subtitle: "Resolvemos tus dudas para que comiences con confianza",
         items: [
           {
             question: "¿Qué es TradingDash?",
@@ -447,8 +447,12 @@ export default function LandingPage() {
             answer: "Ofrecemos planes flexibles que se adaptan a diferentes niveles de trading. Los planes comienzan desde 29€/mes para funciones básicas, con soluciones personalizadas para enterprise."
           },
           {
-            question: "¿Hay periodo de prueba gratuito?",
-            answer: "Sí, ofrecemos 14 días de prueba gratuita en todos nuestros planes. No se requiere tarjeta de crédito para comenzar."
+            question: "¿Ofrecen un periodo de prueba gratuito?",
+            answer: "Sí, ofrecemos un periodo de prueba gratuito en todos nuestros planes. No se requiere tarjeta de crédito para comenzar."
+          },
+          {
+            question: "¿Cuántos días incluye la prueba gratuita?",
+            answer: "Nuestra prueba gratuita incluye acceso completo a todas las funcionalidades premium de la plataforma."
           },
           {
             question: "¿Puedo cancelar mi suscripción en cualquier momento?",
@@ -463,9 +467,9 @@ export default function LandingPage() {
         subtitle: "Únete a miles de traders que ya están mejorando sus resultados con TradingDash",
         button: "Comenzar Gratis",
         noCreditCard: "Sin tarjeta de crédito",
-        freeTrial: "14 días de prueba gratuita",
+        freeTrial: "Prueba gratuita",
         easyCancel: "Cancelación sencilla",
-        daysFreeTrial: "días gratis"
+        daysFreeTrial: "Período gratis"
       },
       footer: {
         description: "Plataforma líder en análisis y gestión de trading",
@@ -493,7 +497,7 @@ export default function LandingPage() {
         steps: [
           {
             title: "Regístrate",
-            description: "Crea tu cuenta en menos de 2 minutos y accede a tu periodo de prueba gratuito de 14 días.",
+            description: "Crea tu cuenta en menos de 2 minutos y accede a tu periodo de prueba gratuito.",
             icon: "🔐"
           },
           {
@@ -628,7 +632,7 @@ export default function LandingPage() {
           },
           {
             question: "Is there a free trial?",
-            answer: "Yes, we offer a 14-day free trial on all our plans. No credit card required to start."
+            answer: "Yes, we offer a free trial on all our plans. No credit card required to start."
           },
           {
             question: "Can I cancel my subscription at any time?",
@@ -643,9 +647,9 @@ export default function LandingPage() {
         subtitle: "Join thousands of traders who are already improving their results with TradingDash",
         button: "Start Free",
         noCreditCard: "No credit card",
-        freeTrial: "14-day free trial",
+        freeTrial: "Free trial",
         easyCancel: "Easy cancellation",
-        daysFreeTrial: "free days"
+        daysFreeTrial: "free trial"
       },
       footer: {
         description: "Leading platform for trading analysis and management",
@@ -673,7 +677,7 @@ export default function LandingPage() {
         steps: [
           {
             title: "Sign up",
-            description: "Create your account in less than 2 minutes and access your 14-day free trial.",
+            description: "Create your account in less than 2 minutes and access your free trial.",
             icon: "🔐"
           },
           {
@@ -808,7 +812,11 @@ export default function LandingPage() {
           },
           {
             question: "Gibt es eine kostenlose Testversion?",
-            answer: "Ja, wir bieten eine 14-tägige kostenlose Testversion für alle unsere Pläne an. Keine Kreditkarte erforderlich."
+            answer: "Ja, wir bieten eine kostenlose Testversion für alle unsere Pläne an. Keine Kreditkarte erforderlich zum Start."
+          },
+          {
+            question: "Wie viele Tage umfasst die kostenlose Testversion?",
+            answer: "Unsere kostenlose Testversion umfasst Zugang zu allen Premium-Funktionen der Plattform."
           },
           {
             question: "Kann ich mein Abonnement jederzeit kündigen?",
@@ -823,9 +831,9 @@ export default function LandingPage() {
         subtitle: "Schließen Sie sich Tausenden von Tradern an, die ihre Ergebnisse bereits mit TradingDash verbessern",
         button: "Kostenlos Starten",
         noCreditCard: "Keine Kreditkarte",
-        freeTrial: "14 Tage kostenlose Testversion",
+        freeTrial: "Kostenlose Testversion",
         easyCancel: "Einfache Kündigung",
-        daysFreeTrial: "kostenlose Tage"
+        daysFreeTrial: "kostenlose Testversion"
       },
       footer: {
         description: "Führende Plattform für Handelsanalyse und -management",
@@ -853,7 +861,7 @@ export default function LandingPage() {
         steps: [
           {
             title: "Registrieren",
-            description: "Erstellen Sie Ihr Konto in weniger als 2 Minuten und greifen Sie auf Ihre 14-tägige kostenlose Testversion zu.",
+            description: "Erstellen Sie Ihr Konto in weniger als 2 Minuten und greifen Sie auf Ihre kostenlose Testversion zu.",
             icon: "🔐"
           },
           {
@@ -940,8 +948,12 @@ export default function LandingPage() {
       answer: "Ofrecemos planes flexibles que se adaptan a diferentes niveles de trading. Los planes comienzan desde 29€/mes para funciones básicas, con soluciones personalizadas para enterprise.",
     },
     {
-      question: "¿Hay periodo de prueba gratuito?",
-      answer: "Sí, ofrecemos 14 días de prueba gratuita en todos nuestros planes. No se requiere tarjeta de crédito para comenzar.",
+      question: "¿Ofrecen un periodo de prueba gratuito?",
+      answer: "Sí, ofrecemos un periodo de prueba gratuito en todos nuestros planes. No se requiere tarjeta de crédito para comenzar.",
+    },
+    {
+      question: "¿Cuántos días incluye la prueba gratuita?",
+      answer: "Nuestra prueba gratuita incluye acceso completo a todas las funcionalidades premium de la plataforma.",
     },
     {
       question: "¿Puedo cancelar mi suscripción en cualquier momento?",
