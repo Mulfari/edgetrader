@@ -965,7 +965,7 @@ export default function LandingPage() {
           <div className="flex items-center justify-between h-20">
             {/* Logo Mejorado */}
             <Link href="/" className="flex items-center group">
-              <span className="text-2xl font-extrabold text-[#16243a] dark:text-white tracking-[0.25em]">
+              <span className="text-2xl font-extrabold text-[#16243a] dark:text-white tracking-[0.25em] ml-8">
                 MULFEX
               </span>
             </Link>
