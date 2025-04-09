@@ -207,40 +207,55 @@ export const updatePassword = async (password: string) => {
   try {
     // Si estamos en el navegador, intentar obtener el token de recuperación
     if (typeof window !== 'undefined') {
+      // Buscar el token en el hash de la URL
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token');
+      let accessToken = hashParams.get('access_token');
+      
+      // Si no está en el hash, intentar obtenerlo de sessionStorage (donde lo guardamos en reset-password/page.tsx)
+      if (!accessToken && sessionStorage.getItem('reset_token')) {
+        accessToken = sessionStorage.getItem('reset_token');
+      }
       
       if (accessToken) {
-        // Si tenemos un token de recuperación, establecerlo antes de actualizar
-        // Esto es necesario para que la API nos permita actualizar la contraseña
-        // Pero NO queremos crear una sesión persistente, solo usar el token
-        const { data: { session }, error: sessionError } = await supabase.auth.setSession({
+        // Primero establecemos temporalmente el token para autorizar la operación
+        // pero configuramos para no mantener la sesión
+        await supabase.auth.setSession({
           access_token: accessToken,
-          refresh_token: '',
+          refresh_token: ''
         });
         
-        if (sessionError) throw sessionError;
+        // Actualizar la contraseña
+        const { data, error } = await supabase.auth.updateUser({
+          password: password
+        });
+        
+        if (error) throw error;
+        
+        // Cerrar inmediatamente la sesión temporal que se creó
+        await supabase.auth.signOut({ scope: 'global' });
+        
+        // Eliminar todos los posibles tokens del localStorage y sessionStorage
+        if (typeof window !== 'undefined') {
+          // Limpiar localStorage
+          localStorage.removeItem('token');
+          localStorage.removeItem('supabase.auth.token');
+          
+          // Buscar y eliminar todas las claves relacionadas con auth de Supabase
+          Object.keys(localStorage).forEach(key => {
+            if (key.includes('supabase.auth') || key.includes('token')) {
+              localStorage.removeItem(key);
+            }
+          });
+          
+          // Limpiar sessionStorage
+          sessionStorage.removeItem('reset_token');
+        }
+        
+        return { data, success: true };
       }
     }
 
-    // Actualizar la contraseña
-    const { data, error } = await supabase.auth.updateUser({
-      password: password
-    });
-
-    if (error) throw error;
-    
-    // Cerrar inmediatamente la sesión temporal que se creó
-    await supabase.auth.signOut();
-    
-    // Limpiar los tokens del localStorage para asegurar que no hay sesión activa
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      // Eliminar también los datos de sesión que Supabase guarda en localStorage
-      localStorage.removeItem('supabase.auth.token');
-    }
-    
-    return { data, success: true };
+    throw new Error('No se encontró un token de acceso válido');
   } catch (error) {
     console.error('Error en updatePassword:', error);
     return { error, success: false };

@@ -60,12 +60,24 @@ function ConfirmEmailContent() {
   const [shouldRedirect, setShouldRedirect] = useState(false);
   const router = useRouter();
 
-  // Función para limpiar sesión
+  // Función para limpiar sesión completamente
   const clearSession = async () => {
     try {
-      await supabase.auth.signOut();
-      // Limpiar token del localStorage
-      localStorage.removeItem('token');
+      // Cerrar sesión en todos los dispositivos
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      // Limpiar todo el almacenamiento relacionado con la autenticación
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('supabase.auth.token');
+        
+        // Buscar y eliminar todas las claves relacionadas con auth de Supabase
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes('supabase.auth') || key.includes('token')) {
+            localStorage.removeItem(key);
+          }
+        });
+      }
     } catch (error) {
       console.error('Error clearing session:', error);
     }
@@ -74,8 +86,21 @@ function ConfirmEmailContent() {
   // Ejecutar limpieza de sesión inmediatamente
   if (typeof window !== 'undefined') {
     // Esta línea ejecuta la limpieza de la sesión antes de que se monte el componente
-    supabase.auth.signOut().catch(error => console.error('Error al limpiar sesión inicial:', error));
+    // Cerramos la sesión en todos los dispositivos
+    supabase.auth.signOut({ scope: 'global' }).catch(error => 
+      console.error('Error al limpiar sesión inicial:', error)
+    );
+    
+    // Limpiar todo el almacenamiento relacionado con la autenticación
     localStorage.removeItem('token');
+    localStorage.removeItem('supabase.auth.token');
+    
+    // Buscar y eliminar todas las claves relacionadas con auth
+    Object.keys(localStorage).forEach(key => {
+      if (key.includes('supabase.auth') || key.includes('token')) {
+        localStorage.removeItem(key);
+      }
+    });
   }
 
   useEffect(() => {

@@ -115,11 +115,24 @@ function ResetPasswordContent() {
   const [countdown, setCountdown] = useState(5);
   const router = useRouter();
 
-  // Función para limpiar la sesión
+  // Función para limpiar la sesión completamente
   const clearSession = async () => {
     try {
-      await supabase.auth.signOut();
-      localStorage.removeItem('token');
+      // Cerrar sesión en todos los dispositivos
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      // Limpiar todo el almacenamiento relacionado con la autenticación
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('supabase.auth.token');
+        
+        // Buscar y eliminar todas las claves relacionadas con auth de Supabase
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes('supabase.auth') || key.includes('token')) {
+            localStorage.removeItem(key);
+          }
+        });
+      }
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
     }
@@ -152,6 +165,20 @@ function ResetPasswordContent() {
     if (!accessToken || type !== 'recovery') {
       toast.error(translations[language].invalidLink);
       router.push("/login");
+    } else {
+      // Si tenemos el token, limpiamos la sesión antes de usarlo
+      // para asegurarnos de que no hay una sesión activa
+      clearSession();
+      
+      // Eliminamos el hash de la URL para evitar problemas
+      // El token lo usaremos más tarde desde la función updatePassword
+      if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
+        // Mantener el token en sessionStorage temporalmente
+        sessionStorage.setItem('reset_token', accessToken);
+        // Eliminar el hash de la URL para evitar logins automáticos si se recarga la página
+        const url = window.location.href.split('#')[0];
+        window.history.replaceState({}, document.title, url);
+      }
     }
 
     // Limpiar cualquier sesión que se haya creado automáticamente
