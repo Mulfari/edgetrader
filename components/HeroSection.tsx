@@ -90,8 +90,16 @@ const HeroSection = ({ t }: HeroSectionProps) => {
               filter: 'blur(1px)'
             }}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.05 }}
-            transition={{ duration: 1.2, delay: 0.2 }}
+            animate={{ 
+              opacity: 0.05,
+              y: [0, -15, 0, -10, 0],
+              rotate: [0, 5, 0, -5, 0]
+            }}
+            transition={{ 
+              opacity: { duration: 1.2, delay: 0.2 },
+              y: { duration: 12, repeat: Infinity, ease: "easeInOut" },
+              rotate: { duration: 15, repeat: Infinity, ease: "easeInOut" }
+            }}
           >
             <BitcoinIcon size={120} rotation={15} />
           </motion.div>
@@ -103,8 +111,16 @@ const HeroSection = ({ t }: HeroSectionProps) => {
               filter: 'blur(1px)'
             }}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.05 }}
-            transition={{ duration: 1.2, delay: 0.4 }}
+            animate={{ 
+              opacity: 0.05,
+              y: [0, 15, 0, 10, 0],
+              rotate: [0, -7, 0, 7, 0]
+            }}
+            transition={{ 
+              opacity: { duration: 1.2, delay: 0.4 },
+              y: { duration: 14, repeat: Infinity, ease: "easeInOut" },
+              rotate: { duration: 17, repeat: Infinity, ease: "easeInOut" }
+            }}
           >
             <EthereumIcon size={100} rotation={-10} />
           </motion.div>
@@ -116,8 +132,16 @@ const HeroSection = ({ t }: HeroSectionProps) => {
               filter: 'blur(1px)'
             }}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.05 }}
-            transition={{ duration: 1.2, delay: 0.6 }}
+            animate={{ 
+              opacity: 0.05,
+              y: [0, -12, 0, -8, 0],
+              rotate: [0, 3, 0, -3, 0]
+            }}
+            transition={{ 
+              opacity: { duration: 1.2, delay: 0.6 },
+              y: { duration: 10, repeat: Infinity, ease: "easeInOut" },
+              rotate: { duration: 13, repeat: Infinity, ease: "easeInOut" }
+            }}
           >
             <USDTIcon size={90} rotation={5} />
           </motion.div>
@@ -129,21 +153,37 @@ const HeroSection = ({ t }: HeroSectionProps) => {
               filter: 'blur(1px)'
             }}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.05 }}
-            transition={{ duration: 1.2, delay: 0.8 }}
+            animate={{ 
+              opacity: 0.05,
+              y: [0, 10, 0, 6, 0],
+              rotate: [0, -4, 0, 4, 0]
+            }}
+            transition={{ 
+              opacity: { duration: 1.2, delay: 0.8 },
+              y: { duration: 11, repeat: Infinity, ease: "easeInOut" },
+              rotate: { duration: 14, repeat: Infinity, ease: "easeInOut" }
+            }}
           >
             <USDCIcon size={80} rotation={-5} />
           </motion.div>
           
           {/* Bitcoin adicional - Esquina superior izquierda */}
           <motion.div 
-            className="absolute top-40 left-40 opacity-5 dark:opacity-3"
+            className="absolute top-20 left-10 opacity-5 dark:opacity-3"
             style={{
               filter: 'blur(1px)'
             }}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.05 }}
-            transition={{ duration: 1.2, delay: 1.0 }}
+            animate={{ 
+              opacity: 0.05,
+              y: [0, -13, 0, -7, 0],
+              rotate: [0, 6, 0, -6, 0]
+            }}
+            transition={{ 
+              opacity: { duration: 1.2, delay: 1.0 },
+              y: { duration: 13, repeat: Infinity, ease: "easeInOut" },
+              rotate: { duration: 16, repeat: Infinity, ease: "easeInOut" }
+            }}
           >
             <BitcoinIcon size={110} rotation={30} />
           </motion.div>
@@ -155,8 +195,16 @@ const HeroSection = ({ t }: HeroSectionProps) => {
               filter: 'blur(1px)'
             }}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.05 }}
-            transition={{ duration: 1.2, delay: 1.2 }}
+            animate={{ 
+              opacity: 0.05,
+              y: [0, 14, 0, 9, 0],
+              rotate: [0, -5, 0, 5, 0]
+            }}
+            transition={{ 
+              opacity: { duration: 1.2, delay: 1.2 },
+              y: { duration: 15, repeat: Infinity, ease: "easeInOut" },
+              rotate: { duration: 18, repeat: Infinity, ease: "easeInOut" }
+            }}
           >
             <EthereumIcon size={90} rotation={-20} />
           </motion.div>
@@ -242,70 +290,6 @@ const HeroSection = ({ t }: HeroSectionProps) => {
               <div className="glass-card rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">87%</div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Mejora en resultados</p>
-              </div>
-            </div>
-            
-            {/* Iconos de criptomonedas movidos al lado izquierdo */}
-            <div className="relative mt-8 h-40">
-              {/* Bitcoin flotante con rotación 3D y efectos visuales mejorados */}
-              <div 
-                className="absolute -left-4 top- z-10"
-                style={{
-                  animation: 'float 6s ease-in-out infinite',
-                  filter: 'drop-shadow(0 0 15px rgba(247, 147, 26, 0.35))',
-                  perspective: '1000px'
-                }}
-              >
-                <BitcoinIcon 
-                  size={90} 
-                  rotation={20}
-                />
-              </div>
-              
-              {/* Ethereum con diferente timing y rotación */}
-              <div 
-                className="absolute left-16 top-10 z-10"
-                style={{
-                  animation: 'float 7s ease-in-out 0.5s infinite',
-                  filter: 'drop-shadow(0 0 12px rgba(114, 137, 255, 0.3))',
-                  perspective: '1000px'
-                }}
-              >
-                <EthereumIcon 
-                  size={70} 
-                  rotation={-15}
-                />
-              </div>
-              
-              {/* USDT con diferente animación */}
-              <div 
-                className="absolute left-4 top-20 z-10"
-                style={{
-                  animation: 'float 6.5s ease-in-out 1s infinite',
-                  filter: 'drop-shadow(0 0 12px rgba(38, 161, 123, 0.4))',
-                  perspective: '1000px'
-                }}
-              >
-                <USDTIcon 
-                  size={60} 
-                  rotation={12}
-                />
-              </div>
-              
-              {/* USDC más pequeño */}
-              <div 
-                className="absolute left-24 top-30 z-10"
-                style={{
-                  animation: 'float 5.5s ease-in-out 1.5s infinite',
-                  filter: 'drop-shadow(0 0 12px rgba(42, 117, 187, 0.4))',
-                  transform: 'scale(0.9)',
-                  perspective: '1000px'
-                }}
-              >
-                <USDCIcon 
-                  size={50} 
-                  rotation={-10}
-                />
               </div>
             </div>
           </motion.div>
