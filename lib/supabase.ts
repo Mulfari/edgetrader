@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { verifyTokenUsage, checkTokenExpiration } from './tokenVerification';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -212,46 +211,35 @@ export const updatePassword = async (password: string) => {
       const accessToken = hashParams.get('access_token');
       
       if (accessToken) {
-        // Verificar si el token ya ha sido utilizado
-        const { used, error: tokenError } = await verifyTokenUsage(accessToken, 'reset-password');
+        // Si tenemos un token de recuperación, establecerlo antes de actualizar
+        // Esto es necesario para que la API nos permita actualizar la contraseña
+        const { data: { session }, error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: '',
+        });
         
-        if (tokenError) {
-          throw new Error('Error al verificar el token');
-        }
-        
-        if (used) {
-          throw new Error('Este enlace de restablecimiento de contraseña ya ha sido utilizado. Por favor, solicita un nuevo enlace.');
-        }
-        
-        // Verificar si el token ha expirado
-        const { expired, error: expirationError } = await checkTokenExpiration(accessToken, 'reset-password');
-        
-        if (expirationError) {
-          throw new Error('Error al verificar la expiración del token');
-        }
-        
-        if (expired) {
-          throw new Error('Este enlace de restablecimiento de contraseña ha expirado. Por favor, solicita un nuevo enlace.');
-        }
-
-        // Actualizar la contraseña
-        const { data, error } = await supabase.auth.updateUser({ password });
-        if (error) throw error;
-
-        // Cerrar sesión y limpiar todo
-        await supabase.auth.signOut();
-        if (typeof window !== 'undefined') {
-          window.history.replaceState({}, document.title, window.location.pathname);
-          localStorage.clear();
-        }
-        
-        return { success: true };
+        if (sessionError) throw sessionError;
       }
     }
+
+    // Actualizar la contraseña
+    const { data, error } = await supabase.auth.updateUser({
+      password: password
+    });
+
+    if (error) throw error;
     
-    throw new Error('Token de recuperación no encontrado');
+    // Cerrar la sesión para que el usuario tenga que iniciar sesión explícitamente
+    await supabase.auth.signOut();
+    
+    // Limpiar los tokens del localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+    }
+    
+    return { data, success: true };
   } catch (error) {
     console.error('Error en updatePassword:', error);
-    return { success: false, error };
+    return { error, success: false };
   }
 }; 
