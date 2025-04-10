@@ -36,6 +36,7 @@ const translations = {
     tokenExpired: "El token ha expirado",
     tokenAlreadyUsed: "El token ya ha sido utilizado",
     invalidOrExpiredToken: "El token es inválido o ha expirado",
+    resetError: "Error al restablecer la contraseña. Por favor, solicita un nuevo enlace de recuperación.",
     passwordRequirements: {
       chars: "8+ caracteres",
       uppercase: "Mayúscula",
@@ -67,6 +68,7 @@ const translations = {
     tokenExpired: "Token expired",
     tokenAlreadyUsed: "Token already used",
     invalidOrExpiredToken: "Token is invalid or has expired",
+    resetError: "Error resetting password. Please request a new recovery link.",
     passwordRequirements: {
       chars: "8+ characters",
       uppercase: "Uppercase",
@@ -98,6 +100,7 @@ const translations = {
     tokenExpired: "Token abgelaufen",
     tokenAlreadyUsed: "Token bereits verwendet",
     invalidOrExpiredToken: "Token ist ungültig oder abgelaufen",
+    resetError: "Fehler beim Zurücksetzen des Passworts. Bitte fordern Sie einen neuen Wiederherstellungslink an.",
     passwordRequirements: {
       chars: "8+ Zeichen",
       uppercase: "Großbuchstabe",
@@ -112,6 +115,26 @@ const isValidPassword = (password: string): boolean => {
   return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password);
 };
 
+// Función para extraer el token de la URL y guardarlo en sessionStorage
+const extractAndSaveToken = () => {
+  if (typeof window === 'undefined') return null;
+  
+  // Obtener token del hash
+  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  const accessToken = hashParams.get('access_token');
+  
+  // Si hay un token en el hash, guardarlo y limpiar la URL
+  if (accessToken && window.history && window.history.replaceState) {
+    sessionStorage.setItem('reset_token', accessToken);
+    const url = window.location.href.split('#')[0];
+    window.history.replaceState({}, document.title, url);
+    return accessToken;
+  }
+  
+  // Si no hay token en el hash, verificar si existe en sessionStorage
+  return sessionStorage.getItem('reset_token');
+};
+
 function ResetPasswordContent() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -122,7 +145,14 @@ function ResetPasswordContent() {
   const [errors, setErrors] = useState({ password: "", confirmPassword: "" });
   const [language, setLanguage] = useState<Language>('es');
   const [countdown, setCountdown] = useState(5);
+  const [hasToken, setHasToken] = useState(false);
   const router = useRouter();
+
+  // Extraer el token inmediatamente si estamos en el cliente
+  useEffect(() => {
+    const token = extractAndSaveToken();
+    setHasToken(!!token);
+  }, []);
 
   // Función para limpiar la sesión completamente
   const clearSession = async () => {
@@ -287,52 +317,65 @@ function ResetPasswordContent() {
     setIsLoading(true);
     
     try {
-      // Comprobar si estamos utilizando un token personalizado
-      const validResetToken = sessionStorage.getItem('valid_reset_token');
-      let success = false;
+      // Verificar si tenemos un token de recuperación válido
+      const accessToken = sessionStorage.getItem('reset_token');
       
-      if (validResetToken) {
-        // Obtener la información del token
-        const tokenInfo = JSON.parse(localStorage.getItem(`reset_token_${validResetToken}`) || '{}');
-        
-        // Verificar nuevamente que el token sea válido y no esté expirado
-        const currentTime = Date.now();
-        if (!tokenInfo || !tokenInfo.resetId || tokenInfo.expires_at < currentTime || tokenInfo.is_used) {
-          throw new Error(t.invalidOrExpiredToken);
+      if (!accessToken) {
+        // Si no hay token, volver a extraerlo
+        const newToken = extractAndSaveToken();
+        if (!newToken) {
+          toast.error(t.invalidLink);
+          router.push("/login");
+          return;
         }
-        
-        // Utilizar el email almacenado en el token para actualizar la contraseña
-        // del usuario correcto
-        const { data, error } = await supabase.auth.updateUser({
-          email: tokenInfo.email,
-          password: password
-        });
-        
-        if (error) throw error;
-        
-        // Marcar el token como utilizado
-        tokenInfo.is_used = true;
-        localStorage.setItem(`reset_token_${validResetToken}`, JSON.stringify(tokenInfo));
-        success = true;
-      } else {
-        // Usar el proceso estándar de Supabase
-        const { success: updateSuccess, error } = await updatePassword(password);
-        
-        if (error) throw error;
-        success = updateSuccess;
       }
       
-      if (success) {
-        // Limpiar los tokens almacenados
-        sessionStorage.removeItem('valid_reset_token');
-        sessionStorage.removeItem('reset_token');
-        
-        setIsSuccess(true);
-        toast.success(t.resetSuccess);
+      // Establecer la sesión para que Supabase pueda realizar la actualización
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken || '',
+        refresh_token: ''
+      });
+      
+      if (sessionError) {
+        console.error("Error al establecer sesión:", sessionError);
+        toast.error(t.resetError);
+        return;
       }
+      
+      // Ahora que tenemos una sesión válida, actualizar la contraseña
+      const { error } = await supabase.auth.updateUser({
+        password: password
+      });
+      
+      if (error) {
+        console.error("Error al actualizar contraseña:", error);
+        throw error;
+      }
+      
+      // Cerrar la sesión inmediatamente
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      // Limpiar todos los tokens
+      sessionStorage.removeItem('reset_token');
+      sessionStorage.removeItem('valid_reset_token');
+      localStorage.removeItem('token');
+      
+      // Si tenemos un token personalizado, marcarlo como usado
+      const validResetToken = sessionStorage.getItem('valid_reset_token');
+      if (validResetToken) {
+        const tokenInfo = JSON.parse(localStorage.getItem(`reset_token_${validResetToken}`) || '{}');
+        if (tokenInfo && tokenInfo.resetId) {
+          tokenInfo.is_used = true;
+          localStorage.setItem(`reset_token_${validResetToken}`, JSON.stringify(tokenInfo));
+        }
+      }
+      
+      // Mostrar éxito
+      setIsSuccess(true);
+      toast.success(t.resetSuccess);
     } catch (error: any) {
       console.error("Error resetting password:", error);
-      toast.error(error.message || "Error resetting password");
+      toast.error(error.message || t.resetError);
     } finally {
       setIsLoading(false);
     }
