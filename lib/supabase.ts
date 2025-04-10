@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { verifyTokenUsage, checkTokenExpiration } from './tokenVerification';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -211,6 +212,28 @@ export const updatePassword = async (password: string) => {
       const accessToken = hashParams.get('access_token');
       
       if (accessToken) {
+        // Verificar si el token ya ha sido utilizado
+        const { used, error: tokenError } = await verifyTokenUsage(accessToken, 'reset-password');
+        
+        if (tokenError) {
+          throw new Error('Error al verificar el token');
+        }
+        
+        if (used) {
+          throw new Error('Este enlace de restablecimiento de contraseña ya ha sido utilizado. Por favor, solicita un nuevo enlace.');
+        }
+        
+        // Verificar si el token ha expirado
+        const { expired, error: expirationError } = await checkTokenExpiration(accessToken, 'reset-password');
+        
+        if (expirationError) {
+          throw new Error('Error al verificar la expiración del token');
+        }
+        
+        if (expired) {
+          throw new Error('Este enlace de restablecimiento de contraseña ha expirado. Por favor, solicita un nuevo enlace.');
+        }
+        
         // Si tenemos un token de recuperación, establecerlo antes de actualizar
         // Esto es necesario para que la API nos permita actualizar la contraseña
         const { data: { session }, error: sessionError } = await supabase.auth.setSession({
@@ -232,14 +255,14 @@ export const updatePassword = async (password: string) => {
     // Cerrar la sesión para que el usuario tenga que iniciar sesión explícitamente
     await supabase.auth.signOut();
     
-    // Limpiar los tokens del localStorage
+    // Limpiar tokens de la URL
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
     
-    return { data, success: true };
+    return { success: true };
   } catch (error) {
     console.error('Error en updatePassword:', error);
-    return { error, success: false };
+    return { success: false, error };
   }
 }; 

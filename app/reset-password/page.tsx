@@ -8,6 +8,7 @@ import Link from "next/link";
 import { updatePassword, getSession } from "@/lib/supabase";
 import { toast } from "react-hot-toast";
 import { supabase } from "@/lib/supabase";
+import { checkTokenExpiration } from "@/lib/tokenVerification";
 
 type Language = 'es' | 'en' | 'de';
 
@@ -32,6 +33,8 @@ const translations = {
     availability: "Disponibilidad",
     backToLogin: "Volver al inicio de sesión",
     invalidLink: "El enlace es inválido o ha expirado",
+    linkAlreadyUsed: "Este enlace ya ha sido utilizado. Por favor, solicita un nuevo enlace.",
+    linkExpired: "Este enlace ha expirado (válido por 30 minutos). Por favor, solicita un nuevo enlace.",
     redirectingIn: "Redirigiendo en {seconds} segundos",
     passwordRequirements: {
       chars: "8+ caracteres",
@@ -47,7 +50,7 @@ const translations = {
     confirmPassword: "Confirm Password",
     resetBtn: "Reset Password",
     resetting: "Resetting...",
-    invalidPassword: "Password must be at least 8 characters long",
+    invalidPassword: "Password must be at least 8 characters",
     passwordsNotMatch: "Passwords do not match",
     resetSuccess: "Your password has been successfully reset!",
     loginNow: "Login now",
@@ -59,7 +62,9 @@ const translations = {
     operations: "Operations",
     availability: "Availability",
     backToLogin: "Back to login",
-    invalidLink: "Invalid or expired link",
+    invalidLink: "The link is invalid or has expired",
+    linkAlreadyUsed: "This link has already been used. Please request a new link.",
+    linkExpired: "This link has expired (valid for 30 minutes). Please request a new link.",
     redirectingIn: "Redirecting in {seconds} seconds",
     passwordRequirements: {
       chars: "8+ characters",
@@ -88,6 +93,8 @@ const translations = {
     availability: "Verfügbarkeit",
     backToLogin: "Zurück zur Anmeldung",
     invalidLink: "Ungültiger oder abgelaufener Link",
+    linkAlreadyUsed: "Dieser Link wurde bereits verwendet. Bitte fordern Sie einen neuen Link an.",
+    linkExpired: "Dieser Link ist abgelaufen (gültig für 30 Minuten). Bitte fordern Sie einen neuen Link an.",
     redirectingIn: "Umleitung in {seconds} Sekunden",
     passwordRequirements: {
       chars: "8+ Zeichen",
@@ -136,8 +143,35 @@ function ResetPasswordContent() {
     if (!accessToken || type !== 'recovery') {
       toast.error(translations[language].invalidLink);
       router.push("/login");
+      return;
     }
-  }, [router]);
+    
+    // Verificar si el token ha expirado
+    const checkExpiration = async () => {
+      try {
+        const { expired, error } = await checkTokenExpiration(accessToken, 'reset-password');
+        
+        if (error) {
+          console.error('Error al verificar la expiración del token:', error);
+          toast.error(translations[language].invalidLink);
+          router.push("/login");
+          return;
+        }
+        
+        if (expired) {
+          toast.error(translations[language].linkExpired);
+          router.push("/login");
+          return;
+        }
+      } catch (error) {
+        console.error('Error al verificar la expiración del token:', error);
+        toast.error(translations[language].invalidLink);
+        router.push("/login");
+      }
+    };
+    
+    checkExpiration();
+  }, [router, language]);
 
   // Efecto para el contador de redirección
   useEffect(() => {
