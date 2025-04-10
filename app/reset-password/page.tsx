@@ -184,6 +184,8 @@ function ResetPasswordContent() {
             supabase.auth.signOut().then(() => {
               localStorage.removeItem('token');
               localStorage.removeItem('supabase.auth.token');
+              localStorage.removeItem('supabase.auth.refresh_token');
+              localStorage.removeItem('supabase.auth.expires_at');
               router.push('/login');
             }).catch(error => {
               console.error("Error al cerrar sesión:", error);

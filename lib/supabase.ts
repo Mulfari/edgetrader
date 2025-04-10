@@ -260,6 +260,8 @@ export const updatePassword = async (password: string) => {
       window.history.replaceState({}, document.title, window.location.pathname);
       localStorage.removeItem('token');
       localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('supabase.auth.refresh_token');
+      localStorage.removeItem('supabase.auth.expires_at');
     }
     
     return { success: true };
