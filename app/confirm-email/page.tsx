@@ -22,7 +22,10 @@ const translations = {
     advancedTech: "Tecnología Avanzada",
     activeUsers: "Usuarios Activos",
     operations: "Operaciones",
-    availability: "Disponibilidad"
+    availability: "Disponibilidad",
+    error: "Error al confirmar correo",
+    backToLogin: "Volver al inicio de sesión",
+    emailAlreadyConfirmed: "Este correo electrónico ya ha sido confirmado anteriormente."
   },
   en: {
     emailConfirmed: "Email Confirmed!",
@@ -36,7 +39,10 @@ const translations = {
     advancedTech: "Advanced Technology",
     activeUsers: "Active Users",
     operations: "Operations",
-    availability: "Availability"
+    availability: "Availability",
+    error: "Error confirming email",
+    backToLogin: "Back to Login",
+    emailAlreadyConfirmed: "This email has already been confirmed previously."
   },
   de: {
     emailConfirmed: "E-Mail bestätigt!",
@@ -50,7 +56,10 @@ const translations = {
     advancedTech: "Fortschrittliche Technologie",
     activeUsers: "Aktive Nutzer",
     operations: "Operationen",
-    availability: "Verfügbarkeit"
+    availability: "Verfügbarkeit",
+    error: "Fehler beim Bestätigen der E-Mail",
+    backToLogin: "Zurück zur Anmeldung",
+    emailAlreadyConfirmed: "Diese E-Mail wurde bereits zuvor bestätigt."
   }
 };
 
@@ -58,6 +67,8 @@ function ConfirmEmailContent() {
   const [countdown, setCountdown] = useState(5);
   const [language, setLanguage] = useState<Language>('es');
   const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [isValid, setIsValid] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const router = useRouter();
 
   // Función para limpiar sesión completamente
@@ -74,7 +85,10 @@ function ConfirmEmailContent() {
         // Buscar y eliminar todas las claves relacionadas con auth de Supabase
         Object.keys(localStorage).forEach(key => {
           if (key.includes('supabase.auth') || key.includes('token')) {
-            localStorage.removeItem(key);
+            // No eliminamos los enlaces de confirmación usados para mantener registro
+            if (!key.includes('email_confirm_')) {
+              localStorage.removeItem(key);
+            }
           }
         });
       }
@@ -98,7 +112,9 @@ function ConfirmEmailContent() {
     // Buscar y eliminar todas las claves relacionadas con auth
     Object.keys(localStorage).forEach(key => {
       if (key.includes('supabase.auth') || key.includes('token')) {
-        localStorage.removeItem(key);
+        if (!key.includes('email_confirm_')) {
+          localStorage.removeItem(key);
+        }
       }
     });
   }
@@ -110,9 +126,52 @@ function ConfirmEmailContent() {
       setLanguage(savedLanguage);
     }
 
+    // Verificar si la confirmación de correo ya ha sido procesada
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const emailToken = urlParams.get('token');
+      
+      if (emailToken) {
+        // Verificar si ya se ha utilizado este token
+        const confirmRecord = localStorage.getItem(`email_confirm_${emailToken}`);
+        
+        if (confirmRecord) {
+          try {
+            const record = JSON.parse(confirmRecord);
+            
+            if (record.is_used) {
+              setErrorMessage(translations[language].emailAlreadyConfirmed);
+              setIsValid(false);
+              return;
+            }
+            
+            // Marcar el token como utilizado
+            record.is_used = true;
+            localStorage.setItem(`email_confirm_${emailToken}`, JSON.stringify(record));
+            setIsValid(true);
+          } catch (error) {
+            console.error('Error al procesar token de confirmación:', error);
+            setIsValid(true); // En caso de error, permitimos continuar para no bloquear al usuario
+          }
+        } else {
+          // No tenemos registro, es primera vez
+          const record = {
+            token: emailToken,
+            confirmed_at: Date.now(),
+            is_used: true
+          };
+          localStorage.setItem(`email_confirm_${emailToken}`, JSON.stringify(record));
+          setIsValid(true);
+        }
+      } else {
+        // No hay token en la URL
+        setIsValid(true); // Permitimos continuar para compatibilidad con links antiguos
+      }
+    }
+
     // Asegurarnos de que no hay sesión activa 
     clearSession();
-  }, []);
+  }, [language]);
 
   useEffect(() => {
     if (shouldRedirect) {
@@ -121,6 +180,9 @@ function ConfirmEmailContent() {
   }, [shouldRedirect, router]);
 
   useEffect(() => {
+    // Solo iniciar el contador si la confirmación es válida
+    if (!isValid) return;
+    
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -133,13 +195,38 @@ function ConfirmEmailContent() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [isValid]);
 
   const handleManualRedirect = () => {
     setShouldRedirect(true);
   };
 
   const t = translations[language];
+
+  // Si hay un error, mostramos el mensaje de error
+  if (errorMessage) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cyan-500 to-blue-600">
+        <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg max-w-md w-full">
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-red-100 text-red-600 mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t.error}</h2>
+            <p className="text-gray-600 dark:text-gray-400">{errorMessage}</p>
+            <button 
+              onClick={handleManualRedirect}
+              className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              {t.backToLogin}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen relative overflow-hidden">
