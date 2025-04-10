@@ -255,9 +255,11 @@ export const updatePassword = async (password: string) => {
     // Cerrar la sesión para que el usuario tenga que iniciar sesión explícitamente
     await supabase.auth.signOut();
     
-    // Limpiar tokens de la URL
+    // Limpiar tokens de la URL y localStorage
     if (typeof window !== 'undefined') {
       window.history.replaceState({}, document.title, window.location.pathname);
+      localStorage.removeItem('token');
+      localStorage.removeItem('supabase.auth.token');
     }
     
     return { success: true };

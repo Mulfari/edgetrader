@@ -183,6 +183,7 @@ function ResetPasswordContent() {
             // Asegurarse de que no haya sesión activa al redirigir
             supabase.auth.signOut().then(() => {
               localStorage.removeItem('token');
+              localStorage.removeItem('supabase.auth.token');
               router.push('/login');
             }).catch(error => {
               console.error("Error al cerrar sesión:", error);
