@@ -102,22 +102,7 @@ export const signUpWithEmail = async (email: string, password: string, name?: st
       throw new Error(error.message || 'Formato de fecha inválido. Use DD/MM/YYYY');
     }
 
-    // Generar un token único para la confirmación de email
-    const confirmToken = Date.now().toString(36) + Math.random().toString(36).substring(2);
-    
-    // Guardar registro de este token para validación posterior
-    if (typeof window !== 'undefined') {
-      const confirmInfo = {
-        token: confirmToken,
-        email: email,
-        created_at: Date.now(),
-        expires_at: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7 días
-        is_used: false
-      };
-      localStorage.setItem(`email_confirm_${confirmToken}`, JSON.stringify(confirmInfo));
-    }
-
-    // Registrar usuario con el token personalizado en la URL de redirección
+    // Registrar usuario
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -126,7 +111,7 @@ export const signUpWithEmail = async (email: string, password: string, name?: st
           full_name: name.trim(),
           date_of_birth: formattedDate
         },
-        emailRedirectTo: `${window.location.origin}/confirm-email?token=${confirmToken}`
+        emailRedirectTo: `${window.location.origin}/confirm-email`
       }
     });
 
@@ -206,25 +191,8 @@ export const signInWithGoogle = async () => {
 
 export const resetPassword = async (email: string) => {
   try {
-    // Generar un token único para esta solicitud de restablecimiento
-    const resetId = Date.now().toString(36) + Math.random().toString(36).substring(2);
-    
-    // Guardar el token en localStorage para validación posterior
-    if (typeof window !== 'undefined') {
-      // Guardar información del token con expiración
-      const resetTokenInfo = {
-        resetId: resetId,
-        email: email,
-        created_at: Date.now(),
-        expires_at: Date.now() + (60 * 60 * 1000), // 1 hora en milisegundos
-        is_used: false
-      };
-      localStorage.setItem(`reset_token_${resetId}`, JSON.stringify(resetTokenInfo));
-    }
-    
-    // Configuración del enlace de restablecimiento
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password?token=${resetId}`
+      redirectTo: `${window.location.origin}/reset-password`,
     });
 
     if (error) throw error;
@@ -239,76 +207,55 @@ export const updatePassword = async (password: string) => {
   try {
     // Si estamos en el navegador, intentar obtener el token de recuperación
     if (typeof window !== 'undefined') {
-      // Verificar primero si hay un hash en la URL (token recién recibido)
+      // Buscar el token en el hash de la URL
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const urlToken = hashParams.get('access_token');
+      let accessToken = hashParams.get('access_token');
       
-      // Si hay un token en la URL, guardarlo en sessionStorage y reemplazar la URL
-      if (urlToken && window.history && window.history.replaceState) {
-        sessionStorage.setItem('reset_token', urlToken);
-        const url = window.location.href.split('#')[0];
-        window.history.replaceState({}, document.title, url);
+      // Si no está en el hash, intentar obtenerlo de sessionStorage (donde lo guardamos en reset-password/page.tsx)
+      if (!accessToken && sessionStorage.getItem('reset_token')) {
+        accessToken = sessionStorage.getItem('reset_token');
       }
       
-      // Buscar el token en sessionStorage (donde lo guardamos)
-      const accessToken = sessionStorage.getItem('reset_token');
-      
       if (accessToken) {
-        try {
-          // Establecer la sesión con el token
-          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: ''
+        // Primero establecemos temporalmente el token para autorizar la operación
+        // pero configuramos para no mantener la sesión
+        await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: ''
+        });
+        
+        // Actualizar la contraseña
+        const { data, error } = await supabase.auth.updateUser({
+          password: password
+        });
+        
+        if (error) throw error;
+        
+        // Cerrar inmediatamente la sesión temporal que se creó
+        await supabase.auth.signOut({ scope: 'global' });
+        
+        // Eliminar todos los posibles tokens del localStorage y sessionStorage
+        if (typeof window !== 'undefined') {
+          // Limpiar localStorage
+          localStorage.removeItem('token');
+          localStorage.removeItem('supabase.auth.token');
+          
+          // Buscar y eliminar todas las claves relacionadas con auth de Supabase
+          Object.keys(localStorage).forEach(key => {
+            if (key.includes('supabase.auth') || key.includes('token')) {
+              localStorage.removeItem(key);
+            }
           });
           
-          if (sessionError) {
-            console.error('Error al establecer sesión:', sessionError);
-            throw sessionError;
-          }
-          
-          // Actualizar la contraseña
-          const { data, error } = await supabase.auth.updateUser({
-            password: password
-          });
-          
-          if (error) throw error;
-          
-          // Cerrar inmediatamente la sesión temporal que se creó
-          await supabase.auth.signOut({ scope: 'global' });
-          
-          // Eliminar todos los posibles tokens del localStorage y sessionStorage
-          if (typeof window !== 'undefined') {
-            // Limpiar localStorage
-            localStorage.removeItem('token');
-            localStorage.removeItem('supabase.auth.token');
-            
-            // Limpiar sessionStorage
-            sessionStorage.removeItem('reset_token');
-            sessionStorage.removeItem('valid_reset_token');
-            
-            // Buscar y eliminar todas las claves relacionadas con auth de Supabase
-            Object.keys(localStorage).forEach(key => {
-              if (key.includes('supabase.auth') || key.includes('token')) {
-                // No eliminamos los tokens de restablecimiento usados para mantener registro
-                // y evitar su reutilización
-                if (!key.includes('reset_token_')) {
-                  localStorage.removeItem(key);
-                }
-              }
-            });
-          }
-          
-          return { data, success: true };
-        } catch (tokenError) {
-          console.error('Error al usar token de sesión:', tokenError);
-          throw tokenError;
+          // Limpiar sessionStorage
+          sessionStorage.removeItem('reset_token');
         }
-      } else {
-        throw new Error('No se encontró un token de acceso válido. Por favor, solicita un nuevo enlace de recuperación.');
+        
+        return { data, success: true };
       }
     }
 
-    throw new Error('No se encontró un token de acceso válido. Esta función solo puede ser ejecutada en el cliente.');
+    throw new Error('No se encontró un token de acceso válido');
   } catch (error) {
     console.error('Error en updatePassword:', error);
     return { error, success: false };
