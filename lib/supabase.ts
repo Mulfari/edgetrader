@@ -233,38 +233,23 @@ export const updatePassword = async (password: string) => {
         if (expired) {
           throw new Error('Este enlace de restablecimiento de contraseña ha expirado. Por favor, solicita un nuevo enlace.');
         }
+
+        // Actualizar la contraseña
+        const { data, error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+
+        // Cerrar sesión y limpiar todo
+        await supabase.auth.signOut();
+        if (typeof window !== 'undefined') {
+          window.history.replaceState({}, document.title, window.location.pathname);
+          localStorage.clear();
+        }
         
-        // Si tenemos un token de recuperación, establecerlo antes de actualizar
-        // Esto es necesario para que la API nos permita actualizar la contraseña
-        const { data: { session }, error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: '',
-        });
-        
-        if (sessionError) throw sessionError;
+        return { success: true };
       }
     }
-
-    // Actualizar la contraseña
-    const { data, error } = await supabase.auth.updateUser({
-      password: password
-    });
-
-    if (error) throw error;
     
-    // Cerrar la sesión para que el usuario tenga que iniciar sesión explícitamente
-    await supabase.auth.signOut();
-    
-    // Limpiar tokens de la URL y localStorage
-    if (typeof window !== 'undefined') {
-      window.history.replaceState({}, document.title, window.location.pathname);
-      localStorage.removeItem('token');
-      localStorage.removeItem('supabase.auth.token');
-      localStorage.removeItem('supabase.auth.refresh_token');
-      localStorage.removeItem('supabase.auth.expires_at');
-    }
-    
-    return { success: true };
+    throw new Error('Token de recuperación no encontrado');
   } catch (error) {
     console.error('Error en updatePassword:', error);
     return { success: false, error };

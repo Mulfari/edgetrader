@@ -229,11 +229,19 @@ function ResetPasswordContent() {
     setIsLoading(true);
     
     try {
+      // Cerrar cualquier sesión existente antes de intentar actualizar la contraseña
+      await supabase.auth.signOut();
+      localStorage.clear();
+      
       const { success, error } = await updatePassword(password);
       
       if (success) {
         setIsSuccess(true);
         toast.success(t.resetSuccess);
+        
+        // Asegurarse de que no haya sesión activa
+        await supabase.auth.signOut();
+        localStorage.clear();
       } else if (error) {
         throw error;
       }
