@@ -60,49 +60,6 @@ function ConfirmEmailContent() {
   const [shouldRedirect, setShouldRedirect] = useState(false);
   const router = useRouter();
 
-  // Función para limpiar sesión completamente
-  const clearSession = async () => {
-    try {
-      // Cerrar sesión en todos los dispositivos
-      await supabase.auth.signOut({ scope: 'global' });
-      
-      // Limpiar todo el almacenamiento relacionado con la autenticación
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('supabase.auth.token');
-        
-        // Buscar y eliminar todas las claves relacionadas con auth de Supabase
-        Object.keys(localStorage).forEach(key => {
-          if (key.includes('supabase.auth') || key.includes('token')) {
-            localStorage.removeItem(key);
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error clearing session:', error);
-    }
-  };
-
-  // Ejecutar limpieza de sesión inmediatamente
-  if (typeof window !== 'undefined') {
-    // Esta línea ejecuta la limpieza de la sesión antes de que se monte el componente
-    // Cerramos la sesión en todos los dispositivos
-    supabase.auth.signOut({ scope: 'global' }).catch(error => 
-      console.error('Error al limpiar sesión inicial:', error)
-    );
-    
-    // Limpiar todo el almacenamiento relacionado con la autenticación
-    localStorage.removeItem('token');
-    localStorage.removeItem('supabase.auth.token');
-    
-    // Buscar y eliminar todas las claves relacionadas con auth
-    Object.keys(localStorage).forEach(key => {
-      if (key.includes('supabase.auth') || key.includes('token')) {
-        localStorage.removeItem(key);
-      }
-    });
-  }
-
   useEffect(() => {
     // Intentar obtener el idioma guardado
     const savedLanguage = localStorage.getItem('preferredLanguage') as Language;
@@ -110,7 +67,17 @@ function ConfirmEmailContent() {
       setLanguage(savedLanguage);
     }
 
-    // Asegurarnos de que no hay sesión activa 
+    // Si hay una sesión activa por la confirmación de correo, cerrarla
+    const clearSession = async () => {
+      try {
+        await supabase.auth.signOut();
+        // Limpiar token del localStorage
+        localStorage.removeItem('token');
+      } catch (error) {
+        console.error('Error clearing session:', error);
+      }
+    };
+    
     clearSession();
   }, []);
 
