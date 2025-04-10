@@ -113,14 +113,24 @@ export default function RootLayout({
       }
     };
 
-    // Solo ejecutar si no estamos en una página pública
-    const publicRoutes = ['/', '/login', '/signup'];
-    const isPublicPage = publicRoutes.includes(pathname);
+    // Verificar si estamos en una página pública
+    const isPublicPage = checkIsPublicPage(pathname);
     
     if (!isPublicPage && isAuthenticated) {
       fetchUserProfile();
     }
   }, [pathname, user, isAuthenticated]);
+
+  // Función para verificar si una ruta es pública
+  const checkIsPublicPage = (path: string | null): boolean => {
+    if (!path) return false;
+    
+    const publicRoutes = ['/', '/login', '/signup'];
+    // Verificar rutas exactas
+    if (publicRoutes.includes(path)) return true;
+    // Verificar rutas que comienzan con ciertos prefijos
+    return path.startsWith('/reset-password') || path.startsWith('/confirm-email');
+  };
 
   const handleLogout = async () => {
     try {
@@ -155,8 +165,7 @@ export default function RootLayout({
   };
 
   // Verificar si estamos en páginas públicas
-  const publicRoutes = ['/', '/login', '/signup'];
-  const isPublicPage = publicRoutes.includes(pathname);
+  const isPublicPage = checkIsPublicPage(pathname);
 
   return (
     <html lang="es">
