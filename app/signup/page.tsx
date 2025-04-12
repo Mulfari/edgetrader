@@ -51,7 +51,8 @@ const translations = {
       chars: "8+ caracteres",
       uppercase: "Mayúscula",
       lowercase: "Minúscula",
-      number: "Número"
+      number: "Número",
+      special: "Carácter especial"
     },
     terms: {
       title: "Términos y Condiciones",
@@ -109,7 +110,8 @@ const translations = {
       chars: "8+ characters",
       uppercase: "Uppercase",
       lowercase: "Lowercase",
-      number: "Number"
+      number: "Number",
+      special: "Special character"
     },
     terms: {
       title: "Terms and Conditions",
@@ -167,7 +169,8 @@ const translations = {
       chars: "8+ Zeichen",
       uppercase: "Großbuchstabe",
       lowercase: "Kleinbuchstabe",
-      number: "Nummer"
+      number: "Nummer",
+      special: "Sonderzeichen"
     },
     terms: {
       title: "Allgemeine Geschäftsbedingungen",
@@ -209,7 +212,11 @@ const isValidEmail = (email: string): boolean => {
 
 // Función para verificar si una contraseña es válida
 const isValidPassword = (password: string): boolean => {
-  return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password);
+  return password.length >= 8 && 
+         /[A-Z]/.test(password) && 
+         /[a-z]/.test(password) && 
+         /[0-9]/.test(password) &&
+         /[!@#$%^&*]/.test(password);
 };
 
 export default function SignUpPage() {
@@ -513,15 +520,15 @@ export default function SignUpPage() {
               className="w-full max-w-md space-y-8"
             >
               {/* Gráfico Superior */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 min-h-[200px]">
                 <div className="flex items-center justify-between mb-2">
                   <div>
                     <h4 className="text-base font-semibold">{t.leftSection.userImprovement}</h4>
                     <p className="text-xs text-blue-50/80">{t.leftSection.monthlyProgress}</p>
                   </div>
                 </div>
-                <div className="h-40">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="h-[160px] w-full min-w-[200px] min-h-[160px]">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={160} debounce={1}>
                     <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
                       <XAxis 
@@ -1173,7 +1180,8 @@ export default function SignUpPage() {
                               { met: password.length >= 8, text: t.passwordRequirements.chars },
                               { met: /[A-Z]/.test(password), text: t.passwordRequirements.uppercase },
                               { met: /[a-z]/.test(password), text: t.passwordRequirements.lowercase },
-                              { met: /[0-9]/.test(password), text: t.passwordRequirements.number }
+                              { met: /[0-9]/.test(password), text: t.passwordRequirements.number },
+                              { met: /[!@#$%^&*]/.test(password), text: t.passwordRequirements.special }
                             ].map((requirement, index) => (
                               <div
                                 key={index}
@@ -1196,8 +1204,9 @@ export default function SignUpPage() {
                                   ((password.length >= 8 ? 1 : 0) +
                                   (/[A-Z]/.test(password) ? 1 : 0) +
                                   (/[a-z]/.test(password) ? 1 : 0) +
-                                  (/[0-9]/.test(password) ? 1 : 0)) *
-                                  25
+                                  (/[0-9]/.test(password) ? 1 : 0) +
+                                  (/[!@#$%^&*]/.test(password) ? 1 : 0)) *
+                                  20
                                 }%`
                               }}
                               transition={{ duration: 0.3 }}

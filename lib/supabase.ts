@@ -7,20 +7,123 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Las variables de entorno de Supabase no están configuradas correctamente');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+});
+
 
 export const signInWithEmail = async (email: string, password: string) => {
-  if (typeof window === 'undefined') {
-    throw new Error('Esta función solo puede ser ejecutada en el cliente');
+  try {
+    if (!email || !password) {
+      throw new Error('El correo y la contraseña son requeridos');
+    }
+
+    // Obtener IP del usuario
+    const ipResponse = await fetch('https://api.ipify.org?format=json');
+    const ipData = await ipResponse.json();
+    const ipAddress = ipData.ip;
+    const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : null;
+
+    // Verificar si el email está verificado
+    const { data: user, error: userError } = await supabase
+      .from('profiles')
+      .select('is_email_verified, failed_login_attempts, last_failed_login')
+      .eq('email', email)
+      .single();
+
+    if (userError) {
+      console.error('Error al verificar el estado de la cuenta:', userError);
+      // Registrar intento fallido
+      await supabase.rpc('log_login_attempt', { 
+        p_email: email,
+        p_success: false,
+        p_ip_address: ipAddress,
+        p_user_agent: userAgent
+      });
+      throw new Error('Error al verificar el estado de la cuenta');
+    }
+
+    if (!user) {
+      // Registrar intento fallido
+      await supabase.rpc('log_login_attempt', { 
+        p_email: email,
+        p_success: false,
+        p_ip_address: ipAddress,
+        p_user_agent: userAgent
+      });
+      throw new Error('Usuario no encontrado');
+    }
+
+    if (!user.is_email_verified) {
+      // Registrar intento fallido
+      await supabase.rpc('log_login_attempt', { 
+        p_email: email,
+        p_success: false,
+        p_ip_address: ipAddress,
+        p_user_agent: userAgent
+      });
+      throw new Error('Por favor, verifica tu correo electrónico antes de iniciar sesión');
+    }
+
+    // Verificar si la cuenta está bloqueada
+    if (user.failed_login_attempts >= 5 && user.last_failed_login) {
+      const lockoutTime = new Date(user.last_failed_login);
+      const now = new Date();
+      const minutesSinceLastAttempt = (now.getTime() - lockoutTime.getTime()) / 1000 / 60;
+
+      if (minutesSinceLastAttempt < 30) {
+        // Registrar intento fallido
+        await supabase.rpc('log_login_attempt', { 
+          p_email: email,
+          p_success: false,
+          p_ip_address: ipAddress,
+          p_user_agent: userAgent
+        });
+        throw new Error('Cuenta bloqueada temporalmente. Por favor, intente de nuevo en 30 minutos.');
+      }
+    }
+
+    // Intentar iniciar sesión
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      // Incrementar intentos fallidos y registrar el intento
+      await supabase.rpc('increment_failed_login_attempts', { user_email: email });
+      await supabase.rpc('log_login_attempt', { 
+        p_email: email,
+        p_success: false,
+        p_ip_address: ipAddress,
+        p_user_agent: userAgent
+      });
+      throw error;
+    }
+
+    // Resetear intentos fallidos si el inicio de sesión fue exitoso
+    await supabase.rpc('reset_failed_login_attempts', { user_email: email });
+    
+    // Registrar inicio de sesión exitoso
+    await supabase.rpc('log_login_attempt', { 
+      p_email: email,
+      p_success: true,
+      p_ip_address: ipAddress,
+      p_user_agent: userAgent
+    });
+
+    return { data, error: null };
+  } catch (error: any) {
+    console.error('Error en signInWithEmail:', error);
+    return {
+      data: null,
+      error: error.message || 'Error al iniciar sesión'
+    };
   }
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) throw error;
-  return data;
 };
 
 export const signUpWithEmail = async (email: string, password: string, name?: string, dateOfBirth?: string) => {
@@ -37,6 +140,19 @@ export const signUpWithEmail = async (email: string, password: string, name?: st
   }
 
   try {
+    // Verificar si el email ya existe usando la nueva función
+    const { data: exists, error: checkError } = await supabase
+      .rpc('check_email_exists', { email });
+
+    if (checkError) {
+      console.error('Error al verificar email:', checkError);
+      throw new Error('Error al verificar disponibilidad del email');
+    }
+
+    if (exists) {
+      throw new Error('Este email ya está registrado');
+    }
+
     // Validar email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -44,8 +160,24 @@ export const signUpWithEmail = async (email: string, password: string, name?: st
     }
 
     // Validar contraseña
-    if (password.length < 6) {
-      throw new Error('La contraseña debe tener al menos 6 caracteres');
+    if (password.length < 8) {
+      throw new Error('La contraseña debe tener al menos 8 caracteres');
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      throw new Error('La contraseña debe contener al menos una letra mayúscula');
+    }
+
+    if (!/[a-z]/.test(password)) {
+      throw new Error('La contraseña debe contener al menos una letra minúscula');
+    }
+
+    if (!/[0-9]/.test(password)) {
+      throw new Error('La contraseña debe contener al menos un número');
+    }
+
+    if (!/[!@#$%^&*]/.test(password)) {
+      throw new Error('La contraseña debe contener al menos un carácter especial (!@#$%^&*)');
     }
 
     // Parsear y validar la fecha
@@ -109,14 +241,17 @@ export const signUpWithEmail = async (email: string, password: string, name?: st
       options: {
         data: {
           full_name: name.trim(),
-          date_of_birth: formattedDate
+          date_of_birth: formattedDate,
+          registration_ip: await fetch('https://api.ipify.org?format=json').then(res => res.json()).then(data => data.ip),
+          registration_timestamp: new Date().toISOString(),
+          registration_user_agent: window.navigator.userAgent
         },
         emailRedirectTo: `${window.location.origin}/confirm-email`
       }
     });
 
     if (error) {
-      if (error.message?.toLowerCase().includes('user already registered')) {
+      if (error.message.includes('User already registered')) {
         throw new Error('Este email ya está registrado');
       }
       throw error;
@@ -126,7 +261,10 @@ export const signUpWithEmail = async (email: string, password: string, name?: st
       throw new Error('No se pudo crear el usuario');
     }
 
-    return data;
+    return {
+      ...data,
+      message: 'Se ha enviado un correo de verificación. Por favor, verifica tu email antes de iniciar sesión.'
+    };
 
   } catch (error: any) {
     console.error('Error en signUpWithEmail:', error);
@@ -163,6 +301,23 @@ export const getUser = async () => {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error) throw error;
   return user;
+};
+
+export const getUserProfile = async () => {
+  try {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+    if (!session) return null;
+
+    const { data, error } = await supabase
+      .rpc('get_current_profile');
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error al obtener perfil:', error);
+    return null;
+  }
 };
 
 export const signInWithGoogle = async () => {
@@ -241,5 +396,29 @@ export const updatePassword = async (password: string) => {
   } catch (error) {
     console.error('Error en updatePassword:', error);
     return { error, success: false };
+  }
+};
+
+export type UserRole = 'limited' | 'pro' | 'admin';
+
+export const updateUserRole = async (userId: string, newRole: UserRole) => {
+  try {
+    const { data, error } = await supabase
+      .rpc('update_user_role', {
+        target_user_id: userId,
+        new_role: newRole
+      });
+
+    if (error) {
+      if (error.message.includes('Solo los administradores')) {
+        throw new Error('No tienes permisos para cambiar roles de usuario');
+      }
+      throw error;
+    }
+
+    return data;
+  } catch (error: any) {
+    console.error('Error al actualizar rol:', error);
+    throw error;
   }
 }; 

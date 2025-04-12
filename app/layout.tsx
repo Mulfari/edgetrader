@@ -18,8 +18,28 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import "./globals.css";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { signOut, getUser } from '@/lib/supabase';
+import { signOut, getUserProfile } from '@/lib/supabase';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+
+interface Profile {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  role: string | null;
+}
+
+// Función para formatear el rol del usuario
+const formatUserRole = (role: string | null | undefined): string => {
+  if (!role) return 'Limited';
+  
+  const roleMap: { [key: string]: string } = {
+    'admin': 'Admin',
+    'pro': 'Pro',
+    'limited': 'Limited'
+  };
+
+  return roleMap[role.toLowerCase()] || 'Limited';
+};
 
 const menuItems = [
   {
@@ -84,6 +104,7 @@ export default function RootLayout({
   const [userName, setUserName] = useState("Usuario");
   const [isScrolled, setIsScrolled] = useState(false);
   const [lastUpdate] = useState<string | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated, loading } = useSupabaseAuth();
@@ -100,26 +121,38 @@ export default function RootLayout({
   useEffect(() => {
     const fetchUserProfile = async () => {
       // Solo intentar obtener perfil si tenemos un usuario autenticado
-      if (!user) return;
+      if (!user || !isAuthenticated) {
+        setUserName('Usuario');
+        setUserEmail('');
+        setProfile(null);
+        return;
+      }
 
       try {
-        // Usar los datos del usuario de Supabase
-        setUserName(user.user_metadata?.display_name || user.email?.split('@')[0] || 'Usuario');
-        setUserEmail(user.email || '');
+        const profileData = await getUserProfile() as Profile | null;
+        if (profileData) {
+          setProfile(profileData);
+          setUserName(profileData.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario');
+          setUserEmail(profileData.email || user.email || '');
+        } else {
+          setProfile(null);
+          setUserName(user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario');
+          setUserEmail(user.email || '');
+        }
       } catch (error) {
-        console.error('Error al obtener el perfil del usuario:', error);
-        // Usar valor por defecto
-        setUserName('Usuario');
+        setProfile(null);
+        setUserName(user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario');
+        setUserEmail(user.email || '');
       }
     };
 
     // Verificar si estamos en una página pública
     const isPublicPage = checkIsPublicPage(pathname);
     
-    if (!isPublicPage && isAuthenticated) {
+    if (!isPublicPage && isAuthenticated && !loading) {
       fetchUserProfile();
     }
-  }, [pathname, user, isAuthenticated]);
+  }, [pathname, user, isAuthenticated, loading]);
 
   // Función para verificar si una ruta es pública
   const checkIsPublicPage = (path: string | null): boolean => {
@@ -479,7 +512,7 @@ export default function RootLayout({
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm font-medium text-zinc-900 dark:text-white whitespace-nowrap">{userName || 'Cargando...'}</span>
                                   <Badge variant="outline" className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20 whitespace-nowrap">
-                                    Admin
+                                    {formatUserRole(profile?.role)}
                                   </Badge>
                                 </div>
                                 <div className="text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{userEmail || 'Cargando...'}</div>
@@ -502,7 +535,7 @@ export default function RootLayout({
                                   <div className="flex items-center gap-2">
                                     <h3 className="font-medium text-lg truncate">{userName || 'Cargando...'}</h3>
                                     <Badge variant="outline" className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20 shrink-0">
-                                      Admin
+                                      {formatUserRole(profile?.role)}
                                     </Badge>
                                   </div>
                                   <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate mt-1">{userEmail || 'Cargando...'}</p>

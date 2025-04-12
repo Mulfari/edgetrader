@@ -235,7 +235,7 @@ function LoginForm() {
 
   useEffect(() => {
     // Mostrar mensaje si el usuario viene de confirmar su email
-    const fromConfirmation = searchParams.get('fromConfirmation');
+    const fromConfirmation = searchParams?.get('fromConfirmation');
     if (fromConfirmation === 'true') {
       toast.success(translations[language].emailConfirmed);
     }
@@ -296,9 +296,26 @@ function LoginForm() {
     setError("");
 
     try {
-      const response = await signInWithEmail(email, password);
+      const { data, error } = await signInWithEmail(email, password);
       
-      if (response?.session) {
+      if (error) {
+        console.error('Error detallado:', error);
+        if (error.message.includes('verifica tu correo')) {
+          setError('Por favor, verifica tu correo electrónico antes de iniciar sesión');
+        } else if (error.message.includes('bloqueada temporalmente')) {
+          setError('Tu cuenta está bloqueada temporalmente. Por favor, intenta más tarde');
+        } else if (error.message.includes('Invalid login credentials')) {
+          setError('Credenciales inválidas. Por favor, verifica tu email y contraseña');
+        } else if (error.message.includes('Email not confirmed')) {
+          setError('Por favor, verifica tu correo electrónico antes de iniciar sesión');
+        } else {
+          setError(error.message || 'Error al iniciar sesión');
+        }
+        toast.error(error.message || 'Error al iniciar sesión');
+        return;
+      }
+
+      if (data?.session) {
         if (rememberMe) {
           localStorage.setItem("email", email);
           localStorage.setItem("password", password);
@@ -310,21 +327,15 @@ function LoginForm() {
         setSuccess(true);
         toast.success('¡Inicio de sesión exitoso!');
         
-        setRedirectCountdown(5);
-        
-        const timer = setInterval(() => {
-          setRedirectCountdown((prev) => {
-            if (prev <= 1) {
-              clearInterval(timer);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
+        // Usar setTimeout para la redirección
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 2000);
       } else {
         throw new Error("No se pudo iniciar sesión");
       }
     } catch (error: any) {
+      console.error('Error detallado:', error);
       setError(error.message || "Error al iniciar sesión. Por favor, verifica tus credenciales.");
       toast.error(error.message || 'Error al iniciar sesión');
     } finally {

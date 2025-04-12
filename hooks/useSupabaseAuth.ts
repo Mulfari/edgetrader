@@ -50,7 +50,6 @@ export const useSupabaseAuth = () => {
     // Configurar listener para cambios en la autenticación
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        console.log('Evento de autenticación:', event);
         setSession(newSession);
         setUser(newSession?.user || null);
         
