@@ -16,12 +16,18 @@ import {
   Calendar,
   Camera,
   Pencil,
-  UserCircle
+  UserCircle,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Loader2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "next-themes";
-import { getUserProfile, updateUserAvatar } from "../lib/supabase";
+import { getUserProfile, updateUserAvatar, updatePassword } from "../lib/supabase";
 import Image from "next/image";
+import { toast } from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Profile {
   id: string;
@@ -31,6 +37,12 @@ interface Profile {
   subscription_info: string;
   last_sign_in_formatted: string;
   avatar_url: string;
+}
+
+interface PasswordForm {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 // Lista de avatares predefinidos
@@ -95,6 +107,19 @@ export default function SettingsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const avatarsPerPage = 8;
+  const [passwordForm, setPasswordForm] = useState<PasswordForm>({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<Partial<PasswordForm>>({});
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -187,6 +212,371 @@ export default function SettingsPage() {
   const startIndex = (currentPage - 1) * avatarsPerPage;
   const endIndex = startIndex + avatarsPerPage;
   const currentAvatars = predefinedAvatars.slice(startIndex, endIndex);
+
+  const validatePasswordForm = () => {
+    const errors: Partial<PasswordForm> = {};
+    
+    if (!passwordForm.currentPassword) {
+      errors.currentPassword = 'La contraseña actual es requerida';
+    }
+    
+    if (!passwordForm.newPassword) {
+      errors.newPassword = 'La nueva contraseña es requerida';
+    } else {
+      // Validaciones de contraseña del signup
+      const hasMinLength = passwordForm.newPassword.length >= 8;
+      const hasUpperCase = /[A-Z]/.test(passwordForm.newPassword);
+      const hasLowerCase = /[a-z]/.test(passwordForm.newPassword);
+      const hasNumber = /\d/.test(passwordForm.newPassword);
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword);
+
+      if (!hasMinLength) {
+        errors.newPassword = 'La contraseña debe tener al menos 8 caracteres';
+      } else if (!hasUpperCase) {
+        errors.newPassword = 'La contraseña debe incluir al menos una mayúscula';
+      } else if (!hasLowerCase) {
+        errors.newPassword = 'La contraseña debe incluir al menos una minúscula';
+      } else if (!hasNumber) {
+        errors.newPassword = 'La contraseña debe incluir al menos un número';
+      } else if (!hasSpecialChar) {
+        errors.newPassword = 'La contraseña debe incluir al menos un carácter especial';
+      }
+    }
+    
+    if (!passwordForm.confirmPassword) {
+      errors.confirmPassword = 'Confirma tu nueva contraseña';
+    } else if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      errors.confirmPassword = 'Las contraseñas no coinciden';
+    }
+    
+    return errors;
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const errors = validatePasswordForm();
+    setPasswordErrors(errors);
+    
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+    
+    setIsChangingPassword(true);
+    
+    try {
+      const { error } = await updatePassword(
+        passwordForm.currentPassword,
+        passwordForm.newPassword
+      );
+      
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      
+      // Mensaje de éxito mejorado con toast personalizado
+      toast.custom((t) => (
+        <div className={`${
+          t.visible ? 'animate-enter' : 'animate-leave'
+        } max-w-md w-full bg-white dark:bg-zinc-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+          <div className="flex-1 w-0 p-4">
+            <div className="flex items-start">
+              <div className="flex-shrink-0 pt-0.5">
+                <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                  <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+              </div>
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  ¡Contraseña actualizada!
+                </p>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Tu contraseña ha sido actualizada exitosamente.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex border-l border-gray-200 dark:border-zinc-700">
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-green-600 dark:text-green-400 hover:text-green-500 focus:outline-none"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      ), {
+        duration: 4000,
+        position: 'top-center',
+      });
+
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      
+      // Cerrar el formulario después de actualizar exitosamente
+      setShowPasswordForm(false);
+    } catch (error) {
+      toast.error('Error al actualizar la contraseña');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const renderSecurityTab = () => (
+    <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+      <div className="px-6 py-5 flex items-center gap-4">
+        <div className="relative flex-shrink-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg blur opacity-25"></div>
+          <div className="relative h-14 w-14 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 p-[2px]">
+            <div className="h-full w-full rounded-[7px] bg-white dark:bg-zinc-900 flex items-center justify-center">
+              <Shield className="h-7 w-7 text-amber-500 dark:text-amber-400" />
+            </div>
+          </div>
+        </div>
+        <div>
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-white">
+            Seguridad
+          </h2>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Protege tu cuenta
+          </p>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-4">
+        <div className="grid grid-cols-1 gap-4">
+          {/* Contraseña */}
+          <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/[0.03] to-orange-500/[0.03] border border-amber-500/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Key className="h-4.5 w-4.5 text-amber-500" />
+                <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                  Contraseña
+                </span>
+              </div>
+              <button 
+                onClick={() => setShowPasswordForm(prev => !prev)}
+                className="px-3 py-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 
+                  focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-400/20 rounded-md
+                  transition-all duration-200"
+              >
+                {showPasswordForm ? 'Cancelar' : 'Cambiar'}
+              </button>
+            </div>
+            
+            {/* Formulario de cambio de contraseña */}
+            <AnimatePresence mode="wait">
+              {showPasswordForm && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{
+                    type: "spring",
+                    duration: 0.5,
+                    bounce: 0.2
+                  }}
+                  className="overflow-hidden"
+                >
+                  <motion.form 
+                    onSubmit={handlePasswordChange}
+                    initial={{ y: -20 }}
+                    animate={{ y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="mt-4 space-y-4"
+                  >
+                    <motion.div 
+                      className="space-y-4"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      {/* Contraseña actual */}
+                      <motion.div
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        <div className="relative">
+                          <input
+                            type={showPasswords.current ? "text" : "password"}
+                            placeholder="Contraseña actual"
+                            value={passwordForm.currentPassword}
+                            onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                            className={`block w-full px-3 py-2 border ${
+                              passwordErrors.currentPassword ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                            } rounded-lg shadow-sm focus:ring-amber-500 focus:border-amber-500 dark:bg-zinc-800 dark:text-white text-sm`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                          >
+                            {showPasswords.current ? (
+                              <EyeOff className="h-4 w-4 text-gray-400" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-gray-400" />
+                            )}
+                          </button>
+                        </div>
+                        {passwordErrors.currentPassword && (
+                          <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="mt-1 text-xs text-red-600"
+                          >
+                            {passwordErrors.currentPassword}
+                          </motion.p>
+                        )}
+                      </motion.div>
+
+                      {/* Nueva contraseña */}
+                      <motion.div
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.4 }}
+                      >
+                        <div className="relative">
+                          <input
+                            type={showPasswords.new ? "text" : "password"}
+                            placeholder="Nueva contraseña"
+                            value={passwordForm.newPassword}
+                            onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                            className={`block w-full px-3 py-2 border ${
+                              passwordErrors.newPassword ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                            } rounded-lg shadow-sm focus:ring-amber-500 focus:border-amber-500 dark:bg-zinc-800 dark:text-white text-sm`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                          >
+                            {showPasswords.new ? (
+                              <EyeOff className="h-4 w-4 text-gray-400" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-gray-400" />
+                            )}
+                          </button>
+                        </div>
+                        {passwordErrors.newPassword && (
+                          <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="mt-1 text-xs text-red-600"
+                          >
+                            {passwordErrors.newPassword}
+                          </motion.p>
+                        )}
+                      </motion.div>
+
+                      {/* Confirmar nueva contraseña */}
+                      <motion.div
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.5 }}
+                      >
+                        <div className="relative">
+                          <input
+                            type={showPasswords.confirm ? "text" : "password"}
+                            placeholder="Confirmar nueva contraseña"
+                            value={passwordForm.confirmPassword}
+                            onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                            className={`block w-full px-3 py-2 border ${
+                              passwordErrors.confirmPassword ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                            } rounded-lg shadow-sm focus:ring-amber-500 focus:border-amber-500 dark:bg-zinc-800 dark:text-white text-sm`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                          >
+                            {showPasswords.confirm ? (
+                              <EyeOff className="h-4 w-4 text-gray-400" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-gray-400" />
+                            )}
+                          </button>
+                        </div>
+                        {passwordErrors.confirmPassword && (
+                          <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="mt-1 text-xs text-red-600"
+                          >
+                            {passwordErrors.confirmPassword}
+                          </motion.p>
+                        )}
+                      </motion.div>
+                    </motion.div>
+
+                    <motion.div 
+                      className="flex justify-end"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.6 }}
+                    >
+                      <button
+                        type="submit"
+                        disabled={isChangingPassword}
+                        className="flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-amber-500 to-orange-500 
+                          hover:from-amber-600 hover:to-orange-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 
+                          disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                      >
+                        {isChangingPassword ? (
+                          <>
+                            <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
+                            Actualizando...
+                          </>
+                        ) : (
+                          'Actualizar contraseña'
+                        )}
+                      </button>
+                    </motion.div>
+                  </motion.form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Autenticación 2FA */}
+          <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/[0.03] to-orange-500/[0.03] border border-amber-500/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Smartphone className="h-4.5 w-4.5 text-amber-500" />
+                <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                  Autenticación 2FA
+                </span>
+              </div>
+              <button className="px-3 py-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 
+                focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-400/20 rounded-md
+                transition-all duration-200">
+                Activar
+              </button>
+            </div>
+          </div>
+
+          {/* Correo verificado */}
+          <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/[0.03] to-orange-500/[0.03] border border-amber-500/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Mail className="h-4.5 w-4.5 text-amber-500" />
+                <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                  Correo verificado
+                </span>
+              </div>
+              <Badge variant="outline" className="text-xs px-2 py-0.5 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
+                Verificado
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -376,78 +766,7 @@ export default function SettingsPage() {
           )}
 
           {/* Seguridad */}
-          {activeTab === "seguridad" && (
-            <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              <div className="px-6 py-5 flex items-center gap-4">
-                <div className="relative flex-shrink-0">
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg blur opacity-25"></div>
-                  <div className="relative h-14 w-14 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 p-[2px]">
-                    <div className="h-full w-full rounded-[7px] bg-white dark:bg-zinc-900 flex items-center justify-center">
-                      <Shield className="h-7 w-7 text-amber-500 dark:text-amber-400" />
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h2 className="text-base font-semibold text-zinc-900 dark:text-white">
-                    Seguridad
-                  </h2>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                    Protege tu cuenta
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/[0.03] to-orange-500/[0.03] border border-amber-500/10">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Key className="h-4.5 w-4.5 text-amber-500" />
-                        <span className="text-sm font-medium text-zinc-900 dark:text-white">
-                          Contraseña
-                        </span>
-                      </div>
-                      <button className="px-3 py-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 
-                        focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-400/20 rounded-md
-                        transition-all duration-200">
-                        Cambiar
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/[0.03] to-orange-500/[0.03] border border-amber-500/10">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Smartphone className="h-4.5 w-4.5 text-amber-500" />
-                        <span className="text-sm font-medium text-zinc-900 dark:text-white">
-                          Autenticación 2FA
-                        </span>
-                      </div>
-                      <button className="px-3 py-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 
-                        focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-400/20 rounded-md
-                        transition-all duration-200">
-                        Activar
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/[0.03] to-orange-500/[0.03] border border-amber-500/10">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Mail className="h-4.5 w-4.5 text-amber-500" />
-                        <span className="text-sm font-medium text-zinc-900 dark:text-white">
-                          Correo verificado
-                        </span>
-                      </div>
-                      <Badge variant="outline" className="text-xs px-2 py-0.5 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
-                        Verificado
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {activeTab === "seguridad" && renderSecurityTab()}
 
           {/* Notificaciones */}
           {activeTab === "notificaciones" && (

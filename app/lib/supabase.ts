@@ -39,4 +39,30 @@ export async function updateUserAvatar(avatarUrl: string) {
     console.error('Error al actualizar el avatar:', error);
     throw error;
   }
-} 
+}
+
+export const updatePassword = async (currentPassword: string, newPassword: string) => {
+  try {
+    // Primero verificamos la contraseña actual
+    const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({
+      email: (await supabase.auth.getUser()).data.user?.email || '',
+      password: currentPassword,
+    });
+
+    if (signInError) {
+      throw new Error('La contraseña actual es incorrecta');
+    }
+
+    // Si la contraseña actual es correcta, actualizamos a la nueva
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) throw error;
+
+    return { data, error: null };
+  } catch (error: any) {
+    console.error('Error al actualizar la contraseña:', error);
+    return { data: null, error: error.message };
+  }
+}; 
