@@ -28,74 +28,14 @@ export const signInWithEmail = async (email: string, password: string) => {
     const ipAddress = ipData.ip;
     const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : null;
 
-    // Verificar si el email está verificado
-    const { data: user, error: userError } = await supabase
-      .from('profiles')
-      .select('is_email_verified, failed_login_attempts, last_failed_login')
-      .eq('email', email)
-      .single();
-
-    if (userError) {
-      console.error('Error al verificar el estado de la cuenta:', userError);
-      // Registrar intento fallido
-      await supabase.rpc('log_login_attempt', { 
-        p_email: email,
-        p_success: false,
-        p_ip_address: ipAddress,
-        p_user_agent: userAgent
-      });
-      throw new Error('Error al verificar el estado de la cuenta');
-    }
-
-    if (!user) {
-      // Registrar intento fallido
-      await supabase.rpc('log_login_attempt', { 
-        p_email: email,
-        p_success: false,
-        p_ip_address: ipAddress,
-        p_user_agent: userAgent
-      });
-      throw new Error('Usuario no encontrado');
-    }
-
-    if (!user.is_email_verified) {
-      // Registrar intento fallido
-      await supabase.rpc('log_login_attempt', { 
-        p_email: email,
-        p_success: false,
-        p_ip_address: ipAddress,
-        p_user_agent: userAgent
-      });
-      throw new Error('Por favor, verifica tu correo electrónico antes de iniciar sesión');
-    }
-
-    // Verificar si la cuenta está bloqueada
-    if (user.failed_login_attempts >= 5 && user.last_failed_login) {
-      const lockoutTime = new Date(user.last_failed_login);
-      const now = new Date();
-      const minutesSinceLastAttempt = (now.getTime() - lockoutTime.getTime()) / 1000 / 60;
-
-      if (minutesSinceLastAttempt < 30) {
-        // Registrar intento fallido
-        await supabase.rpc('log_login_attempt', { 
-          p_email: email,
-          p_success: false,
-          p_ip_address: ipAddress,
-          p_user_agent: userAgent
-        });
-        throw new Error('Cuenta bloqueada temporalmente. Por favor, intente de nuevo en 30 minutos.');
-      }
-    }
-
-    // Intentar iniciar sesión
+    // Intentar iniciar sesión primero
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      // Incrementar intentos fallidos y registrar el intento
-      await supabase.rpc('increment_failed_login_attempts', { user_email: email });
+      // Registrar intento fallido
       await supabase.rpc('log_login_attempt', { 
         p_email: email,
         p_success: false,
@@ -105,7 +45,53 @@ export const signInWithEmail = async (email: string, password: string) => {
       throw error;
     }
 
-    // Resetear intentos fallidos si el inicio de sesión fue exitoso
+    // Si el inicio de sesión fue exitoso, verificar o crear el perfil
+    const { data: user, error: userError } = await supabase
+      .from('profiles')
+      .select('is_email_verified, failed_login_attempts, last_failed_login')
+      .eq('email', email)
+      .single();
+
+    // Si no existe el perfil, crearlo
+    if (userError?.message?.includes('Results contain 0 rows')) {
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert([
+          { 
+            id: data.user.id,
+            email: email,
+            is_email_verified: true,
+            failed_login_attempts: 0,
+            role: 'limited'
+          }
+        ]);
+
+      if (insertError) {
+        console.error('Error al crear perfil:', insertError);
+        // No lanzamos error aquí, permitimos continuar
+      }
+    } else if (userError) {
+      console.error('Error al verificar el perfil:', userError);
+      throw new Error('Error al verificar el estado de la cuenta');
+    } else {
+      // Si existe el perfil, verificar bloqueos y estado
+      if (!user.is_email_verified) {
+        throw new Error('Por favor, verifica tu correo electrónico antes de iniciar sesión');
+      }
+
+      // Verificar si la cuenta está bloqueada
+      if (user.failed_login_attempts >= 5 && user.last_failed_login) {
+        const lockoutTime = new Date(user.last_failed_login);
+        const now = new Date();
+        const minutesSinceLastAttempt = (now.getTime() - lockoutTime.getTime()) / 1000 / 60;
+
+        if (minutesSinceLastAttempt < 30) {
+          throw new Error('Cuenta bloqueada temporalmente. Por favor, intente de nuevo en 30 minutos.');
+        }
+      }
+    }
+
+    // Resetear intentos fallidos
     await supabase.rpc('reset_failed_login_attempts', { user_email: email });
     
     // Registrar inicio de sesión exitoso
@@ -326,18 +312,17 @@ export const signInWithGoogle = async () => {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/dashboard`,
-        skipBrowserRedirect: true,
         queryParams: {
           prompt: 'select_account',
           access_type: 'offline',
-          hd: 'domain.com', // Opcional: para restringir a un dominio específico
         },
       },
     });
 
     if (error) throw error;
     
-    return { data, url: data.url };
+    // La redirección será manejada automáticamente por Supabase
+    return { data };
   } catch (error) {
     console.error('Error en signInWithGoogle:', error);
     return { error };

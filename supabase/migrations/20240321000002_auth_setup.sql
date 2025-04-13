@@ -25,6 +25,10 @@ drop policy if exists "Enable insert for authenticated users" on profiles;
 drop policy if exists "Enable update for users based on email" on profiles;
 drop policy if exists "Permitir verificación de email durante registro" on profiles;
 
+-- Eliminar políticas de login_logs
+drop policy if exists "Permitir inserciones desde funciones" on login_logs;
+drop policy if exists "Solo administradores pueden leer logs" on login_logs;
+
 -- Eliminar tipos existentes
 drop type if exists user_role cascade;
 
@@ -47,6 +51,10 @@ create table public.profiles (
     role user_role default 'limited',
     role_updated_at timestamptz,
     role_updated_by uuid references auth.users(id),
+    subscription_expires_at timestamptz,
+    subscription_started_at timestamptz,
+    subscription_status text,
+    stripe_customer_id text,
     is_email_verified boolean default false,
     is_phone_verified boolean default false,
     last_sign_in timestamptz,
@@ -60,7 +68,11 @@ create table public.profiles (
     lock_timestamp timestamptz,
     created_at timestamptz default now(),
     updated_at timestamptz default now(),
-    constraint valid_email check (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
+    constraint valid_email check (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
+    constraint valid_subscription_dates check (
+        (role = 'limited' and subscription_expires_at is null and subscription_started_at is null) or
+        (role in ('pro', 'admin') and subscription_expires_at is not null and subscription_started_at is not null)
+    )
 );
 
 -- Habilitar RLS
@@ -117,7 +129,7 @@ create trigger on_profile_updated
     for each row execute function public.handle_updated_at();
 
 -- Crear función para manejar nuevos usuarios
-create function public.handle_new_user()
+create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer
@@ -147,7 +159,8 @@ begin
         registration_user_agent,
         registration_timestamp,
         created_at,
-        updated_at
+        updated_at,
+        subscription_status
     )
     values (
         new.id,
@@ -163,7 +176,8 @@ begin
         new.raw_user_meta_data->>'registration_user_agent',
         (new.raw_user_meta_data->>'registration_timestamp')::timestamptz,
         new.created_at,
-        new.updated_at
+        new.updated_at,
+        'free'
     )
     on conflict (id) do update
     set
@@ -182,50 +196,147 @@ create trigger on_auth_user_created
     after insert or update on auth.users
     for each row execute function public.handle_new_user();
 
+-- Función para formatear intervalo de tiempo en español
+create or replace function public.format_interval_to_spanish(
+    from_time timestamptz
+)
+returns text
+language plpgsql
+as $$
+declare
+    diff interval;
+    diff_minutes int;
+    diff_hours int;
+    diff_days int;
+    diff_months int;
+begin
+    diff := now() - from_time;
+    diff_minutes := extract(epoch from diff)/60;
+    diff_hours := diff_minutes/60;
+    diff_days := diff_hours/24;
+    diff_months := diff_days/30;
+
+    if diff_minutes < 1 then
+        return 'hace un momento';
+    elsif diff_minutes < 60 then
+        return 'hace ' || diff_minutes || ' minutos';
+    elsif diff_hours < 24 then
+        if diff_hours = 1 then
+            return 'hace 1 hora';
+        else
+            return 'hace ' || diff_hours || ' horas';
+        end if;
+    elsif diff_days < 30 then
+        if diff_days = 1 then
+            return 'hace 1 día';
+        else
+            return 'hace ' || diff_days || ' días';
+        end if;
+    elsif diff_months < 12 then
+        if diff_months = 1 then
+            return 'hace 1 mes';
+        else
+            return 'hace ' || diff_months || ' meses';
+        end if;
+    else
+        return to_char(from_time, 'DD/MM/YYYY');
+    end if;
+end;
+$$;
+
 -- Crear función para obtener el perfil actual
-create function public.get_current_profile()
+create or replace function public.get_current_profile()
 returns jsonb
 language plpgsql
 security definer
 as $$
 declare
-    profile_data jsonb;
+    _user_id uuid;
+    _profile jsonb;
+    _last_login timestamp;
+    _remaining_days int;
 begin
-    select 
-        jsonb_build_object(
-            'id', id,
-            'email', email,
-            'full_name', full_name,
-            'avatar_url', avatar_url,
-            'phone_number', phone_number,
-            'country', country,
-            'language', language,
-            'timezone', timezone,
-            'role', role,
-            'is_email_verified', is_email_verified,
-            'is_phone_verified', is_phone_verified,
-            'last_sign_in', last_sign_in,
-            'failed_login_attempts', failed_login_attempts,
-            'last_failed_login', last_failed_login,
-            'registration_timestamp', registration_timestamp,
-            'account_locked', account_locked,
-            'created_at', created_at,
-            'updated_at', updated_at
+    -- Get current user ID
+    _user_id := auth.uid();
+    
+    -- Get user profile with all fields
+    SELECT jsonb_build_object(
+        'id', p.id,
+        'email', p.email,
+        'full_name', p.full_name,
+        'avatar_url', p.avatar_url,
+        'role', p.role,
+        'is_email_verified', p.is_email_verified,
+        'subscription_expires_at', p.subscription_expires_at,
+        'subscription_started_at', p.subscription_started_at,
+        'subscription_status', p.subscription_status,
+        'subscription_info', (
+            case
+                when p.role = 'limited' then 'Cuenta gratuita'
+                when p.role in ('pro', 'admin') then (
+                    case
+                        when p.subscription_expires_at is null then 'Sin vencimiento'
+                        else (
+                            select 
+                                case
+                                    when p.subscription_expires_at < now() then 'Expirada'
+                                    else extract(day from p.subscription_expires_at - now())::text || ' días restantes'
+                                end
+                        )
+                    end
+                )
+            end
         )
-    into profile_data
-    from public.profiles
-    where id = auth.uid();
+    )
+    INTO _profile
+    FROM public.profiles p
+    WHERE p.id = _user_id;
 
-    return profile_data;
+    -- Get penultimate successful login
+    SELECT created_at 
+    INTO _last_login
+    FROM public.login_logs
+    WHERE email = (_profile->>'email')
+    AND success = true
+    ORDER BY created_at DESC
+    OFFSET 1
+    LIMIT 1;
+
+    -- If no penultimate login exists, try to get the last login
+    IF _last_login IS NULL THEN
+        SELECT created_at 
+        INTO _last_login
+        FROM public.login_logs
+        WHERE email = (_profile->>'email')
+        AND success = true
+        ORDER BY created_at DESC
+        LIMIT 1;
+    END IF;
+
+    -- Add last login info to profile
+    IF _last_login IS NOT NULL THEN
+        _profile := _profile || jsonb_build_object(
+            'last_sign_in', _last_login,
+            'last_sign_in_formatted', public.format_interval_to_spanish(_last_login)
+        );
+    ELSE
+        _profile := _profile || jsonb_build_object(
+            'last_sign_in', null,
+            'last_sign_in_formatted', 'Nunca'
+        );
+    END IF;
+
+    RETURN _profile;
 end;
 $$;
 
--- Crear función para actualizar el rol de un usuario
-create function public.update_user_role(
+-- Crear función para actualizar rol y suscripción (solo para admin)
+create or replace function public.update_user_role_and_subscription(
     target_user_id uuid,
-    new_role user_role
+    new_role user_role,
+    subscription_duration interval default null
 )
-returns boolean
+returns void
 language plpgsql
 security definer
 as $$
@@ -238,21 +349,69 @@ begin
     where id = auth.uid();
 
     if current_user_role != 'admin' then
-        raise exception 'Solo los administradores pueden cambiar roles';
-        return false;
+        raise exception 'Solo los administradores pueden cambiar roles de usuario';
     end if;
 
-    -- Actualizar el rol del usuario objetivo
+    -- Verificar que no se esté intentando asignar el rol 'pro' manualmente
+    if new_role = 'pro' then
+        raise exception 'El rol PRO solo puede ser asignado a través del proceso de pago';
+    end if;
+
+    -- Actualizar el rol y la suscripción (solo para admin)
     update public.profiles
     set
         role = new_role,
         role_updated_at = now(),
-        role_updated_by = auth.uid()
+        role_updated_by = auth.uid(),
+        subscription_started_at = case
+            when new_role = 'admin' then now()
+            else null
+        end,
+        subscription_expires_at = case
+            when new_role = 'admin' and subscription_duration is not null
+                then now() + subscription_duration
+            when new_role = 'limited' then null
+            else subscription_expires_at
+        end,
+        subscription_status = case
+            when new_role = 'limited' then 'free'
+            when new_role = 'admin' then 'active'
+        end
     where id = target_user_id;
-
-    return true;
 end;
 $$;
+
+-- Crear función para procesar actualización de suscripción desde Stripe
+create or replace function public.process_stripe_subscription(
+    user_id uuid,
+    subscription_id text,
+    subscription_status text,
+    subscription_period interval
+)
+returns void
+language plpgsql
+security definer
+as $$
+begin
+    -- Actualizar el perfil con la información de la suscripción
+    update public.profiles
+    set
+        role = 'pro',
+        role_updated_at = now(),
+        role_updated_by = user_id,
+        subscription_started_at = now(),
+        subscription_expires_at = now() + subscription_period,
+        subscription_status = subscription_status,
+        stripe_customer_id = subscription_id
+    where id = user_id;
+end;
+$$;
+
+-- Otorgar permisos solo para la función de admin
+grant execute on function public.update_user_role_and_subscription to authenticated;
+
+-- La función de Stripe será llamada por un webhook, así que no necesita permisos de usuario
+revoke execute on function public.process_stripe_subscription from anon, authenticated;
 
 -- Crear función para manejar intentos fallidos de inicio de sesión
 create function public.handle_failed_login()
@@ -427,4 +586,32 @@ end;
 $$;
 
 -- Otorgar permisos para ejecutar la función
-grant execute on function public.log_login_attempt to anon, authenticated; 
+grant execute on function public.log_login_attempt to anon, authenticated;
+
+-- Función para actualizar el avatar del usuario
+create or replace function public.update_user_avatar(
+    avatar_url text
+)
+returns jsonb
+language plpgsql
+security definer
+as $$
+declare
+    _profile jsonb;
+begin
+    -- Actualizar el avatar del usuario actual
+    update public.profiles
+    set avatar_url = update_user_avatar.avatar_url
+    where id = auth.uid()
+    returning jsonb_build_object(
+        'id', profiles.id,
+        'avatar_url', profiles.avatar_url,
+        'updated_at', profiles.updated_at
+    ) into _profile;
+
+    return _profile;
+end;
+$$;
+
+-- Otorgar permisos para ejecutar la función
+grant execute on function public.update_user_avatar to authenticated; 

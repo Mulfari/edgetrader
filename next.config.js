@@ -15,7 +15,13 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'assets.coingecko.com',
         pathname: '/coins/images/**',
-      }
+      },
+      {
+        protocol: 'https',
+        hostname: 'api.dicebear.com',
+        port: '',
+        pathname: '/7.x/**',
+      },
     ]
   },
   eslint: {
