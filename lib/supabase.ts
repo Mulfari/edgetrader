@@ -406,4 +406,4 @@ export const updateUserRole = async (userId: string, newRole: UserRole) => {
     console.error('Error al actualizar rol:', error);
     throw error;
   }
-}; 
+}; 2
