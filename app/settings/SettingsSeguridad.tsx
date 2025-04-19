@@ -3,14 +3,14 @@ import {
   Shield,
   Key,
   Smartphone,
-  Mail,
   Eye,
   EyeOff,
   Loader2,
   Check,
   X,
   AlertCircle,
-  Info
+  Info,
+  CheckCircle2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
@@ -73,6 +73,7 @@ export default function SettingsSeguridad() {
 
   // Estados para 2FA
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+  const [isLoading2FA, setIsLoading2FA] = useState(true);
   const [show2FASetup, setShow2FASetup] = useState(false);
   const [totpSetup, setTotpSetup] = useState<TOTPSetupState>({
     qrCode: null,
@@ -84,6 +85,7 @@ export default function SettingsSeguridad() {
   const [disableToken, setDisableToken] = useState('');
   const [showDisableForm, setShowDisableForm] = useState(false);
   const [isDisabling2FA, setIsDisabling2FA] = useState(false);
+  const [disable2FAError, setDisable2FAError] = useState<string | null>(null);
 
   // Verificar estado de contraseña
   useEffect(() => {
@@ -109,28 +111,29 @@ export default function SettingsSeguridad() {
   useEffect(() => {
     const check2FA = async () => {
       if (!user?.id) {
-        console.log('No hay usuario autenticado');
+        setIsLoading2FA(false);
         return;
       }
       
       try {
+        setIsLoading2FA(true);
         const { is2FAEnabled: enabled, error } = await check2FAStatus(user.id);
         
         if (error) {
-          console.error('Error al verificar estado de 2FA:', error);
           toast.error('Error al verificar estado de 2FA');
           return;
         }
         
         setIs2FAEnabled(enabled);
       } catch (error) {
-        console.error('Error inesperado al verificar 2FA:', error);
         toast.error('Error al verificar estado de 2FA');
+      } finally {
+        setIsLoading2FA(false);
       }
     };
 
     check2FA();
-  }, [user]);
+  }, [user?.id]);
 
   // Función para iniciar la configuración de 2FA
   const handleSetup2FA = async () => {
@@ -140,13 +143,10 @@ export default function SettingsSeguridad() {
     }
 
     setTotpSetup(prev => ({ ...prev, isLoading: true, error: null }));
-    setShow2FASetup(true); // Mostrar el formulario inmediatamente
+    setShow2FASetup(true);
     
     try {
-      console.log('Iniciando configuración 2FA para usuario:', user.id);
       const { secret, qrCodeDataUrl, error } = await generateTOTPSecret(user.id);
-      
-      console.log('Respuesta de generateTOTPSecret:', { secret, qrCodeDataUrl, error });
       
       if (error) throw new Error(error);
       if (!secret || !qrCodeDataUrl) throw new Error('Error generando códigos');
@@ -159,7 +159,6 @@ export default function SettingsSeguridad() {
         error: null
       });
     } catch (error: any) {
-      console.error('Error completo en handleSetup2FA:', error);
       setTotpSetup(prev => ({
         ...prev,
         isLoading: false,
@@ -168,7 +167,6 @@ export default function SettingsSeguridad() {
         secret: null
       }));
       toast.error(error.message || 'Error al configurar 2FA');
-      // NO cerramos el formulario aquí para mostrar el error
     }
   };
 
@@ -249,20 +247,23 @@ export default function SettingsSeguridad() {
     }
 
     setIsDisabling2FA(true);
+    setDisable2FAError(null);
 
     try {
       const { success, error } = await disable2FA(user.id, disableToken);
       
       if (error) throw new Error(error);
-      if (!success) throw new Error('No se pudo desactivar 2FA');
+      if (!success) throw new Error('Código de verificación inválido');
 
       setIs2FAEnabled(false);
       setShowDisableForm(false);
       setDisableToken('');
+      setDisable2FAError(null);
       
       toast.success('2FA desactivado exitosamente');
     } catch (error: any) {
-      toast.error(error.message);
+      setDisable2FAError(error.message);
+      setDisableToken(''); // Limpiar el token para permitir un nuevo intento
     } finally {
       setIsDisabling2FA(false);
     }
@@ -492,32 +493,41 @@ export default function SettingsSeguridad() {
 
   return (
     <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-      <div className="px-6 py-5 flex items-center gap-4">
-        <div className="relative flex-shrink-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg blur opacity-25"></div>
-          <div className="relative h-14 w-14 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 p-[2px]">
-            <div className="h-full w-full rounded-[7px] bg-white dark:bg-zinc-900 flex items-center justify-center">
-              <Shield className="h-7 w-7 text-amber-500 dark:text-amber-400" />
+      {/* Encabezado mejorado */}
+      <div className="px-6 py-4">
+        <div className="flex items-center gap-4">
+          <div className="relative flex-shrink-0">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-lg blur opacity-25 animate-pulse"></div>
+            <div className="relative h-12 w-12 rounded-lg bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 p-[2px] transform hover:scale-105 transition-transform duration-300">
+              <div className="h-full w-full rounded-[7px] bg-white dark:bg-zinc-900 flex items-center justify-center backdrop-blur-xl">
+                <Shield className="h-6 w-6 text-amber-500 dark:text-amber-400" />
+              </div>
             </div>
           </div>
-        </div>
-        <div>
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-white">
-            Seguridad
-          </h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Protege tu cuenta
-          </p>
+          <div>
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white bg-clip-text text-transparent bg-gradient-to-r from-amber-500 to-orange-500">
+              Seguridad
+            </h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              Protege tu cuenta
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="p-6 space-y-4">
+      <div className="p-4 space-y-4">
         <div className="grid grid-cols-1 gap-4">
           {/* Contraseña */}
-          <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/[0.03] to-orange-500/[0.03] border border-amber-500/10">
-            <div className="flex items-center justify-between">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-xl bg-gradient-to-r from-amber-500/[0.03] to-orange-500/[0.03] border border-amber-500/10 hover:border-amber-500/20 transition-all duration-300"
+          >
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <Key className="h-4.5 w-4.5 text-amber-500" />
+                <div className="p-1.5 rounded-lg bg-amber-500/10">
+                  <Key className="h-4 w-4 text-amber-500" />
+                </div>
                 <span className="text-sm font-medium text-zinc-900 dark:text-white">
                   Contraseña
                 </span>
@@ -529,7 +539,7 @@ export default function SettingsSeguridad() {
                   {passwordStatus?.has_password ? (
                     <button 
                       onClick={() => setShowPasswordForm(prev => !prev)}
-                      className="px-3 py-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 
+                      className="px-3 py-1 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 
                         focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-400/20 rounded-md
                         transition-all duration-200"
                     >
@@ -542,7 +552,7 @@ export default function SettingsSeguridad() {
                       </Badge>
                       <button 
                         onClick={() => setShowPasswordForm(true)}
-                        className="px-3 py-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 
+                        className="px-3 py-1 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 
                           focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-400/20 rounded-md
                           transition-all duration-200"
                       >
@@ -555,14 +565,14 @@ export default function SettingsSeguridad() {
             </div>
 
             {!isLoadingStatus && passwordStatus?.auth_provider === 'google' && !passwordStatus.has_password && (
-              <div className="mt-2 flex items-start gap-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-500/5 p-3 rounded-lg">
-                <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                <p>
+              <div className="mb-4 flex items-start gap-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-500/5 p-2 rounded-lg">
+                <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <p className="text-xs">
                   Tu cuenta fue creada usando Google. Establecer una contraseña te permitirá también iniciar sesión con tu email y contraseña.
                 </p>
               </div>
             )}
-            
+
             <AnimatePresence mode="wait">
               {showPasswordForm && (
                 <motion.div
@@ -581,7 +591,7 @@ export default function SettingsSeguridad() {
                     initial={{ y: -20 }}
                     animate={{ y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="mt-4 space-y-4"
+                    className="space-y-4 bg-white/50 dark:bg-zinc-800/50 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700/50"
                   >
                     <motion.div 
                       className="space-y-4"
@@ -716,9 +726,11 @@ export default function SettingsSeguridad() {
                       <button
                         type="submit"
                         disabled={isChangingPassword}
-                        className="flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-amber-500 to-orange-500 
-                          hover:from-amber-600 hover:to-orange-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 
-                          disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                        className="relative flex items-center justify-center px-4 py-2 text-sm font-medium text-white 
+                          bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 
+                          rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500
+                          disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 min-w-[160px]
+                          transform hover:scale-105 hover:shadow-lg hover:shadow-amber-500/20"
                       >
                         {isChangingPassword ? (
                           <>
@@ -734,47 +746,74 @@ export default function SettingsSeguridad() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </motion.div>
 
           {/* Autenticación 2FA */}
-          <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/[0.03] to-orange-500/[0.03] border border-amber-500/10">
-            <div className="flex items-center justify-between">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="p-4 rounded-xl bg-gradient-to-r from-amber-500/[0.03] to-orange-500/[0.03] border border-amber-500/10 hover:border-amber-500/20 transition-all duration-300"
+          >
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <Smartphone className="h-4.5 w-4.5 text-amber-500" />
+                <div className="p-1.5 rounded-lg bg-amber-500/10">
+                  <Smartphone className="h-4 w-4 text-amber-500" />
+                </div>
                 <span className="text-sm font-medium text-zinc-900 dark:text-white">
                   Autenticación 2FA
                 </span>
               </div>
-              {is2FAEnabled ? (
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
-                    Activado
-                  </Badge>
-                  <button
-                    onClick={() => setShowDisableForm(true)}
-                    className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 
-                      focus:outline-none focus:ring-2 focus:ring-red-500/20 dark:focus:ring-red-400/20 rounded-md
-                      transition-all duration-200"
+              <AnimatePresence mode="wait">
+                {isLoading2FA ? (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex items-center gap-2"
                   >
-                    Desactivar
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={handleSetup2FA}
-                  disabled={totpSetup.isLoading}
-                  className="px-3 py-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 
-                    focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-400/20 rounded-md
-                    transition-all duration-200"
-                >
-                  {totpSetup.isLoading ? 'Generando...' : 'Activar'}
-                </button>
-              )}
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500/20 border-t-amber-500"/>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex items-center gap-2"
+                  >
+                    {is2FAEnabled ? (
+                      <>
+                        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Activado
+                        </Badge>
+                        <button
+                          onClick={() => setShowDisableForm(true)}
+                          className="px-3 py-1 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 
+                            focus:outline-none focus:ring-2 focus:ring-red-500/20 dark:focus:ring-red-400/20 rounded-md
+                            transition-all duration-200"
+                        >
+                          Desactivar
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={handleSetup2FA}
+                        disabled={totpSetup.isLoading}
+                        className="px-3 py-1 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 
+                          focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-400/20 rounded-md
+                          transition-all duration-200"
+                      >
+                        {totpSetup.isLoading ? 'Generando...' : 'Activar'}
+                      </button>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <AnimatePresence mode="wait">
               {render2FASetupForm()}
-              {/* Formulario para desactivar 2FA */}
               {showDisableForm && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
@@ -787,7 +826,7 @@ export default function SettingsSeguridad() {
                   }}
                   className="mt-4"
                 >
-                  <div className="p-4 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                  <div className="p-4 bg-white/50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700/50">
                     <div className="space-y-4">
                       <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                         <AlertCircle className="h-5 w-5" />
@@ -798,22 +837,42 @@ export default function SettingsSeguridad() {
                       <p className="text-xs text-zinc-500 dark:text-zinc-400">
                         Ingresa un código de verificación de tu aplicación de autenticación para confirmar:
                       </p>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={disableToken}
-                          onChange={(e) => setDisableToken(e.target.value)}
-                          placeholder="000000"
-                          className="block w-full px-3 py-2 text-center border border-zinc-300 dark:border-zinc-600 rounded-lg 
-                            shadow-sm focus:ring-amber-500 focus:border-amber-500 dark:bg-zinc-800 dark:text-white text-sm"
-                          maxLength={6}
-                        />
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={disableToken}
+                            onChange={(e) => {
+                              setDisableToken(e.target.value);
+                              setDisable2FAError(null);
+                            }}
+                            placeholder="000000"
+                            className={`block w-full px-3 py-2 text-center border ${
+                              disable2FAError ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-zinc-300 dark:border-zinc-600 focus:ring-amber-500 focus:border-amber-500'
+                            } rounded-lg shadow-sm dark:bg-zinc-800 dark:text-white text-sm`}
+                            maxLength={6}
+                          />
+                        </div>
+                        <AnimatePresence mode="wait">
+                          {disable2FAError && (
+                            <motion.p
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              transition={{ duration: 0.2 }}
+                              className="text-xs text-red-500 text-center"
+                            >
+                              {disable2FAError}
+                            </motion.p>
+                          )}
+                        </AnimatePresence>
                       </div>
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => {
                             setShowDisableForm(false);
                             setDisableToken('');
+                            setDisable2FAError(null);
                           }}
                           className="px-3 py-1.5 text-sm font-medium text-zinc-600 dark:text-zinc-400 
                             hover:text-zinc-700 dark:hover:text-zinc-300"
@@ -826,7 +885,8 @@ export default function SettingsSeguridad() {
                           className="flex items-center justify-center px-4 py-2 text-sm font-medium text-white 
                             bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700
                             rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500
-                            disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                            disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200
+                            transform hover:scale-105 hover:shadow-lg hover:shadow-red-500/20"
                         >
                           {isDisabling2FA ? (
                             <>
@@ -843,22 +903,7 @@ export default function SettingsSeguridad() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
-
-          {/* Correo verificado */}
-          <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/[0.03] to-orange-500/[0.03] border border-amber-500/10">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Mail className="h-4.5 w-4.5 text-amber-500" />
-                <span className="text-sm font-medium text-zinc-900 dark:text-white">
-                  Correo verificado
-                </span>
-              </div>
-              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
-                Verificado
-              </Badge>
-            </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>

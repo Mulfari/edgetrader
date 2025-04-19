@@ -432,11 +432,18 @@ export const updateUserRole = async (userId: string, newRole: UserRole) => {
   }
 };
 
+// Obtener la URL base del API desde las variables de entorno
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+if (!apiBaseUrl) {
+  throw new Error('La variable de entorno NEXT_PUBLIC_API_URL no está configurada');
+}
+
 // Función para generar el secreto TOTP y código QR para 2FA
-export const generateTOTPSecret = async (userId: string) => {
+export async function generateTOTPSecret(userId: string) {
   try {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) throw sessionError;
+    if (sessionError) throw new Error(`Error de sesión: ${sessionError.message}`);
     if (!session) throw new Error('No hay sesión activa');
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/generate`, {
@@ -445,33 +452,29 @@ export const generateTOTPSecret = async (userId: string) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
       },
-      body: JSON.stringify({ userId })
+      body: JSON.stringify({ userId }),
+      credentials: 'include'
     });
 
     if (!response.ok) {
-      throw new Error('Error al generar el secreto TOTP');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
     }
 
     const result = await response.json();
-    
-    if (!result.success) {
-      throw new Error(result.error || 'Error al generar el secreto TOTP');
-    }
-
     return {
       secret: result.secret,
       qrCodeDataUrl: result.qr,
       error: null
     };
   } catch (error: any) {
-    console.error('Error en generateTOTPSecret:', error);
     return {
       secret: null,
       qrCodeDataUrl: null,
       error: error.message || 'Error al generar el secreto TOTP'
     };
   }
-};
+}
 
 // Función para verificar el token TOTP y activar 2FA
 export const verifyTOTPToken = async (userId: string, token: string) => {
@@ -510,65 +513,40 @@ export const verifyTOTPToken = async (userId: string, token: string) => {
 // Función para verificar si 2FA está habilitado
 export const check2FAStatus = async (userId: string) => {
   try {
-    console.log('Verificando estado 2FA para usuario:', userId);
-
     if (!userId) {
-      console.error('ID de usuario no proporcionado');
       return {
         is2FAEnabled: false,
         error: 'ID de usuario no proporcionado'
       };
     }
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('is_2fa_enabled, totp_secret')
-      .eq('id', userId)
-      .single();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw new Error(`Error de sesión: ${sessionError.message}`);
+    if (!session) throw new Error('No hay sesión activa');
 
-    if (error) {
-      console.error('Error al verificar estado de 2FA:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
-      
-      return {
-        is2FAEnabled: false,
-        error: error.message || 'Error al verificar estado de 2FA'
-      };
-    }
-
-    if (!data) {
-      console.error('No se encontró el perfil del usuario');
-      return {
-        is2FAEnabled: false,
-        error: 'No se encontró el perfil del usuario'
-      };
-    }
-
-    console.log('Estado 2FA recuperado exitosamente:', {
-      is2FAEnabled: data.is_2fa_enabled,
-      hasTOTPSecret: !!data.totp_secret
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ userId })
     });
 
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+
+    const result = await response.json();
     return {
-      is2FAEnabled: data.is_2fa_enabled || false,
+      is2FAEnabled: result.is2FAEnabled || false,
       error: null
     };
   } catch (error: any) {
-    console.error('Error inesperado en check2FAStatus:', {
-      error,
-      message: error?.message,
-      details: error?.details,
-      hint: error?.hint,
-      code: error?.code
-    });
-
+    console.error('Error en check2FAStatus:', error);
     return {
       is2FAEnabled: false,
-      error: error?.message || 'Error inesperado al verificar el estado de 2FA'
+      error: error.message || 'Error al verificar el estado de 2FA'
     };
   }
 };
@@ -580,17 +558,21 @@ export const disable2FA = async (userId: string, token: string) => {
     if (sessionError) throw sessionError;
     if (!session) throw new Error('No hay sesión activa');
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/disable`, {
+    const response = await fetch(`${apiBaseUrl}/2fa/disable`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        'Authorization': `Bearer ${session.access_token}`,
+        'Accept': 'application/json',
+        'Origin': window.location.origin
       },
+      credentials: 'include',
       body: JSON.stringify({ userId, token })
     });
 
     if (!response.ok) {
-      throw new Error('Error al desactivar 2FA');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Error al desactivar 2FA');
     }
 
     const result = await response.json();

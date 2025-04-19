@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@firebase/auth": "^1.10.0",
-    "@nestjs/swagger": "^11.0.6",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/swagger": "^11.1.4",
+    "@nestjs/throttler": "^6.4.0",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
     "@radix-ui/react-avatar": "^1.1.3",

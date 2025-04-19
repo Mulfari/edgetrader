@@ -18,6 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
+import { FaSpinner } from 'react-icons/fa';
 
 const predefinedAvatars = [
   { name: 'Sin avatar', url: null },
@@ -42,26 +43,103 @@ interface Profile {
   subscription_info: string;
   last_sign_in_formatted: string;
   avatar_url: string;
+  avatar_style?: string;
+}
+
+// Tipos de avatares disponibles en DiceBear 7.x
+const AVATAR_STYLES = {
+  personas: 'personas',
+  bottts: 'bottts',
+  pixelArt: 'pixel-art',
+  adventurer: 'adventurer',
+  lorelei: 'lorelei',
+  avataaars: 'avataaars',
+} as const;
+
+type AvatarStyle = keyof typeof AVATAR_STYLES;
+
+// Función para generar URL de avatar con parámetros personalizados
+const generateAvatarUrl = (seed: string, style: AvatarStyle, options: Record<string, string> = {}) => {
+  const baseUrl = 'https://api.dicebear.com/7.x';
+  const queryParams = new URLSearchParams({
+    seed,
+    ...options,
+  });
+  return `${baseUrl}/${style}/svg?${queryParams}`;
+};
+
+interface AvatarPreviewProps {
+  url: string;
+  size?: number;
+  isSelected?: boolean;
+}
+
+// Componente para previsualizar avatar con fallback y loading
+const AvatarPreview = ({ url, size = 100, isSelected = false }: AvatarPreviewProps) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  return (
+    <div className={`relative rounded-full overflow-hidden ${isSelected ? 'ring-2 ring-blue-500' : ''}`}>
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+          <FaSpinner className="animate-spin text-gray-400" />
+        </div>
+      )}
+      <Image
+        src={url}
+        alt="Avatar preview"
+        width={size}
+        height={size}
+        className="object-cover"
+        priority={true}
+        onLoad={() => setIsLoading(false)}
+        onError={() => {
+          setError(true);
+          setIsLoading(false);
+        }}
+      />
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-red-100">
+          <span className="text-red-500 text-xs">Error</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface AvatarPreview {
+  url: string;
+  id: string;
 }
 
 export default function SettingsPerfil() {
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [selectedStyle, setSelectedStyle] = useState<AvatarStyle>('personas');
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
+
+  // Usar los avatares predefinidos en lugar de generarlos
+  const [avatarPreviews] = useState(predefinedAvatars.map((avatar, index) => ({
+    url: avatar.url || '',
+    id: `avatar-${index}`,
+    name: avatar.name
+  })));
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const data = await getUserProfile();
         setProfile(data);
-        setSelectedAvatar(data?.avatar_url || predefinedAvatars[0].url);
+        if (data.avatar_style) {
+          setSelectedStyle(data.avatar_style as AvatarStyle);
+        }
       } catch (error) {
         setError('Error al obtener el perfil');
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
     fetchProfile();
@@ -76,7 +154,7 @@ export default function SettingsPerfil() {
         throw new Error(response.error || 'Error al actualizar el avatar');
       }
 
-      setSelectedAvatar(avatarUrl);
+      setProfile(prev => prev ? { ...prev, avatar_url: avatarUrl, avatar_style: selectedStyle } : null);
       toast.success('Avatar actualizado correctamente');
     } catch (error) {
       console.error('Error al actualizar avatar:', error);
@@ -135,18 +213,15 @@ export default function SettingsPerfil() {
           >
             <div className="flex flex-col items-center text-center mb-8">
               <div className="relative mb-4">
-                {loading ? (
+                {isLoading ? (
                   <div className="animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-700 h-28 w-28" />
                 ) : (
                   <>
                     <div className="relative h-28 w-28 rounded-full ring-4 ring-white dark:ring-zinc-900 shadow-xl">
-                      {selectedAvatar ? (
-                        <Image 
-                          src={selectedAvatar} 
-                          alt="Avatar" 
-                          width={112} 
-                          height={112} 
-                          className="rounded-full object-cover"
+                      {profile?.avatar_url ? (
+                        <AvatarPreview
+                          url={profile.avatar_url}
+                          size={112}
                         />
                       ) : (
                         <div className="h-full w-full rounded-full bg-white dark:bg-zinc-900 flex items-center justify-center">
@@ -156,7 +231,7 @@ export default function SettingsPerfil() {
                     </div>
           <button
             onClick={() => setShowAvatarModal(true)}
-                      disabled={loading}
+                      disabled={isLoading}
                       className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-800 shadow-lg 
                         rounded-full p-2 border-2 border-violet-500/20 hover:border-violet-500 
                         transition-all duration-200 group"
@@ -167,7 +242,7 @@ export default function SettingsPerfil() {
                   </>
                 )}
               </div>
-              {loading ? (
+              {isLoading ? (
                 <div className="space-y-3 w-full max-w-[200px]">
                   <div className="h-6 bg-zinc-200 dark:bg-zinc-700 rounded-md w-full animate-pulse mx-auto" />
                   <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded-md w-4/5 animate-pulse mx-auto" />
@@ -197,14 +272,14 @@ export default function SettingsPerfil() {
                   </div>
                   <div>
                     <span className="text-sm text-zinc-500 dark:text-zinc-400">Rol</span>
-                    {loading ? (
+                    {isLoading ? (
                       <div className="h-5 bg-zinc-200 dark:bg-zinc-700 rounded w-20 animate-pulse mt-1" />
                     ) : (
                       <p className="text-sm font-medium text-zinc-900 dark:text-white">{profile?.role}</p>
                     )}
                   </div>
                 </div>
-                {!loading && (
+                {!isLoading && (
                   <Badge variant="outline" className="bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20">
                     {profile?.role}
                   </Badge>
@@ -218,14 +293,14 @@ export default function SettingsPerfil() {
                   </div>
                   <div>
                     <span className="text-sm text-zinc-500 dark:text-zinc-400">Plan</span>
-                    {loading ? (
+                    {isLoading ? (
                       <div className="h-5 bg-zinc-200 dark:bg-zinc-700 rounded w-24 animate-pulse mt-1" />
                     ) : (
                       <p className="text-sm font-medium text-zinc-900 dark:text-white">{profile?.subscription_info}</p>
                     )}
                   </div>
                 </div>
-                {!loading && (
+                {!isLoading && (
                   <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
                     {profile?.subscription_info}
                   </Badge>
@@ -239,7 +314,7 @@ export default function SettingsPerfil() {
                   </div>
                   <div>
                     <span className="text-sm text-zinc-500 dark:text-zinc-400">Último acceso</span>
-                    {loading ? (
+                    {isLoading ? (
                       <div className="h-5 bg-zinc-200 dark:bg-zinc-700 rounded w-32 animate-pulse mt-1" />
                     ) : (
                       <p className="text-sm font-medium text-zinc-900 dark:text-white">{profile?.last_sign_in_formatted}</p>
@@ -285,18 +360,18 @@ export default function SettingsPerfil() {
               </div>
 
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                {predefinedAvatars.map((avatar, idx) => (
+                {avatarPreviews.map((avatar) => (
                   <motion.button
-                    key={idx}
+                    key={avatar.id}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: idx * 0.05 }}
+                    transition={{ delay: Number(avatar.id.split('-')[1]) * 0.05 }}
                     onClick={() => {
-                      selectAvatar(avatar.url || '');
+                      selectAvatar(avatar.url);
                       setShowAvatarModal(false);
                     }}
                     className={`relative aspect-square rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-300 focus:outline-none
-                      ${selectedAvatar === avatar.url
+                      ${profile?.avatar_url === avatar.url
                         ? 'border-violet-500 ring-2 ring-violet-500/30 bg-violet-500/10 scale-105 shadow-lg shadow-violet-500/20'
                         : 'border-zinc-200 dark:border-zinc-700 hover:border-violet-500/40 hover:bg-violet-500/5 hover:scale-105 hover:shadow-lg'}
                       transform hover:-translate-y-1 hover:shadow-violet-500/20
@@ -304,7 +379,10 @@ export default function SettingsPerfil() {
                   >
                     <div className="relative w-16 h-16 rounded-lg p-1 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 group-hover:opacity-100 transition-opacity duration-300">
                     {avatar.url ? (
-                        <img src={avatar.url} alt={avatar.name} className="w-full h-full rounded-md object-cover" />
+                        <AvatarPreview
+                          url={avatar.url}
+                          size={64}
+                        />
                     ) : (
                         <div className="w-full h-full rounded-md bg-white dark:bg-zinc-900 flex items-center justify-center">
                           <UserCircle className="w-10 h-10 text-violet-500/30" />
@@ -312,13 +390,13 @@ export default function SettingsPerfil() {
                     )}
                     </div>
                     <span className={`mt-3 text-xs font-medium ${
-                      selectedAvatar === avatar.url 
+                      profile?.avatar_url === avatar.url 
                         ? 'text-violet-500' 
                         : 'text-zinc-600 dark:text-zinc-400'
                     }`}>
                       {avatar.name}
                     </span>
-                    {selectedAvatar === avatar.url && (
+                    {profile?.avatar_url === avatar.url && (
                       <motion.span 
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}

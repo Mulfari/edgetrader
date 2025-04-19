@@ -22,7 +22,10 @@ const nextConfig = {
         port: '',
         pathname: '/7.x/**',
       },
-    ]
+    ],
+    domains: ['api.dicebear.com'],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   eslint: {
     ignoreDuringBuilds: true,
