@@ -89,19 +89,15 @@ export default function DashboardPage() {
   useEffect(() => {
     // Proteger esta ruta con Supabase Auth
     const tokenInStorage = localStorage.getItem('token');
-    console.log('Dashboard: Token en localStorage:', !!tokenInStorage);
-    console.log('Dashboard: Usuario autenticado:', !!user);
     
     // Comentar temporalmente para probar sin redirección
     // requireAuth();
     
-    // En su lugar, solo loguear el resultado sin redireccionar
+    // En su lugar, solo verificar la autenticación sin redireccionar
     const isAuth = requireAuth(() => {
-      console.log('Se intentaría redirigir a login, pero está temporalmente deshabilitado');
       // No hacemos nada para evitar la redirección
       return false; // Evita que se ejecute la redirección
     });
-    console.log('¿Usuario autenticado según requireAuth?:', isAuth);
   }, []);
 
   // Establecer valores predeterminados ya que SubAccounts está deshabilitado
@@ -129,7 +125,6 @@ export default function DashboardPage() {
     // Cargar datos iniciales al montar el componente
     const subaccountsComponent = document.getElementById('subaccounts-component');
     if (subaccountsComponent) {
-      console.log("Enviando evento refresh inicial al componente de subcuentas");
       const refreshEvent = new CustomEvent('refresh', { bubbles: true });
       subaccountsComponent.dispatchEvent(refreshEvent);
     }

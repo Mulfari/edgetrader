@@ -1,20 +1,39 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Las variables de entorno de Supabase no están configuradas correctamente');
+  throw new Error('Las variables de entorno de Supabase no están configuradas correctamente');
 }
 
+// Crear el cliente de Supabase con la configuración optimizada
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-  },
+    persistSession: true,     // mantiene la sesión en localStorage
+    detectSessionInUrl: true, // necesario para auth callbacks en Next.js
+    autoRefreshToken: true,   // renueva automáticamente el token
+    storageKey: 'supabase.auth.token' // clave para localStorage
+  }
 });
 
+// Escuchar cambios en el estado de autenticación
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN') {
+    // El usuario ha iniciado sesión
+  } else if (event === 'SIGNED_OUT') {
+    // El usuario ha cerrado sesión
+    // Limpiar cualquier dato local si es necesario
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('supabase.auth.token');
+    }
+  } else if (event === 'TOKEN_REFRESHED') {
+    // El token se ha renovado automáticamente
+    console.log('Token renovado:', session?.access_token ? 'success' : 'failed');
+  }
+});
+
+export type SupabaseClient = typeof supabase;
 
 export const signInWithEmail = async (email: string, password: string) => {
   try {
@@ -22,92 +41,85 @@ export const signInWithEmail = async (email: string, password: string) => {
       throw new Error('El correo y la contraseña son requeridos');
     }
 
-    // Obtener IP del usuario
-    const ipResponse = await fetch('https://api.ipify.org?format=json');
-    const ipData = await ipResponse.json();
-    const ipAddress = ipData.ip;
-    const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : null;
-
     // Intentar iniciar sesión primero
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
-      // Registrar intento fallido
-      await supabase.rpc('log_login_attempt', { 
-        p_email: email,
-        p_success: false,
-        p_ip_address: ipAddress,
-        p_user_agent: userAgent
-      });
-      throw error;
-    }
-
-    // Si el inicio de sesión fue exitoso, verificar o crear el perfil
-    const { data: user, error: userError } = await supabase
-      .from('profiles')
-      .select('is_email_verified, failed_login_attempts, last_failed_login')
-      .eq('email', email)
-      .single();
-
-    // Si no existe el perfil, crearlo
-    if (userError?.message?.includes('Results contain 0 rows')) {
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert([
-          { 
-            id: data.user.id,
-            email: email,
-            is_email_verified: true,
-            failed_login_attempts: 0,
-            role: 'limited'
-          }
-        ]);
-
-      if (insertError) {
-        console.error('Error al crear perfil:', insertError);
-        // No lanzamos error aquí, permitimos continuar
-      }
-    } else if (userError) {
-      console.error('Error al verificar el perfil:', userError);
-      throw new Error('Error al verificar el estado de la cuenta');
-    } else {
-      // Si existe el perfil, verificar bloqueos y estado
-      if (!user.is_email_verified) {
-        throw new Error('Por favor, verifica tu correo electrónico antes de iniciar sesión');
-      }
-
-      // Verificar si la cuenta está bloqueada
-      if (user.failed_login_attempts >= 5 && user.last_failed_login) {
-        const lockoutTime = new Date(user.last_failed_login);
-        const now = new Date();
-        const minutesSinceLastAttempt = (now.getTime() - lockoutTime.getTime()) / 1000 / 60;
-
-        if (minutesSinceLastAttempt < 30) {
-          throw new Error('Cuenta bloqueada temporalmente. Por favor, intente de nuevo en 30 minutos.');
+    // Manejar específicamente el error de email no confirmado
+    if (signInError?.message?.includes('Email not confirmed')) {
+      return {
+        data: null,
+        error: {
+          message: 'Email not confirmed',
+          status: 400
         }
-      }
+      };
     }
 
-    // Resetear intentos fallidos
-    await supabase.rpc('reset_failed_login_attempts', { user_email: email });
-    
-    // Registrar inicio de sesión exitoso
-    await supabase.rpc('log_login_attempt', { 
-      p_email: email,
-      p_success: true,
-      p_ip_address: ipAddress,
-      p_user_agent: userAgent
-    });
+    // Si hay otro tipo de error en el inicio de sesión
+    if (signInError) {
+      // Obtener información del cliente solo si es necesario registrar el intento
+      const ipResponse = await fetch('https://api.ipify.org?format=json');
+      const ipData = await ipResponse.json();
+      const ipAddress = ipData.ip;
+      const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : null;
+
+      // Registrar intento fallido
+      try {
+        // Obtener el user_id del usuario que intenta iniciar sesión
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData?.user?.id;
+
+        await supabase.rpc('log_login_attempt', { 
+          p_user_id: userId || '00000000-0000-0000-0000-000000000000', // UUID nulo para intentos fallidos sin usuario
+          p_success: false,
+          p_ip_address: ipAddress,
+          p_user_agent: userAgent
+        });
+      } catch (logError) {
+        console.error('Error al registrar intento de inicio de sesión:', logError);
+        // Continuamos con el flujo normal aunque falle el registro
+      }
+
+      return {
+        data: null,
+        error: signInError
+      };
+    }
+
+    // Si el inicio de sesión fue exitoso
+    if (data?.user) {
+      try {
+        // Obtener información del cliente
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        const ipAddress = ipData.ip;
+        const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : null;
+
+        // Registrar inicio de sesión exitoso
+        await supabase.rpc('log_login_attempt', { 
+          p_user_id: data.user.id,
+          p_success: true,
+          p_ip_address: ipAddress,
+          p_user_agent: userAgent
+        });
+      } catch (logError) {
+        console.error('Error al registrar inicio de sesión exitoso:', logError);
+        // Continuamos aunque falle el registro
+      }
+    }
 
     return { data, error: null };
   } catch (error: any) {
     console.error('Error en signInWithEmail:', error);
     return {
       data: null,
-      error: error.message || 'Error al iniciar sesión'
+      error: {
+        message: error.message || 'Error al iniciar sesión',
+        status: error.status || 500
+      }
     };
   }
 };
@@ -352,13 +364,17 @@ export const updatePassword = async (password: string) => {
       
       if (accessToken) {
         // Si tenemos un token de recuperación, establecerlo antes de actualizar
-        // Esto es necesario para que la API nos permita actualizar la contraseña
         const { data: { session }, error: sessionError } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: '',
         });
         
-        if (sessionError) throw sessionError;
+        if (sessionError) {
+          return { 
+            success: false, 
+            error: sessionError.message || 'Error al establecer la sesión'
+          };
+        }
       }
     }
 
@@ -367,7 +383,12 @@ export const updatePassword = async (password: string) => {
       password: password
     });
 
-    if (error) throw error;
+    if (error) {
+      return { 
+        success: false, 
+        error: error.message || 'Error al actualizar la contraseña'
+      };
+    }
     
     // Cerrar la sesión para que el usuario tenga que iniciar sesión explícitamente
     await supabase.auth.signOut();
@@ -377,10 +398,13 @@ export const updatePassword = async (password: string) => {
       localStorage.removeItem('token');
     }
     
-    return { data, success: true };
-  } catch (error) {
+    return { data, success: true, error: null };
+  } catch (error: any) {
     console.error('Error en updatePassword:', error);
-    return { error, success: false };
+    return { 
+      success: false, 
+      error: error.message || 'Error al actualizar la contraseña'
+    };
   }
 };
 
@@ -405,5 +429,306 @@ export const updateUserRole = async (userId: string, newRole: UserRole) => {
   } catch (error: any) {
     console.error('Error al actualizar rol:', error);
     throw error;
+  }
+};
+
+// Función para generar el secreto TOTP y código QR para 2FA
+export const generateTOTPSecret = async (userId: string) => {
+  try {
+    console.log('Generando secreto TOTP para usuario:', userId);
+    
+    const { data, error } = await supabase.rpc('generate_totp_secret', {
+      user_id_input: userId
+    });
+
+    console.log('Respuesta de generate_totp_secret:', { data, error });
+
+    if (error) throw error;
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Error al generar el secreto TOTP');
+    }
+
+    return {
+      secret: data.secret,
+      qrCodeDataUrl: data.qr_code,
+      error: null
+    };
+  } catch (error: any) {
+    console.error('Error detallado en generateTOTPSecret:', {
+      error,
+      message: error?.message,
+      details: error?.details,
+      hint: error?.hint
+    });
+    return {
+      secret: null,
+      qrCodeDataUrl: null,
+      error: error.message || 'Error al generar el secreto TOTP'
+    };
+  }
+};
+
+// Función para verificar el token TOTP y activar 2FA
+export const verifyTOTPToken = async (userId: string, token: string) => {
+  try {
+    const { data, error } = await supabase.rpc('verify_totp_token', {
+      user_id: userId,
+      token: token
+    });
+
+    if (error) throw error;
+
+    return {
+      success: data.success,
+      error: null
+    };
+  } catch (error: any) {
+    console.error('Error en verifyTOTPToken:', error);
+    return {
+      success: false,
+      error: error.message || 'Error al verificar el token TOTP'
+    };
+  }
+};
+
+// Función para verificar si 2FA está habilitado
+export const check2FAStatus = async (userId: string) => {
+  try {
+    console.log('Verificando estado 2FA para usuario:', userId);
+
+    if (!userId) {
+      console.error('ID de usuario no proporcionado');
+      return {
+        is2FAEnabled: false,
+        error: 'ID de usuario no proporcionado'
+      };
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('is_2fa_enabled, totp_secret')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error al verificar estado de 2FA:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      
+      return {
+        is2FAEnabled: false,
+        error: error.message || 'Error al verificar estado de 2FA'
+      };
+    }
+
+    if (!data) {
+      console.error('No se encontró el perfil del usuario');
+      return {
+        is2FAEnabled: false,
+        error: 'No se encontró el perfil del usuario'
+      };
+    }
+
+    console.log('Estado 2FA recuperado exitosamente:', {
+      is2FAEnabled: data.is_2fa_enabled,
+      hasTOTPSecret: !!data.totp_secret
+    });
+
+    return {
+      is2FAEnabled: data.is_2fa_enabled || false,
+      error: null
+    };
+  } catch (error: any) {
+    console.error('Error inesperado en check2FAStatus:', {
+      error,
+      message: error?.message,
+      details: error?.details,
+      hint: error?.hint,
+      code: error?.code
+    });
+
+    return {
+      is2FAEnabled: false,
+      error: error?.message || 'Error inesperado al verificar el estado de 2FA'
+    };
+  }
+};
+
+// Función para desactivar 2FA
+export const disable2FA = async (userId: string, token: string) => {
+  try {
+    const { data, error } = await supabase.rpc('disable_2fa', {
+      user_id: userId,
+      token: token
+    });
+
+    if (error) throw error;
+
+    return {
+      success: data.success,
+      error: null
+    };
+  } catch (error: any) {
+    console.error('Error en disable2FA:', error);
+    return {
+      success: false,
+      error: error.message || 'Error al desactivar 2FA'
+    };
+  }
+};
+
+export const updateUserAvatar = async (avatarUrl: string): Promise<{ success: boolean; error: string | null; data?: any }> => {
+  try {
+    console.log('Iniciando actualización de avatar con URL:', avatarUrl);
+
+    // Validar que tenemos una sesión activa
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('Error de sesión:', sessionError);
+      return {
+        success: false,
+        error: 'Error de autenticación: ' + sessionError.message
+      };
+    }
+
+    if (!session?.user) {
+      console.error('No hay sesión de usuario');
+      return {
+        success: false,
+        error: 'Usuario no autenticado'
+      };
+    }
+
+    console.log('Usuario autenticado:', session.user.id);
+
+    // Usar la función RPC update_user_avatar en lugar de actualizar directamente
+    const { data, error: updateError } = await supabase
+      .rpc('update_user_avatar', {
+        avatar_url: avatarUrl
+      });
+
+    if (updateError) {
+      console.error('Error completo al actualizar avatar:', {
+        error: updateError,
+        code: updateError.code,
+        details: updateError.details,
+        hint: updateError.hint,
+        message: updateError.message
+      });
+      return {
+        success: false,
+        error: updateError.message || 'Error al actualizar el avatar en la base de datos'
+      };
+    }
+
+    if (!data) {
+      console.error('No se recibieron datos después de la actualización');
+      return {
+        success: false,
+        error: 'No se pudo actualizar el perfil'
+      };
+    }
+
+    console.log('Avatar actualizado exitosamente:', data);
+
+    return {
+      success: true,
+      error: null,
+      data
+    };
+
+  } catch (error: any) {
+    console.error('Error detallado al actualizar avatar:', {
+      error,
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+      details: error?.details,
+      hint: error?.hint
+    });
+
+    return {
+      success: false,
+      error: error?.message || 'Error inesperado al actualizar el avatar'
+    };
+  }
+};
+
+export const checkPasswordStatus = async () => {
+  try {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) throw userError;
+    if (!user) throw new Error('No hay usuario autenticado');
+
+    const { data, error } = await supabase.rpc('check_password_status', {
+      user_id: user.id
+    });
+
+    if (error) throw error;
+
+    return {
+      data,
+      error: null
+    };
+  } catch (error: any) {
+    console.error('Error al verificar estado de contraseña:', error);
+    return {
+      data: null,
+      error: error.message || 'Error al verificar estado de contraseña'
+    };
+  }
+};
+
+export const setInitialPassword = async (password: string) => {
+  try {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) throw userError;
+    if (!user) throw new Error('No hay usuario autenticado');
+
+    const { data, error } = await supabase.rpc('set_initial_password', {
+      user_id: user.id,
+      new_password: password
+    });
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      error: null
+    };
+  } catch (error: any) {
+    console.error('Error al establecer contraseña inicial:', error);
+    return {
+      success: false,
+      error: error.message || 'Error al establecer contraseña inicial'
+    };
+  }
+};
+
+export const rpcVerifyTOTP = async (userId: string, token: string) => {
+  try {
+    const { data, error } = await supabase.rpc('verify_totp', {
+      user_id: userId,
+      token: token
+    });
+
+    if (error) throw error;
+
+    return {
+      success: data,
+      error: null
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.message
+    };
   }
 }; 

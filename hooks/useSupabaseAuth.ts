@@ -15,7 +15,6 @@ export const useSupabaseAuth = () => {
     // Esto evita redirecciones en el primer render mientras carga la sesión real
     const tokenInLocalStorage = localStorage.getItem('token');
     if (tokenInLocalStorage) {
-      console.log('Token encontrado en localStorage, no redireccionar aún');
       setLoading(true); // Mantener cargando hasta verificar con Supabase
     }
   }, []);
@@ -85,7 +84,6 @@ export const useSupabaseAuth = () => {
     // Verificar token en localStorage como última opción
     const tokenInLocalStorage = localStorage.getItem('token');
     if (tokenInLocalStorage) {
-      console.log('Token encontrado en localStorage, permitiendo acceso mientras se verifica');
       return true;
     }
 

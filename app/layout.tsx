@@ -114,6 +114,26 @@ const safeLocalStorage = {
   }
 };
 
+const clearAllCache = () => {
+  // Limpiar cualquier dato restante en localStorage
+  // Datos de subcuentas y caché
+  safeLocalStorage.removeItem("subAccounts");
+  safeLocalStorage.removeItem("subaccounts_cache");
+  
+  // Datos de balances y caché
+  safeLocalStorage.removeItem("accountBalances");
+  safeLocalStorage.forEach(key => {
+    if (key.startsWith('subaccount_balance_')) {
+      safeLocalStorage.removeItem(key);
+    }
+  });
+  
+  // Preferencias de usuario
+  safeLocalStorage.removeItem("balanceDisplayPreference");
+  safeLocalStorage.removeItem("selectedSubAccountId");
+  safeLocalStorage.removeItem("lastUpdate");
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -191,28 +211,10 @@ export default function RootLayout({
       // Usar la función de cierre de sesión de Supabase
       await signOut();
       
-      // Limpiar cualquier dato restante en localStorage
-      // Datos de subcuentas y caché
-      safeLocalStorage.removeItem("subAccounts");
-      safeLocalStorage.removeItem("subaccounts_cache");
+      // Limpiar caché y datos locales
+      clearAllCache();
       
-      // Datos de balances y caché
-      safeLocalStorage.removeItem("accountBalances");
-      safeLocalStorage.forEach(key => {
-        if (key.startsWith('subaccount_balance_')) {
-          safeLocalStorage.removeItem(key);
-        }
-      });
-      
-      // Preferencias de usuario
-      safeLocalStorage.removeItem("balanceDisplayPreference");
-      safeLocalStorage.removeItem("selectedSubAccountId");
-      safeLocalStorage.removeItem("lastUpdate");
-      
-      console.log("✅ Sesión cerrada correctamente. Todos los datos en caché han sido eliminados.");
-      
-      // Redirigir al usuario a la página de login
-      router.push("/login");
+      router.push('/login');
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
     }

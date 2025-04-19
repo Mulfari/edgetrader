@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Eye, EyeOff, AlertCircle, Loader2, X } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, AlertCircle, Loader2, X, Clock } from "lucide-react";
 import { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -21,9 +21,9 @@ const isValidEmail = (email: string): boolean => {
   return emailRegex.test(email);
 };
 
-// Función para validar contraseña - simplificada
+// Función para validar contraseña
 const validatePassword = (password: string): boolean => {
-  return password.length >= 6; // Solo verificamos longitud mínima
+  return password.length >= 6;
 };
 
 type Language = 'es' | 'en' | 'de';
@@ -68,7 +68,21 @@ const translations = {
     goDashboard: "Ir al dashboard",
     loginSuccess: "¡Inicio de sesión exitoso!",
     preparingDashboard: "Preparando tu dashboard...",
-    welcomeUser: "¡Bienvenido(a) a Mulfex Trader!"
+    welcomeUser: "¡Bienvenido(a) a Mulfex Trader!",
+    emailNotConfirmed: "Por favor, verifica tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada y la carpeta de spam.",
+    accountTemporarilyLocked: "Tu cuenta está bloqueada temporalmente. Por favor, intenta más tarde",
+    invalidCredentials: "Credenciales inválidas. Por favor, verifica tu email y contraseña",
+    loginError: "Error al iniciar sesión",
+    unexpectedError: "Error inesperado al iniciar sesión",
+    resendVerification: "Reenviar correo de verificación",
+    resendingVerification: "Reenviando...",
+    verificationSent: "Correo de verificación reenviado. Por favor, revisa tu bandeja de entrada.",
+    tooManyAttempts: "Demasiados intentos. Por favor, espera antes de intentar de nuevo.",
+    waitMinutes: "Por favor, espera {minutes} minutos antes de intentar de nuevo.",
+    waitSeconds: "Por favor, espera {seconds} segundos antes de intentar de nuevo.",
+    contactSupport: "Has excedido el límite diario. Por favor, contacta a soporte.",
+    waitingForCooldown: "Esperando tiempo de espera...",
+    remainingAttempts: "Intentos restantes: {hourly} por hora, {daily} por día"
   },
   en: {
     welcomeBack: "Welcome back",
@@ -109,7 +123,21 @@ const translations = {
     goDashboard: "Go to dashboard",
     loginSuccess: "Login successful!",
     preparingDashboard: "Preparing your dashboard...",
-    welcomeUser: "Welcome to Mulfex Trader!"
+    welcomeUser: "Welcome to Mulfex Trader!",
+    emailNotConfirmed: "Please verify your email before logging in. Check your inbox and spam folder.",
+    accountTemporarilyLocked: "Your account is temporarily locked. Please try again later",
+    invalidCredentials: "Invalid credentials. Please verify your email and password",
+    loginError: "Login error",
+    unexpectedError: "Unexpected error logging in",
+    resendVerification: "Resend verification email",
+    resendingVerification: "Resending...",
+    verificationSent: "Verification email resent. Please check your inbox.",
+    tooManyAttempts: "Too many attempts. Please wait before trying again.",
+    waitMinutes: "Please wait {minutes} minutes before trying again.",
+    waitSeconds: "Please wait {seconds} seconds before trying again.",
+    contactSupport: "You have exceeded the daily limit. Please contact support.",
+    waitingForCooldown: "Waiting for cooldown...",
+    remainingAttempts: "Remaining attempts: {hourly} per hour, {daily} per day"
   },
   de: {
     welcomeBack: "Willkommen zurück",
@@ -150,7 +178,21 @@ const translations = {
     goDashboard: "Zum Dashboard",
     loginSuccess: "Anmeldung erfolgreich!",
     preparingDashboard: "Dashboard wird vorbereitet...",
-    welcomeUser: "Willkommen bei Mulfex Trader!"
+    welcomeUser: "Willkommen bei Mulfex Trader!",
+    emailNotConfirmed: "Bitte bestätigen Sie Ihre E-Mail-Adresse vor dem Login. Überprüfen Sie Ihren Posteingang und Spam-Ordner.",
+    accountTemporarilyLocked: "Ihr Konto ist vorübergehend gesperrt. Bitte versuchen Sie es später erneut",
+    invalidCredentials: "Ungültige Anmeldedaten. Bitte überprüfen Sie Ihre E-Mail und Ihr Passwort",
+    loginError: "Anmeldefehler",
+    unexpectedError: "Unerwarteter Fehler beim Anmelden",
+    resendVerification: "Bestätigungsmail erneut senden",
+    resendingVerification: "Wird gesendet...",
+    verificationSent: "Bestätigungsmail erneut gesendet. Bitte überprüfen Sie Ihren Posteingang.",
+    tooManyAttempts: "Zu viele Versuche. Bitte warten Sie, bevor Sie es erneut versuchen.",
+    waitMinutes: "Bitte warten Sie {minutes} Minuten, bevor Sie es erneut versuchen.",
+    waitSeconds: "Bitte warten Sie {seconds} Sekunden, bevor Sie es erneut versuchen.",
+    contactSupport: "Sie haben das Tageslimit überschritten. Bitte kontaktieren Sie den Support.",
+    waitingForCooldown: "Warten auf Abklingzeit...",
+    remainingAttempts: "Verbleibende Versuche: {hourly} pro Stunde, {daily} pro Tag"
   }
 };
 
@@ -173,7 +215,17 @@ function LoginForm() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [showCountdown, setShowCountdown] = useState(false);
-  const [redirectCountdown, setRedirectCountdown] = useState(5);
+  const [redirectCountdown, setRedirectCountdown] = useState(3);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const [resendState, setResendState] = useState<{
+    lastAttempt: Date | null;
+    remainingAttempts: { hourly: number; daily: number } | null;
+    cooldown: { seconds: number | null; minutes: number | null; hours: number | null } | null;
+  }>({
+    lastAttempt: null,
+    remainingAttempts: null,
+    cooldown: null
+  });
 
   useEffect(() => {
     // Cargar el idioma guardado o usar español por defecto
@@ -200,7 +252,7 @@ function LoginForm() {
         const session = await getSession();
         if (session) {
           setIsExistingSession(true);
-          setRedirectCountdown(5);
+          setRedirectCountdown(3);
           
           const timer = setInterval(() => {
             setRedirectCountdown((prev) => {
@@ -225,14 +277,19 @@ function LoginForm() {
   // Efecto separado para la redirección cuando el contador llega a cero
   useEffect(() => {
     if (redirectCountdown === 0 && (isExistingSession || success)) {
-      // Usamos un timeout para asegurar que la redirección ocurra después del renderizado
-      const redirectTimeout = setTimeout(() => {
-        router.push("/dashboard");
-      }, 100);
-      
-      return () => clearTimeout(redirectTimeout);
+      router.push("/dashboard");
     }
   }, [redirectCountdown, isExistingSession, success, router]);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if ((success || isExistingSession) && redirectCountdown > 0) {
+      timer = setTimeout(() => {
+        setRedirectCountdown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [redirectCountdown, success, isExistingSession]);
 
   useEffect(() => {
     // Mostrar mensaje si el usuario viene de confirmar su email
@@ -279,7 +336,82 @@ function LoginForm() {
     return () => clearTimeout(timer);
   }, [countdown, showCountdown]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleResendVerification = async () => {
+    if (!email) {
+      toast.error(t.invalidEmail);
+      return;
+    }
+
+    setIsResendingVerification(true);
+    try {
+      // Obtener información del cliente
+      const ipResponse = await fetch('https://api.ipify.org?format=json');
+      const ipData = await ipResponse.json();
+      const ipAddress = ipData.ip;
+      const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : null;
+
+      // Verificar límites de reenvío
+      const { data: limitCheck, error: limitError } = await supabase.rpc('check_verification_email_limit', {
+        p_email: email,
+        p_ip_address: ipAddress,
+        p_user_agent: userAgent
+      });
+
+      if (limitError) throw limitError;
+
+      if (!limitCheck.allowed) {
+        setResendState(prev => ({
+          ...prev,
+          lastAttempt: new Date(),
+          cooldown: {
+            seconds: limitCheck.wait_seconds || null,
+            minutes: limitCheck.wait_minutes || null,
+            hours: limitCheck.wait_hours || null
+          }
+        }));
+
+        if (limitCheck.wait_seconds) {
+          toast.error(t.waitSeconds.replace('{seconds}', limitCheck.wait_seconds));
+        } else if (limitCheck.wait_minutes) {
+          toast.error(t.waitMinutes.replace('{minutes}', limitCheck.wait_minutes));
+        } else if (limitCheck.wait_hours) {
+          toast.error(t.contactSupport);
+        } else {
+          toast.error(t.tooManyAttempts);
+        }
+        return;
+      }
+
+      // Intentar reenviar el correo
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/login`
+        }
+      });
+
+      if (error) throw error;
+      
+      setResendState(prev => ({
+        ...prev,
+        lastAttempt: new Date(),
+        remainingAttempts: {
+          hourly: 2, // 3 intentos por hora - 1 intento actual
+          daily: 9   // 10 intentos por día - 1 intento actual
+        }
+      }));
+
+      toast.success(t.verificationSent);
+    } catch (error: any) {
+      console.error('Error al reenviar correo de verificación:', error);
+      toast.error(error.message);
+    } finally {
+      setIsResendingVerification(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched({ email: true, password: true });
 
@@ -300,19 +432,64 @@ function LoginForm() {
       const { data, error } = await signInWithEmail(email, password);
       
       if (error) {
-        console.error('Error detallado:', error);
-        if (error.message.includes('verifica tu correo')) {
-          setError('Por favor, verifica tu correo electrónico antes de iniciar sesión');
-        } else if (error.message.includes('bloqueada temporalmente')) {
-          setError('Tu cuenta está bloqueada temporalmente. Por favor, intenta más tarde');
-        } else if (error.message.includes('Invalid login credentials')) {
-          setError('Credenciales inválidas. Por favor, verifica tu email y contraseña');
-        } else if (error.message.includes('Email not confirmed')) {
-          setError('Por favor, verifica tu correo electrónico antes de iniciar sesión');
-        } else {
-          setError(error.message || 'Error al iniciar sesión');
+        let errorMessage = '';
+        let isEmailNotConfirmed = false;
+        
+        switch (true) {
+          case error.message.includes('verifica tu correo'):
+          case error.message.includes('Email not confirmed'):
+            errorMessage = t.emailNotConfirmed;
+            isEmailNotConfirmed = true;
+            break;
+          case error.message.includes('bloqueada temporalmente'):
+            errorMessage = t.accountTemporarilyLocked;
+            break;
+          case error.message.includes('Invalid login credentials'):
+            errorMessage = t.invalidCredentials;
+            break;
+          default:
+            errorMessage = error.message || t.loginError;
         }
-        toast.error(error.message || 'Error al iniciar sesión');
+        
+        setError(errorMessage);
+        
+        if (isEmailNotConfirmed) {
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/50 border border-amber-200 dark:border-amber-800"
+            >
+              <div className="flex flex-col space-y-3">
+                <div className="flex">
+                  <AlertCircle className="h-5 w-5 text-amber-400 dark:text-amber-300" />
+                  <div className="ml-3">
+                    <p className="text-sm text-amber-500 dark:text-amber-200">{errorMessage}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleResendVerification}
+                  disabled={isResendingVerification || Boolean(resendState.cooldown)}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isResendingVerification ? (
+                    <>
+                      <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                      {t.resendingVerification}
+                    </>
+                  ) : resendState.cooldown ? (
+                    <>
+                      <Clock className="h-5 w-5 mr-2" />
+                      {t.waitingForCooldown}
+                    </>
+                  ) : (
+                    t.resendVerification
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          );
+        }
         return;
       }
 
@@ -326,19 +503,10 @@ function LoginForm() {
         }
 
         setSuccess(true);
-        toast.success('¡Inicio de sesión exitoso!');
-        
-        // Usar setTimeout para la redirección
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 2000);
-      } else {
-        throw new Error("No se pudo iniciar sesión");
+        setRedirectCountdown(3);
       }
-    } catch (error: any) {
-      console.error('Error detallado:', error);
-      setError(error.message || "Error al iniciar sesión. Por favor, verifica tus credenciales.");
-      toast.error(error.message || 'Error al iniciar sesión');
+    } catch (error) {
+      setError(t.unexpectedError);
     } finally {
       setIsLoading(false);
     }
@@ -392,6 +560,72 @@ function LoginForm() {
   const showLoginForm = () => {
     setShowForgotPassword(false);
     setShowCountdown(false);
+  };
+
+  const renderVerificationAlert = () => {
+    if (!error?.includes(t.emailNotConfirmed)) return null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/50 border border-amber-200 dark:border-amber-800"
+      >
+        <div className="flex flex-col space-y-3">
+          <div className="flex items-start">
+            <AlertCircle className="h-5 w-5 text-amber-400 dark:text-amber-300 mt-0.5" />
+            <div className="ml-3">
+              <p className="text-sm text-amber-500 dark:text-amber-200">{t.emailNotConfirmed}</p>
+              {resendState.lastAttempt && (
+                <p className="text-xs text-amber-400 dark:text-amber-300 mt-1">
+                  {resendState.remainingAttempts && (
+                    <>
+                      {t.remainingAttempts
+                        .replace('{hourly}', resendState.remainingAttempts.hourly.toString())
+                        .replace('{daily}', resendState.remainingAttempts.daily.toString())}
+                    </>
+                  )}
+                  {resendState.cooldown?.seconds && (
+                    <>
+                      {t.waitSeconds.replace('{seconds}', resendState.cooldown.seconds.toString())}
+                    </>
+                  )}
+                  {resendState.cooldown?.minutes && (
+                    <>
+                      {t.waitMinutes.replace('{minutes}', resendState.cooldown.minutes.toString())}
+                    </>
+                  )}
+                  {resendState.cooldown?.hours && (
+                    <>
+                      {t.contactSupport}
+                    </>
+                  )}
+                </p>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={handleResendVerification}
+            disabled={isResendingVerification || Boolean(resendState.cooldown)}
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          >
+            {isResendingVerification ? (
+              <>
+                <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                {t.resendingVerification}
+              </>
+            ) : resendState.cooldown ? (
+              <>
+                <Clock className="h-5 w-5 mr-2" />
+                {t.waitingForCooldown}
+              </>
+            ) : (
+              t.resendVerification
+            )}
+          </button>
+        </div>
+      </motion.div>
+    );
   };
 
   return (
@@ -842,21 +1076,24 @@ function LoginForm() {
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
+                                    onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
                                     className={`appearance-none block w-full px-3 py-2 border ${
                                       errors.email && touched.email ? 'border-red-300 dark:border-red-700' : 'border-gray-300 dark:border-gray-600'
                                     } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
                                     placeholder="usuario@example.com"
                                   />
-                                  {errors.email && touched.email && (
-                                    <motion.div
-                                      initial={{ opacity: 0 }}
-                                      animate={{ opacity: 1 }}
-                                      exit={{ opacity: 0 }}
-                                      className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
-                                    >
-                                      <AlertCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
-                                    </motion.div>
-                                  )}
+                                  <AnimatePresence>
+                                    {errors.email && touched.email && (
+                                      <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                                      >
+                                        <AlertCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
                                 </div>
                                 {errors.email && touched.email && (
                                   <motion.p
@@ -1018,13 +1255,48 @@ function LoginForm() {
                               <motion.div
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="p-3 rounded-lg bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800"
+                                className={`p-3 rounded-lg ${
+                                  error === t.emailNotConfirmed
+                                    ? 'bg-amber-50 dark:bg-amber-900/50 border border-amber-200 dark:border-amber-800'
+                                    : 'bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800'
+                                }`}
                               >
-                                <div className="flex">
-                                  <AlertCircle className="h-5 w-5 text-red-400 dark:text-red-300" />
-                                  <div className="ml-3">
-                                    <p className="text-sm text-red-500 dark:text-red-200">{error}</p>
+                                <div className="flex flex-col space-y-3">
+                                  <div className="flex">
+                                    <AlertCircle className={`h-5 w-5 ${
+                                      error === t.emailNotConfirmed
+                                        ? 'text-amber-400 dark:text-amber-300'
+                                        : 'text-red-400 dark:text-red-300'
+                                    }`} />
+                                    <div className="ml-3">
+                                      <p className={`text-sm ${
+                                        error === t.emailNotConfirmed
+                                          ? 'text-amber-500 dark:text-amber-200'
+                                          : 'text-red-500 dark:text-red-200'
+                                      }`}>{error}</p>
+                                    </div>
                                   </div>
+                                  {error === t.emailNotConfirmed && (
+                                    <button
+                                      onClick={handleResendVerification}
+                                      disabled={isResendingVerification || Boolean(resendState.cooldown)}
+                                      className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      {isResendingVerification ? (
+                                        <>
+                                          <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                                          {t.resendingVerification}
+                                        </>
+                                      ) : resendState.cooldown ? (
+                                        <>
+                                          <Clock className="h-5 w-5 mr-2" />
+                                          {t.waitingForCooldown}
+                                        </>
+                                      ) : (
+                                        t.resendVerification
+                                      )}
+                                    </button>
+                                  )}
                                 </div>
                               </motion.div>
                             )}
@@ -1051,7 +1323,7 @@ function LoginForm() {
                     )}
                   </AnimatePresence>
 
-                  {(!success && !showForgotPassword) && (
+                  {(!success && !showForgotPassword && !isExistingSession) && (
                     <>
                       <div className="mt-8">
                         <div className="flex items-center justify-center gap-4 my-6">

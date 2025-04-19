@@ -189,23 +189,32 @@ export const useMarketData = (marketType: 'spot' | 'perpetual' = 'spot') => {
     setTickers(marketType === 'spot' ? defaultSpotTickers : defaultPerpetualTickers);
     setLoading(true);
     
+    let isSubscribed = true;
+
     // Fetch inicial (mostrar carga)
-    fetchTickers(true)
-      .then(() => {
-      })
-      .catch(err => {
+    const loadInitialData = async () => {
+      try {
+        await fetchTickers(true);
+      } catch (err) {
         console.error(`Error in initial ${marketType} data load:`, err);
-      });
+      }
+    };
+
+    loadInitialData();
 
     // Polling cada 2 segundos para mantener los datos actualizados (sin mostrar carga)
-    const interval = setInterval(() => {
-      fetchTickers(false)
-        .catch(err => {
+    const interval = setInterval(async () => {
+      if (isSubscribed) {
+        try {
+          await fetchTickers(false);
+        } catch (err) {
           console.error(`Error in polling ${marketType} data:`, err);
-        });
+        }
+      }
     }, 2000);
 
     return () => {
+      isSubscribed = false;
       clearInterval(interval);
     };
   }, [fetchTickers, marketType]);
