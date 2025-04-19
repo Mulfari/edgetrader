@@ -25,7 +25,6 @@ import {
 } from "@/lib/supabase";
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
-import Image from "next/image";
 
 interface PasswordForm {
   currentPassword: string;
@@ -384,11 +383,12 @@ export default function SettingsSeguridad() {
               {totpSetup.qrCode && (
                 <div className="flex justify-center">
                   <div className="p-2 bg-white rounded-lg w-48 h-48">
-                    <Image
+                    <img
                       src={totpSetup.qrCode}
                       alt="Código QR para 2FA"
                       width={192}
                       height={192}
+                      className="w-full h-full"
                     />
                   </div>
                 </div>
