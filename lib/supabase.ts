@@ -355,7 +355,7 @@ export const resetPassword = async (email: string) => {
   }
 };
 
-export const updatePassword = async (password: string) => {
+export const updatePassword = async (newPassword: string, currentPassword?: string) => {
   try {
     // Si estamos en el navegador, intentar obtener el token de recuperación
     if (typeof window !== 'undefined') {
@@ -378,9 +378,24 @@ export const updatePassword = async (password: string) => {
       }
     }
 
+    // Si se proporciona contraseña actual, verificarla primero
+    if (currentPassword) {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: (await supabase.auth.getUser()).data.user?.email!,
+        password: currentPassword,
+      });
+
+      if (signInError || !data?.user) {
+        return {
+          success: false,
+          error: 'La contraseña actual es incorrecta'
+        };
+      }
+    }
+
     // Actualizar la contraseña
     const { data, error } = await supabase.auth.updateUser({
-      password: password
+      password: newPassword
     });
 
     if (error) {
@@ -388,14 +403,6 @@ export const updatePassword = async (password: string) => {
         success: false, 
         error: error.message || 'Error al actualizar la contraseña'
       };
-    }
-    
-    // Cerrar la sesión para que el usuario tenga que iniciar sesión explícitamente
-    await supabase.auth.signOut();
-    
-    // Limpiar los tokens del localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
     }
     
     return { data, success: true, error: null };
@@ -524,17 +531,23 @@ export const check2FAStatus = async (userId: string) => {
     if (sessionError) throw new Error(`Error de sesión: ${sessionError.message}`);
     if (!session) throw new Error('No hay sesión activa');
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/status`, {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://btrader-production.up.railway.app/api';
+    
+    const response = await fetch(`${apiUrl}/2fa/status`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        'Authorization': `Bearer ${session.access_token}`,
+        'Accept': 'application/json',
+        'Origin': typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
       },
+      credentials: 'include',
       body: JSON.stringify({ userId })
     });
 
     if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
     }
 
     const result = await response.json();
@@ -669,19 +682,36 @@ export const updateUserAvatar = async (avatarUrl: string): Promise<{ success: bo
 
 export const checkPasswordStatus = async () => {
   try {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Intentar obtener la sesión actual
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
+    if (sessionError) throw sessionError;
+    if (!session) {
+      // Intentar refrescar la sesión
+      const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) throw refreshError;
+      if (!refreshedSession) throw new Error('No hay sesión activa');
+    }
+
+    // Obtener el usuario actual
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError) throw userError;
     if (!user) throw new Error('No hay usuario autenticado');
 
+    // Llamar al RPC con el nombre correcto del parámetro
     const { data, error } = await supabase.rpc('check_password_status', {
-      user_id: user.id
+      p_user_id: user.id
     });
 
     if (error) throw error;
 
+    // Procesar el resultado
+    const status = Array.isArray(data) ? data[0] : data;
     return {
-      data,
+      data: {
+        ...status,
+        auth_provider: user.app_metadata?.provider || 'email'
+      },
       error: null
     };
   } catch (error: any) {
@@ -693,7 +723,7 @@ export const checkPasswordStatus = async () => {
   }
 };
 
-export const setInitialPassword = async (password: string) => {
+export const setInitialPassword = async (password: string, currentPassword?: string) => {
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
@@ -701,11 +731,20 @@ export const setInitialPassword = async (password: string) => {
     if (!user) throw new Error('No hay usuario autenticado');
 
     const { data, error } = await supabase.rpc('set_initial_password', {
-      user_id: user.id,
-      new_password: password
+      p_user_id: user.id,
+      p_new_password: password,
+      p_current_password: currentPassword
     });
 
     if (error) throw error;
+
+    // Verificar si hay un error en la respuesta
+    if (data && !data.success) {
+      return {
+        success: false,
+        error: data.error || 'Error al establecer la contraseña'
+      };
+    }
 
     return {
       success: true,

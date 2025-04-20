@@ -25,6 +25,7 @@ import {
 } from "@/lib/supabase";
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/lib/supabase";
 
 interface PasswordForm {
   currentPassword: string;
@@ -48,9 +49,9 @@ interface UpdatePasswordResponse {
 
 interface PasswordStatus {
   has_password: boolean;
-  auth_provider: string;
   can_set_password: boolean;
   can_reset_password: boolean;
+  auth_provider?: string;
 }
 
 export default function SettingsSeguridad() {
@@ -93,12 +94,30 @@ export default function SettingsSeguridad() {
       if (!user?.id) return;
       
       try {
-        const { data, error } = await checkPasswordStatus();
-        if (error) throw new Error(error);
-        setPasswordStatus(data);
-      } catch (error) {
+        // Primero verificamos que tengamos una sesión válida
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          // Intentar refrescar la sesión
+          const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+          if (!refreshedSession) {
+            throw new Error('No se pudo recuperar la sesión');
+          }
+        }
+
+        const { data, error } = await supabase.rpc('check_password_status', { p_user_id: user.id });
+        if (error) throw new Error(error.message);
+        // Tomamos el primer elemento del array si existe
+        setPasswordStatus(Array.isArray(data) && data.length > 0 ? data[0] : data);
+      } catch (error: any) {
         console.error('Error al verificar estado de contraseña:', error);
-        toast.error('Error al verificar estado de contraseña');
+        // Si el error es de sesión, intentamos redirigir al login
+        if (typeof error.message === 'string' && error.message.includes('session')) {
+          toast.error('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+          // Opcional: redirigir al login
+          // window.location.href = '/login';
+        } else {
+          toast.error('Error al verificar estado de contraseña');
+        }
       } finally {
         setIsLoadingStatus(false);
       }
@@ -272,8 +291,8 @@ export default function SettingsSeguridad() {
   const validatePasswordForm = () => {
     const errors: Partial<PasswordForm> = {};
     
-    // Solo validar contraseña actual si el usuario ya tiene una
-    if (passwordStatus?.has_password) {
+    // Solo validar contraseña actual si el usuario ya tiene una contraseña configurada
+    if (!passwordStatus?.can_set_password) {
       if (!passwordForm.currentPassword) {
         errors.currentPassword = 'La contraseña actual es requerida';
       }
@@ -293,7 +312,7 @@ export default function SettingsSeguridad() {
       }
 
       // Solo validar que sea diferente si el usuario ya tiene contraseña
-      if (passwordStatus?.has_password && passwordForm.newPassword === passwordForm.currentPassword) {
+      if (!passwordStatus?.can_set_password && passwordForm.newPassword === passwordForm.currentPassword) {
         errors.newPassword = 'La nueva contraseña debe ser diferente a la actual';
       }
     }
@@ -327,12 +346,31 @@ export default function SettingsSeguridad() {
         response = await setInitialPassword(passwordForm.newPassword);
       } else {
         // Actualizar contraseña existente
-        response = await updatePassword(passwordForm.newPassword);
+        response = await setInitialPassword(
+          passwordForm.newPassword,
+          passwordForm.currentPassword
+        );
       }
 
-      if (!response.success || response.error) {
-        throw new Error(response.error || 'Error al actualizar la contraseña');
+      if (!response.success) {
+        // Si el error está relacionado con la contraseña actual
+        if (response.error?.toLowerCase().includes('contraseña actual')) {
+          setPasswordErrors(prev => ({
+            ...prev,
+            currentPassword: response.error
+          }));
+          return;
+        }
+        throw new Error(response.error);
       }
+
+      // Actualizar el estado inmediatamente después de una operación exitosa
+      setPasswordStatus({
+        has_password: true,
+        can_set_password: false,
+        can_reset_password: true,
+        auth_provider: passwordStatus?.auth_provider
+      });
 
       toast.success('Contraseña actualizada correctamente');
       
@@ -344,10 +382,7 @@ export default function SettingsSeguridad() {
       
       setShowPasswordForm(false);
 
-      // Actualizar el estado de la contraseña
-      const { data } = await checkPasswordStatus();
-      setPasswordStatus(data);
-    } catch (error) {
+    } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : 'Error al actualizar la contraseña';
       toast.error(errorMessage);
     } finally {
@@ -536,16 +571,7 @@ export default function SettingsSeguridad() {
                 <div className="animate-pulse h-6 w-16 bg-zinc-200 dark:bg-zinc-700 rounded" />
               ) : (
                 <>
-                  {passwordStatus?.has_password ? (
-                    <button 
-                      onClick={() => setShowPasswordForm(prev => !prev)}
-                      className="px-3 py-1 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 
-                        focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-400/20 rounded-md
-                        transition-all duration-200"
-                    >
-                      {showPasswordForm ? 'Cancelar' : 'Cambiar'}
-                    </button>
-                  ) : (
+                  {passwordStatus?.can_set_password ? (
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20">
                         No configurada
@@ -559,12 +585,21 @@ export default function SettingsSeguridad() {
                         Establecer
                       </button>
                     </div>
+                  ) : (
+                    <button 
+                      onClick={() => setShowPasswordForm(prev => !prev)}
+                      className="px-3 py-1 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 
+                        focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-400/20 rounded-md
+                        transition-all duration-200"
+                    >
+                      {showPasswordForm ? 'Cancelar' : 'Cambiar'}
+                    </button>
                   )}
                 </>
               )}
             </div>
 
-            {!isLoadingStatus && passwordStatus?.auth_provider === 'google' && !passwordStatus.has_password && (
+            {!isLoadingStatus && passwordStatus?.auth_provider === 'google' && passwordStatus.can_set_password && (
               <div className="mb-4 flex items-start gap-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-500/5 p-2 rounded-lg">
                 <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
                 <p className="text-xs">
@@ -599,44 +634,46 @@ export default function SettingsSeguridad() {
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.2 }}
                     >
-                      {/* Contraseña actual */}
-                      <motion.div
-                        initial={{ x: -20, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: 0.3 }}
-                      >
-                        <div className="relative">
-                          <input
-                            type={showPasswords.current ? "text" : "password"}
-                            placeholder="Contraseña actual"
-                            value={passwordForm.currentPassword}
-                            onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
-                            className={`block w-full px-3 py-2 border ${
-                              passwordErrors.currentPassword ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                            } rounded-lg shadow-sm focus:ring-amber-500 focus:border-amber-500 dark:bg-zinc-800 dark:text-white text-sm`}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                          >
-                            {showPasswords.current ? (
-                              <EyeOff className="h-4 w-4 text-gray-400" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-gray-400" />
-                            )}
-                          </button>
-                        </div>
-                        {passwordErrors.currentPassword && (
-                          <motion.p
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="mt-1 text-xs text-red-600"
-                          >
-                            {passwordErrors.currentPassword}
-                          </motion.p>
-                        )}
-                      </motion.div>
+                      {/* Contraseña actual - solo mostrar si ya tiene contraseña configurada */}
+                      {!passwordStatus?.can_set_password && (
+                        <motion.div
+                          initial={{ x: -20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: 0.3 }}
+                        >
+                          <div className="relative">
+                            <input
+                              type={showPasswords.current ? "text" : "password"}
+                              placeholder="Contraseña actual"
+                              value={passwordForm.currentPassword}
+                              onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                              className={`block w-full px-3 py-2 border ${
+                                passwordErrors.currentPassword ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                              } rounded-lg shadow-sm focus:ring-amber-500 focus:border-amber-500 dark:bg-zinc-800 dark:text-white text-sm`}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                            >
+                              {showPasswords.current ? (
+                                <EyeOff className="h-4 w-4 text-gray-400" />
+                              ) : (
+                                <Eye className="h-4 w-4 text-gray-400" />
+                              )}
+                            </button>
+                          </div>
+                          {passwordErrors.currentPassword && (
+                            <motion.p
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              className="mt-1 text-xs text-red-600"
+                            >
+                              {passwordErrors.currentPassword}
+                            </motion.p>
+                          )}
+                        </motion.div>
+                      )}
 
                       {/* Nueva contraseña */}
                       <motion.div
