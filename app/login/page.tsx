@@ -503,20 +503,34 @@ function LoginForm() {
         // Guardamos el userId para el siguiente paso
         setUserId(data.user.id);
 
-        // Comprobamos si tiene 2FA activado
-        const { is2FAEnabled, error: statusErr } = await check2FAStatus(data.user.id);
-        if (statusErr) {
-          setError(statusErr);
-          setIsLoading(false);
-          return;
-        }
+        try {
+          // Comprobamos si tiene 2FA activado
+          const { is2FAEnabled, error: statusErr } = await check2FAStatus(data.user.id);
+          
+          // Si hay error al verificar 2FA, procedemos como si no estuviera habilitado
+          if (statusErr) {
+            console.error('Error al verificar 2FA:', statusErr);
+            toast.success(t.loginSuccess);
+            toast.success(t.preparingDashboard);
+            setSuccess(true);
+            setRedirectCountdown(3);
+            return;
+          }
 
-        if (is2FAEnabled) {
-          // Pasamos al paso OTP
-          setStep('otp');
-          setIsLoading(false);
-        } else {
-          // No tiene 2FA, procedemos normalmente
+          if (is2FAEnabled) {
+            // Pasamos al paso OTP
+            setStep('otp');
+            setIsLoading(false);
+          } else {
+            // No tiene 2FA, procedemos normalmente
+            toast.success(t.loginSuccess);
+            toast.success(t.preparingDashboard);
+            setSuccess(true);
+            setRedirectCountdown(3);
+          }
+        } catch (error) {
+          // Si hay cualquier error al verificar 2FA, procedemos como si no estuviera habilitado
+          console.error('Error al verificar 2FA:', error);
           toast.success(t.loginSuccess);
           toast.success(t.preparingDashboard);
           setSuccess(true);

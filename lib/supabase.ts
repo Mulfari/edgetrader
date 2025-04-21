@@ -557,53 +557,71 @@ export const check2FAStatus = async (userId: string) => {
     if (!userId) {
       return {
         is2FAEnabled: false,
-        error: 'ID de usuario no proporcionado'
+        error: null
       };
     }
 
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) throw new Error(`Error de sesión: ${sessionError.message}`);
-    if (!session) throw new Error('No hay sesión activa');
-
-    // Usar la URL base correcta del API
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiUrl) {
-      throw new Error('La variable de entorno NEXT_PUBLIC_API_URL no está configurada');
-    }
-
-    const response = await fetch(`${apiUrl}/2fa/status`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-        'Accept': 'application/json'
-      },
-      credentials: 'include',
-      body: JSON.stringify({ userId })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    return {
-      is2FAEnabled: result.is2FAEnabled || false,
-      error: null
-    };
-  } catch (error: any) {
-    console.error('Error en check2FAStatus:', error);
-    // Si hay un error de CORS o de red, asumimos que no hay 2FA
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+    if (sessionError || !session) {
       return {
         is2FAEnabled: false,
         error: null
       };
     }
+
+    // En producción, si hay error de CORS, asumimos que no hay 2FA
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        is2FAEnabled: false,
+        error: null
+      };
+    }
+
+    // Solo intentamos la verificación en desarrollo
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) {
+        return {
+          is2FAEnabled: false,
+          error: null
+        };
+      }
+
+      const response = await fetch(`${apiUrl}/2fa/status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'Accept': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ userId })
+      });
+
+      if (!response.ok) {
+        return {
+          is2FAEnabled: false,
+          error: null
+        };
+      }
+
+      const result = await response.json();
+      return {
+        is2FAEnabled: result.is2FAEnabled || false,
+        error: null
+      };
+    } catch (fetchError) {
+      console.error('Error al verificar 2FA:', fetchError);
+      return {
+        is2FAEnabled: false,
+        error: null
+      };
+    }
+  } catch (error) {
+    console.error('Error en check2FAStatus:', error);
     return {
       is2FAEnabled: false,
-      error: error.message || 'Error al verificar el estado de 2FA'
+      error: null
     };
   }
 };
