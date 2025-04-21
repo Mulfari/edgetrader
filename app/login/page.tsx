@@ -505,26 +505,22 @@ function LoginForm() {
 
         try {
           // Comprobamos si tiene 2FA activado
-          console.log('Verificando 2FA para usuario:', data.user.id);
-          const { is2FAEnabled, error: statusErr } = await check2FAStatus(data.user.id);
-          console.log('RPC check2FAStatus result:', { is2FAEnabled, statusErr });
+          const { data: twoFactorData, error: statusErr } = await supabase.rpc('check_2fa_status', {
+            p_user_id: data.user.id
+          });
           
           if (statusErr) {
-            console.error('Error al verificar 2FA:', statusErr);
-            // En lugar de hacer bypass, mostramos el error y bloqueamos el login
-            toast.error(`Error al verificar 2FA: ${statusErr}`);
-            setError(statusErr);
+            toast.error(`Error al verificar 2FA: ${statusErr.message}`);
+            setError(statusErr.message);
             setIsLoading(false);
             return;
           }
 
-          if (is2FAEnabled) {
-            console.log('2FA está habilitado, cambiando a paso OTP');
+          if (twoFactorData === true) {
             // Pasamos al paso OTP
             setStep('otp');
             setIsLoading(false);
           } else {
-            console.log('2FA no está habilitado, procediendo con login normal');
             // No tiene 2FA, procedemos normalmente
             toast.success(t.loginSuccess);
             toast.success(t.preparingDashboard);
@@ -876,7 +872,7 @@ function LoginForm() {
                             </div>
                             <button
                               onClick={() => router.push("/dashboard")}
-                              className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25"
+                              className="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-xl text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-[1.02]"
                             >
                               {t.goDashboard}
                             </button>
@@ -925,7 +921,7 @@ function LoginForm() {
                         >
                           <p className="text-base text-gray-600 dark:text-gray-400">
                               {t.preparingDashboard}
-                          </p>
+                            </p>
                           <div className="space-y-4">
                             <p className="text-sm text-gray-500 dark:text-gray-500">
                               {t.redirectingIn.replace('{seconds}', redirectCountdown.toString())} 
@@ -940,7 +936,7 @@ function LoginForm() {
                             </div>
                             <button
                               onClick={() => router.push("/dashboard")}
-                              className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-cyan-500/25"
+                              className="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-xl text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-[1.02]"
                             >
                               {t.goDashboard}
                             </button>
@@ -988,18 +984,18 @@ function LoginForm() {
                                 />
                                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                                   {otp.length === 6 && (
-                                    <motion.div
-                                      initial={{ scale: 0 }}
-                                      animate={{ scale: 1 }}
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
                                       className="text-green-500"
                                     >
                                       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                      </svg>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
                                     </motion.div>
                                   )}
-                                </div>
-                              </div>
+                            </div>
+                          </div>
                               <div className="mt-2 flex justify-between items-center">
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
                                   {t.enterOtp}
@@ -1007,13 +1003,13 @@ function LoginForm() {
                                 <p className="text-xs font-mono text-gray-400 dark:text-gray-500">
                                   {otp.length}/6
                                 </p>
-                              </div>
                             </div>
+                          </div>
 
                             {error && (
-                              <motion.div
+                      <motion.div
                                 initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
+                        animate={{ opacity: 1, y: 0 }}
                                 className="p-3 rounded-lg bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800"
                               >
                                 <div className="flex">
@@ -1022,228 +1018,228 @@ function LoginForm() {
                                     <p className="text-sm text-red-500 dark:text-red-200">{error}</p>
                                   </div>
                                 </div>
-                              </motion.div>
-                            )}
+                                      </motion.div>
+                                    )}
 
                             <div className="space-y-3">
-                              <button
-                                type="submit"
+                                <button
+                                  type="submit"
                                 disabled={isLoading || otp.length !== 6}
-                                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-[1.02]"
-                              >
-                                {isLoading ? (
+                                  className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-[1.02]"
+                                >
+                                  {isLoading ? (
                                   <>
                                     <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
                                     {t.verifying}
                                   </>
-                                ) : (
+                                  ) : (
                                   t.verify
-                                )}
-                              </button>
-
-                              <button
-                                type="button"
+                                  )}
+                                </button>
+                                
+                                <button
+                                  type="button"
                                 onClick={() => {
                                   setStep('credentials');
                                   setError('');
                                   setOtp('');
                                 }}
-                                className="w-full flex justify-center py-2.5 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transform transition-all duration-200 hover:scale-[1.02]"
-                              >
-                                {t.backToLogin}
-                              </button>
-                            </div>
+                                  className="w-full flex justify-center py-2.5 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transform transition-all duration-200 hover:scale-[1.02]"
+                                >
+                                  {t.backToLogin}
+                                </button>
+                              </div>
                           </form>
                         </div>
                       </motion.div>
-                    ) : (
-                      <motion.form 
-                        className="space-y-6" 
-                        onSubmit={handleSubmit}
-                        noValidate
-                      >
-                        <div>
-                          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                              {t.email}
-                          </label>
-                          <div className="mt-1 relative">
-                            <input
-                              id="email"
-                              name="email"
-                              type="email"
-                              autoComplete="email"
-                              value={email}
-                              onChange={(e) => setEmail(e.target.value)}
-                              onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
-                              className={`appearance-none block w-full px-3 py-2 border ${
-                                errors.email && touched.email ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                              } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
-                            />
-                            <AnimatePresence>
-                              {errors.email && touched.email && (
-                                <motion.div
-                                  initial={{ opacity: 0 }}
-                                  animate={{ opacity: 1 }}
-                                  exit={{ opacity: 0 }}
-                                  className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
-                                >
-                                  <AlertCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                          <AnimatePresence>
-                            {errors.email && touched.email && (
-                              <motion.p
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="text-xs text-red-600 dark:text-red-500 mt-1"
-                              >
-                                  {t.invalidEmail}
-                              </motion.p>
-                            )}
-                          </AnimatePresence>
-                        </div>
-
-                        <div>
-                          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                              {t.password}
-                          </label>
-                          <div className="mt-1 relative">
-                            <input
-                              id="password"
-                              name="password"
-                              type={showPassword ? "text" : "password"}
-                              autoComplete="current-password"
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
-                              onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
-                              className={`appearance-none block w-full px-3 py-2 border ${
-                                errors.password && touched.password ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                              } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                            >
-                              {showPassword ? (
-                                <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
-                              ) : (
-                                <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
-                              )}
-                            </button>
-                          </div>
-                          <AnimatePresence>
-                            {touched.password && errors.password && (
-                              <motion.p
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="text-xs text-red-600 dark:text-red-500 mt-1"
-                              >
-                                  {t.invalidPassword}
-                              </motion.p>
-                            )}
-                          </AnimatePresence>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="relative flex items-center">
-                              <input
-                                id="remember-me"
-                                name="remember-me"
-                                type="checkbox"
-                                checked={rememberMe}
-                                onChange={(e) => setRememberMe(e.target.checked)}
-                                className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0 transition-colors duration-200 ease-in-out cursor-pointer"
-                              />
-                              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 dark:text-gray-300 select-none cursor-pointer">
-                                  {t.rememberMe}
-                              </label>
-                            </div>
-                          </div>
-
-                          <div className="text-sm">
-                            <button
-                              type="button"
-                              onClick={() => setShowForgotPassword(true)}
-                              className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
-                            >
-                                {t.forgotPassword}
-                            </button>
-                          </div>
-                        </div>
-
-                        {error && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className={`p-3 rounded-lg ${
-                              error === t.emailNotConfirmed
-                                ? 'bg-amber-50 dark:bg-amber-900/50 border border-amber-200 dark:border-amber-800'
-                                : 'bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800'
-                            }`}
+                        ) : (
+                          <motion.form 
+                            className="space-y-6" 
+                            onSubmit={handleSubmit}
+                            noValidate
                           >
-                            <div className="flex flex-col space-y-3">
-                              <div className="flex">
-                                <AlertCircle className={`h-5 w-5 ${
-                                  error === t.emailNotConfirmed
-                                    ? 'text-amber-400 dark:text-amber-300'
-                                    : 'text-red-400 dark:text-red-300'
-                                }`} />
-                                <div className="ml-3">
-                                  <p className={`text-sm ${
-                                    error === t.emailNotConfirmed
-                                      ? 'text-amber-500 dark:text-amber-200'
-                                      : 'text-red-500 dark:text-red-200'
-                                  }`}>{error}</p>
-                                </div>
+                            <div>
+                              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  {t.email}
+                              </label>
+                              <div className="mt-1 relative">
+                                <input
+                                  id="email"
+                                  name="email"
+                                  type="email"
+                                  autoComplete="email"
+                                  value={email}
+                                  onChange={(e) => setEmail(e.target.value)}
+                                  onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
+                                  className={`appearance-none block w-full px-3 py-2 border ${
+                                    errors.email && touched.email ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                                  } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
+                                />
+                                <AnimatePresence>
+                                  {errors.email && touched.email && (
+                                    <motion.div
+                                      initial={{ opacity: 0 }}
+                                      animate={{ opacity: 1 }}
+                                      exit={{ opacity: 0 }}
+                                      className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                                    >
+                                      <AlertCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
                               </div>
-                              {error === t.emailNotConfirmed && (
+                              <AnimatePresence>
+                                {errors.email && touched.email && (
+                                  <motion.p
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="text-xs text-red-600 dark:text-red-500 mt-1"
+                                  >
+                                      {t.invalidEmail}
+                                  </motion.p>
+                                )}
+                              </AnimatePresence>
+                            </div>
+
+                            <div>
+                              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  {t.password}
+                              </label>
+                              <div className="mt-1 relative">
+                                <input
+                                  id="password"
+                                  name="password"
+                                  type={showPassword ? "text" : "password"}
+                                  autoComplete="current-password"
+                                  value={password}
+                                  onChange={(e) => setPassword(e.target.value)}
+                                  onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
+                                  className={`appearance-none block w-full px-3 py-2 border ${
+                                    errors.password && touched.password ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                                  } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
+                                />
                                 <button
-                                  onClick={handleResendVerification}
-                                  disabled={isResendingVerification || Boolean(resendState.cooldown)}
-                                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  type="button"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
                                 >
-                                  {isResendingVerification ? (
-                                    <>
-                                      <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-                                      {t.resendingVerification}
-                                    </>
-                                  ) : resendState.cooldown ? (
-                                    <>
-                                      <Clock className="h-5 w-5 mr-2" />
-                                      {t.waitingForCooldown}
-                                    </>
+                                  {showPassword ? (
+                                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
                                   ) : (
-                                    t.resendVerification
+                                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
                                   )}
                                 </button>
-                              )}
+                              </div>
+                              <AnimatePresence>
+                                {touched.password && errors.password && (
+                                  <motion.p
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="text-xs text-red-600 dark:text-red-500 mt-1"
+                                  >
+                                      {t.invalidPassword}
+                                  </motion.p>
+                                )}
+                              </AnimatePresence>
                             </div>
-                          </motion.div>
-                        )}
 
-                        <div>
-                          <button
-                            type="submit"
-                            disabled={isLoading || (touched.email && touched.password && (!!errors.email || !!errors.password))}
-                            className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-[1.02]"
-                          >
-                            {isLoading ? (
-                              <>
-                                <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-                                  {t.loggingIn}
-                              </>
-                            ) : (
-                                t.login
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <div className="relative flex items-center">
+                                  <input
+                                    id="remember-me"
+                                    name="remember-me"
+                                    type="checkbox"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0 transition-colors duration-200 ease-in-out cursor-pointer"
+                                  />
+                                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 dark:text-gray-300 select-none cursor-pointer">
+                                      {t.rememberMe}
+                                  </label>
+                                </div>
+                              </div>
+
+                              <div className="text-sm">
+                                <button
+                                  type="button"
+                                  onClick={() => setShowForgotPassword(true)}
+                                  className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
+                                >
+                                    {t.forgotPassword}
+                                </button>
+                              </div>
+                            </div>
+
+                            {error && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className={`p-3 rounded-lg ${
+                                  error === t.emailNotConfirmed
+                                    ? 'bg-amber-50 dark:bg-amber-900/50 border border-amber-200 dark:border-amber-800'
+                                    : 'bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800'
+                                }`}
+                              >
+                                <div className="flex flex-col space-y-3">
+                                  <div className="flex">
+                                    <AlertCircle className={`h-5 w-5 ${
+                                      error === t.emailNotConfirmed
+                                        ? 'text-amber-400 dark:text-amber-300'
+                                        : 'text-red-400 dark:text-red-300'
+                                    }`} />
+                                    <div className="ml-3">
+                                      <p className={`text-sm ${
+                                        error === t.emailNotConfirmed
+                                          ? 'text-amber-500 dark:text-amber-200'
+                                          : 'text-red-500 dark:text-red-200'
+                                      }`}>{error}</p>
+                                    </div>
+                                  </div>
+                                  {error === t.emailNotConfirmed && (
+                                    <button
+                                      onClick={handleResendVerification}
+                                      disabled={isResendingVerification || Boolean(resendState.cooldown)}
+                                      className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      {isResendingVerification ? (
+                                        <>
+                                          <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                                          {t.resendingVerification}
+                                        </>
+                                      ) : resendState.cooldown ? (
+                                        <>
+                                          <Clock className="h-5 w-5 mr-2" />
+                                          {t.waitingForCooldown}
+                                        </>
+                                      ) : (
+                                        t.resendVerification
+                                      )}
+                                    </button>
+                                  )}
+                                </div>
+                              </motion.div>
                             )}
-                          </button>
-                        </div>
-                      </motion.form>
+
+                            <div>
+                              <button
+                                type="submit"
+                                disabled={isLoading || (touched.email && touched.password && (!!errors.email || !!errors.password))}
+                                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-[1.02]"
+                              >
+                                {isLoading ? (
+                                  <>
+                                    <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                                      {t.loggingIn}
+                                  </>
+                                ) : (
+                                    t.login
+                                )}
+                              </button>
+                            </div>
+                          </motion.form>
                     )}
                   </AnimatePresence>
 

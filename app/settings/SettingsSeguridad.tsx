@@ -136,14 +136,19 @@ export default function SettingsSeguridad() {
       
       try {
         setIsLoading2FA(true);
-        const { is2FAEnabled: enabled, error } = await check2FAStatus(user.id);
+        const { data, error } = await supabase.rpc('check_2fa_status', {
+          p_user_id: user.id
+        });
         
         if (error) {
           toast.error('Error al verificar estado de 2FA');
           return;
         }
+
+        // Asegurarnos de que data sea un booleano
+        const is2FAActive = data === true;
         
-        setIs2FAEnabled(enabled);
+        setIs2FAEnabled(is2FAActive);
       } catch (error) {
         toast.error('Error al verificar estado de 2FA');
       } finally {
@@ -167,6 +172,14 @@ export default function SettingsSeguridad() {
     try {
       const { secret, qrCodeDataUrl, error } = await generateTOTPSecret(user.id);
       
+      // Si el error indica que 2FA ya está habilitado
+      if (error?.includes('ya está habilitada')) {
+        toast.error(error);
+        setShow2FASetup(false);
+        setIs2FAEnabled(true); // Actualizamos el estado local
+        return;
+      }
+
       if (error) throw new Error(error);
       if (!secret || !qrCodeDataUrl) throw new Error('Error generando códigos');
 
@@ -186,6 +199,8 @@ export default function SettingsSeguridad() {
         secret: null
       }));
       toast.error(error.message || 'Error al configurar 2FA');
+    } finally {
+      setTotpSetup(prev => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -196,14 +211,21 @@ export default function SettingsSeguridad() {
       return;
     }
 
+    if (totpSetup.token.length !== 6) {
+      setTotpSetup(prev => ({ ...prev, error: 'El código debe tener 6 dígitos' }));
+      return;
+    }
+
     setTotpSetup(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const { success, error } = await verifyTOTPToken(user.id, totpSetup.token);
       
-      if (error) throw new Error(error);
-      if (!success) throw new Error('Código inválido');
+      if (!success || error) {
+        throw new Error(error || 'Error al verificar el código');
+      }
 
+      // Actualizar el estado local
       setIs2FAEnabled(true);
       setShow2FASetup(false);
       setTotpSetup({
@@ -213,55 +235,32 @@ export default function SettingsSeguridad() {
         isLoading: false,
         error: null
       });
-      
-      toast.custom((t) => (
-        <div className={`${
-          t.visible ? 'animate-enter' : 'animate-leave'
-        } max-w-md w-full bg-white dark:bg-zinc-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
-          <div className="flex-1 w-0 p-4">
-            <div className="flex items-start">
-              <div className="flex-shrink-0 pt-0.5">
-                <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
-                  <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
-                </div>
-              </div>
-              <div className="ml-3 flex-1">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  ¡2FA Activado!
-                </p>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  La autenticación de dos factores ha sido activada exitosamente.
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="flex border-l border-gray-200 dark:border-zinc-700">
-            <button
-              onClick={() => toast.dismiss(t.id)}
-              className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-green-600 dark:text-green-400 hover:text-green-500 focus:outline-none"
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
-      ), {
-        duration: 4000,
-        position: 'top-center',
-      });
+
+      toast.success('Autenticación de dos factores activada correctamente');
     } catch (error: any) {
       setTotpSetup(prev => ({
         ...prev,
         isLoading: false,
-        error: error.message,
-        token: '' // Limpiar el token para permitir un nuevo intento
+        error: error.message || 'Error al verificar el código'
       }));
+      toast.error(error.message || 'Error al verificar el código');
     }
   };
 
   // Función para desactivar 2FA
   const handleDisable2FA = async () => {
-    if (!user?.id || !disableToken) {
-      toast.error('Por favor, ingresa el código de verificación');
+    if (!user?.id) {
+      toast.error('Usuario no autenticado');
+      return;
+    }
+
+    if (!disableToken) {
+      setDisable2FAError('Por favor, ingresa el código de verificación');
+      return;
+    }
+
+    if (disableToken.length !== 6) {
+      setDisable2FAError('El código debe tener 6 dígitos');
       return;
     }
 
@@ -269,20 +268,28 @@ export default function SettingsSeguridad() {
     setDisable2FAError(null);
 
     try {
-      const { success, error } = await disable2FA(user.id, disableToken);
+      // Primero verificamos el token
+      const { success: isValidToken, error: verifyError } = await verifyTOTPToken(user.id, disableToken);
       
-      if (error) throw new Error(error);
-      if (!success) throw new Error('Código de verificación inválido');
+      if (!isValidToken || verifyError) {
+        throw new Error(verifyError || 'Código de verificación inválido');
+      }
 
+      // Si el token es válido, procedemos a desactivar 2FA
+      const { error: disableError } = await disable2FA(user.id, disableToken);
+      
+      if (disableError) {
+        throw new Error(disableError);
+      }
+
+      // Actualizar estado local
       setIs2FAEnabled(false);
       setShowDisableForm(false);
       setDisableToken('');
-      setDisable2FAError(null);
-      
-      toast.success('2FA desactivado exitosamente');
+      toast.success('Autenticación de dos factores desactivada correctamente');
     } catch (error: any) {
-      setDisable2FAError(error.message);
-      setDisableToken(''); // Limpiar el token para permitir un nuevo intento
+      setDisable2FAError(error.message || 'Error al desactivar 2FA');
+      toast.error(error.message || 'Error al desactivar 2FA');
     } finally {
       setIsDisabling2FA(false);
     }

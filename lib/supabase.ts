@@ -8,7 +8,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Función para crear el cliente de Supabase con persistencia configurable
-export function createSupabaseClient(persistSession = false) {
+export function createSupabaseClient(persistSession = true) {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -16,18 +16,19 @@ export function createSupabaseClient(persistSession = false) {
       auth: {
         persistSession,
         detectSessionInUrl: true,
-        autoRefreshToken: true
+        autoRefreshToken: true,
+        storage: typeof window !== 'undefined' ? window.localStorage : undefined
       }
     }
   );
 }
 
-// Cliente por defecto sin persistencia
+// Cliente por defecto con persistencia
 export const supabase = createSupabaseClient();
 
-// Función para obtener un cliente con persistencia
-export function getPersistedClient() {
-  return createSupabaseClient(true);
+// Función para obtener un cliente sin persistencia (por si se necesita)
+export function getNonPersistedClient() {
+  return createSupabaseClient(false);
 }
 
 // Escuchar cambios en el estado de autenticación
@@ -462,6 +463,10 @@ if (!apiBaseUrl) {
 // Función para generar el secreto TOTP y código QR para 2FA
 export async function generateTOTPSecret(userId: string) {
   try {
+    if (!userId) {
+      throw new Error('ID de usuario no proporcionado');
+    }
+
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     if (sessionError) throw new Error(`Error de sesión: ${sessionError.message}`);
     if (!session) throw new Error('No hay sesión activa');
@@ -471,6 +476,8 @@ export async function generateTOTPSecret(userId: string) {
       throw new Error('La variable de entorno NEXT_PUBLIC_API_URL no está configurada');
     }
 
+    console.log('🔍 Llamando a 2FA Generate con URL:', `${apiUrl}/2fa/generate`);
+
     const response = await fetch(`${apiUrl}/2fa/generate`, {
       method: 'POST',
       headers: {
@@ -479,21 +486,35 @@ export async function generateTOTPSecret(userId: string) {
         'Accept': 'application/json'
       },
       credentials: 'include',
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({ userId })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
+    console.log('📡 Status code:', response.status);
+    
+    const payload = await response.json();
+    console.log('🚀 2FA Generate response:', payload);
+
+    // Si el backend indica que 2FA ya está habilitado
+    if (payload.error === 'El 2FA ya está habilitado para este usuario') {
+      return {
+        secret: null,
+        qrCodeDataUrl: null,
+        error: 'La autenticación de dos factores ya está habilitada para tu cuenta'
+      };
+    }
+    
+    // Si hay otros tipos de errores
+    if (!payload.success || !payload.secret || !payload.qr) {
+      throw new Error(`Respuesta incompleta del servidor: ${JSON.stringify(payload)}`);
     }
 
-    const result = await response.json();
     return {
-      secret: result.secret,
-      qrCodeDataUrl: result.qr,
+      secret: payload.secret,
+      qrCodeDataUrl: payload.qr,
       error: null
     };
   } catch (error: any) {
+    console.error('❌ Error en generateTOTPSecret:', error);
     return {
       secret: null,
       qrCodeDataUrl: null,
