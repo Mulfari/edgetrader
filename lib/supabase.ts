@@ -466,14 +466,20 @@ export async function generateTOTPSecret(userId: string) {
     if (sessionError) throw new Error(`Error de sesión: ${sessionError.message}`);
     if (!session) throw new Error('No hay sesión activa');
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/generate`, {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl) {
+      throw new Error('La variable de entorno NEXT_PUBLIC_API_URL no está configurada');
+    }
+
+    const response = await fetch(`${apiUrl}/2fa/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        'Authorization': `Bearer ${session.access_token}`,
+        'Accept': 'application/json'
       },
+      credentials: 'include',
       body: JSON.stringify({ userId }),
-      credentials: 'include'
     });
 
     if (!response.ok) {
@@ -503,17 +509,25 @@ export const verifyTOTPToken = async (userId: string, token: string) => {
     if (sessionError) throw sessionError;
     if (!session) throw new Error('No hay sesión activa');
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/verify`, {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl) {
+      throw new Error('La variable de entorno NEXT_PUBLIC_API_URL no está configurada');
+    }
+
+    const response = await fetch(`${apiUrl}/2fa/verify`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        'Authorization': `Bearer ${session.access_token}`,
+        'Accept': 'application/json'
       },
+      credentials: 'include',
       body: JSON.stringify({ userId, token })
     });
 
     if (!response.ok) {
-      throw new Error('Error al verificar el token TOTP');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Error al verificar el token TOTP');
     }
 
     const result = await response.json();
@@ -523,6 +537,13 @@ export const verifyTOTPToken = async (userId: string, token: string) => {
     };
   } catch (error: any) {
     console.error('Error en verifyTOTPToken:', error);
+    // Si hay un error de CORS o de red, consideramos que la verificación falló
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      return {
+        success: false,
+        error: 'Error de conexión al verificar el token'
+      };
+    }
     return {
       success: false,
       error: error.message || 'Error al verificar el token TOTP'
@@ -544,15 +565,18 @@ export const check2FAStatus = async (userId: string) => {
     if (sessionError) throw new Error(`Error de sesión: ${sessionError.message}`);
     if (!session) throw new Error('No hay sesión activa');
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://btrader-production.up.railway.app/api';
-    
+    // Usar la URL base correcta del API
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl) {
+      throw new Error('La variable de entorno NEXT_PUBLIC_API_URL no está configurada');
+    }
+
     const response = await fetch(`${apiUrl}/2fa/status`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`,
-        'Accept': 'application/json',
-        'Origin': typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
+        'Accept': 'application/json'
       },
       credentials: 'include',
       body: JSON.stringify({ userId })
@@ -570,6 +594,13 @@ export const check2FAStatus = async (userId: string) => {
     };
   } catch (error: any) {
     console.error('Error en check2FAStatus:', error);
+    // Si hay un error de CORS o de red, asumimos que no hay 2FA
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      return {
+        is2FAEnabled: false,
+        error: null
+      };
+    }
     return {
       is2FAEnabled: false,
       error: error.message || 'Error al verificar el estado de 2FA'
