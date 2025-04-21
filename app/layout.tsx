@@ -23,6 +23,7 @@ import { signOut, getUserProfile } from '@/lib/supabase';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { BellMenu } from '@/components/BellMenu'
 
 interface Profile {
   id: string;
@@ -438,84 +439,7 @@ export default function RootLayout({
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
-                              className="group relative p-2.5 rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-gradient-to-br hover:from-violet-500/5 hover:to-indigo-500/5 dark:text-zinc-400 dark:hover:text-zinc-50 dark:hover:bg-gradient-to-br dark:hover:from-violet-500/10 dark:hover:to-indigo-500/10 focus:outline-none transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:shadow-lg hover:shadow-violet-200/50 dark:hover:shadow-violet-900/50"
-                            >
-                              <span className="sr-only">Ver notificaciones</span>
-                              <div className="relative">
-                                <div className={`transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform ${isScrolled ? 'scale-95' : 'scale-100'}`}>
-                                  <Bell className={`transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform group-hover:scale-110 h-5 w-5`} />
-                                </div>
-                                <div className={`absolute -top-1 -right-1 h-3 w-3 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform ${isScrolled ? 'scale-95' : 'scale-100'}`}>
-                                  <div className="absolute inset-0 rounded-full bg-rose-500 animate-ping opacity-75"></div>
-                                  <div className="relative rounded-full h-3 w-3 bg-rose-500 ring-2 ring-white dark:ring-zinc-900"></div>
-                                </div>
-                              </div>
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-96">
-                            <div className="p-4 space-y-4">
-                              <div className="flex items-center justify-between">
-                                <div className="space-y-1">
-                                  <h3 className="font-medium text-lg bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-indigo-500">Notificaciones</h3>
-                                  <p className="text-sm text-zinc-500 dark:text-zinc-400">Últimas actualizaciones del sistema</p>
-                                </div>
-                                <Badge variant="outline" className="bg-gradient-to-r from-rose-500/10 to-pink-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20">
-                                  3 nuevas
-                                </Badge>
-                              </div>
-
-                              <div className="space-y-3">
-                                <div className="group p-3 rounded-xl bg-gradient-to-r from-blue-500/5 to-violet-500/5 hover:from-blue-500/10 hover:to-violet-500/10 dark:from-blue-500/10 dark:to-violet-500/10 dark:hover:from-blue-500/20 dark:hover:to-violet-500/20 border border-blue-500/20 dark:border-blue-400/20 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer">
-                                  <div className="flex items-start gap-3">
-                                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110">
-                                      <Wallet className="h-4 w-4 text-white" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center justify-between">
-                                        <p className="text-sm font-medium truncate">Nuevo balance detectado</p>
-                                        <Badge variant="outline" className="bg-gradient-to-r from-blue-500/10 to-violet-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20 ml-2 shrink-0">
-                                          Nuevo
-                                        </Badge>
-                                      </div>
-                                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">
-                                        Se ha detectado un cambio en el balance de tu cuenta principal
-                                      </p>
-                                      <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-2">Hace 5 minutos</p>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="group p-3 rounded-xl bg-gradient-to-r from-green-500/5 to-emerald-500/5 hover:from-green-500/10 hover:to-emerald-500/10 dark:from-green-500/10 dark:to-emerald-500/10 dark:hover:from-green-500/20 dark:hover:to-emerald-500/20 border border-green-500/20 dark:border-green-400/20 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer">
-                                  <div className="flex items-start gap-3">
-                                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110">
-                                      <LineChart className="h-4 w-4 text-white" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center justify-between">
-                                        <p className="text-sm font-medium truncate">Operación cerrada</p>
-                                        <Badge variant="outline" className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 text-green-700 dark:text-green-400 border-green-500/20 ml-2 shrink-0">
-                                          +2.5%
-                                        </Badge>
-                                      </div>
-                                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">
-                                        Operación cerrada exitosamente en BTC/USDT
-                                      </p>
-                                      <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-2">Hace 15 minutos</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <button className="w-full py-2 text-sm font-medium text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 transition-colors">
-                                Ver todas las notificaciones
-                              </button>
-                            </div>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <BellMenu userId={profile?.id || ''} />
 
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

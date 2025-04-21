@@ -6,8 +6,9 @@ import { ArrowLeft, Eye, EyeOff, AlertCircle, Loader2, X, Clock } from "lucide-r
 import { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { signInWithEmail, getSession, signInWithGoogle, supabase, resetPassword, check2FAStatus, verifyTOTPToken } from "@/lib/supabase";
+import { signInWithEmail, getSession, signInWithGoogle, supabase, resetPassword, check2FAStatus, verifyTOTPToken, getNonPersistedClient } from "@/lib/supabase";
 import { toast } from 'react-hot-toast';
+import { Session } from '@supabase/supabase-js';
 
 // Tipos para los errores de validación
 interface ValidationErrors {
@@ -259,6 +260,7 @@ function LoginForm() {
     remainingAttempts: null,
     cooldown: null
   });
+  const [tempSession, setTempSession] = useState<Session | null>(null);
 
   useEffect(() => {
     // Cargar el idioma guardado o usar español por defecto
@@ -464,7 +466,12 @@ function LoginForm() {
     setError("");
 
     try {
-      const { data, error } = await signInWithEmail(email, password);
+      // Usar cliente sin persistencia para el login inicial
+      const np = getNonPersistedClient();
+      const { data, error } = await np.auth.signInWithPassword({
+        email,
+        password,
+      });
       
       if (error) {
         let errorMessage = '';
@@ -504,8 +511,8 @@ function LoginForm() {
         setUserId(data.user.id);
 
         try {
-          // Comprobamos si tiene 2FA activado
-          const { data: twoFactorData, error: statusErr } = await supabase.rpc('check_2fa_status', {
+          // Comprobamos si tiene 2FA activado usando el cliente sin persistencia
+          const { data: twoFactorData, error: statusErr } = await np.rpc('check_2fa_status', {
             p_user_id: data.user.id
           });
           
@@ -517,18 +524,22 @@ function LoginForm() {
           }
 
           if (twoFactorData === true) {
-            // Pasamos al paso OTP
+            // Guardamos la sesión temporalmente sin persistirla
+            setTempSession(data.session);
             setStep('otp');
             setIsLoading(false);
           } else {
-            // No tiene 2FA, procedemos normalmente
+            // No tiene 2FA, persistimos la sesión y procedemos normalmente
+            await supabase.auth.setSession({
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token
+            });
             toast.success(t.loginSuccess);
             toast.success(t.preparingDashboard);
             setSuccess(true);
             setRedirectCountdown(3);
           }
         } catch (error) {
-          // En lugar de hacer bypass, mostramos el error
           console.error('Error inesperado al verificar 2FA:', error);
           toast.error(`Error inesperado al verificar 2FA: ${error instanceof Error ? error.message : 'Error desconocido'}`);
           setError('Error al verificar estado de autenticación de dos factores');
@@ -545,23 +556,46 @@ function LoginForm() {
   // Nueva función para manejar la verificación del OTP
   const handleSubmitOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userId) return;
+    if (!userId || !tempSession) return;
 
     setIsLoading(true);
-    const { success: otpSuccess, error: otpErr } = await verifyTOTPToken(userId, otp);
-    
-    if (!otpSuccess) {
-      setError(otpErr || t.invalidOtp);
-      setIsLoading(false);
-      return;
-    }
+    setError("");
 
-    // OTP verificado correctamente
-    toast.success(t.loginSuccess);
-    toast.success(t.preparingDashboard);
-    setSuccess(true);
-    setRedirectCountdown(3);
-    setIsLoading(false);
+    try {
+      // Llamada manual al endpoint de verificación, usando el token de tempSession
+      const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/2fa/verify`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${tempSession.access_token}`
+        },
+        body: JSON.stringify({ userId, token: otp })
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ message: "Error desconocido" }));
+        throw new Error(err.error || err.message || "OTP inválido");
+      }
+
+      const { success } = await resp.json();
+      if (!success) throw new Error("OTP inválido");
+
+      // Si llegamos aquí, el OTP es correcto: persisto la sesión
+      await supabase.auth.setSession({
+        access_token: tempSession.access_token,
+        refresh_token: tempSession.refresh_token
+      });
+
+      toast.success(t.loginSuccess);
+      toast.success(t.preparingDashboard);
+      setSuccess(true);
+      setRedirectCountdown(3);
+
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
