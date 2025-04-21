@@ -7,15 +7,28 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Las variables de entorno de Supabase no están configuradas correctamente');
 }
 
-// Crear el cliente de Supabase con la configuración optimizada
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,     // mantiene la sesión en localStorage
-    detectSessionInUrl: true, // necesario para auth callbacks en Next.js
-    autoRefreshToken: true,   // renueva automáticamente el token
-    storageKey: 'supabase.auth.token' // clave para localStorage
-  }
-});
+// Función para crear el cliente de Supabase con persistencia configurable
+export function createSupabaseClient(persistSession = false) {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        persistSession,
+        detectSessionInUrl: true,
+        autoRefreshToken: true
+      }
+    }
+  );
+}
+
+// Cliente por defecto sin persistencia
+export const supabase = createSupabaseClient();
+
+// Función para obtener un cliente con persistencia
+export function getPersistedClient() {
+  return createSupabaseClient(true);
+}
 
 // Escuchar cambios en el estado de autenticación
 supabase.auth.onAuthStateChange((event, session) => {

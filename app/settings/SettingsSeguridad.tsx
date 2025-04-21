@@ -329,6 +329,11 @@ export default function SettingsSeguridad() {
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user?.id) {
+      toast.error('Usuario no autenticado');
+      return;
+    }
+
     const errors = validatePasswordForm();
     setPasswordErrors(errors);
     
@@ -343,13 +348,21 @@ export default function SettingsSeguridad() {
       
       if (passwordStatus?.can_set_password) {
         // Establecer contraseña inicial
-        response = await setInitialPassword(passwordForm.newPassword);
+        const { data, error } = await supabase.rpc('set_initial_password', {
+          p_user_id: user.id,
+          p_new_password: passwordForm.newPassword
+        });
+        
+        response = { success: !error, error: error?.message };
       } else {
         // Actualizar contraseña existente
-        response = await setInitialPassword(
-          passwordForm.newPassword,
-          passwordForm.currentPassword
-        );
+        const { data, error } = await supabase.rpc('update_user_password', {
+          p_user_id: user.id,
+          p_current_password: passwordForm.currentPassword,
+          p_new_password: passwordForm.newPassword
+        });
+        
+        response = { success: !error, error: error?.message };
       }
 
       if (!response.success) {
