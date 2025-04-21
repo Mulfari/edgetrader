@@ -569,49 +569,30 @@ export const check2FAStatus = async (userId: string) => {
       };
     }
 
-    // En producción, si hay error de CORS, asumimos que no hay 2FA
-    if (process.env.NODE_ENV === 'production') {
-      return {
-        is2FAEnabled: false,
-        error: null
-      };
-    }
-
-    // Solo intentamos la verificación en desarrollo
+    // Intentar obtener el estado de 2FA directamente de Supabase
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!apiUrl) {
+      const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
+      
+      if (factorsError) {
+        console.error('Error al obtener factores MFA:', factorsError);
         return {
           is2FAEnabled: false,
           error: null
         };
       }
 
-      const response = await fetch(`${apiUrl}/2fa/status`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'Accept': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ userId })
-      });
+      // Verificar si hay algún factor TOTP activo
+      const hasTOTP = factorsData.totp && 
+                     factorsData.totp.length > 0 && 
+                     factorsData.totp.some(factor => factor.status === 'verified');
 
-      if (!response.ok) {
-        return {
-          is2FAEnabled: false,
-          error: null
-        };
-      }
-
-      const result = await response.json();
       return {
-        is2FAEnabled: result.is2FAEnabled || false,
+        is2FAEnabled: hasTOTP,
         error: null
       };
-    } catch (fetchError) {
-      console.error('Error al verificar 2FA:', fetchError);
+
+    } catch (error) {
+      console.error('Error al verificar estado 2FA:', error);
       return {
         is2FAEnabled: false,
         error: null
