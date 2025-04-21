@@ -287,9 +287,12 @@ export const signUpWithEmail = async (email: string, password: string, name?: st
 export const signOut = async () => {
   const { error } = await supabase.auth.signOut();
   
-  // Limpiar el token del localStorage
+  // Limpiar todos los datos de sesión del localStorage
   if (typeof window !== 'undefined') {
     localStorage.removeItem('token');
+    localStorage.removeItem('supabase.auth.token');
+    localStorage.removeItem('supabase.auth.expires_at');
+    localStorage.removeItem('supabase.auth.refresh_token');
   }
   
   if (error) throw error;
@@ -476,9 +479,9 @@ export async function generateTOTPSecret(userId: string) {
       throw new Error('La variable de entorno NEXT_PUBLIC_API_URL no está configurada');
     }
 
-    console.log('🔍 Llamando a 2FA Generate con URL:', `${apiUrl}/2fa/generate`);
+    console.log('🔍 Llamando a 2FA Generate con URL:', `${apiUrl}/api/2fa/generate`);
 
-    const response = await fetch(`${apiUrl}/2fa/generate`, {
+    const response = await fetch(`${apiUrl}/api/2fa/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -535,7 +538,7 @@ export const verifyTOTPToken = async (userId: string, token: string) => {
       throw new Error('La variable de entorno NEXT_PUBLIC_API_URL no está configurada');
     }
 
-    const response = await fetch(`${apiUrl}/2fa/verify`, {
+    const response = await fetch(`${apiUrl}/api/2fa/verify`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -628,7 +631,7 @@ export const disable2FA = async (userId: string, token: string) => {
     if (sessionError) throw sessionError;
     if (!session) throw new Error('No hay sesión activa');
 
-    const response = await fetch(`${apiBaseUrl}/2fa/disable`, {
+    const response = await fetch(`${apiBaseUrl}/api/2fa/disable`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -822,7 +825,7 @@ export const rpcVerifyTOTP = async (userId: string, token: string) => {
     if (sessionError) throw sessionError;
     if (!session) throw new Error('No hay sesión activa');
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/2fa/verify`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/2fa/verify`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
