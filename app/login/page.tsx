@@ -505,23 +505,26 @@ function LoginForm() {
 
         try {
           // Comprobamos si tiene 2FA activado
+          console.log('Verificando 2FA para usuario:', data.user.id);
           const { is2FAEnabled, error: statusErr } = await check2FAStatus(data.user.id);
+          console.log('RPC check2FAStatus result:', { is2FAEnabled, statusErr });
           
-          // Si hay error al verificar 2FA, procedemos como si no estuviera habilitado
           if (statusErr) {
             console.error('Error al verificar 2FA:', statusErr);
-            toast.success(t.loginSuccess);
-            toast.success(t.preparingDashboard);
-            setSuccess(true);
-            setRedirectCountdown(3);
+            // En lugar de hacer bypass, mostramos el error y bloqueamos el login
+            toast.error(`Error al verificar 2FA: ${statusErr}`);
+            setError(statusErr);
+            setIsLoading(false);
             return;
           }
 
           if (is2FAEnabled) {
+            console.log('2FA está habilitado, cambiando a paso OTP');
             // Pasamos al paso OTP
             setStep('otp');
             setIsLoading(false);
           } else {
+            console.log('2FA no está habilitado, procediendo con login normal');
             // No tiene 2FA, procedemos normalmente
             toast.success(t.loginSuccess);
             toast.success(t.preparingDashboard);
@@ -529,12 +532,11 @@ function LoginForm() {
             setRedirectCountdown(3);
           }
         } catch (error) {
-          // Si hay cualquier error al verificar 2FA, procedemos como si no estuviera habilitado
-          console.error('Error al verificar 2FA:', error);
-          toast.success(t.loginSuccess);
-          toast.success(t.preparingDashboard);
-          setSuccess(true);
-          setRedirectCountdown(3);
+          // En lugar de hacer bypass, mostramos el error
+          console.error('Error inesperado al verificar 2FA:', error);
+          toast.error(`Error inesperado al verificar 2FA: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+          setError('Error al verificar estado de autenticación de dos factores');
+          setIsLoading(false);
         }
       }
     } catch (error) {

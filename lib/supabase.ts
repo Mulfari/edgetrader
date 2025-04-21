@@ -554,55 +554,48 @@ export const verifyTOTPToken = async (userId: string, token: string) => {
 // Función para verificar si 2FA está habilitado
 export const check2FAStatus = async (userId: string) => {
   try {
+    console.log('Iniciando verificación de 2FA para usuario:', userId);
+    
     if (!userId) {
-      return {
-        is2FAEnabled: false,
-        error: null
-      };
+      throw new Error('ID de usuario no proporcionado');
     }
 
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session) {
-      return {
-        is2FAEnabled: false,
-        error: null
-      };
+    if (sessionError) {
+      throw new Error(`Error de sesión: ${sessionError.message}`);
+    }
+    if (!session) {
+      throw new Error('No hay sesión activa');
     }
 
-    // Intentar obtener el estado de 2FA directamente de Supabase
-    try {
-      const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
-      
-      if (factorsError) {
-        console.error('Error al obtener factores MFA:', factorsError);
-        return {
-          is2FAEnabled: false,
-          error: null
-        };
-      }
+    console.log('Obteniendo estado 2FA desde RPC...');
+    
+    // Llamar directamente a la función RPC de Supabase
+    const { data, error } = await supabase.rpc('check_2fa_status', {
+      p_user_id: userId
+    });
 
-      // Verificar si hay algún factor TOTP activo
-      const hasTOTP = factorsData.totp && 
-                     factorsData.totp.length > 0 && 
-                     factorsData.totp.some(factor => factor.status === 'verified');
+    console.log('Respuesta RPC check_2fa_status:', { data, error });
 
-      return {
-        is2FAEnabled: hasTOTP,
-        error: null
-      };
-
-    } catch (error) {
-      console.error('Error al verificar estado 2FA:', error);
-      return {
-        is2FAEnabled: false,
-        error: null
-      };
+    if (error) {
+      throw new Error(`Error en RPC check_2fa_status: ${error.message}`);
     }
+
+    return {
+      is2FAEnabled: data?.is_enabled || false,
+      error: null
+    };
+
   } catch (error) {
-    console.error('Error en check2FAStatus:', error);
+    console.error('Error detallado en check2FAStatus:', {
+      error,
+      message: error instanceof Error ? error.message : 'Error desconocido',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
     return {
       is2FAEnabled: false,
-      error: null
+      error: error instanceof Error ? error.message : 'Error al verificar el estado de 2FA'
     };
   }
 };
