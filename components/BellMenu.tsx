@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { Bell, Wallet, LineChart } from 'lucide-react'
+import { Bell, Wallet, LineChart, RefreshCw, AlertCircle } from 'lucide-react'
 import { useNotifications } from '@/hooks/useNotifications'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 
-export function BellMenu({ userId }: { userId: string }) {
-  const { notifications, loading, error, markAsRead, markAllAsRead } = useNotifications(userId)
+export function BellMenu() {
+  const { notifications, loading, error, markAsRead, markAllAsRead } = useNotifications()
   const unreadCount = notifications.filter(n => !n.read).length
+  const [isOpen, setIsOpen] = useState(false)
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -30,8 +31,14 @@ export function BellMenu({ userId }: { userId: string }) {
     }
   }
 
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open)
+  }
+
+  const isPermissionError = error?.message?.includes('permisos') || error?.message?.includes('permission denied')
+
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
@@ -46,6 +53,11 @@ export function BellMenu({ userId }: { userId: string }) {
               <div className="absolute -top-1 -right-1 h-3 w-3 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform scale-100">
                 <div className="absolute inset-0 rounded-full bg-rose-500 animate-ping opacity-75"></div>
                 <div className="relative rounded-full h-3 w-3 bg-rose-500 ring-2 ring-white dark:ring-zinc-900"></div>
+              </div>
+            )}
+            {error && (
+              <div className="absolute -top-1 -right-1 h-3 w-3 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform scale-100">
+                <div className="relative rounded-full h-3 w-3 bg-amber-500 ring-2 ring-white dark:ring-zinc-900"></div>
               </div>
             )}
           </div>
@@ -74,8 +86,32 @@ export function BellMenu({ userId }: { userId: string }) {
               Cargando notificaciones...
             </div>
           ) : error ? (
-            <div className="p-4 text-center text-rose-500">
-              Error: {error.message}
+            <div className="p-4 space-y-3">
+              <div className="text-center text-rose-500">
+                <div className="flex justify-center mb-2">
+                  <AlertCircle className="h-8 w-8 text-amber-500" />
+                </div>
+                <p className="font-medium">Error al cargar notificaciones</p>
+                <p className="text-sm mt-1">{error.message}</p>
+              </div>
+              <div className="flex justify-center gap-2">
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 transition-colors"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Reintentar
+                </button>
+                {isPermissionError && (
+                  <a 
+                    href="mailto:admin@example.com?subject=Problema con notificaciones"
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition-colors"
+                  >
+                    <AlertCircle className="h-4 w-4" />
+                    Contactar admin
+                  </a>
+                )}
+              </div>
             </div>
           ) : notifications.length === 0 ? (
             <div className="p-4 text-center text-zinc-500 dark:text-zinc-400">

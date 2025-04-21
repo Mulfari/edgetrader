@@ -574,11 +574,11 @@ function LoginForm() {
 
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({ message: "Error desconocido" }));
-        throw new Error(err.error || err.message || "OTP inválido");
+        throw new Error(err.error || err.message || "Código inválido");
       }
 
       const { success } = await resp.json();
-      if (!success) throw new Error("OTP inválido");
+      if (!success) throw new Error("Código inválido");
 
       // Si llegamos aquí, el OTP es correcto: persisto la sesión
       await supabase.auth.setSession({

@@ -439,7 +439,7 @@ export default function RootLayout({
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <BellMenu userId={profile?.id || ''} />
+                        <BellMenu />
 
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
