@@ -88,6 +88,12 @@ export default function SettingsSeguridad() {
   const [isDisabling2FA, setIsDisabling2FA] = useState(false);
   const [disable2FAError, setDisable2FAError] = useState<string | null>(null);
 
+  // Nuevo estado para manejar la validación 2FA previa
+  const [show2FAValidation, setShow2FAValidation] = useState(false);
+  const [validating2FA, setValidating2FA] = useState(false);
+  const [totpValidationToken, setTotpValidationToken] = useState('');
+  const [totpValidationError, setTotpValidationError] = useState<string | null>(null);
+
   // Verificar estado de contraseña
   useEffect(() => {
     const checkStatus = async () => {
@@ -295,6 +301,69 @@ export default function SettingsSeguridad() {
     }
   };
 
+  // Función para manejar la validación inicial de 2FA
+  const handleInitial2FAValidation = async () => {
+    if (!totpValidationToken) {
+      setTotpValidationError('El código 2FA es requerido');
+      return;
+    }
+
+    if (!/^\d{6}$/.test(totpValidationToken)) {
+      setTotpValidationError('El código debe tener 6 dígitos');
+      return;
+    }
+
+    setValidating2FA(true);
+    setTotpValidationError(null);
+
+    try {
+      const { success, error } = await verifyTOTPToken(user!.id, totpValidationToken);
+      
+      if (error || !success) {
+        setTotpValidationError(error?.message || 'Código 2FA inválido');
+        return;
+      }
+
+      // Si la validación es exitosa, mostrar el formulario de cambio de contraseña
+      setShow2FAValidation(false);
+      setShowPasswordForm(true);
+      setTotpValidationToken('');
+    } catch (error: any) {
+      setTotpValidationError(error.message || 'Error al validar el código 2FA');
+    } finally {
+      setValidating2FA(false);
+    }
+  };
+
+  // Función para limpiar todos los estados del formulario
+  const handleCancelPasswordChange = () => {
+    // Limpiar formulario de contraseña
+    setPasswordForm({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+    setPasswordErrors({});
+    setShowPasswordForm(false);
+    
+    // Limpiar estados de validación 2FA
+    setTotpValidationToken('');
+    setTotpValidationError(null);
+    setShow2FAValidation(false);
+    setValidating2FA(false);
+  };
+
+  // Modificar el manejador del botón de cambio de contraseña
+  const handlePasswordButtonClick = () => {
+    if (showPasswordForm || show2FAValidation) {
+      handleCancelPasswordChange();
+    } else if (is2FAEnabled) {
+      setShow2FAValidation(true);
+    } else {
+      setShowPasswordForm(true);
+    }
+  };
+
   const validatePasswordForm = () => {
     const errors: Partial<PasswordForm> = {};
     
@@ -351,6 +420,7 @@ export default function SettingsSeguridad() {
     setIsChangingPassword(true);
 
     try {
+      // Proceder con el cambio de contraseña
       let response;
       
       if (passwordStatus?.can_set_password) {
@@ -394,6 +464,7 @@ export default function SettingsSeguridad() {
 
       toast.success('Contraseña actualizada correctamente');
       
+      // Limpiar el formulario
       setPasswordForm({
         currentPassword: '',
         newPassword: '',
@@ -546,6 +617,94 @@ export default function SettingsSeguridad() {
     );
   };
 
+  // Componente para la validación 2FA
+  const render2FAValidationForm = () => {
+    if (!show2FAValidation) return null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: "auto" }}
+        exit={{ opacity: 0, height: 0 }}
+        transition={{
+          type: "spring",
+          duration: 0.5,
+          bounce: 0.2
+        }}
+        className="mt-4"
+      >
+        <div className="p-4 bg-white/50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700/50">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+              <AlertCircle className="h-5 w-5" />
+              <p className="text-sm font-medium">
+                Verifica tu identidad
+              </p>
+            </div>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Por favor, ingresa un código de verificación de tu aplicación de autenticación:
+            </p>
+            <div className="space-y-2">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={totpValidationToken}
+                  onChange={(e) => {
+                    setTotpValidationToken(e.target.value);
+                    setTotpValidationError(null);
+                  }}
+                  placeholder="000000"
+                  className={`block w-full px-3 py-2 text-center border ${
+                    totpValidationError ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-zinc-300 dark:border-zinc-600 focus:ring-amber-500 focus:border-amber-500'
+                  } rounded-lg shadow-sm dark:bg-zinc-800 dark:text-white text-sm`}
+                  maxLength={6}
+                  disabled={validating2FA}
+                />
+              </div>
+              <AnimatePresence mode="wait">
+                {totpValidationError && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-xs text-red-500 text-center"
+                  >
+                    {totpValidationError}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={handleCancelPasswordChange}
+                disabled={validating2FA}
+                className="px-3 py-1.5 text-sm font-medium text-zinc-600 dark:text-zinc-400 
+                  hover:text-zinc-700 dark:hover:text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleInitial2FAValidation}
+                disabled={validating2FA || !totpValidationToken}
+                className="relative flex items-center justify-center px-4 py-2 text-sm font-medium text-white 
+                  bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 
+                  rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500
+                  disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 min-w-[100px]"
+              >
+                {validating2FA ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Verificar'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
   return (
     <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
       {/* Encabezado mejorado */}
@@ -597,7 +756,7 @@ export default function SettingsSeguridad() {
                         No configurada
                       </Badge>
                       <button 
-                        onClick={() => setShowPasswordForm(true)}
+                        onClick={handlePasswordButtonClick}
                         className="px-3 py-1 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 
                           focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-400/20 rounded-md
                           transition-all duration-200"
@@ -607,12 +766,12 @@ export default function SettingsSeguridad() {
                     </div>
                   ) : (
                     <button 
-                      onClick={() => setShowPasswordForm(prev => !prev)}
+                      onClick={handlePasswordButtonClick}
                       className="px-3 py-1 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 
                         focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-400/20 rounded-md
                         transition-all duration-200"
                     >
-                      {showPasswordForm ? 'Cancelar' : 'Cambiar'}
+                      {showPasswordForm || show2FAValidation ? 'Cancelar' : 'Cambiar'}
                     </button>
                   )}
                 </>
@@ -628,6 +787,12 @@ export default function SettingsSeguridad() {
               </div>
             )}
 
+            {/* Renderizar el formulario de validación 2FA */}
+            <AnimatePresence mode="wait">
+              {render2FAValidationForm()}
+            </AnimatePresence>
+
+            {/* Renderizar el formulario de cambio de contraseña */}
             <AnimatePresence mode="wait">
               {showPasswordForm && (
                 <motion.div
@@ -775,11 +940,21 @@ export default function SettingsSeguridad() {
                     </motion.div>
 
                     <motion.div 
-                      className="flex justify-end"
+                      className="flex justify-end gap-2"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.6 }}
                     >
+                      <button
+                        type="button"
+                        onClick={handleCancelPasswordChange}
+                        className="px-4 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 
+                          hover:text-zinc-700 dark:hover:text-zinc-300 
+                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500
+                          disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                      >
+                        Cancelar
+                      </button>
                       <button
                         type="submit"
                         disabled={isChangingPassword}
