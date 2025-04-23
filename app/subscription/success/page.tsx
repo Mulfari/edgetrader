@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 import Link from 'next/link';
 
-export default function SubscriptionSuccess() {
+function SubscriptionSuccessContent() {
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -86,5 +86,17 @@ export default function SubscriptionSuccess() {
         </div>
       </Card>
     </div>
+  );
+}
+
+export default function SubscriptionSuccess() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <SubscriptionSuccessContent />
+    </Suspense>
   );
 } 
