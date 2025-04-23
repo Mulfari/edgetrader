@@ -23,7 +23,7 @@ export class PaymentService {
 
   static async createSubscription(planId: string, email: string): Promise<CreateSubscriptionResponse> {
     const headers = await this.getAuthHeaders();
-    const response = await fetch(`${API_URL}/payments/create-subscription`, {
+    const response = await fetch(`${API_URL}/api/payments/create-subscription`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ planId, email }),
@@ -39,7 +39,7 @@ export class PaymentService {
 
   static async createCheckoutSession(planId: string, email: string) {
     const headers = await this.getAuthHeaders();
-    const response = await fetch(`${API_URL}/payments/create-checkout-session`, {
+    const response = await fetch(`${API_URL}/api/payments/create-checkout-session`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ planId, email }),
@@ -55,7 +55,7 @@ export class PaymentService {
 
   static async getSubscriptionStatus(): Promise<{ status: string }> {
     const headers = await this.getAuthHeaders();
-    const url = `${API_URL}/payments/subscription-status`;
+    const url = `${API_URL}/api/payments/subscription-status`;
     console.log('Calling subscription status endpoint:', url);
     const response = await fetch(url, {
       method: 'GET',
