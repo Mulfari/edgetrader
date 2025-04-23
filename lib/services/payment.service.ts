@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { supabase } from '../supabase';
 
 // Asegurarnos de que siempre tengamos una URL válida
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export interface CreateSubscriptionResponse {
   subscriptionId: string;
@@ -55,7 +55,9 @@ export class PaymentService {
 
   static async getSubscriptionStatus(): Promise<{ status: string }> {
     const headers = await this.getAuthHeaders();
-    const response = await fetch(`${API_URL}/payments/subscription-status`, {
+    const url = `${API_URL}/payments/subscription-status`;
+    console.log('Calling subscription status endpoint:', url);
+    const response = await fetch(url, {
       method: 'GET',
       headers,
     });
