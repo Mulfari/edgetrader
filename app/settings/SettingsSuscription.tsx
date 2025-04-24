@@ -1,6 +1,7 @@
 "use client";
 
 import { Star } from "lucide-react";
+import SubscriptionPlans from "@/components/subscription/SubscriptionPlans";
 
 export default function SettingsSuscription() {
   return (
@@ -25,11 +26,7 @@ export default function SettingsSuscription() {
       </div>
 
       <div className="p-6">
-        {/* Contenido de la sección de suscripción irá aquí */}
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Próximamente: Aquí podrás ver los detalles de tu plan actual, historial de facturación y gestionar tu suscripción.
-        </p>
-        {/* Ejemplo: Mostrar plan actual, botón para cambiar plan, etc. */}
+        <SubscriptionPlans />
       </div>
     </div>
   );
