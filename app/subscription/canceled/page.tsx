@@ -1,31 +1,42 @@
 'use client';
 
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { XCircle } from "lucide-react";
+import { XCircle, Home } from "lucide-react";
 import Link from 'next/link';
 
 export default function SubscriptionCanceled() {
   return (
-    <div className="container max-w-2xl mx-auto py-12 px-4">
-      <Card className="p-8 text-center">
-        <div className="flex justify-center mb-6">
-          <XCircle className="h-16 w-16 text-red-500" />
-        </div>
-        <h1 className="text-3xl font-bold mb-4">Suscripción Cancelada</h1>
-        <p className="text-gray-600 mb-8">
-          Has cancelado el proceso de suscripción. Si tuviste algún problema o necesitas ayuda, no dudes en contactarnos.
-        </p>
-        <div className="space-y-4">
-          <Link href="/subscription">
-            <Button className="w-full">
-              Volver a Planes
+    <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
+      <Card className="max-w-md mx-auto w-full border-red-500/30 bg-red-500/[0.02]">
+        <CardHeader className="text-center">
+          <div className="mx-auto bg-red-100 dark:bg-red-900/50 rounded-full p-2.5 w-fit mb-4">
+            <XCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+          </div>
+          <CardTitle className="text-2xl font-semibold text-red-700 dark:text-red-300">Pago Cancelado</CardTitle>
+          <CardDescription className="text-red-600 dark:text-red-400">
+            Parece que has cancelado el proceso de pago.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="text-center">
+          <p className="text-gray-700 dark:text-gray-300 mb-8">
+            No te preocupes, tu suscripción no ha sido activada. Puedes volver a intentarlo cuando quieras o regresar al panel principal.
+          </p>
+          <div className="space-y-3">
+            <Button 
+              asChild
+              className="w-full bg-red-600 hover:bg-red-700 text-white dark:bg-red-500 dark:hover:bg-red-600"
+            >
+              <Link href="/dashboard">
+                <Home className="mr-2 h-4 w-4" />
+                Volver al Dashboard
+              </Link>
             </Button>
-          </Link>
-          <Link href="/support" className="block text-sm text-gray-500 hover:text-gray-700">
-            ¿Necesitas ayuda? Contacta a soporte
-          </Link>
-        </div>
+            <Link href="/support" className="block text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+              ¿Necesitas ayuda? Contacta a soporte
+            </Link>
+          </div>
+        </CardContent>
       </Card>
     </div>
   );
