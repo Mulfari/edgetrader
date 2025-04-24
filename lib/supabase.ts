@@ -33,8 +33,59 @@ export function getNonPersistedClient() {
 
 // Escuchar cambios en el estado de autenticación
 supabase.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_IN') {
-    // El usuario ha iniciado sesión
+  // Log para cualquier evento (opcional, para depuración)
+  // console.log('[onAuthStateChange] Event:', event, 'Session:', session);
+
+  if (event === 'SIGNED_IN' && session?.user) { // Comprobar evento y usuario
+    // Log especifícamente para OAuth
+    const provider = session.user.app_metadata?.provider ?? 'email';
+    console.log('[onAuthStateChange] SIGNED_IN event detected. Provider:', provider);
+
+    if (provider !== 'email') { // Loguear solo si NO es email (Google, etc.)
+      console.log('[onAuthStateChange] Firing OAuth login log task for user:', session.user.id);
+      
+      // *** Fire-and-forget para no bloquear el listener ***
+      (async () => {
+        // Intenta obtener IP y User-Agent
+        let ipAddress: string | null = null;
+        let userAgent: string | null = null;
+        try {
+          console.log('[onAuthStateChange - async task] Fetching IP...');
+          const res = await fetch('https://api.ipify.org?format=json');
+          if (res.ok) {
+             ipAddress = (await res.json()).ip;
+             console.log('[onAuthStateChange - async task] IP fetched:', ipAddress);
+          } else {
+             console.warn('[onAuthStateChange - async task] Failed to fetch IP. Status:', res.status);
+          }
+        } catch (ipError){
+          console.warn('[onAuthStateChange - async task] Error fetching IP:', ipError);
+          ipAddress = null; // Asegurar null
+        }
+        try {
+           userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : null;
+        } catch (uaError) {
+           console.warn('[onAuthStateChange - async task] Error getting User Agent:', uaError);
+           userAgent = null; // Asegurar null
+        }
+
+        // Y loguea el intento exitoso
+        try {
+          console.log('[onAuthStateChange - async task] Calling log_login_attempt RPC...');
+          await supabase.rpc('log_login_attempt', {
+            p_user_id:    session.user.id,
+            p_success:    true,
+            p_ip_address: ipAddress,
+            p_user_agent: userAgent
+          });
+          console.log('[onAuthStateChange - async task] OAuth login log RPC call potentially succeeded.');
+        } catch (rpcError) {
+          console.error('[onAuthStateChange - async task] Error logging OAuth sign-in via RPC:', rpcError);
+        }
+      })(); // <-- Autoejecutar la función async
+    }
+    // El log para email/password se maneja dentro de signInWithEmail
+
   } else if (event === 'SIGNED_OUT') {
     // El usuario ha cerrado sesión
     // Limpiar cualquier dato local si es necesario
@@ -43,26 +94,29 @@ supabase.auth.onAuthStateChange((event, session) => {
     }
   } else if (event === 'TOKEN_REFRESHED') {
     // El token se ha renovado automáticamente
-    console.log('Token renovado:', session?.access_token ? 'success' : 'failed');
+    // console.log('Token renovado:', session?.access_token ? 'success' : 'failed');
   }
 });
 
 export type SupabaseClient = typeof supabase;
 
 export const signInWithEmail = async (email: string, password: string) => {
+  console.log('[signInWithEmail] Function started.'); // Log 1: Inicio de función
   try {
     if (!email || !password) {
       throw new Error('El correo y la contraseña son requeridos');
     }
 
-    // Intentar iniciar sesión primero
+    console.log('[signInWithEmail] Calling supabase.auth.signInWithPassword...'); // Log 2: Antes de llamar a Supabase Auth
     const { data, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    console.log('[signInWithEmail] supabase.auth.signInWithPassword completed.', { data, signInError }); // Log 3: Resultado de Supabase Auth
 
     // Manejar específicamente el error de email no confirmado
     if (signInError?.message?.includes('Email not confirmed')) {
+      console.log('[signInWithEmail] Handling "Email not confirmed" error.'); // Log 4a: Error específico
       return {
         data: null,
         error: {
@@ -74,27 +128,31 @@ export const signInWithEmail = async (email: string, password: string) => {
 
     // Si hay otro tipo de error en el inicio de sesión
     if (signInError) {
-      // Obtener información del cliente solo si es necesario registrar el intento
-      const ipResponse = await fetch('https://api.ipify.org?format=json');
-      const ipData = await ipResponse.json();
-      const ipAddress = ipData.ip;
-      const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : null;
-
-      // Registrar intento fallido
+      console.log('[signInWithEmail] Handling other signInError:', signInError); // Log 4b: Otro error de login
+      // Intentar obtener IP/UA para log de fallo
+      let ipAddress = null;
+      let userAgent = null;
       try {
-        // Obtener el user_id del usuario que intenta iniciar sesión
-        const { data: userData } = await supabase.auth.getUser();
-        const userId = userData?.user?.id;
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        ipAddress = ipData.ip;
+        userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : null;
+      } catch (fetchError) {
+        console.warn('[signInWithEmail] No se pudo obtener IP/UA para log de fallo:', fetchError);
+      }
 
+      // Registrar intento fallido (incluso si IP/UA son null)
+      try {
+        const { data: userData } = await supabase.auth.getUser(); // Intentar obtener user ID si existe
+        const userId = userData?.user?.id;
         await supabase.rpc('log_login_attempt', { 
-          p_user_id: userId || '00000000-0000-0000-0000-000000000000', // UUID nulo para intentos fallidos sin usuario
+          p_user_id: userId || '00000000-0000-0000-0000-000000000000', 
           p_success: false,
           p_ip_address: ipAddress,
           p_user_agent: userAgent
         });
       } catch (logError) {
-        console.error('Error al registrar intento de inicio de sesión:', logError);
-        // Continuamos con el flujo normal aunque falle el registro
+        console.error('Error al registrar intento de inicio de sesión fallido:', logError);
       }
 
       return {
@@ -103,31 +161,56 @@ export const signInWithEmail = async (email: string, password: string) => {
       };
     }
 
+    console.log('[signInWithEmail] Before checking data.user.'); // Log 5: Justo antes del IF clave
+
     // Si el inicio de sesión fue exitoso
     if (data?.user) {
+      console.log('[signInWithEmail] Inside if (data?.user) block.'); // Log 6: Entró al bloque de éxito
+      let ipAddress = null; // Valor por defecto
+      let userAgent = null; // Valor por defecto
+
+      // Intentar obtener IP y User Agent de forma segura
       try {
-        // Obtener información del cliente
+        console.log('[signInWithEmail] Inner try block for IP/UA fetch.'); // Log 7: Dentro del try interno
         const ipResponse = await fetch('https://api.ipify.org?format=json');
         const ipData = await ipResponse.json();
-        const ipAddress = ipData.ip;
-        const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : null;
+        ipAddress = ipData.ip;
+      } catch (fetchIpError) {
+        console.warn('[signInWithEmail] No se pudo obtener la IP:', fetchIpError);
+      }
+      try {
+         userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : null;
+      } catch (fetchUaError){
+         console.warn('[signInWithEmail] No se pudo obtener el User Agent:', fetchUaError);
+      }
 
-        // Registrar inicio de sesión exitoso
-        await supabase.rpc('log_login_attempt', { 
+      // Intentar registrar el log exitoso
+      try {
+        console.log('[signInWithEmail] Inner try block for RPC call.'); // Log 8: Antes de la RPC
+        console.log('[signInWithEmail] Attempting to log successful login:', { 
+          userId: data.user.id, 
+          ipAddress, 
+          userAgent 
+        });
+        await supabase.rpc('log_login_attempt', {
           p_user_id: data.user.id,
           p_success: true,
           p_ip_address: ipAddress,
           p_user_agent: userAgent
         });
-      } catch (logError) {
-        console.error('Error al registrar inicio de sesión exitoso:', logError);
-        // Continuamos aunque falle el registro
+         console.log('[signInWithEmail] Log successful login RPC call potentially succeeded.');
+      } catch (rpcError) {
+        console.error('[signInWithEmail] Error al llamar a RPC log_login_attempt (éxito):', rpcError); // Log 9: Error RPC
       }
+    } else {
+        console.log('[signInWithEmail] data.user is null or undefined, skipping log attempt.'); // Log 10: data.user fue falso
     }
 
+    console.log('[signInWithEmail] Returning success.'); // Log 11: Antes de retornar éxito
     return { data, error: null };
+
   } catch (error: any) {
-    console.error('Error en signInWithEmail:', error);
+    console.error('[signInWithEmail] Outer catch block error:', error); // Log 12: Error general
     return {
       data: null,
       error: {
@@ -847,6 +930,6 @@ export const rpcVerifyTOTP = async (userId: string, token: string) => {
     return {
       success: false,
       error: error.message || 'Error al verificar el token TOTP'
-    };
+    }; 
   }
 }; 

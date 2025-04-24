@@ -466,25 +466,20 @@ function LoginForm() {
     setError("");
 
     try {
-      // Usar cliente sin persistencia para el login inicial
-      const np = getNonPersistedClient();
-      const { data, error } = await np.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
+      console.log('[LoginPage] Attempting to call signInWithEmail from lib/supabase...');
+
+      const { data, error } = await signInWithEmail(email, password);
+
+      console.log('[LoginPage] signInWithEmail from lib/supabase returned:', { data, error });
+
       if (error) {
         let errorMessage = '';
         let isEmailNotConfirmed = false;
-        
+
         switch (true) {
-          case error.message.includes('verifica tu correo'):
           case error.message.includes('Email not confirmed'):
             errorMessage = t.emailNotConfirmed;
             isEmailNotConfirmed = true;
-            break;
-          case error.message.includes('bloqueada temporalmente'):
-            errorMessage = t.accountTemporarilyLocked;
             break;
           case error.message.includes('Invalid login credentials'):
             errorMessage = t.invalidCredentials;
@@ -492,8 +487,12 @@ function LoginForm() {
           default:
             errorMessage = error.message || t.loginError;
         }
-        
+
         setError(errorMessage);
+        if (isEmailNotConfirmed) {
+          // Asumiendo que tienes este estado, si no, necesitas añadirlo
+          // setShowResendVerification(true);
+        }
         setIsLoading(false);
         return;
       }
@@ -501,17 +500,17 @@ function LoginForm() {
       if (data?.session) {
         if (rememberMe) {
           localStorage.setItem("email", email);
-          localStorage.setItem("password", password);
+          // Considera NO guardar la contraseña en localStorage por seguridad
+          // localStorage.setItem("password", password); 
         } else {
           localStorage.removeItem("email");
-          localStorage.removeItem("password");
+          // localStorage.removeItem("password");
         }
 
-        // Guardamos el userId para el siguiente paso
         setUserId(data.user.id);
 
         try {
-          // Comprobamos si tiene 2FA activado usando el cliente sin persistencia
+          const np = getNonPersistedClient();
           const { data: twoFactorData, error: statusErr } = await np.rpc('check_2fa_status', {
             p_user_id: data.user.id
           });
@@ -524,12 +523,10 @@ function LoginForm() {
           }
 
           if (twoFactorData === true) {
-            // Guardamos la sesión temporalmente sin persistirla
             setTempSession(data.session);
             setStep('otp');
             setIsLoading(false);
           } else {
-            // No tiene 2FA, persistimos la sesión y procedemos normalmente
             await supabase.auth.setSession({
               access_token: data.session.access_token,
               refresh_token: data.session.refresh_token
@@ -545,15 +542,19 @@ function LoginForm() {
           setError('Error al verificar estado de autenticación de dos factores');
           setIsLoading(false);
         }
+      } else {
+        console.error("[LoginPage] signInWithEmail succeeded but returned no session/user data.");
+        setError(t.unexpectedError);
       }
-    } catch (error) {
-      setError(t.unexpectedError);
+
+    } catch (submitError: any) {
+      console.error('[LoginPage] Error in handleSubmit catch block:', submitError);
+      setError(submitError.message || t.unexpectedError);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Nueva función para manejar la verificación del OTP
   const handleSubmitOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId || !tempSession) return;
@@ -562,7 +563,6 @@ function LoginForm() {
     setError("");
 
     try {
-      // Llamada manual al endpoint de verificación, usando el token de tempSession
       const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/2fa/verify`, {
         method: "POST",
         headers: {
@@ -580,7 +580,6 @@ function LoginForm() {
       const { success } = await resp.json();
       if (!success) throw new Error("Código inválido");
 
-      // Si llegamos aquí, el OTP es correcto: persisto la sesión
       await supabase.auth.setSession({
         access_token: tempSession.access_token,
         refresh_token: tempSession.refresh_token
@@ -611,9 +610,6 @@ function LoginForm() {
         return;
       }
 
-      // La redirección será manejada automáticamente por Supabase
-      // No necesitamos hacer nada más aquí ya que la página se recargará
-
     } catch (error) {
       console.error('Error en handleGoogleLogin:', error);
       toast.error(t.googleLoginError);
@@ -642,7 +638,6 @@ function LoginForm() {
     }
   };
 
-  // Función para cambiar al formulario de login
   const showLoginForm = () => {
     setShowForgotPassword(false);
     setShowCountdown(false);
@@ -716,13 +711,10 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Fondo azul que ocupará toda la pantalla */}
       <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-600">
-        {/* Elementos decorativos de fondo */}
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(to_bottom,white,transparent)] opacity-10"></div>
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 to-blue-600/30 backdrop-blur-sm"></div>
         
-        {/* Elementos decorativos flotantes con efecto de cristal */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -right-4 top-1/4 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
           <div className="absolute -left-4 top-3/4 w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
@@ -731,7 +723,6 @@ function LoginForm() {
       </div>
 
       <div className="relative z-10 min-h-screen flex">
-        {/* Sección izquierda - Decorativa (visible solo en pantallas grandes) */}
         <div className="hidden lg:flex lg:w-1/2 relative">
           <div className="relative w-full flex flex-col items-center justify-center p-8 text-white">
             <motion.div
@@ -814,9 +805,7 @@ function LoginForm() {
           </div>
         </div>
 
-        {/* Sección derecha - Login o Forgot Password */}
         <div className="w-full lg:w-1/2 flex flex-col items-center justify-center bg-white dark:bg-gray-900 p-8 relative rounded-tl-[40px] rounded-bl-[40px]">
-          {/* Elementos decorativos de fondo */}
           <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-700/25 bg-[size:20px_20px] opacity-[0.05] rounded-tl-[40px] rounded-bl-[40px]"></div>
 
           <AnimatePresence mode="wait">
@@ -1300,11 +1289,9 @@ function LoginForm() {
                                      hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed gap-3
                                      group overflow-hidden"
                           >
-                            {/* Efecto de hover */}
                             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 
                                           opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                             
-                            {/* Contenido del botón */}
                             <div className="relative z-10 flex items-center gap-3">
                               <svg className="w-6 h-6" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -1317,7 +1304,6 @@ function LoginForm() {
                               </span>
                             </div>
                             
-                            {/* Indicador de carga */}
                             {isGoogleLoading && (
                               <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
                                 <div className="flex items-center gap-2">
@@ -1347,7 +1333,6 @@ function LoginForm() {
                 </div>
               </motion.div>
 
-              {/* Botón para volver al inicio */}
               {!success && (
                 <motion.div
                   initial={{ opacity: 0 }}

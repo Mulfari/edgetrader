@@ -19,7 +19,8 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
-  Loader2
+  Loader2,
+  Star
 } from "lucide-react"; // Solo los íconos realmente usados en tabs y secciones
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "next-themes";
@@ -28,6 +29,7 @@ import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import SettingsPerfil from "./SettingsPerfil";
 import SettingsSeguridad from "./SettingsSeguridad";
+import SettingsSuscription from "./SettingsSuscription";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -87,6 +89,12 @@ export default function SettingsPage() {
         text: "Importante",
         variant: "warning"
       }
+    },
+    {
+      id: "suscripcion",
+      name: "Suscripción",
+      icon: Star,
+      badge: null
     },
     {
       id: "notificaciones",
@@ -241,6 +249,11 @@ export default function SettingsPage() {
           {/* Seguridad */}
           {activeTab === "seguridad" && (
             <SettingsSeguridad />
+          )}
+
+          {/* Suscripción */}
+          {activeTab === "suscripcion" && (
+            <SettingsSuscription />
           )}
 
           {/* Notificaciones */}
