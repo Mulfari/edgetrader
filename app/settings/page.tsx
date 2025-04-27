@@ -34,7 +34,6 @@ import SettingsSuscription from "./SettingsSuscription";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import SettingsSubaccounts from "./SettingsSubaccounts";
-import ExampleUsage from "./subcuentas2/example-usage";
 
 interface Profile {
   id: string;
@@ -104,15 +103,6 @@ export default function SettingsPage() {
       name: "Subcuentas/API Keys",
       icon: Key,
       badge: null
-    },
-    {
-      id: "subcuentas2",
-      name: "Subcuentas con Vault",
-      icon: KeyRound,
-      badge: {
-        text: "Nuevo",
-        variant: "info"
-      }
     },
     {
       id: "notificaciones",

@@ -142,7 +142,7 @@ export default function DashboardPage() {
         setTotalBalance(0);
         setActiveSubAccounts(0);
         setExchanges(0);
-        setIsLoading(false);
+      setIsLoading(false);
         return;
       }
 
@@ -373,21 +373,21 @@ export default function DashboardPage() {
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm sm:text-base font-medium text-white/90">Balance Total</h3>
-              <button 
-                onClick={toggleShowBalance} 
+                <button
+                  onClick={toggleShowBalance}
                 className="flex items-center justify-center w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200"
                 aria-label={showBalance ? "Ocultar balance" : "Mostrar balance"}
               >
                 {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+                      </button>
             </div>
-            <div className="text-3xl sm:text-4xl font-bold">
-              {isLoading ? (
+                <div className="text-3xl sm:text-4xl font-bold">
+                  {isLoading ? (
                 <Skeleton className="h-10 w-40 bg-white/20 rounded-md" />
               ) : (
                 showBalance ? formatNumber(totalBalance) : "••••••"
-              )}
-            </div>
+                  )}
+                </div>
             {!isLoading && totalBalance !== null && (
               <div className="mt-2 flex items-center text-xs text-white/80">
                 <TrendingUp className="h-4 w-4 mr-1 text-green-400" /> 
