@@ -34,6 +34,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Lista de exchanges disponibles
 const AVAILABLE_EXCHANGES = [
@@ -48,7 +49,8 @@ export default function SettingsSubaccounts() {
     identifier: "",
     name: AVAILABLE_EXCHANGES[0].id, // Default a la primera opción (Binance)
     apiKey: "",
-    secretKey: ""
+    secretKey: "",
+    isDemo: false
   });
   const [isAdding, setIsAdding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -109,7 +111,11 @@ export default function SettingsSubaccounts() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setForm(prevForm => ({
+        ...prevForm,
+        [name]: type === 'checkbox' ? checked : value
+    }));
   };
 
   const handleSelectChange = (value: string, field: string) => {
@@ -132,7 +138,8 @@ export default function SettingsSubaccounts() {
       const { success, error } = await createSubaccount(
         displayName, // Usar el nombre combinado
         form.apiKey,
-        form.secretKey
+        form.secretKey,
+        form.isDemo
       );
       
       if (error) {
@@ -153,7 +160,8 @@ export default function SettingsSubaccounts() {
         identifier: "", 
         name: AVAILABLE_EXCHANGES[0].id, // Reset a la primera opción
         apiKey: "", 
-        secretKey: "" 
+        secretKey: "",
+        isDemo: false
       });
       setAddDialogOpen(false);
       
@@ -378,6 +386,27 @@ export default function SettingsSubaccounts() {
                             type="password"
                         />
                         </div>
+                        <div className="flex items-center space-x-2 pt-2"> 
+                            <Checkbox 
+                                id="isDemo" 
+                                name="isDemo" 
+                                checked={form.isDemo} 
+                                onCheckedChange={(checked) => { 
+                                handleInputChange({ 
+                                    target: { name: 'isDemo', value: '', type: 'checkbox', checked: !!checked } 
+                                } as React.ChangeEvent<HTMLInputElement>); 
+                                }} 
+                            /> 
+                            <Label 
+                                htmlFor="isDemo" 
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" 
+                            > 
+                                Esta es una cuenta Demo/Testnet 
+                            </Label> 
+                        </div> 
+                        <p className="text-xs text-muted-foreground px-1 -mt-2"> 
+                            Marca esta opción si usas claves de un entorno de pruebas. 
+                        </p>
                         {(form.identifier || form.name) && (
                         <div className="mt-2 p-3 bg-muted/50 rounded-md border">
                             <p className="text-xs text-muted-foreground">

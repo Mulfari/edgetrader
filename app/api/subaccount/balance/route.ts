@@ -59,12 +59,12 @@ export async function POST(request: Request) {
       throw new Error(keysData?.error || 'Could not get API keys for subaccount');
     }
 
-    const { apiKey, secretKey, subaccountName } = keysData;
+    const { apiKey, secretKey, subaccountName, isDemo } = keysData;
     if (!apiKey || !secretKey || !subaccountName) {
       console.error('Retrieved empty API key or secret key for subaccount:', subaccountId);
       throw new Error('Invalid API credentials retrieved');
     }
-    console.log(`Successfully retrieved keys for subaccount: ${subaccountName}`);
+    console.log(`Successfully retrieved keys for subaccount: ${subaccountName}, Is Demo: ${isDemo}`);
 
     // Determinar el exchange (simple check, ajustar si el formato del nombre es diferente)
     let isBinance = false;
@@ -94,9 +94,10 @@ export async function POST(request: Request) {
         const params = 'accountType=UNIFIED';
         const signPayload = `${timestamp}${apiKey}${recvWindow}${params}`;
         const signature = createNodeSignature(signPayload, secretKey);
-        const bybitUrl = `https://api.bybit.com/v5/account/wallet-balance?${params}`;
+        const bybitBaseUrl = isDemo ? 'https://api-testnet.bybit.com' : 'https://api.bybit.com';
+        const bybitUrl = `${bybitBaseUrl}/v5/account/wallet-balance?${params}`;
 
-        console.log(`Calling Bybit API for ${subaccountName}...`);
+        console.log(`Calling Bybit API (${isDemo ? 'Testnet' : 'Mainnet'}) for ${subaccountName}... URL: ${bybitUrl}`);
         const response = await fetch(bybitUrl, {
           method: 'GET',
           headers: {
@@ -128,7 +129,7 @@ export async function POST(request: Request) {
         // --- BINANCE API LOGIC ---
         const timestamp = Date.now();
         const recvWindow = 5000; // Opcional para Binance, pero recomendado
-        const binanceBaseUrl = 'https://api.binance.com'; // Usar api.binance.com, NO testnet
+        const binanceBaseUrl = isDemo ? 'https://testnet.binance.vision' : 'https://api.binance.com'; // Usar api.binance.com, NO testnet
         const endpoint = '/api/v3/account';
         const queryString = `recvWindow=${recvWindow}&timestamp=${timestamp}`;
 
@@ -136,7 +137,7 @@ export async function POST(request: Request) {
         const signature = createNodeSignature(queryString, secretKey);
         const requestUrl = `${binanceBaseUrl}${endpoint}?${queryString}&signature=${signature}`;
 
-        console.log(`Calling Binance API for ${subaccountName}...`);
+        console.log(`Calling Binance API (${isDemo ? 'Testnet' : 'Mainnet'}) for ${subaccountName}... URL: ${requestUrl}`);
         const response = await fetch(requestUrl, {
             method: 'GET',
             headers: {

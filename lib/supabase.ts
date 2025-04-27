@@ -983,29 +983,35 @@ export const getUserSubaccounts = async (): Promise<{ data: Subaccount[] | null;
 /**
  * Crea una nueva subcuenta con las claves API y secretas encriptadas en Vault.
  */
-export const createSubaccount = async (name: string, apiKey: string, secretKey: string): Promise<{ success: boolean; error: any }> => {
+export const createSubaccount = async (
+    name: string,
+    apiKey: string,
+    secretKey: string,
+    isDemo: boolean
+): Promise<{ success: boolean; error: any }> => {
   try {
     // Obtener el usuario actual
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
+
     if (userError) {
       console.error('Error obteniendo usuario:', userError);
       throw userError;
     }
-    
+
     if (!user) throw new Error('No hay usuario autenticado');
-    
+
     // Validar datos
     if (!name.trim()) throw new Error('El nombre es requerido');
     if (!apiKey.trim()) throw new Error('La API Key es requerida');
     if (!secretKey.trim()) throw new Error('La Secret Key es requerida');
 
-    // Llamar a la función RPC para crear la subcuenta
+    // Llamar a la función RPC actualizada para crear la subcuenta
     const { error } = await supabase.rpc('insert_subaccount', {
       p_user_id: user.id,
       p_name: name.trim(),
       p_api_key: apiKey.trim(),
-      p_secret_key: secretKey.trim()
+      p_secret_key: secretKey.trim(),
+      p_is_demo: isDemo
     });
 
     if (error) {
@@ -1016,9 +1022,9 @@ export const createSubaccount = async (name: string, apiKey: string, secretKey: 
     return { success: true, error: null };
   } catch (error: any) {
     console.error('Error al crear subcuenta:', error);
-    return { 
-      success: false, 
-      error: error.message || 'Error al crear la subcuenta' 
+    return {
+      success: false,
+      error: error.message || 'Error al crear la subcuenta'
     };
   }
 };
