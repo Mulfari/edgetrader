@@ -34,7 +34,6 @@ import SettingsSuscription from "./SettingsSuscription";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import SettingsSubaccounts from "./SettingsSubaccounts";
-import SettingsSubaccounts2 from "./SettingsSubaccounts2";
 import ExampleUsage from "./subcuentas2/example-usage";
 
 interface Profile {
@@ -279,24 +278,6 @@ export default function SettingsPage() {
           {activeTab === "subcuentas" && (
             <SettingsSubaccounts />
           )}
-
-          {/* Subcuentas con Vault */}
-          {activeTab === "subcuentas2" && (
-            <div>
-              <SettingsSubaccounts2 />
-              <div className="px-6 pt-4">
-                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
-                  Ejemplo de uso del hook personalizado
-                </h3>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-                  Esta sección muestra cómo utilizar el hook useSubaccounts para acceder a las claves
-                  desde cualquier componente de la aplicación.
-                </p>
-                <ExampleUsage />
-              </div>
-            </div>
-          )}
-
           {/* Notificaciones */}
           {activeTab === "notificaciones" && (
             <div className="divide-y divide-zinc-200 dark:divide-zinc-800">

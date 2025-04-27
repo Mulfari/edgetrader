@@ -15,12 +15,15 @@ import {
   CheckCircle,
   Activity,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Globe
 } from "lucide-react";
-import SubAccounts from "@/components/SubAccounts";
-import SubAccountManager from "@/components/SubAccountManager";
 import { useRouter } from "next/navigation";
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { getUserSubaccounts, Subaccount } from "@/lib/supabase";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 // Tipo para las opciones de balance
 type BalanceDisplayType = 'total' | 'real' | 'demo' | 'detailed';
@@ -43,17 +46,36 @@ type AccountStats = {
   totalOperations: number;
 };
 
+// Tipo para los resultados de fetchBalance
+interface BalanceFetchResult {
+    id: string;
+    name: string;
+    status: 'fulfilled' | 'rejected';
+    value?: { success: boolean; data?: { balance: number; assets: any[] }; error?: string }; // Si fulfilled
+    reason?: any; // Si rejected
+}
+
 // Función de utilidad para acceder a localStorage de forma segura
 const safeLocalStorage = {
   getItem: (key: string, defaultValue: any = null): any => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem(key) || defaultValue;
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue; // Intentar parsear JSON
+      } catch (e) {
+        console.warn(`Error reading localStorage key “${key}”:`, e);
+        return defaultValue;
+      }
     }
     return defaultValue;
   },
-  setItem: (key: string, value: string): void => {
+  setItem: (key: string, value: any): void => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(key, value);
+      try {
+        localStorage.setItem(key, JSON.stringify(value)); // Guardar como JSON
+      } catch (e) {
+        console.warn(`Error setting localStorage key “${key}”:`, e);
+      }
     }
   },
   removeItem: (key: string): void => {
@@ -79,12 +101,12 @@ export default function DashboardPage() {
   const [operationsDisplay, setOperationsDisplay] = useState<OperationsDisplayType>('open');
   const [isLoading, setIsLoading] = useState(true);
   const [showBalance, setShowBalance] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [tooltipContent, setTooltipContent] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const router = useRouter();
   const { requireAuth, user } = useSupabaseAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Proteger esta ruta con Supabase Auth
@@ -100,132 +122,142 @@ export default function DashboardPage() {
     });
   }, []);
 
-  // Establecer valores predeterminados ya que SubAccounts está deshabilitado
-  useEffect(() => {
-    // Simular la carga de datos después de un breve retraso
-    const timer = setTimeout(() => {
-      // Establecer valores de ejemplo
-      setTotalBalance(25000);
-      setRealBalance(15000);
-      setDemoBalance(10000);
-      setActiveSubAccounts(5);
-      setRealAccounts(3);
-      setDemoAccounts(2);
-      setExchanges(120);
-      setOpenOperations(30);
-      setClosedOperations(90);
-      setIsLoading(false);
-      setLastUpdate(new Date());
-    }, 1500);
-    
-    return () => clearTimeout(timer);
-  }, []);
+  const fetchDashboardData = useCallback(async () => {
+    setIsLoading(true);
+    setFetchError(null);
+    let aggregatedBalance = 0;
+    let accountCount = 0;
+    let exchangeSet = new Set<string>();
 
-  useEffect(() => {
-    // Cargar datos iniciales al montar el componente
-    const subaccountsComponent = document.getElementById('subaccounts-component');
-    if (subaccountsComponent) {
-      const refreshEvent = new CustomEvent('refresh', { bubbles: true });
-      subaccountsComponent.dispatchEvent(refreshEvent);
-    }
+    try {
+      console.log("Fetching subaccounts...");
+      const { data: subaccounts, error: subaccountsError } = await getUserSubaccounts();
 
-    // Establecer un tiempo máximo de carga
-    const loadingTimeout = setTimeout(() => {
-      setIsLoading(false);
-    }, 5000); // 5 segundos máximo de carga
-
-    return () => clearTimeout(loadingTimeout);
-  }, []);
-
-  useEffect(() => {
-    // Cargar preferencias guardadas
-    const savedBalanceDisplay = safeLocalStorage.getItem('balanceDisplayPreference');
-    const savedOperationsDisplay = safeLocalStorage.getItem('operationsDisplayPreference');
-    
-    if (savedBalanceDisplay) {
-      setBalanceDisplay(savedBalanceDisplay as BalanceDisplayType);
-    }
-    
-    if (savedOperationsDisplay) {
-      setOperationsDisplay(savedOperationsDisplay as OperationsDisplayType);
-    }
-
-    // Cerrar menús al hacer clic fuera
-    const handleClickOutside = (event: MouseEvent) => {
-      const balanceMenu = document.getElementById('balance-menu');
-      const operationsMenu = document.getElementById('operations-menu');
-      const balanceButton = document.getElementById('balance-menu-button');
-      const operationsButton = document.getElementById('operations-menu-button');
-      
-      if (balanceMenu && !balanceMenu.contains(event.target as Node) && !balanceButton?.contains(event.target as Node)) {
-        balanceMenu.classList.add('hidden');
+      if (subaccountsError) {
+        throw new Error(`Error fetching subaccounts: ${subaccountsError.message}`);
       }
-      
-      if (operationsMenu && !operationsMenu.contains(event.target as Node) && !operationsButton?.contains(event.target as Node)) {
-        operationsMenu.classList.add('hidden');
+
+      if (!subaccounts || subaccounts.length === 0) {
+        console.log("No subaccounts found.");
+        setTotalBalance(0);
+        setActiveSubAccounts(0);
+        setExchanges(0);
+        setIsLoading(false);
+        return;
       }
-    };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+      accountCount = subaccounts.length;
+      setActiveSubAccounts(accountCount);
+      console.log(`Found ${accountCount} subaccounts. Fetching balances...`);
 
-  const handleStatsUpdate = useCallback((stats: AccountStats) => {
-    // Usamos una función de actualización de estado para evitar dependencias
-    setActiveSubAccounts(stats.totalAccounts);
-    setRealAccounts(stats.realAccounts);
-    setDemoAccounts(stats.demoAccounts);
-    setTotalBalance(stats.totalBalance);
-    setRealBalance(stats.realBalance);
-    setDemoBalance(stats.demoBalance);
-    setExchanges(stats.totalOperations);
-    setOpenOperations(stats.openOperations);
-    setClosedOperations(stats.closedOperations);
-    setIsLoading(false);
-    
-    // Actualizamos la última actualización
-    setLastUpdate(new Date());
-  }, []);
-
-  const handleSubAccountSuccess = () => {
-    console.log("Actualizando lista de subcuentas después de operación exitosa");
-    setShowCreateModal(false);
-    setShowDeleteModal(false);
-    safeLocalStorage.removeItem("subAccounts");
-    safeLocalStorage.removeItem("accountBalances");
-    
-    setTimeout(() => {
-      try {
-        const subaccountsComponent = document.getElementById('subaccounts-component');
-        if (subaccountsComponent) {
-          console.log("Enviando evento refresh al componente de subcuentas");
-          const refreshEvent = new CustomEvent('refresh', { bubbles: true });
-          subaccountsComponent.dispatchEvent(refreshEvent);
-        } else {
-          console.error("No se encontró el componente de subcuentas para actualizar");
+      // Preparar llamadas a la API Route para cada subcuenta
+      const balancePromises = subaccounts.map(async (sub): Promise<BalanceFetchResult> => {
+        try {
+            const response = await fetch('/api/subaccount/balance', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ subaccountId: sub.id })
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                 // Lanzar error para que lo capture el catch de abajo
+                throw new Error(result?.error || `HTTP Error ${response.status}`);
+            }
+            // Si todo ok, devolver estado fulfilled
+            return {
+                id: sub.id,
+                name: sub.name,
+                status: 'fulfilled',
+                value: result 
+            };
+        } catch (error) {
+            // Si hay cualquier error (fetch, json parse, o el throw anterior), devolver rejected
+            return {
+                id: sub.id,
+                name: sub.name,
+                status: 'rejected',
+                reason: error instanceof Error ? error.message : String(error)
+            };
         }
-      } catch (error) {
-        console.error("Error al intentar actualizar subcuentas:", error);
-      }
-    }, 500);
-  };
+      });
 
-  const handleBalanceDisplayChange = (type: BalanceDisplayType) => {
-    setBalanceDisplay(type);
-    safeLocalStorage.setItem('balanceDisplayPreference', type);
-    // Cerrar el menú después de seleccionar
-    const menu = document.getElementById('balance-menu');
-    menu?.classList.add('hidden');
-  };
+      // Ejecutar todas las llamadas en paralelo y esperar resultados
+      const results: BalanceFetchResult[] = await Promise.all(balancePromises);
+      console.log("Balance fetch results:", results);
 
-  const handleOperationsDisplayChange = (type: OperationsDisplayType) => {
-    setOperationsDisplay(type);
-    safeLocalStorage.setItem('operationsDisplayPreference', type);
-    // Cerrar el menú después de seleccionar
-    const menu = document.getElementById('operations-menu');
-    menu?.classList.add('hidden');
+      let failedFetches = 0;
+      results.forEach(result => {
+        if (result.status === 'fulfilled' && result.value?.success) {
+          aggregatedBalance += result.value.data?.balance || 0;
+          const parts = result.name.split(" - ");
+          const exchangeName = parts.length > 1 ? parts.slice(1).join(" - ") : result.name;
+          if (exchangeName) {
+              exchangeSet.add(exchangeName.trim().toLowerCase());
+          }
+        } else {
+          failedFetches++;
+          const errorMessage = result.status === 'rejected' ? result.reason : result.value?.error;
+          console.error(`Failed to fetch balance for subaccount ${result.id} (${result.name}):`, errorMessage);
+           toast({ title: "Error parcial", description: `No se pudo obtener balance para ${result.name}: ${errorMessage}`, variant: "destructive", duration: 2000 });
+        }
+      });
+
+       if(failedFetches > 0 && failedFetches === results.length) {
+           setFetchError(`No se pudo obtener el balance de ninguna subcuenta (${failedFetches} errores).`);
+       } else if (failedFetches > 0) {
+           setFetchError(`No se pudo obtener el balance de ${failedFetches} subcuenta(s). El total puede ser impreciso.`);
+           // Aún así mostramos el balance agregado de las exitosas
+           setTotalBalance(aggregatedBalance);
+           setExchanges(exchangeSet.size); 
+       } else {
+           // Todo OK
+           setTotalBalance(aggregatedBalance);
+           setExchanges(exchangeSet.size);
+       }
+
+    } catch (error: any) {
+      console.error("Error fetching dashboard data:", error);
+      const message = error.message || "Ocurrió un error al cargar los datos.";
+      setFetchError(message);
+      toast({ title: "Error", description: message, variant: "destructive" });
+      // Resetear estados en caso de error total
+      setTotalBalance(null);
+      setActiveSubAccounts(0);
+      setExchanges(0);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  useEffect(() => {
+    const savedShowBalance = safeLocalStorage.getItem('showBalancePreference');
+    if (savedShowBalance !== null) {
+      setShowBalance(savedShowBalance === true);
+    }
+  }, []);
+
+  const toggleShowBalance = useCallback(() => {
+    setShowBalance(prev => {
+      const newState = !prev;
+      safeLocalStorage.setItem('showBalancePreference', newState);
+      return newState;
+    });
+  }, []);
+
+  const formatNumber = (num: number | null, options: Intl.NumberFormatOptions = {}) => {
+    if (num === null || isNaN(num)) return "--"; // Mostrar '--' si es null o NaN
+    const defaultOptions: Intl.NumberFormatOptions = {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      style: 'currency',
+      currency: 'USD',
+      ...options
+    };
+    return new Intl.NumberFormat('es-ES', defaultOptions).format(num);
   };
 
   const getSkeletonOrValue = (value: number | string, size: 'sm' | 'lg' = 'lg') => {
@@ -295,34 +327,8 @@ export default function DashboardPage() {
     }
   };
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      const subaccountsComponent = document.getElementById('subaccounts-component');
-      if (subaccountsComponent) {
-        const refreshEvent = new CustomEvent('refresh', { bubbles: true });
-        subaccountsComponent.dispatchEvent(refreshEvent);
-      }
-      setLastUpdate(new Date());
-    } catch (error) {
-      console.error("Error al actualizar datos:", error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
   const handleMouseMove = (e: React.MouseEvent) => {
     setTooltipPosition({ x: e.clientX, y: e.clientY });
-  };
-
-  const formatNumber = (num: number | null) => {
-    if (num === null) return "0.00";
-    return new Intl.NumberFormat('es-ES', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-      style: 'currency',
-      currency: 'USD'
-    }).format(num);
   };
 
   const getTrendColor = (value: number | null, previousValue: number) => {
@@ -332,27 +338,17 @@ export default function DashboardPage() {
     return 'text-yellow-400';
   };
 
-  const toggleShowBalance = useCallback(() => {
-    setShowBalance(prev => !prev);
-  }, []);
-
-  // Memorizamos el componente SubAccounts para evitar renderizados innecesarios
   const subAccountsComponent = useMemo(() => {
     return (
-      // <SubAccounts 
-      //   onStatsUpdate={handleStatsUpdate} 
-      //   showBalance={showBalance} 
-      // />
       <div className="p-8 rounded-lg border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700">
         <h2 className="text-xl font-semibold mb-4">Componente de Subcuentas deshabilitado temporalmente</h2>
         <p>El componente SubAccounts ha sido deshabilitado para pruebas.</p>
       </div>
     );
-  }, [handleStatsUpdate, showBalance]);
+  }, []);
 
   return (
     <div className="px-4 sm:px-6 lg:px-8" onMouseMove={handleMouseMove}>
-      {/* Tooltip global */}
       {tooltipContent && (
         <div 
           className="fixed z-50 px-2 py-1 text-xs bg-black/90 text-white rounded shadow-lg pointer-events-none"
@@ -365,310 +361,86 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Header con información de última actualización */}
-      <div className="flex items-center justify-end mb-6">
-        {lastUpdate && (
-          <span 
-            className="text-sm text-muted-foreground"
-            onMouseEnter={() => setTooltipContent(`Última actualización: ${lastUpdate.toLocaleString()}`)}
-            onMouseLeave={() => setTooltipContent(null)}
-          >
-            Última actualización: {lastUpdate.toLocaleTimeString()}
-          </span>
-        )}
-      </div>
-
-      {/* Dashboard Content */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* Balance Card */}
-        <div 
-          className="col-span-1 sm:col-span-2 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden group hover:shadow-lg transition-all duration-300"
-          role="region"
-          aria-label="Balance"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <div className="flex items-center space-x-2 relative">
-                <button
-                  id="balance-menu-button"
-                  className="flex items-center space-x-2 bg-white/10 rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium hover:bg-white/20 transition-all duration-200 hover:scale-105"
-                  onClick={() => {
-                    const menu = document.getElementById('balance-menu');
-                    menu?.classList.toggle('hidden');
-                  }}
-                >
-                  <span>{getBalanceTitle()}</span>
-                  <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200" />
-                </button>
-                <button
-                  onClick={toggleShowBalance}
-                  className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 hover:scale-105"
-                >
-                  {showBalance ? (
-                    <EyeOff className="h-3 w-3 sm:h-4 sm:w-4 text-white/80" />
-                  ) : (
-                    <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-white/80" />
-                  )}
-                </button>
-                
-                {/* Balance Type Menu */}
-                <div id="balance-menu" className="hidden fixed top-auto left-auto mt-4 w-56 rounded-xl bg-gray-900/95 backdrop-blur-lg shadow-2xl border border-gray-700/50 z-[100] animate-in fade-in-50 slide-in-from-top-2 duration-200">
-                  <div className="p-2">
-                    <div className="px-3 py-2 text-xs font-medium text-gray-400 uppercase tracking-wider">Tipo de Balance</div>
-                    <div className="space-y-1">
-                      <button
-                        onClick={() => handleBalanceDisplayChange('total')}
-                        className={`w-full px-4 py-2.5 text-sm text-left text-gray-100 hover:bg-gray-800/80 transition-colors duration-200 flex items-center gap-3 rounded-lg ${
-                          balanceDisplay === 'total' ? 'bg-gray-800/80 text-white ring-2 ring-blue-500' : ''
-                        }`}
-                      >
-                        <DollarSign className="h-4 w-4 text-blue-400" />
-                        Balance Total
-                      </button>
-                      <button
-                        onClick={() => handleBalanceDisplayChange('real')}
-                        className={`w-full px-4 py-2.5 text-sm text-left text-gray-100 hover:bg-gray-800/80 transition-colors duration-200 flex items-center gap-3 rounded-lg ${
-                          balanceDisplay === 'real' ? 'bg-gray-800/80 text-white ring-2 ring-green-500' : ''
-                        }`}
-                      >
-                        <DollarSign className="h-4 w-4 text-green-400" />
-                        Balance Real
-                      </button>
-                      <button
-                        onClick={() => handleBalanceDisplayChange('demo')}
-                        className={`w-full px-4 py-2.5 text-sm text-left text-gray-100 hover:bg-gray-800/80 transition-colors duration-200 flex items-center gap-3 rounded-lg ${
-                          balanceDisplay === 'demo' ? 'bg-gray-800/80 text-white ring-2 ring-yellow-500' : ''
-                        }`}
-                      >
-                        <DollarSign className="h-4 w-4 text-yellow-400" />
-                        Balance Demo
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row sm:items-start sm:gap-12">
-              <div className="space-y-1">
-                <div className="text-3xl sm:text-4xl font-bold">
-                  {isLoading ? (
-                    <div className="flex flex-col space-y-2">
-                      <div className="h-8 sm:h-10 w-32 sm:w-40 bg-white/20 animate-pulse rounded"></div>
-                      <div className="h-4 w-20 sm:w-24 bg-white/10 animate-pulse rounded"></div>
-                    </div>
-                  ) : !showBalance ? (
-                    "••••••"
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span>
-                        {formatNumber(balanceDisplay === 'real' ? realBalance : balanceDisplay === 'demo' ? demoBalance : totalBalance)}
-                      </span>
-                      <TrendingUp className={`h-5 w-5 ${getTrendColor(totalBalance, 0)}`} />
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Balances secundarios */}
-              <div className="space-y-2 text-sm sm:text-base text-white/90 mt-2 sm:mt-0">
-                {isLoading ? (
-                  <>
-                    <div className="flex items-center space-x-2">
-                      <div className="h-4 w-24 bg-white/20 animate-pulse rounded"></div>
-                      <div className="h-4 w-16 bg-white/10 animate-pulse rounded"></div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="h-4 w-24 bg-white/20 animate-pulse rounded"></div>
-                      <div className="h-4 w-16 bg-white/10 animate-pulse rounded"></div>
-                    </div>
-                  </>
-                ) : !showBalance ? (
-                  <>
-                    <div>Balance Real: ••••••</div>
-                    <div>Balance Demo: ••••••</div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <span>Balance Real:</span>
-                      <span className="font-medium">{formatNumber(realBalance)}</span>
-                      <ArrowUpRight className={`h-3 w-3 ${getTrendColor(realBalance, 0)}`} />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span>Balance Demo:</span>
-                      <span className="font-medium">{formatNumber(demoBalance)}</span>
-                      <ArrowDownRight className={`h-3 w-3 ${getTrendColor(demoBalance, 0)}`} />
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          <div className="absolute right-0 bottom-0 transform translate-x-1/6 translate-y-1/6 overflow-hidden group-hover:scale-110 transition-transform duration-300">
-            <DollarSign className="h-20 w-20 sm:h-24 sm:w-24 text-white/10" />
-          </div>
-          <div className="absolute top-4 right-4">
-            <div 
-              className="flex items-center gap-2 bg-white/10 rounded-full px-2 py-1 text-xs"
-              onMouseEnter={() => setTooltipContent("Los datos se actualizan automáticamente cada 30 segundos")}
-              onMouseLeave={() => setTooltipContent(null)}
-            >
-              <AlertCircle className="h-3 w-3 text-yellow-400" />
-              <span>Actualizado en tiempo real</span>
-            </div>
-          </div>
+      {fetchError && (
+        <div className="mb-6 p-4 bg-destructive/10 text-destructive border border-destructive/30 rounded-lg text-center">
+          <p className="font-medium">{fetchError.includes("ninguna") || fetchError.includes("cargar") ? "Error al Cargar Datos" : "Aviso"}</p>
+          <p className="text-sm">{fetchError}</p>
         </div>
+      )}
 
-        {/* Subcuentas Activas Card */}
-        <div 
-          className="bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden group hover:shadow-lg transition-all duration-300"
-          role="region"
-          aria-label="Subcuentas Activas"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden shadow-lg">
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h3 className="text-sm sm:text-base font-medium text-white/90">Subcuentas Activas</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm sm:text-base font-medium text-white/90">Balance Total</h3>
+              <button 
+                onClick={toggleShowBalance} 
+                className="flex items-center justify-center w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200"
+                aria-label={showBalance ? "Ocultar balance" : "Mostrar balance"}
+              >
+                {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
-            <div className="text-3xl sm:text-4xl font-bold text-white">
-              {getSkeletonOrValue(activeSubAccounts)}
-            </div>
-            <div className="mt-2 text-xs sm:text-sm text-white/80">
+            <div className="text-3xl sm:text-4xl font-bold">
               {isLoading ? (
-                <div className="flex flex-col space-y-2">
-                  <div className="h-4 w-16 bg-white/10 animate-pulse rounded"></div>
-                </div>
+                <Skeleton className="h-10 w-40 bg-white/20 rounded-md" />
               ) : (
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                  <div className="flex items-center gap-1 bg-white/10 rounded-full px-2 py-1">
-                    <div className="w-2 h-2 rounded-full bg-green-400"></div>
-                    <span>Reales: {realAccounts}</span>
-                  </div>
-                  <div className="flex items-center gap-1 bg-white/10 rounded-full px-2 py-1">
-                    <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
-                    <span>Demo: {demoAccounts}</span>
-                  </div>
-                </div>
+                showBalance ? formatNumber(totalBalance) : "••••••"
               )}
             </div>
+            {!isLoading && totalBalance !== null && (
+              <div className="mt-2 flex items-center text-xs text-white/80">
+                <TrendingUp className="h-4 w-4 mr-1 text-green-400" /> 
+                <span>Valor agregado</span>
+              </div>
+            )}
           </div>
-          <div className="absolute right-0 bottom-0 transform translate-x-1/6 translate-y-1/6 group-hover:scale-110 transition-transform duration-300">
-            <Users className="h-20 w-20 sm:h-24 sm:w-24 text-white/10" />
-          </div>
-          <div className="absolute top-4 right-4">
-            <div 
-              className="flex items-center gap-2 bg-white/10 rounded-full px-2 py-1 text-xs"
-              onMouseEnter={() => setTooltipContent(`Total de subcuentas: ${activeSubAccounts}`)}
-              onMouseLeave={() => setTooltipContent(null)}
-            >
-              <Users className="h-3 w-3 text-blue-400" />
-              <span>Total: {activeSubAccounts}</span>
-            </div>
-          </div>
+          <DollarSign className="absolute right-0 bottom-0 h-20 w-20 text-white/10 transform translate-x-4 translate-y-4" />
         </div>
 
-        {/* Operaciones Card */}
-        <div 
-          className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden group hover:shadow-lg transition-all duration-300"
-          role="region"
-          aria-label="Operaciones"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div className="bg-gradient-to-br from-blue-600 to-sky-600 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden shadow-lg">
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <div className="flex items-center space-x-2 relative">
-                <button
-                  id="operations-menu-button"
-                  className="flex items-center space-x-2 bg-white/10 rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium hover:bg-white/20 transition-all duration-200 hover:scale-105"
-                  onClick={() => {
-                    const menu = document.getElementById('operations-menu');
-                    menu?.classList.toggle('hidden');
-                  }}
-                >
-                  <span>{getOperationsTitle()}</span>
-                  <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200" />
-                </button>
-                
-                {/* Operations Type Menu */}
-                <div id="operations-menu" className="hidden fixed top-auto left-auto mt-4 w-56 rounded-xl bg-gray-900/95 backdrop-blur-lg shadow-2xl border border-gray-700/50 z-[100] animate-in fade-in-50 slide-in-from-top-2 duration-200">
-                  <div className="p-2">
-                    <div className="px-3 py-2 text-xs font-medium text-gray-400 uppercase tracking-wider">Tipo de Operaciones</div>
-                    <div className="space-y-1">
-                      <button
-                        onClick={() => handleOperationsDisplayChange('open')}
-                        className={`w-full px-4 py-2.5 text-sm text-left text-gray-100 hover:bg-gray-800/80 transition-colors duration-200 flex items-center gap-3 rounded-lg ${
-                          operationsDisplay === 'open' ? 'bg-gray-800/80 text-white ring-2 ring-blue-500' : ''
-                        }`}
-                      >
-                        <Clock className="h-4 w-4 text-blue-400" />
-                        Operaciones Abiertas
-                      </button>
-                      <button
-                        onClick={() => handleOperationsDisplayChange('closed')}
-                        className={`w-full px-4 py-2.5 text-sm text-left text-gray-100 hover:bg-gray-800/80 transition-colors duration-200 flex items-center gap-3 rounded-lg ${
-                          operationsDisplay === 'closed' ? 'bg-gray-800/80 text-white ring-2 ring-green-500' : ''
-                        }`}
-                      >
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                        Operaciones Cerradas
-                      </button>
-                      <button
-                        onClick={() => handleOperationsDisplayChange('total')}
-                        className={`w-full px-4 py-2.5 text-sm text-left text-gray-100 hover:bg-gray-800/80 transition-colors duration-200 flex items-center gap-3 rounded-lg ${
-                          operationsDisplay === 'total' ? 'bg-gray-800/80 text-white ring-2 ring-purple-500' : ''
-                        }`}
-                      >
-                        <Activity className="h-4 w-4 text-purple-400" />
-                        Total Operaciones
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <h3 className="text-sm sm:text-base font-medium text-white/90 mb-3">Subcuentas Conectadas</h3>
+            <div className="text-3xl sm:text-4xl font-bold">
+              {isLoading ? <Skeleton className="h-10 w-20 bg-white/20 rounded-md animate-pulse" /> : activeSubAccounts}
             </div>
-            <div className="text-3xl sm:text-4xl font-bold text-white">
-              {getSkeletonOrValue(getOperationsValue())}
-            </div>
-            <div className="mt-2 text-xs sm:text-sm text-white/80">
-              {isLoading ? (
-                <div className="flex flex-col space-y-2">
-                  <div className="h-4 w-16 bg-white/10 animate-pulse rounded"></div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 bg-white/10 rounded-full px-2 py-1 w-fit">
-                  {getOperationsIcon()}
-                  <span>{getOperationsDescription()}</span>
-                </div>
-              )}
+            <div className="mt-2 text-xs text-white/80">
+                {isLoading ? 
+                    <Skeleton className="h-4 w-24 bg-white/10 rounded-md animate-pulse" /> 
+                    : 
+                    (activeSubAccounts === 1 ? 'Cuenta activa.' : 'Cuentas activas.')
+                }
             </div>
           </div>
-          <div className="absolute right-0 bottom-0 transform translate-x-1/6 translate-y-1/6 group-hover:scale-110 transition-transform duration-300">
-            <LineChart className="h-20 w-20 sm:h-24 sm:w-24 text-white/10" />
-          </div>
-          <div className="absolute top-4 right-4">
-            <div 
-              className="flex items-center gap-2 bg-white/10 rounded-full px-2 py-1 text-xs"
-              onMouseEnter={() => setTooltipContent(`Total de operaciones: ${exchanges}`)}
-              onMouseLeave={() => setTooltipContent(null)}
-            >
-              <Activity className="h-3 w-3 text-purple-400" />
-              <span>Total: {exchanges}</span>
+          <Users className="absolute right-0 bottom-0 h-20 w-20 text-white/10 transform translate-x-4 translate-y-4" />
+        </div>
+
+        <div className="bg-gradient-to-br from-emerald-600 to-teal-600 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden shadow-lg">
+          <div className="relative z-10">
+            <h3 className="text-sm sm:text-base font-medium text-white/90 mb-3">Exchanges Conectados</h3>
+            <div className="text-3xl sm:text-4xl font-bold">
+               {isLoading ? <Skeleton className="h-10 w-20 bg-white/20 rounded-md animate-pulse" /> : exchanges}
+            </div>
+             <div className="mt-2 text-xs text-white/80">
+                {isLoading ? 
+                    <Skeleton className="h-4 w-32 bg-white/10 rounded-md animate-pulse" /> 
+                    : 
+                    (exchanges === 1 ? 'Plataforma única vinculada.' : 'Plataformas únicas vinculadas.')
+                }
             </div>
           </div>
+          <Globe className="absolute right-0 bottom-0 h-20 w-20 text-white/10 transform translate-x-4 translate-y-4" />
         </div>
       </div>
 
-      {/* Subcuentas Section */}
       <div className="space-y-4">
         <div id="subaccounts-component" className="px-0 sm:px-2">
           {subAccountsComponent}
         </div>
       </div>
 
-      {/* Modales */}
+      {/* Eliminar Modales si no se usan */}
+      {/* 
       {showCreateModal && (
         <SubAccountManager
           mode="create"
@@ -684,6 +456,7 @@ export default function DashboardPage() {
           onSuccess={handleSubAccountSuccess}
         />
       )}
+      */}
     </div>
   );
 }
