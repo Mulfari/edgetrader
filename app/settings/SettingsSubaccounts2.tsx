@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useCallback } from "react";
 import { getUserSubaccounts, Subaccount } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
