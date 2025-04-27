@@ -20,7 +20,8 @@ import {
   EyeOff,
   AlertCircle,
   Loader2,
-  Star
+  Star,
+  KeyRound
 } from "lucide-react"; // Solo los íconos realmente usados en tabs y secciones
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "next-themes";
@@ -32,6 +33,9 @@ import SettingsSeguridad from "./SettingsSeguridad";
 import SettingsSuscription from "./SettingsSuscription";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import SettingsSubaccounts from "./SettingsSubaccounts";
+import SettingsSubaccounts2 from "./SettingsSubaccounts2";
+import ExampleUsage from "./subcuentas2/example-usage";
 
 interface Profile {
   id: string;
@@ -95,6 +99,21 @@ export default function SettingsPage() {
       name: "Suscripción",
       icon: Star,
       badge: null
+    },
+    {
+      id: "subcuentas",
+      name: "Subcuentas/API Keys",
+      icon: Key,
+      badge: null
+    },
+    {
+      id: "subcuentas2",
+      name: "Subcuentas con Vault",
+      icon: KeyRound,
+      badge: {
+        text: "Nuevo",
+        variant: "info"
+      }
     },
     {
       id: "notificaciones",
@@ -254,6 +273,28 @@ export default function SettingsPage() {
           {/* Suscripción */}
           {activeTab === "suscripcion" && (
             <SettingsSuscription />
+          )}
+
+          {/* Subcuentas/API Keys */}
+          {activeTab === "subcuentas" && (
+            <SettingsSubaccounts />
+          )}
+
+          {/* Subcuentas con Vault */}
+          {activeTab === "subcuentas2" && (
+            <div>
+              <SettingsSubaccounts2 />
+              <div className="px-6 pt-4">
+                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
+                  Ejemplo de uso del hook personalizado
+                </h3>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+                  Esta sección muestra cómo utilizar el hook useSubaccounts para acceder a las claves
+                  desde cualquier componente de la aplicación.
+                </p>
+                <ExampleUsage />
+              </div>
+            </div>
           )}
 
           {/* Notificaciones */}

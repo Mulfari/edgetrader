@@ -932,4 +932,187 @@ export const rpcVerifyTOTP = async (userId: string, token: string) => {
       error: error.message || 'Error al verificar el token TOTP'
     }; 
   }
+};
+
+// Interfaces para subcuentas
+export interface Subaccount {
+  id: string;
+  name: string;
+  api_key: string;
+  secret_key: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Obtiene las subcuentas del usuario actual.
+ * Las claves API y secretas se desencriptan automáticamente gracias a Vault.
+ */
+export const getUserSubaccounts = async (): Promise<{ data: Subaccount[] | null; error: any }> => {
+  try {
+    // Obtener el usuario actual
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error('Error obteniendo usuario:', userError);
+      throw userError;
+    }
+    
+    if (!user) throw new Error('No hay usuario autenticado');
+
+    // Llamar a la función RPC para obtener las subcuentas
+    const { data, error } = await supabase.rpc('get_user_subaccounts', {
+      p_user_id: user.id
+    });
+
+    if (error) {
+      console.error('Error detallado de RPC get_user_subaccounts:', error);
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (error: any) {
+    console.error('Error al obtener subcuentas:', error);
+    return { 
+      data: null, 
+      error: error.message || 'Error al obtener subcuentas' 
+    };
+  }
+};
+
+/**
+ * Crea una nueva subcuenta con las claves API y secretas encriptadas en Vault.
+ */
+export const createSubaccount = async (name: string, apiKey: string, secretKey: string): Promise<{ success: boolean; error: any }> => {
+  try {
+    // Obtener el usuario actual
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error('Error obteniendo usuario:', userError);
+      throw userError;
+    }
+    
+    if (!user) throw new Error('No hay usuario autenticado');
+    
+    // Validar datos
+    if (!name.trim()) throw new Error('El nombre es requerido');
+    if (!apiKey.trim()) throw new Error('La API Key es requerida');
+    if (!secretKey.trim()) throw new Error('La Secret Key es requerida');
+
+    // Llamar a la función RPC para crear la subcuenta
+    const { error } = await supabase.rpc('insert_subaccount', {
+      p_user_id: user.id,
+      p_name: name.trim(),
+      p_api_key: apiKey.trim(),
+      p_secret_key: secretKey.trim()
+    });
+
+    if (error) {
+      console.error('Error detallado de RPC insert_subaccount:', error);
+      throw error;
+    }
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error('Error al crear subcuenta:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Error al crear la subcuenta' 
+    };
+  }
+};
+
+/**
+ * Elimina una subcuenta por su ID y también elimina sus claves de Vault.
+ */
+export const deleteSubaccount = async (subaccountId: string): Promise<{ success: boolean; error: any }> => {
+  try {
+    // Obtener el usuario actual
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error('Error obteniendo usuario:', userError);
+      throw userError;
+    }
+    
+    if (!user) throw new Error('No hay usuario autenticado');
+
+    // Llamar a la función RPC para eliminar la subcuenta
+    const { error } = await supabase.rpc('delete_subaccount', {
+      p_user_id: user.id,
+      p_subaccount_id: subaccountId
+    });
+
+    if (error) {
+      console.error('Error detallado de RPC delete_subaccount:', error);
+      throw error;
+    }
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error('Error al eliminar subcuenta:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Error al eliminar la subcuenta' 
+    };
+  }
+};
+
+/**
+ * Obtiene el balance y los activos de una subcuenta de Bybit
+ * @param subaccountId ID de la subcuenta
+ * @returns Objeto con balance total y lista de activos
+ */
+export const getSubaccountBalance = async (subaccountId: string): Promise<{
+  success: boolean;
+  data?: {
+    balance: number;
+    assets: Array<{
+      coin: string;
+      walletBalance: number;
+      usdValue: number;
+    }>;
+  };
+  error?: string;
+}> => {
+  try {
+    // Verificar que hay un ID de subcuenta válido
+    if (!subaccountId) {
+      throw new Error('ID de subcuenta no proporcionado');
+    }
+
+    // Llamar a la función RPC que acabamos de crear
+    const { data, error } = await supabase.rpc('get_subaccount_balance', {
+      p_subaccount_id: subaccountId
+    });
+
+    if (error) {
+      console.error('Error detallado al obtener balance de subcuenta:', error);
+      throw error;
+    }
+
+    // Verificar si la respuesta de la función contiene un error
+    if (!data.success) {
+      return {
+        success: false,
+        error: data.error || 'Error desconocido al obtener balance'
+      };
+    }
+
+    // Si todo fue bien, devolver los datos formateados
+    return {
+      success: true,
+      data: {
+        balance: data.balance || 0,
+        assets: data.assets || []
+      }
+    };
+  } catch (error: any) {
+    console.error('Error al obtener balance de subcuenta:', error);
+    return {
+      success: false,
+      error: error.message || 'Error al obtener balance de subcuenta'
+    };
+  }
 }; 
