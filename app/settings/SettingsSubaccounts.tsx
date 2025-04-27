@@ -32,6 +32,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { supabase } from "@/lib/supabase";
 
 // Lista de exchanges disponibles
 const AVAILABLE_EXCHANGES = [
@@ -237,20 +238,48 @@ export default function SettingsSubaccounts() {
       setIsLoadingBalance(true);
       setSelectedSubaccountId(subaccountId);
       setBalanceDialogOpen(true);
+      setBalanceData(null); // Reset previous data
       
-      // Llamar a la función que obtiene el balance
-      const { success, data, error } = await getSubaccountBalance(subaccountId);
+      console.log(`Invoking edge function 'get-bybit-balance' for subaccount: ${subaccountId}`);
       
-      if (!success || error) {
-        console.error("Error al obtener balance:", error);
-        setBalanceError(error || "Error desconocido al obtener balance");
+      // Llamar a la Edge Function
+      const { data: functionResponse, error: functionError } = await supabase.functions.invoke(
+        'get-bybit-balance',
+        { 
+          body: { subaccountId } // Pasar el ID en el cuerpo de la solicitud POST
+        }
+      );
+
+      if (functionError) {
+        console.error("Error invoking edge function:", functionError);
+        // Intentar obtener un mensaje más específico si está disponible
+        const errMsg = functionError.message || 'Error desconocido al llamar a la función';
+        setBalanceError(errMsg);
+        // Podrías intentar parsear context si es un error HTTP
+        // try { 
+        //   const ctx = JSON.parse(functionError.context);
+        //   setBalanceError(ctx.error || errMsg);
+        // } catch { setBalanceError(errMsg); }
         return;
       }
+
+      console.log("Edge function response:", functionResponse);
+
+      // La respuesta de invoke ya debería ser el objeto JSON devuelto por la función
+      // Verificar si la operación dentro de la función fue exitosa
+      if (!functionResponse?.success) {
+         const errMsg = functionResponse?.error || "La función de balance no tuvo éxito";
+         console.error("Error reported by edge function:", errMsg);
+         setBalanceError(errMsg);
+         return;
+      }
       
-      setBalanceData(data || { balance: 0, assets: [] });
+      // Si todo fue bien, establecer los datos
+      setBalanceData(functionResponse.data || { balance: 0, assets: [] });
+
     } catch (error: any) {
-      console.error("Error no controlado al obtener balance:", error);
-      setBalanceError(error?.message || "Error al obtener balance");
+      console.error("Error no controlado en fetchBalance:", error);
+      setBalanceError(error?.message || "Error inesperado al obtener balance");
     } finally {
       setIsLoadingBalance(false);
     }
