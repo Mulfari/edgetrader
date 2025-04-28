@@ -119,7 +119,13 @@ export default function SettingsSubaccounts() {
   };
 
   const handleSelectChange = (value: string, field: string) => {
-    setForm({ ...form, [field]: value });
+      // Si se cambia el exchange a uno que NO es Bybit, forzar isDemo a false
+      const newIsDemo = (field === 'name' && value !== 'bybit') ? false : form.isDemo;
+      setForm(prevForm => ({
+          ...prevForm, 
+          [field]: value,
+          isDemo: newIsDemo
+      }));
   };
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -386,27 +392,31 @@ export default function SettingsSubaccounts() {
                             type="password"
                         />
                         </div>
-                        <div className="flex items-center space-x-2 pt-2"> 
-                            <Checkbox 
-                                id="isDemo" 
-                                name="isDemo" 
-                                checked={form.isDemo} 
-                                onCheckedChange={(checked) => { 
-                                handleInputChange({ 
-                                    target: { name: 'isDemo', value: '', type: 'checkbox', checked: !!checked } 
-                                } as React.ChangeEvent<HTMLInputElement>); 
-                                }} 
-                            /> 
-                            <Label 
-                                htmlFor="isDemo" 
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" 
-                            > 
-                                Esta es una cuenta Demo/Testnet 
-                            </Label> 
-                        </div> 
-                        <p className="text-xs text-muted-foreground px-1 -mt-2"> 
-                            Marca esta opción si usas claves de un entorno de pruebas. 
-                        </p>
+                        {form.name === 'bybit' && (
+                            <div className="pt-2">
+                                <div className="flex items-center space-x-2"> 
+                                    <Checkbox 
+                                        id="isDemo" 
+                                        name="isDemo" 
+                                        checked={form.isDemo} 
+                                        onCheckedChange={(checked) => { 
+                                        handleInputChange({ 
+                                            target: { name: 'isDemo', value: '', type: 'checkbox', checked: !!checked } 
+                                        } as React.ChangeEvent<HTMLInputElement>); 
+                                        }} 
+                                    /> 
+                                    <Label 
+                                        htmlFor="isDemo" 
+                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                    > 
+                                        Esta es una cuenta Demo/Testnet de Bybit
+                                    </Label> 
+                                </div> 
+                                <p className="text-xs text-muted-foreground px-1 pt-1"> 
+                                    Marca esta opción si usas claves API de Bybit Testnet.
+                                </p>
+                            </div>
+                        )}
                         {(form.identifier || form.name) && (
                         <div className="mt-2 p-3 bg-muted/50 rounded-md border">
                             <p className="text-xs text-muted-foreground">

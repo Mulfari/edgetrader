@@ -940,6 +940,7 @@ export interface Subaccount {
   name: string;
   api_key: string;
   secret_key: string;
+  is_demo: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -947,6 +948,7 @@ export interface Subaccount {
 /**
  * Obtiene las subcuentas del usuario actual.
  * Las claves API y secretas se desencriptan automáticamente gracias a Vault.
+ * Incluye el flag is_demo.
  */
 export const getUserSubaccounts = async (): Promise<{ data: Subaccount[] | null; error: any }> => {
   try {
@@ -960,7 +962,7 @@ export const getUserSubaccounts = async (): Promise<{ data: Subaccount[] | null;
     
     if (!user) throw new Error('No hay usuario autenticado');
 
-    // Llamar a la función RPC para obtener las subcuentas
+    // Llamar a la función RPC para obtener las subcuentas (que ahora devuelve is_demo)
     const { data, error } = await supabase.rpc('get_user_subaccounts', {
       p_user_id: user.id
     });
@@ -969,8 +971,8 @@ export const getUserSubaccounts = async (): Promise<{ data: Subaccount[] | null;
       console.error('Error detallado de RPC get_user_subaccounts:', error);
       throw error;
     }
-
-    return { data, error: null };
+    // El tipo de 'data' ahora coincide con Subaccount[] incluyendo is_demo
+    return { data: data as Subaccount[], error: null };
   } catch (error: any) {
     console.error('Error al obtener subcuentas:', error);
     return { 
