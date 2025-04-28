@@ -215,7 +215,7 @@ export default function DashboardPage() {
         setRealAccountCount(0);
         setDemoAccountCount(0);
         setExchanges(0);
-        setIsLoading(false);
+      setIsLoading(false);
         return;
       }
 
@@ -570,7 +570,7 @@ export default function DashboardPage() {
         <div className="mb-6 p-4 bg-destructive/10 text-destructive border border-destructive/30 rounded-lg text-center">
           <p className="font-medium">{fetchError.includes("ninguna") || fetchError.includes("cargar") ? "Error al Cargar Datos" : "Aviso"}</p>
           <p className="text-sm">{fetchError}</p>
-        </div>
+      </div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -578,8 +578,8 @@ export default function DashboardPage() {
           <div className="relative z-10">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3">
               <div className="flex items-center rounded-lg bg-white/10 text-xs font-medium">
-                <button
-                  onClick={() => handleBalanceDisplayChange('total')}
+                      <button
+                        onClick={() => handleBalanceDisplayChange('total')}
                   className={`px-2.5 py-1 rounded-l-md transition-colors ${balanceDisplay === 'total' ? 'bg-white/20' : 'hover:bg-white/15'}`}
                 >Todos</button>
                       <button

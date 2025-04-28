@@ -840,6 +840,7 @@ function LoginForm() {
                   <AnimatePresence mode="wait">
                     {isCheckingSession ? (
                       <motion.div
+                        key="checking-session"
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
@@ -904,6 +905,7 @@ function LoginForm() {
                       </motion.div>
                     ) : success || isExistingSession ? (
                       <motion.div
+                        key="success-redirect"
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
@@ -966,8 +968,111 @@ function LoginForm() {
                           </div>
                         </motion.div>
                       </motion.div>
+                    ) : showForgotPassword ? (
+                      <motion.div
+                        key="forgot-password-form"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        {showCountdown ? (
+                           <motion.div
+                           key="forgot-success"
+                           initial={{ opacity: 0, scale: 0.9 }}
+                           animate={{ opacity: 1, scale: 1 }}
+                           exit={{ opacity: 0, scale: 0.9 }}
+                           className="text-center"
+                         >
+                           <motion.div
+                             initial={{ scale: 0 }}
+                             animate={{ scale: 1 }}
+                             transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
+                             className="mx-auto mb-4 w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-cyan-500 flex items-center justify-center shadow-lg"
+                           >
+                             <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                             </svg>
+                           </motion.div>
+                           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t.resetEmailSent}</h3>
+                           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t.checkEmail}</p>
+                           <p className="text-sm text-gray-500 dark:text-gray-500">
+                             {t.redirectingIn.replace('{seconds}', countdown.toString())}
+                           </p>
+                           <div className="relative w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mt-2">
+                              <motion.div
+                                initial={{ width: "100%" }}
+                                animate={{ width: "0%" }}
+                                transition={{ duration: 5, ease: "linear" }}
+                                className="absolute left-0 top-0 h-full bg-gradient-to-r from-cyan-500 to-blue-600"
+                              />
+                            </div>
+                         </motion.div>
+                        ) : (
+                          <form onSubmit={handleForgotPassword} className="space-y-6">
+                            <div>
+                              <label htmlFor="email-forgot" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {t.email}
+                              </label>
+                              <div className="mt-1">
+                                <input
+                                  id="email-forgot"
+                                  name="email"
+                                  type="email"
+                                  autoComplete="email"
+                                  required
+                                  value={email}
+                                  onChange={(e) => setEmail(e.target.value)}
+                                  className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white"
+                                  placeholder="tu@email.com"
+                                />
+                              </div>
+                            </div>
+
+                            {error && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="p-3 rounded-lg bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800"
+                              >
+                                <div className="flex">
+                                  <AlertCircle className="h-5 w-5 text-red-400 dark:text-red-300" />
+                                  <div className="ml-3">
+                                    <p className="text-sm text-red-500 dark:text-red-200">{error}</p>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+
+                            <div className="space-y-3">
+                              <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-[1.02]"
+                              >
+                                {isLoading ? (
+                                  <>
+                                    <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                                    {t.sending}
+                                  </>
+                                ) : (
+                                  t.send
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={showLoginForm}
+                                className="w-full flex justify-center py-2.5 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transform transition-all duration-200 hover:scale-[1.02]"
+                              >
+                                {t.cancel}
+                              </button>
+                            </div>
+                          </form>
+                        )}
+                      </motion.div>
                     ) : step === 'otp' ? (
                       <motion.div
+                        key="otp-form"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
@@ -1075,198 +1180,198 @@ function LoginForm() {
                           </form>
                         </div>
                       </motion.div>
-                        ) : (
-                          <motion.form 
-                            className="space-y-6" 
-                            onSubmit={handleSubmit}
-                            noValidate
-                          >
-                            <div>
-                              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                  {t.email}
-                              </label>
-                              <div className="mt-1 relative">
-                                <input
-                                  id="email"
-                                  name="email"
-                                  type="email"
-                                  autoComplete="email"
-                                  value={email}
-                                  onChange={(e) => setEmail(e.target.value)}
-                                  onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
-                                  className={`appearance-none block w-full px-3 py-2 border ${
-                                    errors.email && touched.email ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                                  } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
-                                />
-                                <AnimatePresence>
-                                  {errors.email && touched.email && (
-                                    <motion.div
-                                      initial={{ opacity: 0 }}
-                                      animate={{ opacity: 1 }}
-                                      exit={{ opacity: 0 }}
-                                      className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
-                                    >
-                                      <AlertCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
-                                    </motion.div>
-                                  )}
-                                </AnimatePresence>
-                              </div>
-                              <AnimatePresence>
-                                {errors.email && touched.email && (
-                                  <motion.p
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="text-xs text-red-600 dark:text-red-500 mt-1"
-                                  >
-                                      {t.invalidEmail}
-                                  </motion.p>
-                                )}
-                              </AnimatePresence>
-                            </div>
-
-                            <div>
-                              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                  {t.password}
-                              </label>
-                              <div className="mt-1 relative">
-                                <input
-                                  id="password"
-                                  name="password"
-                                  type={showPassword ? "text" : "password"}
-                                  autoComplete="current-password"
-                                  value={password}
-                                  onChange={(e) => setPassword(e.target.value)}
-                                  onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
-                                  className={`appearance-none block w-full px-3 py-2 border ${
-                                    errors.password && touched.password ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
-                                  } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setShowPassword(!showPassword)}
-                                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    ) : (
+                      <motion.form 
+                        className="space-y-6" 
+                        onSubmit={handleSubmit}
+                        noValidate
+                      >
+                        <div>
+                          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                              {t.email}
+                          </label>
+                          <div className="mt-1 relative">
+                            <input
+                              id="email"
+                              name="email"
+                              type="email"
+                              autoComplete="email"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
+                              className={`appearance-none block w-full px-3 py-2 border ${
+                                errors.email && touched.email ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                              } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
+                            />
+                            <AnimatePresence>
+                              {errors.email && touched.email && (
+                                <motion.div
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  exit={{ opacity: 0 }}
+                                  className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
                                 >
-                                  {showPassword ? (
-                                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
-                                  ) : (
-                                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
-                                  )}
-                                </button>
-                              </div>
-                              <AnimatePresence>
-                                {touched.password && errors.password && (
-                                  <motion.p
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="text-xs text-red-600 dark:text-red-500 mt-1"
-                                  >
-                                      {t.invalidPassword}
-                                  </motion.p>
-                                )}
-                              </AnimatePresence>
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center">
-                                <div className="relative flex items-center">
-                                  <input
-                                    id="remember-me"
-                                    name="remember-me"
-                                    type="checkbox"
-                                    checked={rememberMe}
-                                    onChange={(e) => setRememberMe(e.target.checked)}
-                                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0 transition-colors duration-200 ease-in-out cursor-pointer"
-                                  />
-                                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 dark:text-gray-300 select-none cursor-pointer">
-                                      {t.rememberMe}
-                                  </label>
-                                </div>
-                              </div>
-
-                              <div className="text-sm">
-                                <button
-                                  type="button"
-                                  onClick={() => setShowForgotPassword(true)}
-                                  className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
-                                >
-                                    {t.forgotPassword}
-                                </button>
-                              </div>
-                            </div>
-
-                            {error && (
-                              <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className={`p-3 rounded-lg ${
-                                  error === t.emailNotConfirmed
-                                    ? 'bg-amber-50 dark:bg-amber-900/50 border border-amber-200 dark:border-amber-800'
-                                    : 'bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800'
-                                }`}
+                                  <AlertCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                          <AnimatePresence>
+                            {errors.email && touched.email && (
+                              <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="text-xs text-red-600 dark:text-red-500 mt-1"
                               >
-                                <div className="flex flex-col space-y-3">
-                                  <div className="flex">
-                                    <AlertCircle className={`h-5 w-5 ${
-                                      error === t.emailNotConfirmed
-                                        ? 'text-amber-400 dark:text-amber-300'
-                                        : 'text-red-400 dark:text-red-300'
-                                    }`} />
-                                    <div className="ml-3">
-                                      <p className={`text-sm ${
-                                        error === t.emailNotConfirmed
-                                          ? 'text-amber-500 dark:text-amber-200'
-                                          : 'text-red-500 dark:text-red-200'
-                                      }`}>{error}</p>
-                                    </div>
-                                  </div>
-                                  {error === t.emailNotConfirmed && (
-                                    <button
-                                      onClick={handleResendVerification}
-                                      disabled={isResendingVerification || Boolean(resendState.cooldown)}
-                                      className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                      {isResendingVerification ? (
-                                        <>
-                                          <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-                                          {t.resendingVerification}
-                                        </>
-                                      ) : resendState.cooldown ? (
-                                        <>
-                                          <Clock className="h-5 w-5 mr-2" />
-                                          {t.waitingForCooldown}
-                                        </>
-                                      ) : (
-                                        t.resendVerification
-                                      )}
-                                    </button>
-                                  )}
-                                </div>
-                              </motion.div>
+                                  {t.invalidEmail}
+                              </motion.p>
                             )}
+                          </AnimatePresence>
+                        </div>
 
-                            <div>
-                              <button
-                                type="submit"
-                                disabled={isLoading || (touched.email && touched.password && (!!errors.email || !!errors.password))}
-                                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-[1.02]"
+                        <div>
+                          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                              {t.password}
+                          </label>
+                          <div className="mt-1 relative">
+                            <input
+                              id="password"
+                              name="password"
+                              type={showPassword ? "text" : "password"}
+                              autoComplete="current-password"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
+                              className={`appearance-none block w-full px-3 py-2 border ${
+                                errors.password && touched.password ? 'border-red-300' : 'border-gray-300 dark:border-gray-600'
+                              } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm dark:bg-gray-700 dark:text-white`}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                            >
+                              {showPassword ? (
+                                <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
+                              ) : (
+                                <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" />
+                              )}
+                            </button>
+                          </div>
+                          <AnimatePresence>
+                            {touched.password && errors.password && (
+                              <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="text-xs text-red-600 dark:text-red-500 mt-1"
                               >
-                                {isLoading ? (
-                                  <>
-                                    <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-                                      {t.loggingIn}
-                                  </>
-                                ) : (
-                                    t.login
-                                )}
-                              </button>
+                                  {t.invalidPassword}
+                              </motion.p>
+                            )}
+                          </AnimatePresence>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="relative flex items-center">
+                              <input
+                                id="remember-me"
+                                name="remember-me"
+                                type="checkbox"
+                                checked={rememberMe}
+                                onChange={(e) => setRememberMe(e.target.checked)}
+                                className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0 transition-colors duration-200 ease-in-out cursor-pointer"
+                              />
+                              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 dark:text-gray-300 select-none cursor-pointer">
+                                  {t.rememberMe}
+                              </label>
                             </div>
-                          </motion.form>
+                          </div>
+
+                          <div className="text-sm">
+                            <button
+                              type="button"
+                              onClick={() => setShowForgotPassword(true)}
+                              className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
+                            >
+                                {t.forgotPassword}
+                            </button>
+                          </div>
+                        </div>
+
+                        {error && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`p-3 rounded-lg ${
+                              error === t.emailNotConfirmed
+                                ? 'bg-amber-50 dark:bg-amber-900/50 border border-amber-200 dark:border-amber-800'
+                                : 'bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800'
+                            }`}
+                          >
+                            <div className="flex flex-col space-y-3">
+                              <div className="flex">
+                                <AlertCircle className={`h-5 w-5 ${
+                                  error === t.emailNotConfirmed
+                                    ? 'text-amber-400 dark:text-amber-300'
+                                    : 'text-red-400 dark:text-red-300'
+                                }`} />
+                                <div className="ml-3">
+                                  <p className={`text-sm ${
+                                    error === t.emailNotConfirmed
+                                      ? 'text-amber-500 dark:text-amber-200'
+                                      : 'text-red-500 dark:text-red-200'
+                                  }`}>{error}</p>
+                                </div>
+                              </div>
+                              {error === t.emailNotConfirmed && (
+                                <button
+                                  onClick={handleResendVerification}
+                                  disabled={isResendingVerification || Boolean(resendState.cooldown)}
+                                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {isResendingVerification ? (
+                                    <>
+                                      <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                                      {t.resendingVerification}
+                                    </>
+                                  ) : resendState.cooldown ? (
+                                    <>
+                                      <Clock className="h-5 w-5 mr-2" />
+                                      {t.waitingForCooldown}
+                                    </>
+                                  ) : (
+                                    t.resendVerification
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+
+                        <div>
+                          <button
+                            type="submit"
+                            disabled={isLoading || (touched.email && touched.password && (!!errors.email || !!errors.password))}
+                            className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-[1.02]"
+                          >
+                            {isLoading ? (
+                              <>
+                                <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                                  {t.loggingIn}
+                              </>
+                            ) : (
+                                t.login
+                            )}
+                          </button>
+                        </div>
+                      </motion.form>
                     )}
                   </AnimatePresence>
 
-                  {(!success && !showForgotPassword && !isExistingSession) && (
+                  {(!success && !showForgotPassword && !isExistingSession && step !== 'otp') && (
                     <>
                       <div className="mt-8">
                         <div className="flex items-center justify-center gap-4 my-6">
