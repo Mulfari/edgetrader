@@ -384,7 +384,7 @@ export default function SettingsSeguridad() {
       const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword);
 
       if (!hasMinLength || !hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
-        errors.newPassword = 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial';
+        errors.newPassword = 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial (!@#$%^&*)';
       }
 
       // Solo validar que sea diferente si el usuario ya tiene contraseña

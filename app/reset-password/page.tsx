@@ -14,12 +14,12 @@ type Language = 'es' | 'en' | 'de';
 const translations = {
   es: {
     resetPassword: "Restablecer Contraseña",
-    resetPasswordDesc: "Crea una nueva contraseña para tu cuenta Mulfex Trader.",
+    resetPasswordDesc: "Crea una nueva contraseña segura para tu cuenta Mulfex Trader.",
     newPassword: "Nueva Contraseña",
     confirmPassword: "Confirmar Contraseña",
     resetBtn: "Restablecer Contraseña",
     resetting: "Restableciendo...",
-    invalidPassword: "La contraseña debe tener al menos 8 caracteres",
+    invalidPassword: "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial (!@#$%^&*).",
     passwordsNotMatch: "Las contraseñas no coinciden",
     resetSuccess: "¡Tu contraseña ha sido restablecida exitosamente!",
     loginNow: "Iniciar sesión ahora",
@@ -37,17 +37,18 @@ const translations = {
       chars: "8+ caracteres",
       uppercase: "Mayúscula",
       lowercase: "Minúscula",
-      number: "Número"
+      number: "Número",
+      special: "Especial (!@#$%^&*)"
     }
   },
   en: {
     resetPassword: "Reset Password",
-    resetPasswordDesc: "Create a new password for your Mulfex Trader account.",
+    resetPasswordDesc: "Create a new secure password for your Mulfex Trader account.",
     newPassword: "New Password",
     confirmPassword: "Confirm Password",
     resetBtn: "Reset Password",
     resetting: "Resetting...",
-    invalidPassword: "Password must be at least 8 characters long",
+    invalidPassword: "Password must have at least 8 characters, one uppercase, one lowercase, one number, and one special character (!@#$%^&*).",
     passwordsNotMatch: "Passwords do not match",
     resetSuccess: "Your password has been successfully reset!",
     loginNow: "Login now",
@@ -65,17 +66,18 @@ const translations = {
       chars: "8+ characters",
       uppercase: "Uppercase",
       lowercase: "Lowercase",
-      number: "Number"
+      number: "Number",
+      special: "Special (!@#$%^&*)"
     }
   },
   de: {
     resetPassword: "Passwort zurücksetzen",
-    resetPasswordDesc: "Erstellen Sie ein neues Passwort für Ihr Mulfex Trader-Konto.",
+    resetPasswordDesc: "Erstellen Sie ein neues sicheres Passwort für Ihr Mulfex Trader-Konto.",
     newPassword: "Neues Passwort",
     confirmPassword: "Passwort bestätigen",
     resetBtn: "Passwort zurücksetzen",
     resetting: "Wird zurückgesetzt...",
-    invalidPassword: "Das Passwort muss mindestens 8 Zeichen lang sein",
+    invalidPassword: "Das Passwort muss mindestens 8 Zeichen, einen Großbuchstaben, einen Kleinbuchstaben, eine Zahl und ein Sonderzeichen (!@#$%^&*) enthalten.",
     passwordsNotMatch: "Passwörter stimmen nicht überein",
     resetSuccess: "Ihr Passwort wurde erfolgreich zurückgesetzt!",
     loginNow: "Jetzt anmelden",
@@ -93,14 +95,19 @@ const translations = {
       chars: "8+ Zeichen",
       uppercase: "Großbuchstabe",
       lowercase: "Kleinbuchstabe",
-      number: "Nummer"
+      number: "Nummer",
+      special: "Sonderzeichen (!@#$%^&*)"
     }
   }
 };
 
 // Validación de contraseña
 const isValidPassword = (password: string): boolean => {
-  return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password);
+  return password.length >= 8 &&
+         /[A-Z]/.test(password) &&
+         /[a-z]/.test(password) &&
+         /[0-9]/.test(password) &&
+         /[!@#$%^&*]/.test(password);
 };
 
 function ResetPasswordContent() {
@@ -428,7 +435,8 @@ function ResetPasswordContent() {
                                 { met: password.length >= 8, text: t.passwordRequirements.chars },
                                 { met: /[A-Z]/.test(password), text: t.passwordRequirements.uppercase },
                                 { met: /[a-z]/.test(password), text: t.passwordRequirements.lowercase },
-                                { met: /[0-9]/.test(password), text: t.passwordRequirements.number }
+                                { met: /[0-9]/.test(password), text: t.passwordRequirements.number },
+                                { met: /[!@#$%^&*]/.test(password), text: t.passwordRequirements.special }
                               ].map((requirement, index) => (
                                 <div
                                   key={index}
@@ -451,8 +459,9 @@ function ResetPasswordContent() {
                                     ((password.length >= 8 ? 1 : 0) +
                                     (/[A-Z]/.test(password) ? 1 : 0) +
                                     (/[a-z]/.test(password) ? 1 : 0) +
-                                    (/[0-9]/.test(password) ? 1 : 0)) *
-                                    25
+                                    (/[0-9]/.test(password) ? 1 : 0) +
+                                    (/[!@#$%^&*]/.test(password) ? 1 : 0)) *
+                                    20
                                   }%`
                                 }}
                                 transition={{ duration: 0.3 }}
