@@ -94,6 +94,25 @@ async function getTickerPrices(symbols: string[]): Promise<Record<string, number
 }
 
 export async function POST(request: Request) {
+  // --- INICIO: Código de prueba temporal del proxy ---
+  if (proxyAgent) {
+    try {
+      console.log("Attempting proxy test call to https://ip.decodo.com/json...");
+      const proxyTestResponse = await fetch('https://ip.decodo.com/json', {
+        dispatcher: proxyAgent
+      } as any);
+      const proxyTestData = await proxyTestResponse.json();
+      console.log("Proxy test successful! IP seen by service:", JSON.stringify(proxyTestData));
+    } catch (proxyTestError) {
+      console.error("Proxy test FAILED:", proxyTestError);
+      // Considerar devolver un error aquí si la prueba del proxy es crucial
+      // return NextResponse.json({ success: false, error: 'Proxy test failed', details: proxyTestError }, { status: 500 });
+    }
+  } else {
+    console.log("Skipping proxy test as proxyAgent is not configured.");
+  }
+  // --- FIN: Código de prueba temporal del proxy ---
+
   let subaccountId: string | undefined;
   let exchangeName: string | undefined; // Para guardar el nombre del exchange
 
