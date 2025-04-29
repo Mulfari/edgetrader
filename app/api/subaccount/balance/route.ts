@@ -96,6 +96,26 @@ async function getTickerPrices(symbols: string[]): Promise<Record<string, number
   }
 }
 
+// Helper para obtener la hora UTC estándar de worldtimeapi.org
+async function getStandardUtcTime(): Promise<number> {
+  try {
+    console.log("Fetching standard UTC time from worldtimeapi.org...");
+    // La llamada a worldtimeapi debería usar el proxy también si es necesario salir
+    const response = await axios.get('http://worldtimeapi.org/api/timezone/Etc/UTC', {
+      httpsAgent: proxyAgent // Usar proxy si está configurado
+    });
+    const utcNow = response.data.unixtime * 1000; // Convertir segundos a milisegundos
+    console.log("Standard UTC time fetched successfully:", utcNow, new Date(utcNow).toISOString());
+    return utcNow;
+  } catch (error) {
+    console.error("Failed to fetch time from worldtimeapi.org, falling back to Date.now():", error);
+    // Fallback a la hora local del servidor si la API externa falla
+    const fallbackTime = Date.now();
+    console.warn("Using server's Date.now() as fallback:", fallbackTime, new Date(fallbackTime).toISOString());
+    return fallbackTime;
+  }
+}
+
 export async function POST(request: Request) {
   // --- INICIO: Código de prueba temporal del proxy ---
   if (proxyAgent) {
@@ -198,105 +218,84 @@ export async function POST(request: Request) {
 
     let balanceDataFromExchange: { balance: number; assets: Array<{ coin: string; walletBalance: number; usdValue: number; }> };
     let apiResponse: any;
-    const timestamp = Date.now();
-    let prices: Record<string, number> = {}; // Para guardar precios si es Binance
+    let prices: Record<string, number> = {};
 
     // --- Lógica Condicional ---
     if (isBybit) {
-        // --- BYBIT API LOGIC (SIN recvWindow en firma - Intento 2) ---
+        const bybitTimestamp = Date.now(); // Bybit usa la hora del servidor (que funciona)
+        console.log(`Using server time for Bybit: ${bybitTimestamp}`);
         const bybitBaseUrl = isDemo ? 'https://api-demo.bybit.com' : 'https://api.bybit.com';
         const accountTypeParam = 'UNIFIED';
         const params = `accountType=${accountTypeParam}`;
-        // const recvWindow = 5000; // No incluir en la firma para este endpoint
-
-        // Firma V5 GET: timestamp + apiKey + queryString (SIN recvWindow)
-        const signPayload = `${timestamp}${apiKey}${params}`;
-        // console.log(`Bybit Sign Payload (No RecvWindow - accountType=${accountTypeParam}):`, signPayload); // Eliminado
-
+        const signPayload = `${bybitTimestamp}${apiKey}${params}`;
         const signature = createNodeSignature(signPayload, secretKey);
-        const bybitUrl = `${bybitBaseUrl}/v5/account/wallet-balance`; // Pasar params como 'params' en axios
+        const bybitUrl = `${bybitBaseUrl}/v5/account/wallet-balance`;
 
-        // console.log(`Calling Bybit API (${isDemo ? 'Demo Trading' : 'Mainnet'}) for ${subaccountName}... URL: ${bybitUrl}`); // Eliminado
         const headersToSend = {
           'X-BAPI-API-KEY': apiKey,
-          'X-BAPI-TIMESTAMP': String(timestamp),
-          // No enviar X-BAPI-RECV-WINDOW si no está en la firma
+          'X-BAPI-TIMESTAMP': String(bybitTimestamp),
           'X-BAPI-SIGN': signature,
           'Content-Type': 'application/json',
         };
-        // console.log(`Calling Bybit API (${isDemo ? 'Demo Trading' : 'Mainnet'}) Headers:`, JSON.stringify(headersToSend)); // Eliminado
 
-        // Usar axios para la llamada a Bybit
         const response = await axios.get(bybitUrl, {
-          params: { accountType: accountTypeParam }, // Pasar parámetros aquí
+          params: { accountType: accountTypeParam },
           headers: headersToSend,
-          httpsAgent: proxyAgent // Pasar agente proxy
+          httpsAgent: proxyAgent
         });
-        // console.log('Bybit API status:', response.status); // Eliminado
-
-        apiResponse = response.data; // axios ya parsea JSON por defecto
-
+        apiResponse = response.data;
         if (response.status !== 200) throw new Error(`Bybit API Error ${response.status}: ${apiResponse?.retMsg || 'Unknown error'}`);
         if (apiResponse.retCode !== 0) throw new Error(`Bybit API Error (${apiResponse.retCode}): ${apiResponse.retMsg}`);
-        // console.log('Bybit API call successful.'); // Eliminado
 
-        // Procesar respuesta Bybit (sumar usdValue)
+        // Procesar respuesta Bybit...
         let calculatedUsdTotalBybit = 0;
         const processedAssetsBybit = apiResponse.result?.list?.[0]?.coin?.map((asset: any) => {
              const usdVal = parseFloat(asset.usdValue || '0');
              calculatedUsdTotalBybit += usdVal;
              return { coin: asset.coin, walletBalance: parseFloat(asset.walletBalance || '0'), usdValue: usdVal };
-        }).filter((a: any) => a.walletBalance > 0) || []; // Filtrar 0 balance
-
+        }).filter((a: any) => a.walletBalance > 0) || [];
         balanceDataFromExchange = {
-             balance: calculatedUsdTotalBybit, 
+             balance: calculatedUsdTotalBybit,
              assets: processedAssetsBybit
         };
-        // --- FIN BYBIT API LOGIC ---
 
     } else if (isBinance) {
-        // --- BINANCE API LOGIC ---
+        // *** Obtener timestamp estándar UTC ANTES de firmar para Binance ***
+        const binanceTimestamp = await getStandardUtcTime(); 
+        console.log(`Using standard UTC time for Binance: ${binanceTimestamp}`);
+
         const binanceBaseUrl = isDemo ? 'https://testnet.binance.vision' : 'https://api.binance.com';
         const endpoint = '/api/v3/account';
-        const recvWindowBinance = 5000; // Binance sí lo usa en la query string firmada
+        const recvWindowBinance = 5000;
         const queryStringParams = { // Parámetros para axios
             recvWindow: recvWindowBinance,
-            timestamp: timestamp
+            timestamp: binanceTimestamp // <--- Usar timestamp estándar
         };
         // Crear la cadena de consulta manualmente SÓLO para la firma
-        const queryStringForSig = `recvWindow=${recvWindowBinance}&timestamp=${timestamp}`;
+        const queryStringForSig = `recvWindow=${recvWindowBinance}&timestamp=${binanceTimestamp}`; // <--- Usar timestamp estándar
         const signature = createNodeSignature(queryStringForSig, secretKey);
 
         const headersToSendBinance = {
             'X-MBX-APIKEY': apiKey,
             'Content-Type': 'application/json'
         };
-        // console.log(`Calling Binance API (${isDemo ? 'Testnet' : 'Mainnet'}) Headers:`, JSON.stringify(headersToSendBinance)); // Eliminado
 
-        // Usar axios para la llamada a Binance
         const response = await axios.get(`${binanceBaseUrl}${endpoint}`, {
-            params: { ...queryStringParams, signature: signature }, // Añadir firma a los params
+            params: { ...queryStringParams, signature: signature },
             headers: headersToSendBinance,
-            httpsAgent: proxyAgent // Pasar agente proxy
+            httpsAgent: proxyAgent
         });
-        // console.log('Binance API status:', response.status); // Eliminado
-
-        apiResponse = response.data; // axios parsea JSON
-
+        apiResponse = response.data;
         if (response.status !== 200) {
              throw new Error(`Binance API HTTP Error ${response.status}: ${apiResponse?.msg || 'Unknown error'}`);
         }
-        // Binance usa 'code' para errores lógicos, pero axios lanza error en status != 2xx
-        // La comprobación apiResponse.code podría no ser necesaria si axios ya lanzó error,
-        // pero la dejamos por si acaso Binance devuelve 200 con un código de error.
         if (apiResponse.code) {
             throw new Error(`Binance API Logic Error (${apiResponse.code}): ${apiResponse.msg}`);
         }
-        // console.log('Binance API call successful.'); // Eliminado
 
-        // Procesar respuesta Binance (calcular usdValue)
-        const symbolsToFetch = ['BTCUSDT', 'ETHUSDT']; 
-        prices = await getTickerPrices(symbolsToFetch);
+        // Procesar respuesta Binance...
+        const symbolsToFetch = ['BTCUSDT', 'ETHUSDT'];
+        prices = await getTickerPrices(symbolsToFetch); // Esto ya usa el proxy si está configurado
         const btcPriceBinance = prices['BTCUSDT'] || 0;
         const ethPriceBinance = prices['ETHUSDT'] || 0;
 
@@ -310,14 +309,12 @@ export async function POST(request: Request) {
              calculatedUsdTotalBinance += usdValue;
              return { coin: asset.asset, walletBalance: walletBalance, usdValue: usdValue };
         }).filter((asset: any) => asset.walletBalance > 0) || [];
-
         balanceDataFromExchange = {
             balance: calculatedUsdTotalBinance,
             assets: processedAssetsBinance
         };
-        // --- FIN BINANCE API LOGIC ---
+
     } else {
-         // Ya manejado arriba, pero por si acaso
          throw new Error("Could not determine exchange type.");
     }
 
