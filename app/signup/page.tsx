@@ -65,6 +65,7 @@ const translations = {
     dateOfBirth: "Fecha de nacimiento",
     invalidDateOfBirth: "Debes tener al menos 18 años",
     dateFormat: "DD/MM/AAAA",
+    receiveUpdatesLabel: "Deseo recibir actualizaciones y noticias por correo.",
     leftSection: {
       userImprovement: "Mejora de Usuarios",
       monthlyProgress: "Progreso mensual",
@@ -124,6 +125,7 @@ const translations = {
     dateOfBirth: "Date of birth",
     invalidDateOfBirth: "You must be at least 18 years old",
     dateFormat: "DD/MM/YYYY",
+    receiveUpdatesLabel: "I wish to receive updates and news by email.",
     leftSection: {
       userImprovement: "User Improvement",
       monthlyProgress: "Monthly progress",
@@ -183,6 +185,7 @@ const translations = {
     dateOfBirth: "Geburtsdatum",
     invalidDateOfBirth: "Sie müssen mindestens 18 Jahre alt sein",
     dateFormat: "TT/MM/JJJJ",
+    receiveUpdatesLabel: "Ich möchte Updates und Neuigkeiten per E-Mail erhalten.",
     leftSection: {
       userImprovement: "Benutzerverbesserung",
       monthlyProgress: "Monatlicher Fortschritt",
@@ -252,6 +255,7 @@ export default function SignUpPage() {
   const [dobYear, setDobYear] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const datePickerRef = useRef<HTMLDivElement>(null);
+  const [receiveUpdates, setReceiveUpdates] = useState(false); // <-- Nuevo estado
 
   useEffect(() => {
     // Cargar el idioma guardado o usar inglés por defecto
@@ -447,7 +451,13 @@ export default function SignUpPage() {
 
     try {
       const fullName = `${name} ${lastName}`.trim();
-      const { user } = await signUpWithEmail(email, password, fullName, formattedDate);
+      const { user } = await signUpWithEmail(
+        email, 
+        password, 
+        fullName, 
+        formattedDate, // Pasar fecha formateada
+        receiveUpdates // <-- Pasar nuevo estado
+      );
       
       if (user) {
         setMessageType('success');
@@ -1314,6 +1324,25 @@ export default function SignUpPage() {
                         </motion.p>
                       )}
                     </AnimatePresence>
+
+                    {/* Checkbox para recibir actualizaciones */}
+                    <div className="flex items-start">
+                      <div className="flex items-center h-5">
+                        <input
+                          id="receive-updates"
+                          name="receive-updates"
+                          type="checkbox"
+                          checked={receiveUpdates}
+                          onChange={(e) => setReceiveUpdates(e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0 transition-colors duration-200 ease-in-out cursor-pointer"
+                        />
+                      </div>
+                      <div className="ml-3 text-sm">
+                        <label htmlFor="receive-updates" className="text-gray-700 dark:text-gray-300 select-none cursor-pointer">
+                          {t.receiveUpdatesLabel}
+                        </label>
+                      </div>
+                    </div>
 
                     {message && (
                       <motion.div

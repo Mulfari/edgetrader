@@ -221,7 +221,7 @@ export const signInWithEmail = async (email: string, password: string) => {
   }
 };
 
-export const signUpWithEmail = async (email: string, password: string, name?: string, dateOfBirth?: string) => {
+export const signUpWithEmail = async (email: string, password: string, name?: string, dateOfBirth?: string, receiveUpdates?: boolean) => {
   if (!email || !password) {
     throw new Error('Email y contraseña son requeridos');
   }
@@ -339,7 +339,8 @@ export const signUpWithEmail = async (email: string, password: string, name?: st
           date_of_birth: formattedDate,
           registration_ip: await fetch('https://api.ipify.org?format=json').then(res => res.json()).then(data => data.ip),
           registration_timestamp: new Date().toISOString(),
-          registration_user_agent: window.navigator.userAgent
+          registration_user_agent: window.navigator.userAgent,
+          receive_updates: receiveUpdates ?? false
         },
         emailRedirectTo: `${window.location.origin}/confirm-email`
       }
