@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto'; // Usar crypto de Node.js
+import { HttpsProxyAgent } from 'https-proxy-agent'; // Importar el agente proxy
 
 // Helper para crear la firma HMAC-SHA256 en Node.js
 function createNodeSignature(payload: string, secret: string): string {
@@ -10,11 +11,28 @@ function createNodeSignature(payload: string, secret: string): string {
     .digest('hex');
 }
 
-// Helper para obtener precio de BTC (simple)
+// Configurar el agente proxy desde variables de entorno
+const proxyUrl = process.env.DECODO_PROXY_URL;
+let proxyAgent: HttpsProxyAgent<string> | undefined;
+if (proxyUrl) {
+  try {
+    proxyAgent = new HttpsProxyAgent(proxyUrl);
+    console.log("Proxy agent configured using DECODO_PROXY_URL.");
+  } catch (e) {
+    console.error("Failed to create proxy agent from DECODO_PROXY_URL:", e);
+    // Continuar sin proxy si la URL es inválida
+  }
+} else {
+  console.warn("DECODO_PROXY_URL environment variable not set. Proceeding without proxy.");
+}
+
+// Helper para obtener precio de BTC (simple) - ¡También necesita el proxy!
 async function getBtcPrice(): Promise<number> {
   try {
     // Usar API pública de Binance (no requiere auth)
-    const response = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+    const response = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT', {
+       dispatcher: proxyAgent // <--- Añadir dispatcher proxy
+    } as any); // <--- Forzar tipo any
     if (!response.ok) {
       console.warn(`Failed to fetch BTC price from Binance: ${response.status}`);
       return 0; // Devolver 0 o manejar error si no se obtiene precio
@@ -33,18 +51,22 @@ async function getBtcPrice(): Promise<number> {
   }
 }
 
-// Helper para obtener precios (MUY ampliado)
+// Helper para obtener precios (MUY ampliado) - ¡También necesita el proxy!
 async function getTickerPrices(symbols: string[]): Promise<Record<string, number>> {
   if (symbols.length === 0) return {};
   const endpoint = `https://api.binance.com/api/v3/ticker/price?symbols=${JSON.stringify(symbols)}`;
   const prices: Record<string, number> = {};
   try {
-    const response = await fetch(endpoint);
+    const response = await fetch(endpoint, {
+       dispatcher: proxyAgent // <--- Añadir dispatcher proxy
+    } as any); // <--- Forzar tipo any
     if (!response.ok) {
       console.warn(`Price fetch failed (${response.status}) for symbols: ${JSON.stringify(symbols)}. Trying individually.`);
       // Intentar obtener uno por uno si falla el batch
       for (const symbol of symbols) {
-          const singleResponse = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+          const singleResponse = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`, {
+             dispatcher: proxyAgent // <--- Añadir dispatcher proxy
+          } as any); // <--- Forzar tipo any
           if(singleResponse.ok) {
               const data = await singleResponse.json();
               const price = parseFloat(data?.price);
@@ -176,8 +198,9 @@ export async function POST(request: Request) {
 
         const response = await fetch(bybitUrl, {
           method: 'GET',
-          headers: headersToSend, 
-        });
+          headers: headersToSend,
+          dispatcher: proxyAgent // <--- Añadir dispatcher proxy
+        } as any); // <--- Forzar tipo any
         // console.log('Bybit API status:', response.status); // Eliminado
 
         const responseText = await response.text();
@@ -229,7 +252,8 @@ export async function POST(request: Request) {
         const response = await fetch(requestUrl, {
             method: 'GET',
             headers: headersToSendBinance, // Usar el objeto
-        });
+            dispatcher: proxyAgent // <--- Añadir dispatcher proxy
+        } as any); // <--- Forzar tipo any
         // console.log('Binance API status:', response.status); // Eliminado
 
         // Binance también puede devolver no-JSON en errores HTTP
@@ -327,6 +351,8 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error(`Error processing balance for subaccount ${subaccountId} (${exchangeName || 'Unknown'}):`, error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    // Añadir el log del error original si aún no lo tienes
+    console.error("Original error details:", error); 
     // Evitar exponer detalles internos en producción si no es necesario
     const clientErrorMessage = errorMessage.includes('subaccount') || errorMessage.includes('API key') ? errorMessage : `Failed to fetch balance for ${exchangeName || 'exchange'}`;
     return NextResponse.json({ success: false, error: clientErrorMessage }, { status: 500 });

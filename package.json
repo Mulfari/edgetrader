@@ -47,6 +47,7 @@
     "date-fns": "^4.1.0",
     "firebase": "^11.6.0",
     "framer-motion": "^12.4.10",
+    "https-proxy-agent": "^7.0.6",
     "i18next": "^24.2.3",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.475.0",
