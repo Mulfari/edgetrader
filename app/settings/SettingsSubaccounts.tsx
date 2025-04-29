@@ -60,7 +60,7 @@ export default function SettingsSubaccounts() {
   const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
   const [selectedSubaccountId, setSelectedSubaccountId] = useState<string | null>(null);
   const [balanceData, setBalanceData] = useState<{
-    balance: number;
+    balanceUsd: number;
     assets: Array<{
       coin: string;
       walletBalance: number;
@@ -276,8 +276,16 @@ export default function SettingsSubaccounts() {
         return;
       }
       
+      // Log the exact structure of the received data for debugging
+      console.log("Data received successfully:", JSON.stringify(result.data, null, 2));
+
       // Si todo fue bien, establecer los datos
-      setBalanceData(result.data || { balance: 0, assets: [] });
+      // Asegúrate de que la estructura coincida con lo esperado por el componente
+      // La API devuelve { balanceUsd: number, assets: [...] }
+      // Adaptamos el estado o la lectura aquí si es necesario.
+      // Si el estado espera `balance`, podemos hacer: setBalanceData({ balance: result.data?.balanceUsd ?? 0, assets: result.data?.assets ?? [] });
+      // O, mejor, adaptar el componente para usar `balanceUsd`. Vamos a hacer esto último.
+      setBalanceData(result.data || { balanceUsd: 0, assets: [] }); // Asumimos que la API devuelve la estructura correcta ahora
 
     } catch (error: any) {
       console.error("Error no controlado en fetchBalance:", error);
@@ -596,7 +604,7 @@ export default function SettingsSubaccounts() {
                         Balance Total Estimado (USD):
                     </h3>
                     <p className="text-2xl font-semibold text-foreground">
-                        ${balanceData.balance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ${(balanceData?.balanceUsd ?? 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                     </div>
                     
@@ -622,8 +630,8 @@ export default function SettingsSubaccounts() {
                             {balanceData.assets.map((asset, index) => (
                                 <TableRow key={asset.coin + index} className="hover:bg-muted/50">
                                 <TableCell className="font-medium">{asset.coin}</TableCell>
-                                <TableCell className="text-right font-mono text-sm">{asset.walletBalance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 8 })}</TableCell>
-                                <TableCell className="text-right font-mono text-sm">${asset.usdValue.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                <TableCell className="text-right font-mono text-sm">{(asset?.walletBalance ?? 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 8 })}</TableCell>
+                                <TableCell className="text-right font-mono text-sm">${(asset?.usdValue ?? 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                                 </TableRow>
                             ))}
                             </TableBody>
