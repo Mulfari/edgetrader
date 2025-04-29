@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto'; // Usar crypto de Node.js
 import { HttpsProxyAgent } from 'https-proxy-agent'; // Importar el agente proxy
+import axios from 'axios'; // Importar axios
 
 // Helper para crear la firma HMAC-SHA256 en Node.js
 function createNodeSignature(payload: string, secret: string): string {
@@ -30,24 +31,23 @@ if (proxyUrl) {
 async function getBtcPrice(): Promise<number> {
   try {
     // Usar API pública de Binance (no requiere auth)
-    const response = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT', {
-       dispatcher: proxyAgent // <--- Añadir dispatcher proxy
-    } as any); // <--- Forzar tipo any
-    if (!response.ok) {
+    const response = await axios.get('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT', {
+      httpsAgent: proxyAgent // <--- Pasar agente a axios
+    });
+    if (response.status !== 200) {
       console.warn(`Failed to fetch BTC price from Binance: ${response.status}`);
-      return 0; // Devolver 0 o manejar error si no se obtiene precio
+      return 0;
     }
-    const data = await response.json();
-    const price = parseFloat(data?.price);
+    const price = parseFloat(response.data?.price);
     if (isNaN(price)) {
-        console.warn("Failed to parse BTC price from Binance response:", data);
+        console.warn("Failed to parse BTC price from Binance response:", response.data);
         return 0;
     }
     console.log("Current BTC Price (USDT):", price);
     return price;
   } catch (error) {
     console.error("Error fetching BTC price:", error);
-    return 0; // Devolver 0 en caso de error
+    return 0;
   }
 }
 
@@ -57,27 +57,30 @@ async function getTickerPrices(symbols: string[]): Promise<Record<string, number
   const endpoint = `https://api.binance.com/api/v3/ticker/price?symbols=${JSON.stringify(symbols)}`;
   const prices: Record<string, number> = {};
   try {
-    const response = await fetch(endpoint, {
-       dispatcher: proxyAgent // <--- Añadir dispatcher proxy
-    } as any); // <--- Forzar tipo any
-    if (!response.ok) {
+    const response = await axios.get(endpoint, {
+      httpsAgent: proxyAgent // <--- Pasar agente a axios
+    });
+    if (response.status !== 200) {
       console.warn(`Price fetch failed (${response.status}) for symbols: ${JSON.stringify(symbols)}. Trying individually.`);
       // Intentar obtener uno por uno si falla el batch
       for (const symbol of symbols) {
-          const singleResponse = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`, {
-             dispatcher: proxyAgent // <--- Añadir dispatcher proxy
-          } as any); // <--- Forzar tipo any
-          if(singleResponse.ok) {
-              const data = await singleResponse.json();
-              const price = parseFloat(data?.price);
-              if (!isNaN(price)) prices[symbol] = price;
-          } else {
-               console.warn(`Failed to fetch individual price for ${symbol}: ${singleResponse.status}`);
+          try {
+            const singleResponse = await axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`, {
+              httpsAgent: proxyAgent // <--- Pasar agente a axios
+            });
+            if(singleResponse.status === 200) {
+                const price = parseFloat(singleResponse.data?.price);
+                if (!isNaN(price)) prices[symbol] = price;
+            } else {
+                 console.warn(`Failed to fetch individual price for ${symbol}: ${singleResponse.status}`);
+            }
+          } catch (singleError) {
+             console.error(`Error fetching individual price for ${symbol}:`, singleError);
           }
       }
       return prices; // Devolver lo que se pudo obtener
     }
-    const data = await response.json();
+    const data = response.data;
     if (Array.isArray(data)) {
         data.forEach((ticker: any) => {
             const price = parseFloat(ticker?.price);
@@ -89,7 +92,7 @@ async function getTickerPrices(symbols: string[]): Promise<Record<string, number
     return prices;
   } catch (error) {
     console.error("Error fetching ticker prices:", error);
-    return prices; // Devolver lo que se tenga si hay error
+    return prices;
   }
 }
 
@@ -98,15 +101,24 @@ export async function POST(request: Request) {
   if (proxyAgent) {
     try {
       console.log("Attempting proxy test call to https://ip.decodo.com/json...");
-      const proxyTestResponse = await fetch('https://ip.decodo.com/json', {
-        dispatcher: proxyAgent
-      } as any);
-      const proxyTestData = await proxyTestResponse.json();
-      console.log("Proxy test successful! IP seen by service:", JSON.stringify(proxyTestData));
-    } catch (proxyTestError) {
-      console.error("Proxy test FAILED:", proxyTestError);
+      const proxyTestResponse = await axios.get('https://ip.decodo.com/json', {
+        httpsAgent: proxyAgent // <--- Pasar agente a axios
+      });
+      console.log("Proxy test successful! IP seen by service:", JSON.stringify(proxyTestResponse.data));
+    } catch (proxyTestError: any) {
+      // Loguear detalles específicos del error de axios si existen
+      if (axios.isAxiosError(proxyTestError)) {
+        console.error("Proxy test FAILED (Axios Error):", {
+          message: proxyTestError.message,
+          code: proxyTestError.code,
+          status: proxyTestError.response?.status,
+          data: proxyTestError.response?.data,
+        });
+      } else {
+        console.error("Proxy test FAILED (Unknown Error):", proxyTestError);
+      }
       // Considerar devolver un error aquí si la prueba del proxy es crucial
-      // return NextResponse.json({ success: false, error: 'Proxy test failed', details: proxyTestError }, { status: 500 });
+      // return NextResponse.json({ success: false, error: 'Proxy test failed' }, { status: 500 });
     }
   } else {
     console.log("Skipping proxy test as proxyAgent is not configured.");
@@ -123,7 +135,6 @@ export async function POST(request: Request) {
     if (!subaccountId) {
       return NextResponse.json({ success: false, error: 'Missing subaccountId' }, { status: 400 });
     }
-    // console.log(`API Route received request for subaccountId: ${subaccountId}`); // Eliminado
 
     // Crear cliente Supabase con Service Role Key desde variables de entorno
     // Asegúrate de que estas variables estén disponibles en tu entorno de ejecución Next.js
@@ -203,7 +214,7 @@ export async function POST(request: Request) {
         // console.log(`Bybit Sign Payload (No RecvWindow - accountType=${accountTypeParam}):`, signPayload); // Eliminado
 
         const signature = createNodeSignature(signPayload, secretKey);
-        const bybitUrl = `${bybitBaseUrl}/v5/account/wallet-balance?${params}`;
+        const bybitUrl = `${bybitBaseUrl}/v5/account/wallet-balance`; // Pasar params como 'params' en axios
 
         // console.log(`Calling Bybit API (${isDemo ? 'Demo Trading' : 'Mainnet'}) for ${subaccountName}... URL: ${bybitUrl}`); // Eliminado
         const headersToSend = {
@@ -215,24 +226,17 @@ export async function POST(request: Request) {
         };
         // console.log(`Calling Bybit API (${isDemo ? 'Demo Trading' : 'Mainnet'}) Headers:`, JSON.stringify(headersToSend)); // Eliminado
 
-        const response = await fetch(bybitUrl, {
-          method: 'GET',
+        // Usar axios para la llamada a Bybit
+        const response = await axios.get(bybitUrl, {
+          params: { accountType: accountTypeParam }, // Pasar parámetros aquí
           headers: headersToSend,
-          dispatcher: proxyAgent // <--- Añadir dispatcher proxy
-        } as any); // <--- Forzar tipo any
+          httpsAgent: proxyAgent // Pasar agente proxy
+        });
         // console.log('Bybit API status:', response.status); // Eliminado
 
-        const responseText = await response.text();
-        // console.log('Bybit API Raw Response Text:', responseText); // Eliminado (Quizás mantener para errores 401?) - Lo dejo comentado
+        apiResponse = response.data; // axios ya parsea JSON por defecto
 
-        try {
-            apiResponse = JSON.parse(responseText);
-        } catch (parseError) {
-            console.error('Failed to parse Bybit JSON response:', parseError, {responseText}); // Añadir contexto al error
-            throw new Error(`Bybit API returned non-JSON response (status ${response.status}). Check raw text log.`);
-        }
-
-        if (!response.ok) throw new Error(`Bybit API Error ${response.status}: ${apiResponse?.retMsg || 'Unknown - Check raw text log.'}`);
+        if (response.status !== 200) throw new Error(`Bybit API Error ${response.status}: ${apiResponse?.retMsg || 'Unknown error'}`);
         if (apiResponse.retCode !== 0) throw new Error(`Bybit API Error (${apiResponse.retCode}): ${apiResponse.retMsg}`);
         // console.log('Bybit API call successful.'); // Eliminado
 
@@ -255,40 +259,36 @@ export async function POST(request: Request) {
         const binanceBaseUrl = isDemo ? 'https://testnet.binance.vision' : 'https://api.binance.com';
         const endpoint = '/api/v3/account';
         const recvWindowBinance = 5000; // Binance sí lo usa en la query string firmada
-        const queryString = `recvWindow=${recvWindowBinance}&timestamp=${timestamp}`;
+        const queryStringParams = { // Parámetros para axios
+            recvWindow: recvWindowBinance,
+            timestamp: timestamp
+        };
+        // Crear la cadena de consulta manualmente SÓLO para la firma
+        const queryStringForSig = `recvWindow=${recvWindowBinance}&timestamp=${timestamp}`;
+        const signature = createNodeSignature(queryStringForSig, secretKey);
 
-        // console.log(`Generating Binance signature with querystring: ${queryString}`); // Eliminado
-        const signature = createNodeSignature(queryString, secretKey);
-        const requestUrl = `${binanceBaseUrl}${endpoint}?${queryString}&signature=${signature}`;
-
-        // console.log(`Calling Binance API (${isDemo ? 'Testnet' : 'Mainnet'}) for ${subaccountName}... URL: ${requestUrl}`); // Eliminado
-        const headersToSendBinance = { // Loguear también para Binance por consistencia
+        const headersToSendBinance = {
             'X-MBX-APIKEY': apiKey,
             'Content-Type': 'application/json'
         };
         // console.log(`Calling Binance API (${isDemo ? 'Testnet' : 'Mainnet'}) Headers:`, JSON.stringify(headersToSendBinance)); // Eliminado
 
-        const response = await fetch(requestUrl, {
-            method: 'GET',
-            headers: headersToSendBinance, // Usar el objeto
-            dispatcher: proxyAgent // <--- Añadir dispatcher proxy
-        } as any); // <--- Forzar tipo any
+        // Usar axios para la llamada a Binance
+        const response = await axios.get(`${binanceBaseUrl}${endpoint}`, {
+            params: { ...queryStringParams, signature: signature }, // Añadir firma a los params
+            headers: headersToSendBinance,
+            httpsAgent: proxyAgent // Pasar agente proxy
+        });
         // console.log('Binance API status:', response.status); // Eliminado
 
-        // Binance también puede devolver no-JSON en errores HTTP
-        const responseTextBinance = await response.text();
-        // console.log('Binance API Raw Response Text:', responseTextBinance); // Eliminado - Lo dejo comentado
+        apiResponse = response.data; // axios parsea JSON
 
-        try {
-            apiResponse = JSON.parse(responseTextBinance);
-        } catch (parseError) {
-             console.error('Failed to parse Binance JSON response:', parseError, {responseTextBinance}); // Añadir contexto al error
-            throw new Error(`Binance API returned non-JSON response (status ${response.status}). Check raw text log.`);
+        if (response.status !== 200) {
+             throw new Error(`Binance API HTTP Error ${response.status}: ${apiResponse?.msg || 'Unknown error'}`);
         }
-
-        if (!response.ok) {
-             throw new Error(`Binance API HTTP Error ${response.status}: ${apiResponse?.msg || 'Unknown - Check raw text log.'}`);
-        }
+        // Binance usa 'code' para errores lógicos, pero axios lanza error en status != 2xx
+        // La comprobación apiResponse.code podría no ser necesaria si axios ya lanzó error,
+        // pero la dejamos por si acaso Binance devuelve 200 con un código de error.
         if (apiResponse.code) {
             throw new Error(`Binance API Logic Error (${apiResponse.code}): ${apiResponse.msg}`);
         }
@@ -369,12 +369,27 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error(`Error processing balance for subaccount ${subaccountId} (${exchangeName || 'Unknown'}):`, error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    // Añadir el log del error original si aún no lo tienes
-    console.error("Original error details:", error); 
-    // Evitar exponer detalles internos en producción si no es necesario
-    const clientErrorMessage = errorMessage.includes('subaccount') || errorMessage.includes('API key') ? errorMessage : `Failed to fetch balance for ${exchangeName || 'exchange'}`;
-    return NextResponse.json({ success: false, error: clientErrorMessage }, { status: 500 });
+    // Mejorar log de errores de Axios
+    if (axios.isAxiosError(error)) {
+         console.error("Original Axios error details:", {
+            message: error.message,
+            code: error.code,
+            status: error.response?.status,
+            data: error.response?.data,
+            config: { url: error.config?.url, method: error.config?.method, headers: error.config?.headers, params: error.config?.params } // Log config sin data/secret
+        });
+        const status = error.response?.status;
+        const errorMsgFromServer = error.response?.data?.msg || error.response?.data?.retMsg || error.message;
+        const clientErrorMessage = status === 451 ? `Binance API Error: Service unavailable from restricted location.` : 
+                                 status === 403 ? `Bybit API Error: Forbidden (Check API Key Permissions).` :
+                                 `Failed to fetch balance for ${exchangeName || 'exchange'} (${status || error.code}): ${errorMsgFromServer}`;
+         return NextResponse.json({ success: false, error: clientErrorMessage }, { status: status || 500 });
+    } else {
+        console.error("Original non-Axios error details:", error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        const clientErrorMessage = errorMessage.includes('subaccount') || errorMessage.includes('API key') ? errorMessage : `Failed to fetch balance for ${exchangeName || 'exchange'}`;
+        return NextResponse.json({ success: false, error: clientErrorMessage }, { status: 500 });
+    }
   }
 }
 
