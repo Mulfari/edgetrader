@@ -38,7 +38,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 // Lista de exchanges disponibles
 const AVAILABLE_EXCHANGES = [
-  { id: "binance", name: "Binance" },
+  // { id: "binance", name: "Binance" }, // Eliminado
   { id: "bybit", name: "Bybit" }
 ];
 
@@ -47,7 +47,7 @@ export default function SettingsSubaccounts() {
   const [selectedAccount, setSelectedAccount] = useState<Subaccount | null>(null);
   const [form, setForm] = useState({
     identifier: "",
-    name: AVAILABLE_EXCHANGES[0].id, // Default a la primera opción (Binance)
+    name: AVAILABLE_EXCHANGES[0].id, // Ahora el default será Bybit
     apiKey: "",
     secretKey: "",
     isDemo: false

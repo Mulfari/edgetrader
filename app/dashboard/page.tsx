@@ -32,9 +32,6 @@ type BalanceDisplayType = 'total' | 'real' | 'demo';
 // Tipo para las opciones de operaciones
 type OperationsDisplayType = 'open' | 'closed' | 'total';
 
-// Añadir tipo ValueDisplayCurrency
-type ValueDisplayCurrency = 'USD' | 'EUR' | 'GBP' | 'BTC' | 'ETH' | 'USDT';
-
 // Definir el tipo AccountStats
 type AccountStats = {
   totalAccounts: number;
@@ -59,8 +56,6 @@ interface BalanceFetchResult {
         success: boolean; 
         data?: { 
             balanceUsd: number; 
-            balanceBtc: number; 
-            balanceUsdt: number; 
             assets: any[] 
         }; 
         error?: string 
@@ -103,21 +98,6 @@ export default function DashboardPage() {
   const [totalUsdBalance, setTotalUsdBalance] = useState<number | null>(null);
   const [realUsdBalance, setRealUsdBalance] = useState<number | null>(null);
   const [demoUsdBalance, setDemoUsdBalance] = useState<number | null>(null);
-  const [totalBtcBalance, setTotalBtcBalance] = useState<number | null>(null);
-  const [realBtcBalance, setRealBtcBalance] = useState<number | null>(null);
-  const [demoBtcBalance, setDemoBtcBalance] = useState<number | null>(null);
-  const [totalUsdtBalance, setTotalUsdtBalance] = useState<number | null>(null);
-  const [realUsdtBalance, setRealUsdtBalance] = useState<number | null>(null);
-  const [demoUsdtBalance, setDemoUsdtBalance] = useState<number | null>(null);
-  const [totalEurBalance, setTotalEurBalance] = useState<number | null>(null);
-  const [realEurBalance, setRealEurBalance] = useState<number | null>(null);
-  const [demoEurBalance, setDemoEurBalance] = useState<number | null>(null);
-  const [totalGbpBalance, setTotalGbpBalance] = useState<number | null>(null);
-  const [realGbpBalance, setRealGbpBalance] = useState<number | null>(null);
-  const [demoGbpBalance, setDemoGbpBalance] = useState<number | null>(null);
-  const [totalEthBalance, setTotalEthBalance] = useState<number | null>(null);
-  const [realEthBalance, setRealEthBalance] = useState<number | null>(null);
-  const [demoEthBalance, setDemoEthBalance] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [activeSubAccounts, setActiveSubAccounts] = useState(0);
@@ -133,15 +113,6 @@ export default function DashboardPage() {
   const [tooltipContent, setTooltipContent] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [valueDisplayCurrency, setValueDisplayCurrency] = useState<ValueDisplayCurrency>(() => {
-       if (typeof window !== 'undefined') {
-            const saved = safeLocalStorage.getItem('dashboardCurrencyDisplay');
-            if (saved && ['USD', 'EUR', 'GBP', 'BTC', 'ETH', 'USDT'].includes(saved)) {
-                return saved as ValueDisplayCurrency;
-            }
-       }
-       return 'USD';
-  });
   const router = useRouter();
   const { requireAuth, user } = useSupabaseAuth();
   const { toast } = useToast();
@@ -165,21 +136,11 @@ export default function DashboardPage() {
     setFetchError(null);
     // Resetear TODOS los balances
     setTotalUsdBalance(null); setRealUsdBalance(null); setDemoUsdBalance(null);
-    setTotalBtcBalance(null); setRealBtcBalance(null); setDemoBtcBalance(null);
-    setTotalUsdtBalance(null); setRealUsdtBalance(null); setDemoUsdtBalance(null);
-    setTotalEurBalance(null); setRealEurBalance(null); setDemoEurBalance(null);
-    setTotalGbpBalance(null); setRealGbpBalance(null); setDemoGbpBalance(null);
-    setTotalEthBalance(null); setRealEthBalance(null); setDemoEthBalance(null);
     // Resetear contadores
     setActiveSubAccounts(0); setRealAccountCount(0); setDemoAccountCount(0);
     setExchanges(0);
     // Variables de agregación
     let aggTotalUsd = 0, aggRealUsd = 0, aggDemoUsd = 0;
-    let aggTotalBtc = 0, aggRealBtc = 0, aggDemoBtc = 0;
-    let aggTotalEth = 0, aggRealEth = 0, aggDemoEth = 0;
-    let aggTotalEur = 0, aggRealEur = 0, aggDemoEur = 0;
-    let aggTotalGbp = 0, aggRealGbp = 0, aggDemoGbp = 0;
-    let aggTotalUsdt = 0, aggRealUsdt = 0, aggDemoUsdt = 0;
     let totalAccountCount = 0, realAccounts = 0, demoAccounts = 0;
     let exchangeSet = new Set<string>();
 
@@ -196,26 +157,11 @@ export default function DashboardPage() {
         setTotalUsdBalance(0);
         setRealUsdBalance(0);
         setDemoUsdBalance(0);
-        setTotalBtcBalance(0);
-        setRealBtcBalance(0);
-        setDemoBtcBalance(0);
-        setTotalUsdtBalance(0);
-        setRealUsdtBalance(0);
-        setDemoUsdtBalance(0);
-        setTotalEurBalance(0);
-        setRealEurBalance(0);
-        setDemoEurBalance(0);
-        setTotalGbpBalance(0);
-        setRealGbpBalance(0);
-        setDemoGbpBalance(0);
-        setTotalEthBalance(0);
-        setRealEthBalance(0);
-        setDemoEthBalance(0);
         setActiveSubAccounts(0);
         setRealAccountCount(0);
         setDemoAccountCount(0);
         setExchanges(0);
-      setIsLoading(false);
+        setIsLoading(false);
         return;
       }
 
@@ -267,40 +213,13 @@ export default function DashboardPage() {
       let failedFetches = 0;
       results.forEach(result => {
         if (result.status === 'fulfilled' && result.value?.success) {
-          // Explicitly cast data to the expected nested structure
-          const data = result.value.data as {
-              balanceUsd: number; balanceBtc: number; balanceEth: number;
-              balanceEur: number; balanceGbp: number;
-              balanceUsdt: number; assets: any[];
-          } | undefined; // Keep undefined check
-
-          // Extraer todos los balances
+          // Extraer solo balance USD
+          const data = result.value.data as { balanceUsd: number; assets: any[] } | undefined;
           const balanceUsd = data?.balanceUsd || 0;
-          const balanceBtc = data?.balanceBtc || 0;
-          const balanceEth = data?.balanceEth || 0; // Should now be recognized
-          const balanceEur = data?.balanceEur || 0; // Should now be recognized
-          const balanceGbp = data?.balanceGbp || 0; // Should now be recognized
-          const balanceUsdt = data?.balanceUsdt || 0;
 
           aggTotalUsd += balanceUsd;
-          aggTotalBtc += balanceBtc;
-          aggTotalUsdt += balanceUsdt;
-          aggTotalEur += balanceEur;
-          aggTotalGbp += balanceGbp;
-
-          if (result.is_demo) {
-              aggDemoUsd += balanceUsd;
-              aggDemoBtc += balanceBtc;
-              aggDemoUsdt += balanceUsdt;
-              aggDemoEur += balanceEur;
-              aggDemoGbp += balanceGbp;
-          } else {
-              aggRealUsd += balanceUsd;
-              aggRealBtc += balanceBtc;
-              aggRealUsdt += balanceUsdt;
-              aggRealEur += balanceEur;
-              aggRealGbp += balanceGbp;
-          }
+          aggRealUsd += balanceUsd;
+          aggDemoUsd += balanceUsd;
           const parts = result.name.split(" - ");
           const exchangeName = parts.length > 1 ? parts.slice(1).join(" - ") : result.name;
           if (exchangeName) {
@@ -318,46 +237,14 @@ export default function DashboardPage() {
            setFetchError(`No se pudo obtener el balance de ninguna subcuenta (${failedFetches} errores).`);
        } else if (failedFetches > 0) {
            setFetchError(`No se pudo obtener el balance de ${failedFetches} subcuenta(s). El total puede ser impreciso.`);
-           // Aún así mostramos el balance agregado de las exitosas
            setTotalUsdBalance(aggTotalUsd);
            setRealUsdBalance(aggRealUsd);
            setDemoUsdBalance(aggDemoUsd);
-           setTotalBtcBalance(aggTotalBtc);
-           setRealBtcBalance(aggRealBtc);
-           setDemoBtcBalance(aggDemoBtc);
-           setTotalUsdtBalance(aggTotalUsdt);
-           setRealUsdtBalance(aggRealUsdt);
-           setDemoUsdtBalance(aggDemoUsdt);
-           setTotalEurBalance(aggTotalEur);
-           setRealEurBalance(aggRealEur);
-           setDemoEurBalance(aggDemoEur);
-           setTotalGbpBalance(aggTotalGbp);
-           setRealGbpBalance(aggRealGbp);
-           setDemoGbpBalance(aggDemoGbp);
-           setTotalEthBalance(aggTotalEth);
-           setRealEthBalance(aggRealEth);
-           setDemoEthBalance(aggDemoEth);
            setExchanges(exchangeSet.size); 
        } else {
-           // Todo OK
            setTotalUsdBalance(aggTotalUsd);
            setRealUsdBalance(aggRealUsd);
            setDemoUsdBalance(aggDemoUsd);
-           setTotalBtcBalance(aggTotalBtc);
-           setRealBtcBalance(aggRealBtc);
-           setDemoBtcBalance(aggDemoBtc);
-           setTotalUsdtBalance(aggTotalUsdt);
-           setRealUsdtBalance(aggRealUsdt);
-           setDemoUsdtBalance(aggDemoUsdt);
-           setTotalEurBalance(aggTotalEur);
-           setRealEurBalance(aggRealEur);
-           setDemoEurBalance(aggDemoEur);
-           setTotalGbpBalance(aggTotalGbp);
-           setRealGbpBalance(aggRealGbp);
-           setDemoGbpBalance(aggDemoGbp);
-           setTotalEthBalance(aggTotalEth);
-           setRealEthBalance(aggRealEth);
-           setDemoEthBalance(aggDemoEth);
            setExchanges(exchangeSet.size);
        }
 
@@ -366,25 +253,9 @@ export default function DashboardPage() {
       const message = error.message || "Ocurrió un error al cargar los datos.";
       setFetchError(message);
       toast({ title: "Error", description: message, variant: "destructive" });
-      // Resetear estados en caso de error total
       setTotalUsdBalance(null);
       setRealUsdBalance(null);
       setDemoUsdBalance(null);
-      setTotalBtcBalance(null);
-      setRealBtcBalance(null);
-      setDemoBtcBalance(null);
-      setTotalUsdtBalance(null);
-      setRealUsdtBalance(null);
-      setDemoUsdtBalance(null);
-      setTotalEurBalance(null);
-      setRealEurBalance(null);
-      setDemoEurBalance(null);
-      setTotalGbpBalance(null);
-      setRealGbpBalance(null);
-      setDemoGbpBalance(null);
-      setTotalEthBalance(null);
-      setRealEthBalance(null);
-      setDemoEthBalance(null);
       setActiveSubAccounts(0);
       setRealAccountCount(0);
       setDemoAccountCount(0);
@@ -413,24 +284,20 @@ export default function DashboardPage() {
     });
   }, []);
 
-  const formatValue = (value: number | null, currency: ValueDisplayCurrency) => {
+  const formatValue = (value: number | null) => {
     if (value === null || isNaN(value)) return "--";
-    let options: Intl.NumberFormatOptions = {
-      maximumFractionDigits: 20 // Permitir muchos decimales por defecto
+    const options: Intl.NumberFormatOptions = { 
+      style: 'currency', 
+      currency: 'USD', 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
     };
-    let suffix = '';
-
-    switch(currency) {
-      case 'USD': case 'USDT': options = { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }; break;
-      case 'EUR': options = { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }; break;
-      case 'GBP': options = { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }; break;
-      case 'BTC': options = { minimumFractionDigits: 6, maximumFractionDigits: 8 }; suffix = ' BTC'; break;
-      case 'ETH': options = { minimumFractionDigits: 4, maximumFractionDigits: 6 }; suffix = ' ETH'; break;
-      default:    options = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+    try { 
+      return new Intl.NumberFormat('es-ES', options).format(value);
+    } catch (e) { 
+      console.error("Error formatting number:", e); 
+      return `$${value.toFixed(2)}`; 
     }
-
-    try { return new Intl.NumberFormat('es-ES', options).format(value) + suffix; }
-    catch (e) { console.error("Error formatting number:", e); return String(value) + suffix; }
   };
 
   const getSkeletonOrValue = (value: number | string, size: 'sm' | 'lg' = 'lg') => {
@@ -524,33 +391,13 @@ export default function DashboardPage() {
     setBalanceDisplay(type);
   };
 
-  const handleCurrencyChange = (currency: ValueDisplayCurrency) => {
-    setValueDisplayCurrency(currency);
-    safeLocalStorage.setItem('dashboardCurrencyDisplay', currency);
-  };
-
   const getDisplayBalance = () => {
-    const balanceMap = {
-      USD: { total: totalUsdBalance, real: realUsdBalance, demo: demoUsdBalance },
-      BTC: { total: totalBtcBalance, real: realBtcBalance, demo: demoBtcBalance },
-      ETH: { total: totalEthBalance, real: realEthBalance, demo: demoEthBalance },
-      EUR: { total: totalEurBalance, real: realEurBalance, demo: demoEurBalance },
-      GBP: { total: totalGbpBalance, real: realGbpBalance, demo: demoGbpBalance },
-      USDT:{ total: totalUsdtBalance, real: realUsdtBalance, demo: demoUsdtBalance }
-    };
-    const key = Object.keys(balanceMap).includes(valueDisplayCurrency) ? valueDisplayCurrency : 'USD';
-    const selectedBalances = balanceMap[key as keyof typeof balanceMap]; 
-    return selectedBalances[balanceDisplay] ?? null;
+    switch(balanceDisplay) {
+        case 'real': return realUsdBalance;
+        case 'demo': return demoUsdBalance;
+        default: return totalUsdBalance;
+    }
   };
-
-  const currencyOptions: {value: ValueDisplayCurrency, label: string}[] = [
-    { value: 'USD', label: 'USD ($)'},
-    { value: 'EUR', label: 'EUR (€)'},
-    { value: 'GBP', label: 'GBP (£)'},
-    { value: 'BTC', label: 'Bitcoin (BTC)'},
-    { value: 'ETH', label: 'Ethereum (ETH)'},
-    { value: 'USDT', label: 'Tether (USDT)'}
-  ];
 
   return (
     <div className="px-4 sm:px-6 lg:px-8" onMouseMove={handleMouseMove}>
@@ -591,16 +438,6 @@ export default function DashboardPage() {
                   className={`px-2.5 py-1 rounded-r-md transition-colors ${balanceDisplay === 'demo' ? 'bg-white/20' : 'hover:bg-white/15'}`}
                 >Demo</button>
               </div>
-              <Select value={valueDisplayCurrency} onValueChange={(value) => handleCurrencyChange(value as ValueDisplayCurrency)}>
-                <SelectTrigger className="w-auto h-7 px-2.5 py-1 text-xs bg-white/10 hover:bg-white/15 border-none focus:ring-0 text-white">
-                  <SelectValue placeholder="Moneda..." />
-                </SelectTrigger>
-                <SelectContent className="bg-background/95 backdrop-blur min-w-[150px]">
-                  {currencyOptions.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <button
                 onClick={toggleShowBalance}
                 className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200"
@@ -611,15 +448,9 @@ export default function DashboardPage() {
             </div>
             <div className="text-3xl sm:text-4xl font-bold min-h-[40px] sm:min-h-[48px]">
               {isLoading ? <Skeleton className="h-10 w-40 bg-white/20 rounded-md animate-pulse" /> : (
-                showBalance ? formatValue(getDisplayBalance(), valueDisplayCurrency) : "••••••"
-                  )}
-                </div>
-            {!isLoading && showBalance && (
-              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-white/80 min-h-[16px]">
-                {valueDisplayCurrency !== 'USD' && <span>USD: {formatValue(balanceDisplay === 'real' ? realUsdBalance : balanceDisplay === 'demo' ? demoUsdBalance : totalUsdBalance, 'USD')}</span>}
-                {valueDisplayCurrency !== 'BTC' && <span>BTC: {formatValue(balanceDisplay === 'real' ? realBtcBalance : balanceDisplay === 'demo' ? demoBtcBalance : totalBtcBalance, 'BTC')}</span>}
-              </div>
-            )}
+                showBalance ? formatValue(getDisplayBalance()) : "••••••"
+              )}
+            </div>
           </div>
           <DollarSign className="absolute right-0 bottom-0 h-20 w-20 text-white/10 transform translate-x-4 translate-y-4" />
         </div>
