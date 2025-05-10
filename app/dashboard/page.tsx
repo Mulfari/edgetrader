@@ -25,6 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import WidgetsContainer from "@/components/widgets/WidgetsContainer";
 
 // Tipo para las opciones de balance
 type BalanceDisplayType = 'total' | 'real' | 'demo';
@@ -489,6 +490,8 @@ export default function DashboardPage() {
           <Globe className="absolute right-0 bottom-0 h-20 w-20 text-white/10 transform translate-x-4 translate-y-4" />
         </div>
       </div>
+
+      <WidgetsContainer />
 
       <div className="space-y-4">
         <div id="subaccounts-component" className="px-0 sm:px-2">

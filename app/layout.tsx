@@ -11,7 +11,8 @@ import {
   Home,
   LineChart,
   Wallet,
-  UserCircle
+  UserCircle,
+  LayoutGrid
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -81,6 +82,12 @@ const menuItems = [
     icon: Wallet,
     href: "/wallet",
     description: "Gestión de Fondos"
+  },
+  {
+    name: "Widgets",
+    icon: LayoutGrid,
+    href: "/widgets",
+    description: "Colección de Widgets"
   },
   {
     name: "Configuración",
