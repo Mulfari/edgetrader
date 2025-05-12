@@ -54,7 +54,7 @@ const TOTAL_TIMELINE_WIDTH_MULTIPLIER = 5;
 const DAYS_TOTAL = TOTAL_TIMELINE_WIDTH_MULTIPLIER;
 
 // *** Zona Horaria del Mercado Americano (Ejemplo: Nueva York) ***
-const AMERICAN_MARKET_TZ = "America/New_York";
+// ELIMINAR: const AMERICAN_MARKET_TZ = "America/New_York";
 
 // Interface MarketSession - actualmente no usada pero la dejamos por si se reactiva
 interface MarketSession { /* ... */ }
@@ -198,12 +198,71 @@ const LOCAL_STORAGE_KEY = 'marketTimesWidgetSettings';
 
 // Interfaz para definir la estructura de los ajustes guardados
 interface SavedSettings {
-    // Guardamos el modo activo
-    activeMode: TimeSourceMode | 'local'; // Incluir 'local' aquí solo para la carga desde localStorage
-    // Guardamos la última hora manual fijada (si aplica)
+    activeMode: TimeSourceMode | 'local';
     manualUtcString: string | null;
     autoRecenterEnabled: boolean;
 }
+
+// --- Interfaz para los datos del backend ---
+interface MarketTimeData {
+  id: string;
+  name: string;
+  timeZone: string;
+  openTimeLocal: string; // "HH:mm"
+  closeTimeLocal: string; // "HH:mm"
+  daysOfWeek: number[]; // 0 (Domingo) - 6 (Sábado)
+  // holidays?: string[]; // YYYY-MM-DD
+}
+// --- Interfaz para los segmentos procesados en la línea de tiempo ---
+interface ProcessedMarketSegment {
+    id: string;
+    marketId: string;
+    name: string;
+    startUtc: Date;
+    endUtc: Date;
+    sourceTimeZone: string;
+    leftPercent: number;
+    widthPercent: number;
+    isValidForRender: boolean;
+    colorClass: string;
+    verticalOffsetClass: string;
+    containedMarketIds?: string[];
+    openingMarkVerticalOffsetStyle?: React.CSSProperties; // Para offsets de marcas de apertura
+    leftPercentClose?: number; // Nueva propiedad para la posición de la marca de cierre
+}
+
+// Mapa de colores para los mercados (ID de mercado -> clase de Tailwind)
+const MARKET_COLORS: Record<string, string> = {
+    nyse: 'bg-red-400/30 dark:bg-red-600/30 border-red-500/40 dark:border-red-700/40 hover:bg-red-400/50 dark:hover:bg-red-600/50 hover:border-red-500/70 dark:hover:border-red-700/70',
+    lse: 'bg-blue-400/30 dark:bg-blue-600/30 border-blue-500/40 dark:border-blue-700/40 hover:bg-blue-400/50 dark:hover:bg-blue-600/50 hover:border-blue-500/70 dark:hover:border-blue-700/70',
+    tse: 'bg-green-400/30 dark:bg-green-600/30 border-green-500/40 dark:border-green-700/40 hover:bg-green-400/50 dark:hover:bg-green-600/50 hover:border-green-500/70 dark:hover:border-green-700/70',
+};
+const DEFAULT_MARKET_COLOR = 'bg-gray-400/30 dark:bg-gray-600/30 border-gray-500/40 dark:border-gray-700/40 hover:bg-gray-400/50 dark:hover:bg-gray-600/50 hover:border-gray-500/70 dark:hover:border-gray-700/70';
+
+// Mapa de colores para los segmentos de mercado (fondos y bordes con opacidad)
+const ASIAN_MARKET_SEGMENT_COLOR = 'bg-green-400/30 dark:bg-green-600/30 border-green-500/40 dark:border-green-700/40 hover:bg-green-400/50 dark:hover:bg-green-600/50 hover:border-green-500/70 dark:hover:border-green-700/70';
+const MARKET_SEGMENT_COLORS: Record<string, string> = {
+    nyse: 'bg-red-400/30 dark:bg-red-600/30 border-red-500/40 dark:border-red-700/40 hover:bg-red-400/50 dark:hover:bg-red-600/50 hover:border-red-500/70 dark:hover:border-red-700/70',
+    lse: 'bg-blue-400/30 dark:bg-blue-600/30 border-blue-500/40 dark:border-blue-700/40 hover:bg-blue-400/50 dark:hover:bg-blue-600/50 hover:border-blue-500/70 dark:hover:border-blue-700/70',
+    tse: ASIAN_MARKET_SEGMENT_COLOR,
+    hkex: ASIAN_MARKET_SEGMENT_COLOR,
+    sse: ASIAN_MARKET_SEGMENT_COLOR,
+    asx: ASIAN_MARKET_SEGMENT_COLOR,
+};
+const DEFAULT_SEGMENT_COLOR = 'bg-gray-400/30 dark:bg-gray-600/30 border-gray-500/40 dark:border-gray-700/40 hover:bg-gray-400/50 dark:hover:bg-gray-600/50 hover:border-gray-500/70 dark:hover:border-gray-700/70';
+
+// Mapa de colores sólidos para las marcas de apertura
+const MARKET_OPENING_MARK_COLORS: Record<string, string> = {
+    nyse: 'bg-red-500',
+    lse: 'bg-blue-500',
+    tse: 'bg-green-500',    // Tokio un verde específico
+    hkex: 'bg-yellow-500',  // HK diferente color para marca
+    sse: 'bg-purple-500', // Shanghái diferente color para marca
+    asx: 'bg-pink-500',     // Sídney diferente color para marca
+};
+const DEFAULT_OPENING_MARK_COLOR = 'bg-gray-500';
+
+const ASIAN_MARKET_IDS = ['tse', 'hkex', 'sse', 'asx'];
 
 export default function MarketTimesWidget() {
   // Hora UTC que se usa para posicionar el marcador rojo y como base si no es 'auto' o 'local'
@@ -230,6 +289,12 @@ export default function MarketTimesWidget() {
   const lastWheelSnapTimeRef = useRef(0); // Ref para throttle de la rueda
   const THROTTLE_INTERVAL = 150; // ms - Intervalo para throttle
   const clockUpdateIntervalRef = useRef<NodeJS.Timeout | null>(null); // Ref para el intervalo de actualización del reloj
+  // --- Nuevo estado para los datos de mercado del backend ---
+  const [marketData, setMarketData] = useState<MarketTimeData[]>([]);
+  const [marketDataError, setMarketDataError] = useState<string | null>(null);
+  const [isLoadingMarketData, setIsLoadingMarketData] = useState<boolean>(true);
+  // Nuevo estado para el segmento seleccionado
+  const [selectedSegment, setSelectedSegment] = useState<ProcessedMarketSegment | null>(null);
 
   // Calcular timelineStartDate basado en el estado estable timelineBaseDate
   const timelineStartDate = useMemo(() => {
@@ -244,64 +309,205 @@ export default function MarketTimesWidget() {
       return addDays(startOfDay(timelineBaseDate), -Math.floor(DAYS_TOTAL / 2));
   }, [timelineBaseDate]); // Solo se recalcula si la fecha base cambia
 
-  // *** Calcular segmentos de mercado americano ***
-  const americanMarketSegments = useMemo(() => {
-    const segments = [];
-    // Asegurarse de que timelineStartDate es válida antes de proceder
-    if (!timelineStartDate || !isValid(timelineStartDate)) return [];
+  // *** useEffect para Cargar Datos de Mercado desde el Backend ***
+  useEffect(() => {
+    const fetchMarketData = async () => {
+      setIsLoadingMarketData(true);
+      setMarketDataError(null);
+      try {
+        const response = await fetch('https://btrader-production.up.railway.app/api/market-hours');
+        if (!response.ok) {
+          throw new Error(`Error fetching market data: ${response.statusText}`);
+        }
+        const data: MarketTimeData[] = await response.json();
+        console.log("[MarketTimesWidget] Data received from backend:", JSON.stringify(data)); // <--- LOG AÑADIDO (datos crudos)
+        setMarketData(data);
+      } catch (error) {
+        console.error("[MarketTimesWidget] Failed to load market data:", error);
+        setMarketDataError(error instanceof Error ? error.message : "Unknown error loading market data");
+      } finally {
+        setIsLoadingMarketData(false);
+      }
+    };
 
-    // Horas UTC aproximadas para el mercado de NY (9:30 AM - 4:00 PM ET)
-    // EDT (UTC-4): 9:30 -> 13:30 UTC, 16:00 -> 20:00 UTC
-    // EST (UTC-5): 9:30 -> 14:30 UTC, 16:00 -> 21:00 UTC
-    // Usaremos 13:30-20:00 UTC como una aproximación general.
-    // Es una simplificación y no tiene en cuenta el DST dinámicamente de forma perfecta sin una librería de TZ completa.
-    const MARKET_OPEN_UTC_H = 13;
-    const MARKET_OPEN_UTC_M = 30;
-    const MARKET_CLOSE_UTC_H = 20;
-    const MARKET_CLOSE_UTC_M = 0;
+    fetchMarketData();
+  }, []); // Ejecutar solo una vez al montar
+
+  // Renombrar useMemo y cambiar lo que devuelve
+  const memoizedMarketInfo = useMemo(() => {
+    const individualSegments: ProcessedMarketSegment[] = [];
+    if (!timelineStartDate || !isValid(timelineStartDate) || marketData.length === 0 || isLoadingMarketData) {
+      return { displaySegments: [], allIndividualSegments: [] };
+    }
+
+    // Paso 1: Calcular todos los segmentos individuales
+    marketData.forEach(market => {
+      const [openHLocal, openMLocal] = market.openTimeLocal.split(':').map(Number);
+      const [closeHLocal, closeMLocal] = market.closeTimeLocal.split(':').map(Number);
+    for (let dayOffset = 0; dayOffset < DAYS_TOTAL; dayOffset++) {
+        const currentTimelineDayUtc = addDays(startOfDay(timelineStartDate), dayOffset);
+        const partsFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: market.timeZone, year: 'numeric', month: '2-digit', day: '2-digit' });
+        let datePartsInMarketTz: Record<string, string> = {};
+        try { partsFormatter.formatToParts(currentTimelineDayUtc).forEach(part => { if (part.type !== 'literal') datePartsInMarketTz[part.type] = part.value; });
+        } catch (e) { console.error(`[MW] Err formatting parts for ${market.timeZone}`, e); continue; }
+        if (!datePartsInMarketTz.year || !datePartsInMarketTz.month || !datePartsInMarketTz.day) continue;
+        const yearMarket = parseInt(datePartsInMarketTz.year);
+        const monthMarket = parseInt(datePartsInMarketTz.month);
+        const dayMarket = parseInt(datePartsInMarketTz.day);
+        const dateInMarketZoneForWeekdayCheck = new Date(Date.UTC(yearMarket, monthMarket - 1, dayMarket, 12, 0, 0));
+        if (!isValid(dateInMarketZoneForWeekdayCheck)) continue;
+        const dayOfWeekInMarketZone = dateInMarketZoneForWeekdayCheck.getUTCDay();
+        if (market.daysOfWeek.includes(dayOfWeekInMarketZone)) {
+          const convertMarketLocalToUtc = (mY: number, mM: number, mD: number, mH: number, mMin: number, zn: string): Date | null => {
+            try {
+                const refTs = Date.UTC(mY, mM - 1, mD, mH, mMin, 0);
+                const znFmt = new Intl.DateTimeFormat("en-US",{timeZone:zn,year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'numeric',second:'numeric',hourCycle:'h23'});
+                const utcFmt = new Intl.DateTimeFormat("en-US",{timeZone:'UTC',year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'numeric',second:'numeric',hourCycle:'h23'});
+                const pZn = znFmt.formatToParts(refTs).reduce((acc,p)=>{if(p.type!=='literal')acc[p.type]=p.value;return acc},{}as any);
+                const pUtc = utcFmt.formatToParts(refTs).reduce((acc,p)=>{if(p.type!=='literal')acc[p.type]=p.value;return acc},{}as any);
+                if(!pZn.year||!pZn.month||!pZn.day||!pZn.hour||!pZn.minute || !pUtc.year||!pUtc.month||!pUtc.day||!pUtc.hour||!pUtc.minute){console.warn(`[MW] convertLtoU: Failed parts for TZ ${zn} or UTC.`);return null;}
+                const dZn=new Date(Date.UTC(parseInt(pZn.year),parseInt(pZn.month)-1,parseInt(pZn.day),parseInt(pZn.hour),parseInt(pZn.minute),parseInt(pZn.second||"0")));
+                const dUtc=new Date(Date.UTC(parseInt(pUtc.year),parseInt(pUtc.month)-1,parseInt(pUtc.day),parseInt(pUtc.hour),parseInt(pUtc.minute),parseInt(pUtc.second||"0")));
+                return new Date(refTs+(dUtc.getTime()-dZn.getTime()));
+            } catch(e){console.error(`[MW] Err convertLtoU ${mY}-${mM}-${mD} ${mH}:${mMin} ${zn}:`,e);return null;}
+          };
+          const openUtcDate = convertMarketLocalToUtc(yearMarket, monthMarket, dayMarket, openHLocal, openMLocal, market.timeZone);
+          const closeUtcDate = convertMarketLocalToUtc(yearMarket, monthMarket, dayMarket, closeHLocal, closeMLocal, market.timeZone);
+          let cLP = 0, cWP = 0, cIVFR = false, cLPClose = 0; // cLPClose para leftPercentClose
+          const mColorClass = MARKET_SEGMENT_COLORS[market.id.toLowerCase()] || DEFAULT_SEGMENT_COLOR;
+          let cVOClass = 'top-1/2 -translate-y-1/2';
+          const mIdL = market.id.toLowerCase();
+          if (ASIAN_MARKET_IDS.includes(mIdL)) cVOClass = 'top-[calc(50%-12px)] -translate-y-1/2';
+          else if (mIdL === 'lse') cVOClass = 'top-[calc(50%+12px)] -translate-y-1/2';
+          if (openUtcDate && isValid(openUtcDate) && closeUtcDate && isValid(closeUtcDate) && isAfter(closeUtcDate, openUtcDate)) {
+            const sSDO = differenceInDays(startOfDay(openUtcDate), timelineStartDate);
+            const sSSD = openUtcDate.getUTCHours()*3600 + openUtcDate.getUTCMinutes()*60 + openUtcDate.getUTCSeconds();
+            const sSTS = (sSDO * HOURS_IN_DAY * 3600) + sSSD;
+            const sEDO = differenceInDays(startOfDay(closeUtcDate), timelineStartDate);
+            const sESD = closeUtcDate.getUTCHours()*3600 + closeUtcDate.getUTCMinutes()*60 + closeUtcDate.getUTCSeconds();
+            const sETS = (sEDO * HOURS_IN_DAY * 3600) + sESD;
+            const tTS = DAYS_TOTAL * HOURS_IN_DAY * 3600;
+            if (tTS > 0) { 
+              cLP = (sSTS/tTS)*100;
+              cWP = ((sETS-sSTS)/tTS)*100;
+              cLPClose = (sETS/tTS)*100; // Calcular leftPercent para el cierre
+              if (!(cWP <= 0 || cLP < 0 || (cLP+cWP)>100.1)) cIVFR = true; 
+            }
+          }
+          individualSegments.push({
+            id: `market-${market.id}-day-${dayOffset}`,
+            marketId: market.id, name: market.name, startUtc: openUtcDate||new Date(0), endUtc: closeUtcDate||new Date(0),
+            sourceTimeZone: market.timeZone, leftPercent: cLP, widthPercent: cWP, isValidForRender: cIVFR, 
+            colorClass: mColorClass, verticalOffsetClass: cVOClass, leftPercentClose: cLPClose
+            // containedMarketIds se define más abajo para segmentos de región
+          });
+        }
+      }
+    });
+
+    // Paso 2: Crear finalDisplaySegments con regiones consolidadas
+    const finalDisplaySegments: ProcessedMarketSegment[] = [];
+    if (!timelineStartDate || !isValid(timelineStartDate)) { // Doble chequeo, aunque ya cubierto arriba
+        return { displaySegments: individualSegments, allIndividualSegments: individualSegments };
+    }
 
     for (let dayOffset = 0; dayOffset < DAYS_TOTAL; dayOffset++) {
-        const currentProcessedDayUtc = addDays(startOfDay(timelineStartDate), dayOffset);
+      const asiaSegmentsThisDay = individualSegments.filter(s => 
+        s.isValidForRender && 
+        ASIAN_MARKET_IDS.includes(s.marketId.toLowerCase()) && 
+        s.id.endsWith(`-day-${dayOffset}`)
+      );
 
-        // Determinar el día de la semana en Nueva York para currentProcessedDayUtc
-        const nyPartsFormatter = new Intl.DateTimeFormat('en-CA', { // en-CA da YYYY-MM-DD
-            timeZone: AMERICAN_MARKET_TZ,
-            year: 'numeric', month: '2-digit', day: '2-digit',
+      if (asiaSegmentsThisDay.length > 0) {
+        let earliestAsiaOpenUtc = asiaSegmentsThisDay[0].startUtc;
+        let latestAsiaCloseUtc = asiaSegmentsThisDay[0].endUtc;
+        const containedAsiaIdsThisDay = new Set<string>();
+        asiaSegmentsThisDay.forEach(s => {
+          if (s.startUtc.getTime() < earliestAsiaOpenUtc.getTime()) earliestAsiaOpenUtc = s.startUtc;
+          if (s.endUtc.getTime() > latestAsiaCloseUtc.getTime()) latestAsiaCloseUtc = s.endUtc;
+          containedAsiaIdsThisDay.add(s.marketId);
         });
-        const datePartsInNy = nyPartsFormatter.formatToParts(currentProcessedDayUtc).reduce((acc, part) => {
-            if (part.type !== 'literal') acc[part.type] = part.value;
-            return acc;
-        }, {} as Record<string, string>);
-        
-        // Construimos una fecha (mediodía para evitar problemas de borde de día) con esas partes de NY,
-        // interpretada como UTC, para luego obtener el día de la semana UTC (que será el día de NY).
-        // Asegurarse de que las partes existen antes de construir la fecha
-        if (!datePartsInNy.year || !datePartsInNy.month || !datePartsInNy.day) {
-            console.warn("Could not get date parts in NY for day offset:", dayOffset);
-            continue; // Saltar este día si no se pueden obtener las partes
-        }
-        const dateInNyForWeekdayCheck = new Date(`${datePartsInNy.year}-${datePartsInNy.month}-${datePartsInNy.day}T12:00:00Z`);
-        
-        if (!isValid(dateInNyForWeekdayCheck)) {
-            console.warn("Constructed date for NY weekday check is invalid for offset:", dayOffset, datePartsInNy);
-            continue; // Saltar si la fecha construida es inválida
-        }
-        const dayOfWeekInNy = dateInNyForWeekdayCheck.getUTCDay(); // 0=Dom, 1=Lun, ..., 6=Sab
 
-        if (dayOfWeekInNy >= 1 && dayOfWeekInNy <= 5) { // Si es Lunes a Viernes en NY
-            // Las horas UTC se establecen en el mismo día UTC que currentProcessedDayUtc.
-            const openUtc = setSeconds(setMinutes(setHours(currentProcessedDayUtc, MARKET_OPEN_UTC_H), MARKET_OPEN_UTC_M),0);
-            const closeUtc = setSeconds(setMinutes(setHours(currentProcessedDayUtc, MARKET_CLOSE_UTC_H), MARKET_CLOSE_UTC_M),0);
+        const regionStartDayOffset = differenceInDays(startOfDay(earliestAsiaOpenUtc), timelineStartDate);
+        const regionStartSecondsInDay = earliestAsiaOpenUtc.getUTCHours()*3600 + earliestAsiaOpenUtc.getUTCMinutes()*60 + earliestAsiaOpenUtc.getUTCSeconds();
+        const regionStartTotalSeconds = (regionStartDayOffset*HOURS_IN_DAY*3600) + regionStartSecondsInDay;
+        const regionEndDayOffset = differenceInDays(startOfDay(latestAsiaCloseUtc), timelineStartDate);
+        const regionEndSecondsInDay = latestAsiaCloseUtc.getUTCHours()*3600 + latestAsiaCloseUtc.getUTCMinutes()*60 + latestAsiaCloseUtc.getUTCSeconds();
+        const regionEndTotalSeconds = (regionEndDayOffset*HOURS_IN_DAY*3600) + regionEndSecondsInDay;
+        const totalTimelineSeconds = DAYS_TOTAL*HOURS_IN_DAY*3600;
+        let regionLeftPercent = 0, regionWidthPercent = 0, regionIsValid = false;
 
-            segments.push({
-                id: `market-us-${dayOffset}`,
-                startUtc: openUtc,
-                endUtc: closeUtc,
+        if (totalTimelineSeconds > 0 && latestAsiaCloseUtc.getTime() > earliestAsiaOpenUtc.getTime()) {
+            regionLeftPercent = (regionStartTotalSeconds/totalTimelineSeconds)*100;
+            regionWidthPercent = ((regionEndTotalSeconds-regionStartTotalSeconds)/totalTimelineSeconds)*100;
+            if (!(regionWidthPercent <= 0 || regionLeftPercent < 0 || (regionLeftPercent + regionWidthPercent) > 100.1)) {
+                regionIsValid = true;
+            }
+        }
+        if (regionIsValid) {
+            finalDisplaySegments.push({
+                id: `asia-region-day-${dayOffset}`,
+                marketId: 'asia-region',
+                name: 'Mercados Asiáticos',
+                startUtc: earliestAsiaOpenUtc, endUtc: latestAsiaCloseUtc,
+                sourceTimeZone: 'Asia/Multiple',
+                leftPercent: regionLeftPercent, widthPercent: regionWidthPercent, 
+                isValidForRender: true, 
+                colorClass: ASIAN_MARKET_SEGMENT_COLOR,
+                verticalOffsetClass: 'top-[calc(50%-12px)] -translate-y-1/2',
+                containedMarketIds: Array.from(containedAsiaIdsThisDay)
             });
         }
+      }
+
+      // Añadir segmentos no asiáticos individuales válidos para este dayOffset a finalDisplaySegments
+      individualSegments.forEach(s => {
+        if (s.isValidForRender && !ASIAN_MARKET_IDS.includes(s.marketId.toLowerCase()) && s.id.endsWith(`-day-${dayOffset}`)) {
+          finalDisplaySegments.push(s);
+        }
+      });
     }
-    return segments;
-}, [timelineStartDate]);
+    
+    console.log("[MW] memoizedMarketInfo: displaySegments", JSON.stringify(finalDisplaySegments.map(s=>({id:s.id, name:s.name, l:s.leftPercent, w:s.widthPercent, v:s.isValidForRender, markets: s.containedMarketIds || s.marketId})),null,2));
+    // console.log("[MW] memoizedMarketInfo: allIndividualSegments", JSON.stringify(individualSegments.map(s=>({id:s.id, name:s.name, l:s.leftPercent, w:s.widthPercent, v:s.isValidForRender})),null,2));
+
+    // Paso 3: Calcular offsets para marcas de apertura concurrentes en allIndividualSegments
+    const openingMarkPositions: Record<string, ProcessedMarketSegment[]> = {};
+    individualSegments.forEach(s => {
+      // Usar una clave más precisa para agrupar: rounded start time in minutes UTC
+      if (s.startUtc && isValid(s.startUtc)) {
+        const roundedStartTimeMinutes = Math.round(s.startUtc.getTime() / (60 * 1000)); 
+        const key = roundedStartTimeMinutes.toString();
+        if (s.leftPercent >= -5 && s.leftPercent <= 105) { // Considerar marcas un poco fuera de la vista por si acaso
+            if (!openingMarkPositions[key]) {
+                openingMarkPositions[key] = [];
+            }
+            openingMarkPositions[key].push(s);
+        }
+      }
+    });
+
+    Object.values(openingMarkPositions).forEach(group => {
+        if (group.length > 1) {
+            const markHeight = 12; // Altura de la marca en px (h-3 = 12px)
+            const gap = 2; // Espacio entre marcas apiladas
+            const totalHeightForGroup = group.length * markHeight + (group.length - 1) * gap;
+            let startY = -(totalHeightForGroup / 2) + (markHeight / 2); // Centrar el grupo de marcas
+
+            group.forEach((segment) => {
+                segment.openingMarkVerticalOffsetStyle = { transform: `translate(-50%, -50%) translateY(${startY}px)` };
+                startY += (markHeight + gap);
+            });
+        }
+    });
+
+    return { displaySegments: finalDisplaySegments, allIndividualSegments: individualSegments };
+  }, [timelineStartDate, marketData, isLoadingMarketData]);
+
+  const { displaySegments, allIndividualSegments } = memoizedMarketInfo;
+  
+  const isAsianMarketRegion = (marketId: string | undefined): boolean => marketId === 'asia-region';
+  // Ya no necesitamos isIndividualAsianMarket si el panel de asia-region maneja la iteración.
 
   // *** Función Auxiliar para Animar al Centro ***
   const animateToCenterTime = (targetDate: Date | null) => {
@@ -777,36 +983,24 @@ export default function MarketTimesWidget() {
 
     // *** useEffect para Guardar Ajustes en localStorage ***
     useEffect(() => {
-        // No guardar hasta que la configuración inicial (carga/default) esté completa
         if (!initialSetupDoneRef.current) {
             return;
         }
-
-       // Solo guardar si tenemos un modo y una hora UTC válida (si aplica para zonas horarias)
-       // En modo 'auto' (local), displayedTimeUtc se actualiza pero no necesitamos guardarlo específicamente.
-       if (!timeMode || (timeMode !== 'auto' && (!displayedTimeUtc || !isValid(displayedTimeUtc)))) {
-            console.log("Skipping save to localStorage: initial setup not done or invalid state for non-auto mode.");
-            return;
-        }
-
-        console.log("Saving settings to localStorage...");
-
+        // console.log("[MarketTimesWidget] Attempting to save settings. Mode:", timeMode, "AutoRecenter:", autoRecenterEnabled); // Log opcional si se necesita depurar el guardado
         const settingsToSave: SavedSettings = {
             activeMode: timeMode,
-           // Guardar la hora UTC actual SOLO si el modo NO es 'auto' (es una zona horaria específica)
            manualUtcString: (timeMode !== 'auto' && displayedTimeUtc)
                 ? displayedTimeUtc.toISOString()
                 : null,
             autoRecenterEnabled,
         };
-
         try {
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(settingsToSave));
+            // console.log("[MarketTimesWidget] Settings saved to localStorage:", settingsToSave); // Log eliminado
         } catch (error) {
-            console.error("Error saving settings to localStorage:", error);
+            console.error("[MarketTimesWidget] Error saving settings to localStorage:", error);
         }
-
-    }, [timeMode, displayedTimeUtc, autoRecenterEnabled]); // Guardar cuando cambien estos estados
+    }, [timeMode, displayedTimeUtc, autoRecenterEnabled, initialSetupDoneRef]); // initialSetupDoneRef añadido aquí
 
 
     // *** Obtener Etiqueta del Modo Actual para Mostrar ***
@@ -910,17 +1104,14 @@ export default function MarketTimesWidget() {
         </div>
       </div>
 
-      {/* Contenedor Exterior: Captura drag, oculta overflow (El div principal ahora es flex-col, este es un hijo) */}
+      {/* Contenedor Exterior: Captura drag, oculta overflow */}
       <div
         ref={outerContainerRef}
         {...gestureBind()}
-        className="w-full h-[120px] overflow-hidden cursor-grab active:cursor-grabbing flex-grow" // Aumentado h-[100px] a h-[120px]
-        style={{ touchAction: 'pan-x', userSelect: 'none' }} // Añadido userSelect
+        className="w-full h-[120px] overflow-hidden cursor-grab active:cursor-grabbing flex-shrink-0" // flex-shrink-0 para que no se encoja
+        style={{ touchAction: 'pan-x', userSelect: 'none' }}
       >
-        {/* Contenedor INTERNO */}
-        <div
-          className="w-full h-full relative"
-        >
+        <div className="w-full h-full relative">
           {/* *** Puntero Central Fijo (Condicional) *** */}
           <AnimatePresence>
                {showCenteredPreciseTime && (
@@ -997,68 +1188,133 @@ export default function MarketTimesWidget() {
               </motion.div>
             )}
 
-            {/* Segmentos de Mercado Americano */}
-            {americanMarketSegments.map(segment => {
-                if (!timelineStartDate || !isValid(timelineStartDate)) return null;
-
-                // Calcular inicio del segmento en segundos desde timelineStartDate
-                const segmentStartDayOffset = differenceInDays(startOfDay(segment.startUtc), timelineStartDate);
-                const segmentStartSecondsInDay = segment.startUtc.getUTCHours() * 3600 + segment.startUtc.getUTCMinutes() * 60 + segment.startUtc.getUTCSeconds();
-                const segmentStartTotalSeconds = (segmentStartDayOffset * HOURS_IN_DAY * 3600) + segmentStartSecondsInDay;
-
-                // Calcular fin del segmento en segundos desde timelineStartDate
-                const segmentEndDayOffset = differenceInDays(startOfDay(segment.endUtc), timelineStartDate);
-                const segmentEndSecondsInDay = segment.endUtc.getUTCHours() * 3600 + segment.endUtc.getUTCMinutes() * 60 + segment.endUtc.getUTCSeconds();
-                const segmentEndTotalSeconds = (segmentEndDayOffset * HOURS_IN_DAY * 3600) + segmentEndSecondsInDay;
-
-                const totalTimelineSeconds = DAYS_TOTAL * HOURS_IN_DAY * 3600;
-                if (totalTimelineSeconds <= 0) return null;
-
-                const leftPercent = (segmentStartTotalSeconds / totalTimelineSeconds) * 100;
-                const widthPercent = ((segmentEndTotalSeconds - segmentStartTotalSeconds) / totalTimelineSeconds) * 100;
-
-                if (widthPercent <= 0 || leftPercent < 0 || (leftPercent + widthPercent) > 100 ) {
-                     // No renderizar si no tiene ancho, o está fuera de los límites de la línea de tiempo de 5 días
-                     // Esto también previene renderizar segmentos que podrían empezar antes del inicio de la timeline
-                     // o terminar después del final de la timeline visible.
-                     // Podríamos clamp los valores si quisiéramos mostrar segmentos parciales.
-                     // Por ahora, solo los que caen completamente dentro o empiezan dentro.
+            {/* Marcas de Apertura de Mercado */}
+            {!isLoadingMarketData && !marketDataError && displaySegments.map(segment => {
+                if (!segment.isValidForRender || !segment.startUtc || !isValid(segment.startUtc)) {
+                    // No renderizar marca si el segmento no es válido o no tiene hora de inicio válida
                     return null;
                 }
+                const openingMarkColor = MARKET_OPENING_MARK_COLORS[segment.marketId.toLowerCase()] || DEFAULT_OPENING_MARK_COLOR;
+                
+                // Usamos segment.leftPercent que corresponde al inicio del segmento
+                return (
+                    <div
+                        key={`open-mark-${segment.id}`}
+                        className={`absolute top-1/2 h-3 w-1 rounded-sm -translate-x-1/2 -translate-y-1/2 z-[3] pointer-events-none ${openingMarkColor}`}
+                        style={{
+                            left: `${segment.leftPercent}%`,
+                            // Ajuste vertical para que la marca de apertura esté ligeramente por encima de la línea central de la pista gris
+                            // La pista gris (timelineRef) está en my-14 (top: 3.5rem). Su centro es 3.5rem + 4px.
+                            // Los segmentos están en diferentes verticalOffsetClass. 
+                            // Esta marca la pondremos en el centro de la pista gris.
+                            // top-1/2 -translate-y-1/2 la centra en la mitad de su propio contenedor (timelineRef)
+                        }}
+                        title={`${segment.name} - Apertura: ${format(segment.startUtc, 'HH:mm')} UTC`}
+                    />
+                );
+            })}
 
+            {/* Segmentos de Mercado */}
+            {!isLoadingMarketData && !marketDataError && displaySegments.map(segment => {
+                if (!segment.isValidForRender) {
+                    return null;
+                }
+                const handleSegmentClick = () => {
+                    if (selectedSegment?.id === segment.id) {
+                        setSelectedSegment(null);
+                    } else {
+                        setSelectedSegment(segment); 
+                    }
+                };
                 // *** Lógica para el texto del tooltip (title) ***
-                let titleText = `Mercado Americano (aprox. ${format(segment.startUtc, 'HH:mm')} - ${format(segment.endUtc, 'HH:mm')} UTC)`;
-                if (displayedTimeUtc && isValid(displayedTimeUtc) && isValid(segment.startUtc) && isValid(segment.endUtc)) {
+                let titleText = segment.name; // Default title
+
+                if (segment.marketId === 'asia-region') {
+                    if (isValid(segment.startUtc) && isValid(segment.endUtc)) {
+                        titleText = `${segment.name} (aprox. ${format(segment.startUtc, 'HH:mm')} - ${format(segment.endUtc, 'HH:mm')} UTC)`;
+                        if (selectedSegment?.id === segment.id && segment.containedMarketIds) {
+                            titleText += ` - Incluye: ${segment.containedMarketIds.join(', ')}`;
+                        }
+                    }
+                } else {
+                    // Segmento individual (no de región)
+                    if (isValid(segment.startUtc) && isValid(segment.endUtc)) {
+                        const openLocalTimeStr = new Date(segment.startUtc).toLocaleTimeString('es-ES', { timeZone: segment.sourceTimeZone, hour: '2-digit', minute: '2-digit' });
+                        const closeLocalTimeStr = new Date(segment.endUtc).toLocaleTimeString('es-ES', { timeZone: segment.sourceTimeZone, hour: '2-digit', minute: '2-digit' });
+                        const marketTZAbbreviation = segment.sourceTimeZone.split('/').pop()?.replace('_', ' ') || segment.sourceTimeZone;
+
+                        if (displayedTimeUtc && isValid(displayedTimeUtc)) {
                     const now = displayedTimeUtc;
                     const opens = segment.startUtc;
                     const closes = segment.endUtc;
-
                     if (isBefore(now, opens)) {
-                        const durationToOpen = formatPreciseDuration(opens, now, es);
-                        titleText = `Mercado Americano: Abre en ${durationToOpen} (Apertura: ${format(opens, 'EEE d, HH:mm', { locale: es })} UTC)`;
+                                titleText = `${segment.name}: Abre en ${formatPreciseDuration(opens, now, es)}. (Apertura local: ${openLocalTimeStr} ${marketTZAbbreviation})`;
                     } else if (isAfter(now, closes)) {
-                        // Para "cerró hace", dateFuture es now, datePast es closes
-                        const durationSinceClose = formatPreciseDuration(now, closes, es);
-                        titleText = `Mercado Americano: Cerró hace ${durationSinceClose} (Cierre: ${format(closes, 'EEE d, HH:mm', { locale: es })} UTC)`;
+                                titleText = `${segment.name}: Cerró hace ${formatPreciseDuration(now, closes, es)}. (Cierre local: ${closeLocalTimeStr} ${marketTZAbbreviation})`;
                     } else {
-                        // Para "cierra en", dateFuture es closes, datePast es now
-                        const durationToClose = formatPreciseDuration(closes, now, es);
-                        // Para "abrió hace", dateFuture es now, datePast es opens
-                        const durationSinceOpen = formatPreciseDuration(now, opens, es);
-                        titleText = `Mercado Americano: Abierto. Abrió hace ${durationSinceOpen}. Cierra en ${durationToClose} (Cierre: ${format(closes, 'EEE d, HH:mm', { locale: es })} UTC)`;
+                                titleText = `${segment.name}: Abierto. Abrió hace ${formatPreciseDuration(now, opens, es)}. Cierra en ${formatPreciseDuration(closes, now, es)}. (Local: ${openLocalTimeStr} - ${closeLocalTimeStr} ${marketTZAbbreviation})`;
+                            }
+                        } else {
+                            titleText = `${segment.name} (${format(segment.startUtc, 'HH:mm')} - ${format(segment.endUtc, 'HH:mm')} UTC)`;
+                        }
+                    } else {
+                        titleText = `${segment.name} (Horario no disponible)`;
                     }
                 }
 
                 return (
                     <div
                         key={segment.id}
-                        className="absolute top-1/2 -translate-y-1/2 h-5 bg-red-400/30 dark:bg-red-600/30 rounded border border-red-500/40 dark:border-red-700/40 transition-all duration-150 hover:bg-red-400/50 dark:hover:bg-red-600/50 hover:border-red-500/70 dark:hover:border-red-700/70 pointer-events-auto shadow-sm" // Aumentada altura, añadido borde, sombra y ajustado hover
+                        className={`absolute ${segment.verticalOffsetClass} h-5 rounded border transition-all duration-150 pointer-events-auto shadow-sm ${segment.colorClass} cursor-pointer`}
                         style={{
-                            left: `${Math.max(0, leftPercent)}%`, // Asegurar que no sea < 0
-                            width: `${Math.min(widthPercent, 100 - Math.max(0, leftPercent))}%`, // Asegurar que no exceda el 100%
-                            zIndex: 2 // Debajo del marcador principal (z-10) y encima del riel base (z-1)
+                            left: `${segment.leftPercent}%`,
+                            width: `${segment.widthPercent}%`,
+                            zIndex: 2 
                         }}
-                        title={titleText} // Usar el titleText dinámico
+                        title={titleText}
+                        onClick={handleSegmentClick}
+                    />
+                );
+            })}
+
+            {/* Marcas de Apertura de Mercados Individuales (usa allIndividualSegments) */}
+            {!isLoadingMarketData && !marketDataError && allIndividualSegments.map(segment => {
+                if (!segment.startUtc || !isValid(segment.startUtc) || segment.leftPercent < -5 || segment.leftPercent > 105) { // Un poco más de margen
+                    return null;
+                }
+                const openingMarkColor = MARKET_OPENING_MARK_COLORS[segment.marketId.toLowerCase()] || DEFAULT_OPENING_MARK_COLOR;
+                // Aplicar el offset de estilo si existe, si no, el centrado por defecto
+                const markStyle: React.CSSProperties = { 
+                    left: `${segment.leftPercent}%`, 
+                    ...(segment.openingMarkVerticalOffsetStyle || { transform: 'translate(-50%, -50%)'}) 
+                };
+
+                return (
+                    <div
+                        key={`open-mark-${segment.id}`}
+                        className={`absolute top-1/2 h-3 w-3 rounded-full z-[3] pointer-events-none ${openingMarkColor} border-2 border-white dark:border-gray-800 shadow`}
+                        style={markStyle} // Usar el estilo calculado
+                        title={`${segment.name} - Apertura: ${format(segment.startUtc, 'HH:mm')} UTC (${new Date(segment.startUtc).toLocaleTimeString('es-ES',{timeZone:segment.sourceTimeZone, hour:'2-digit', minute:'2-digit'})} Local)`}
+                    />
+                );
+            })}
+
+            {/* Marcas de Cierre de Mercados Individuales */}
+            {!isLoadingMarketData && !marketDataError && allIndividualSegments.map(segment => {
+                // Usar segment.leftPercentClose que ahora debería estar en el objeto.
+                // Validar también el endUtc.
+                if (!segment.endUtc || !isValid(segment.endUtc) || segment.leftPercentClose === undefined || segment.leftPercentClose < 0 || segment.leftPercentClose > 100) {
+                    return null;
+                }
+                // Usar el mismo color de apertura pero con un borde distintivo
+                const closingMarkBaseColor = MARKET_OPENING_MARK_COLORS[segment.marketId.toLowerCase()] || DEFAULT_OPENING_MARK_COLOR;
+                
+                return (
+                    <div
+                        key={`close-mark-${segment.id}`}
+                        className={`absolute top-1/2 h-3 w-3 rounded-full -translate-x-1/2 -translate-y-1/2 z-[3] pointer-events-none ${closingMarkBaseColor} border-2 border-red-700 dark:border-red-500 shadow`}
+                        style={{ left: `${segment.leftPercentClose}%` }}
+                        title={`${segment.name} - Cierre: ${format(segment.endUtc, 'HH:mm')} UTC (${new Date(segment.endUtc).toLocaleTimeString('es-ES',{timeZone:segment.sourceTimeZone, hour:'2-digit', minute:'2-digit'})} Local)`}
                     />
                 );
             })}
@@ -1066,13 +1322,118 @@ export default function MarketTimesWidget() {
         </div>
       </div>
 
-      {/* Indicador de Tiempo Relativo del Centro (Abajo Condicional) */}
-      {showCenteredPreciseTime && centeredPreciseTime && isValid(centeredPreciseTime) && (
-        <div className="text-center text-xs text-blue-600 dark:text-blue-400 mt-1 pb-1 pointer-events-none space-x-1.5"> {/* Añadido space-x */} 
-           {/* Hora Precisa */}
+      {/* Panel de Detalles (revisión de estilos y coherencia de color) */}
+      <AnimatePresence>
+        {selectedSegment && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }} 
+            animate={{ opacity: 1, height: 'auto' }} 
+            exit={{ opacity: 0, height: 0 }} 
+            transition={{ duration: 0.3 }} 
+            className="mt-3 border-t pt-3 text-xs overflow-hidden flex flex-col gap-3" // Aumentado gap general
+          >
+            {selectedSegment.marketId === 'asia-region' && selectedSegment.containedMarketIds ? (
+              // PANEL PARA REGIÓN ASIÁTICA - ORDENADO POR APERTURA
+              <>
+                <h4 className="font-semibold text-sm text-center text-foreground mb-1">{selectedSegment.name}</h4>
+                <div className="space-y-3">
+                  {(() => {
+                    const regionSegmentDate = startOfDay(selectedSegment.startUtc);
+                    const relevantAsiaSegments = selectedSegment.containedMarketIds.map(individualMarketId => {
+                      const marketInfo = marketData.find(m => m.id.toLowerCase() === individualMarketId.toLowerCase());
+                      const individualSegmentForDay = allIndividualSegments.find(s => 
+                          s.marketId.toLowerCase() === individualMarketId.toLowerCase() && 
+                          s.isValidForRender && 
+                          isValid(s.startUtc) && 
+                          format(startOfDay(s.startUtc), 'yyyy-MM-dd') === format(regionSegmentDate, 'yyyy-MM-dd')
+                      );
+                      return { marketInfo, individualSegmentForDay, originalMarketId: individualMarketId };
+                    })
+                    .filter(item => item.marketInfo && item.individualSegmentForDay && item.individualSegmentForDay.startUtc && isValid(item.individualSegmentForDay.startUtc))
+                    .sort((a, b) => {
+                      // ¡Asegurarse de que startUtc existe y es válido antes de comparar!
+                      return a.individualSegmentForDay!.startUtc.getTime() - b.individualSegmentForDay!.startUtc.getTime();
+                    });
+
+                    return relevantAsiaSegments.map(({ marketInfo, individualSegmentForDay, originalMarketId }) => {
+                      if (!marketInfo || !individualSegmentForDay) return (
+                        <div key={originalMarketId} className="p-2.5 border rounded-lg shadow-sm bg-card text-muted-foreground text-center">
+                            Datos incompletos para {originalMarketId.toUpperCase()}
+                        </div>
+                      );
+                      
+                      let openL = "--:--", closeL = "--:--", openU = "--:--:--", closeU = "--:--:--", status = "No opera en esta fecha";
+                      let startForStatus = individualSegmentForDay.startUtc;
+                      let endForStatus = individualSegmentForDay.endUtc;
+
+                      openL = new Date(startForStatus).toLocaleTimeString('es-ES', { timeZone: marketInfo.timeZone, hour: '2-digit', minute:'2-digit' });
+                      closeL = new Date(endForStatus).toLocaleTimeString('es-ES', { timeZone: marketInfo.timeZone, hour: '2-digit', minute:'2-digit' });
+                      openU = format(startForStatus, 'HH:mm:ss');
+                      closeU = format(endForStatus, 'HH:mm:ss');
+                      if (displayedTimeUtc) {
+                          if (isBefore(displayedTimeUtc, startForStatus)) status = `Abre en ${formatPreciseDuration(startForStatus, displayedTimeUtc, es)}`;
+                          else if (isAfter(displayedTimeUtc, endForStatus)) status = `Cerró ${formatPreciseDuration(displayedTimeUtc, endForStatus, es)}`;
+                          else status = `Abierto. Cierra ${formatPreciseDuration(endForStatus, displayedTimeUtc, es)}`;
+                      }
+                      const openingMarkColorClass = MARKET_OPENING_MARK_COLORS[marketInfo.id.toLowerCase()] || DEFAULT_OPENING_MARK_COLOR;
+
+                      return (
+                        <div key={marketInfo.id} className="p-2.5 border rounded-lg shadow-sm bg-card hover:shadow-md transition-shadow">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className={`inline-block h-3 w-3 rounded-full ${openingMarkColorClass} border border-white/50 dark:border-gray-900/50`}></span>
+                            <span className="font-semibold text-sm text-foreground">{marketInfo.name}</span>
+                          </div>
+                          <div className="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1 text-muted-foreground text-[11px]">
+                            <span className="font-medium text-foreground/80">Apertura Local:</span><span>{openL} ({marketInfo.timeZone.split('/').pop()?.replace('_',' ')})</span>
+                            <span className="font-medium text-foreground/80">Cierre Local:</span><span>{closeL} ({marketInfo.timeZone.split('/').pop()?.replace('_',' ')})</span>
+                            <span className="font-medium text-foreground/80">Apertura UTC:</span><span>{openU}</span>
+                            <span className="font-medium text-foreground/80">Cierre UTC:</span><span>{closeU}</span>
+                            <span className="font-medium text-foreground/80 col-span-2 mt-1">Estado: <span className="font-normal text-foreground/90">{status}</span></span>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </>
+            ) : (
+              // PANEL PARA MERCADO INDIVIDUAL (NO REGIÓN)
+              selectedSegment.sourceTimeZone && selectedSegment.sourceTimeZone !== 'Asia/Multiple' ? (
+                <div className="p-2.5 border rounded-lg shadow-sm bg-card hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className={`inline-block h-3 w-3 rounded-full ${MARKET_OPENING_MARK_COLORS[selectedSegment.marketId.toLowerCase()] || DEFAULT_OPENING_MARK_COLOR} border border-white/50 dark:border-gray-900/50`}></span>
+                    <h4 className="font-semibold text-sm text-foreground">{selectedSegment.name}</h4>
+                  </div>
+                  <div className="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1 text-muted-foreground text-[11px]">
+                    <span className="font-medium text-foreground/80">Fecha:</span><span>{isValid(selectedSegment.startUtc)?format(selectedSegment.startUtc,'EEE, d MMM yyyy',{locale:es}):'N/A'}</span>
+                    <span className="font-medium text-foreground/80">Apertura Local:</span><span>{isValid(selectedSegment.startUtc)?new Date(selectedSegment.startUtc).toLocaleTimeString('es-ES',{timeZone:selectedSegment.sourceTimeZone,hour:'2-digit',minute:'2-digit'}):'N/A'} ({selectedSegment.sourceTimeZone.split('/').pop()?.replace('_',' ')})</span>
+                    <span className="font-medium text-foreground/80">Cierre Local:</span><span>{isValid(selectedSegment.endUtc)?new Date(selectedSegment.endUtc).toLocaleTimeString('es-ES',{timeZone:selectedSegment.sourceTimeZone,hour:'2-digit',minute:'2-digit'}):'N/A'} ({selectedSegment.sourceTimeZone.split('/').pop()?.replace('_',' ')})</span>
+                    <span className="font-medium text-foreground/80">Apertura UTC:</span><span>{isValid(selectedSegment.startUtc)?format(selectedSegment.startUtc,'HH:mm:ss'):'N/A'} UTC</span>
+                    <span className="font-medium text-foreground/80">Cierre UTC:</span><span>{isValid(selectedSegment.endUtc)?format(selectedSegment.endUtc,'HH:mm:ss'):'N/A'} UTC</span>
+                    <span className="font-medium text-foreground/80">Duración:</span><span>{(isValid(selectedSegment.startUtc)&&isValid(selectedSegment.endUtc))?formatDistanceStrict(selectedSegment.endUtc,selectedSegment.startUtc,{locale:es}):'N/A'}</span>
+                    {displayedTimeUtc && isValid(selectedSegment.startUtc) && isValid(selectedSegment.endUtc) && (
+                       <span className="font-medium text-foreground/80 col-span-2 mt-1">Estado Actual: <span className="font-normal text-foreground/90">
+                        {isBefore(displayedTimeUtc,selectedSegment.startUtc)&&`Abre en ${formatPreciseDuration(selectedSegment.startUtc,displayedTimeUtc,es)}`}
+                        {isAfter(displayedTimeUtc,selectedSegment.startUtc)&&isBefore(displayedTimeUtc,selectedSegment.endUtc)&&`Abierto. Cierra ${formatPreciseDuration(selectedSegment.endUtc,displayedTimeUtc,es)} (Abrió ${formatPreciseDuration(displayedTimeUtc,selectedSegment.startUtc,es)})`}
+                        {isAfter(displayedTimeUtc,selectedSegment.endUtc)&&`Cerró ${formatPreciseDuration(displayedTimeUtc,selectedSegment.endUtc,es)}`}
+                       </span></span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                 <div className="text-muted-foreground p-2 text-center">Detalles no disponibles.</div>
+              )
+            )}
+            <Button variant="ghost" size="sm" onClick={() => setSelectedSegment(null)} className="mt-3 text-xs w-full self-center max-w-xs">Cerrar Detalles</Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Indicador de Tiempo Relativo del Centro (si no hay segmento seleccionado o si se quiere mantener visible) */}
+      {!selectedSegment && showCenteredPreciseTime && centeredPreciseTime && isValid(centeredPreciseTime) && (
+        <div className="text-center text-xs text-blue-600 dark:text-blue-400 mt-1 pb-1 pointer-events-none space-x-1.5 flex-shrink-0">
            <span className="font-mono">{format(centeredPreciseTime, 'HH:mm:ss')}</span>
            <span className="text-muted-foreground/80 dark:text-muted-foreground/60">UTC</span>
-           {/* Tiempo Relativo (entre paréntesis) */} 
            <span className="text-blue-600/90 dark:text-blue-400/90">
               ({formatRelativeTime(centeredPreciseTime, displayedTimeUtc)})
            </span>
