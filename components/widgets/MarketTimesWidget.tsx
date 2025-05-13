@@ -674,6 +674,8 @@ export default function MarketTimesWidget() {
                     setDisplayClockTime(now); // Guardamos 'now' pero la formatearemos localmente
                     // Para el marcador, seguimos usando UTC para la coherencia de la línea de tiempo
                     setDisplayedTimeUtc(now);
+                    // *** AÑADIDO: Asegurar que la base de la línea de tiempo también se actualice ***
+                    setTimelineBaseDate(now);
                 }
             };
             updateLocalTime(); // Llamada inicial
