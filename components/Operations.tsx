@@ -91,6 +91,12 @@ export default function Operations() {
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   const [updateInterval, setUpdateInterval] = useState<number>(5000); // 5 segundos por defecto
   const [changedOperations, setChangedOperations] = useState<Record<string, { profit: number, timestamp: number }>>({});
+  const [subaccountErrors, setSubaccountErrors] = useState<Array<{
+    subaccountId: string;
+    subaccountName: string;
+    error: string;
+    isDemo: boolean;
+  }>>([]);
 
   // Inicializar el componente
   useEffect(() => {
@@ -139,6 +145,14 @@ export default function Operations() {
       
       if (!response.ok) {
         throw new Error(data.message || 'Error al obtener operaciones abiertas en perpetual');
+      }
+      
+      // Manejar errores de subcuentas individuales
+      if (data.errors && data.errors.length > 0) {
+        setSubaccountErrors(data.errors);
+        console.warn(`${data.errors.length} subcuentas fallaron:`, data.errors);
+      } else {
+        setSubaccountErrors([]);
       }
       
       // Detectar cambios en las operaciones
@@ -554,6 +568,39 @@ export default function Operations() {
       {/* Estilos para las animaciones */}
       <style jsx>{styles}</style>
       
+      {/* Mostrar errores de subcuentas si existen */}
+      {subaccountErrors.length > 0 && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
+                Errores en {subaccountErrors.length} subcuenta{subaccountErrors.length > 1 ? 's' : ''}
+              </h3>
+              <div className="mt-2 text-sm text-red-700 dark:text-red-400 space-y-1">
+                {subaccountErrors.map((error, index) => (
+                  <div key={error.subaccountId} className="flex items-start gap-2">
+                    <span className="text-red-600 dark:text-red-500">•</span>
+                    <div>
+                      <span className="font-medium">{error.subaccountName}</span>
+                      {error.isDemo && <span className="text-xs ml-1">(Demo)</span>}:
+                      <span className="ml-1">{error.error}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-xs text-red-600 dark:text-red-500">
+                Por favor, verifica las credenciales API de las subcuentas afectadas en la configuración.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Live Updates Control */}
       <div className="flex items-center justify-between bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-sm">
         <div className="flex items-center gap-3">

@@ -79,7 +79,11 @@ export default function SettingsSubaccounts() {
   const fetchSubaccounts = async () => {
     try {
       setIsLoading(true);
+      console.log('🔄 Fetching subaccounts...');
+      
       const { data, error } = await getUserSubaccounts();
+      
+      console.log('📦 getUserSubaccounts result:', { data, error });
       
       if (error) {
         console.error("Error específico al obtener subcuentas:", error);
@@ -91,6 +95,7 @@ export default function SettingsSubaccounts() {
         return;
       }
       
+      console.log(`✅ Loaded ${data?.length || 0} subaccounts`);
       setSubaccounts(data || []);
     } catch (error: any) {
       console.error("Error no controlado al cargar subcuentas:", error);
