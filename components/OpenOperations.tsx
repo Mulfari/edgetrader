@@ -1,7 +1,25 @@
 'use client';
 
-import React from 'react';
-import { Clock, TrendingUp, TrendingDown, AlertTriangle, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  AlertTriangle, 
+  RefreshCw,
+  ChevronDown,
+  Target,
+  Clock,
+  Users,
+  Activity,
+  Zap,
+  X,
+  MoreHorizontal,
+  DollarSign,
+  Percent,
+  BarChart3,
+  TrendingUp as TrendUp,
+  TrendingDown as TrendDown
+} from 'lucide-react';
 
 interface SubAccount {
   id: string;
@@ -35,7 +53,6 @@ interface Operation {
   profitPercentage?: number;
   fee?: number;
   exchange: string;
-  // Campos adicionales para futuros
   markPrice?: number | null;
   liquidationPrice?: number | null;
   positionValue?: number | null;
@@ -54,6 +71,36 @@ interface OpenOperationsProps {
   autoRefreshEnabled?: boolean;
 }
 
+// Función para determinar si es posición o orden
+const getOperationType = (operation: Operation): 'position' | 'order' => {
+  if (operation.filledQuantity && operation.filledQuantity > 0) {
+    if (operation.remainingQuantity && operation.remainingQuantity > 0) {
+      return 'order'; // Orden parcialmente ejecutada
+    }
+    return 'position'; // Posición abierta
+  }
+  return 'order'; // Orden pendiente
+};
+
+// Función para limpiar nombre de subcuenta
+const cleanAccountName = (name: string): string => {
+  return name
+    .replace(/\s*-\s*bybit/gi, '')
+    .replace(/\s*-\s*binance/gi, '')
+    .replace(/\s*bybit\s*/gi, '')
+    .replace(/\s*binance\s*/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+// Función para formatear números con separadores de miles
+const formatNumber = (num: number, decimals: number = 2): string => {
+  return new Intl.NumberFormat('es-ES', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  }).format(num);
+};
+
 export default function OpenOperations({
   openOperations,
   isLoadingOperations,
@@ -67,454 +114,435 @@ export default function OpenOperations({
   autoRefreshEnabled = true
 }: OpenOperationsProps) {
   
-  // Función para obtener las clases de animación basadas en la dirección del precio
-  const getPriceAnimationClasses = (operation: Operation) => {
-    if (!hasRecentlyChanged(operation.id)) {
-      return { direction: 'neutral', priceClass: '', arrowClass: '', glowClass: '' };
-    }
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [filterType, setFilterType] = useState<'all' | 'positions' | 'orders'>('all');
+  const [expandedSubAccounts, setExpandedSubAccounts] = useState<Record<string, boolean>>({});
+
+  // Filtrar operaciones según el tipo seleccionado
+  const filteredOperations = openOperations.filter(operation => {
+    if (filterType === 'all') return true;
+    const operationType = getOperationType(operation);
+    return filterType === 'positions' ? operationType === 'position' : operationType === 'order';
+  });
+
+  // Agrupar por subcuenta para mejor organización
+  const groupedBySubAccount = filteredOperations.reduce((groups, operation) => {
+    const subAccount = subAccounts.find(acc => acc.id === operation.subAccountId);
+    if (!subAccount) return groups;
     
-    const direction = getPriceDirection(operation.id);
-    
-    if (direction === 'up') {
-      return {
-        direction: 'up',
-        priceClass: 'animate-price-up',
-        arrowClass: 'animate-arrow-up',
-        glowClass: 'glow-green'
+    const key = operation.subAccountId;
+    if (!groups[key]) {
+      groups[key] = {
+        subAccount,
+        operations: []
       };
-    } else if (direction === 'down') {
-      return {
-        direction: 'down',
-        priceClass: 'animate-price-down',
-        arrowClass: 'animate-arrow-down',
-        glowClass: 'glow-red'
-      };
     }
-    
-    return {
-      direction: 'neutral',
-      priceClass: '',
-      arrowClass: '',
-      glowClass: ''
-    };
+    groups[key].operations.push(operation);
+    return groups;
+  }, {} as Record<string, { subAccount: SubAccount; operations: Operation[] }>);
+
+  // Calcular totales
+  const totalProfit = filteredOperations.reduce((sum, op) => sum + (op.profit || 0), 0);
+  const positionsCount = openOperations.filter(op => getOperationType(op) === 'position').length;
+  const ordersCount = openOperations.filter(op => getOperationType(op) === 'order').length;
+
+  // Función para alternar expansión de subcuenta
+  const toggleSubAccount = (subAccountId: string) => {
+    setExpandedSubAccounts(prev => ({
+        ...prev,
+        [subAccountId]: !prev[subAccountId]
+    }));
   };
-  return (
-    <>
-      <style jsx>{`
-        @keyframes pulseGreen {
-          0%, 100% { 
-            background-color: rgba(34, 197, 94, 0.1);
-            border-color: rgba(34, 197, 94, 0.3);
-          }
-          50% { 
-            background-color: rgba(34, 197, 94, 0.3);
-            border-color: rgba(34, 197, 94, 0.6);
-          }
-        }
-        
-        @keyframes pulseRed {
-          0%, 100% { 
-            background-color: rgba(239, 68, 68, 0.1);
-            border-color: rgba(239, 68, 68, 0.3);
-          }
-          50% { 
-            background-color: rgba(239, 68, 68, 0.3);
-            border-color: rgba(239, 68, 68, 0.6);
-          }
-        }
-        
-        @keyframes pulseBlue {
-          0%, 100% { 
-            background-color: rgba(59, 130, 246, 0.1);
-            border-color: rgba(59, 130, 246, 0.3);
-          }
-          50% { 
-            background-color: rgba(59, 130, 246, 0.3);
-            border-color: rgba(59, 130, 246, 0.6);
-          }
-        }
-        
-        @keyframes priceUp {
-          0% { 
-            color: rgb(34, 197, 94);
-            text-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
-          }
-          50% { 
-            color: rgb(34, 197, 94);
-            text-shadow: 0 0 12px rgba(34, 197, 94, 0.7);
-          }
-          100% { 
-            color: rgb(34, 197, 94);
-            text-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
-          }
-        }
-        
-        @keyframes priceDown {
-          0% { 
-            color: rgb(239, 68, 68);
-            text-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
-          }
-          50% { 
-            color: rgb(239, 68, 68);
-            text-shadow: 0 0 12px rgba(239, 68, 68, 0.7);
-          }
-          100% { 
-            color: rgb(239, 68, 68);
-            text-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
-          }
-        }
-        
-        @keyframes arrowBounceUp {
-          0%, 100% { 
-            transform: translateY(0) rotate(0deg);
-            opacity: 0.7;
-          }
-          50% { 
-            transform: translateY(-5px) rotate(5deg);
-            opacity: 1;
-          }
-        }
-        
-        @keyframes arrowBounceDown {
-          0%, 100% { 
-            transform: translateY(0) rotate(0deg);
-            opacity: 0.7;
-          }
-          50% { 
-            transform: translateY(5px) rotate(-5deg);
-            opacity: 1;
-          }
-        }
-        
-        @keyframes glowGreen {
-          0%, 100% { 
-            box-shadow: 0 0 5px rgba(34, 197, 94, 0.3);
-          }
-          50% { 
-            box-shadow: 0 0 20px rgba(34, 197, 94, 0.6), 0 0 30px rgba(34, 197, 94, 0.4);
-          }
-        }
-        
-        @keyframes glowRed {
-          0%, 100% { 
-            box-shadow: 0 0 5px rgba(239, 68, 68, 0.3);
-          }
-          50% { 
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.6), 0 0 30px rgba(239, 68, 68, 0.4);
-          }
-        }
-        
-        .animate-pulse-green {
-          animation: pulseGreen 2s ease-in-out;
-        }
-        
-        .animate-pulse-red {
-          animation: pulseRed 2s ease-in-out;
-        }
-        
-        .animate-pulse-blue {
-          animation: pulseBlue 2s ease-in-out;
-        }
-        
-        .animate-price-up {
-          animation: priceUp 1.5s ease-in-out;
-        }
-        
-        .animate-price-down {
-          animation: priceDown 1.5s ease-in-out;
-        }
-        
-        .animate-arrow-up {
-          animation: arrowBounceUp 1s ease-in-out infinite;
-        }
-        
-        .animate-arrow-down {
-          animation: arrowBounceDown 1s ease-in-out infinite;
-        }
-        
-        .glow-green {
-          animation: glowGreen 2s ease-in-out;
-        }
-        
-        .glow-red {
-          animation: glowRed 2s ease-in-out;
-        }
-      `}</style>
+    
+    return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-zinc-100 dark:border-zinc-700 overflow-hidden">
-      {/* Cabecera simplificada */}
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-1 h-6 bg-violet-500 rounded-full"></div>
-            <h3 className="text-base font-medium text-zinc-900 dark:text-white">
-              Operaciones Abiertas
-              <span className="text-xs font-medium text-white dark:text-zinc-900 bg-violet-500 dark:bg-violet-400 px-2 py-0.5 rounded-full ml-2">
-                {openOperations.length}
-              </span>
-            </h3>
-          </div>
-          {!autoRefreshEnabled && !isLoadingOperations && (
-            <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Actualización automática pausada</span>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Contenido de operaciones */}
-      {isLoadingOperations ? (
-        <div className="p-6 text-center">
-          <div className="inline-flex items-center justify-center">
-            <svg className="animate-spin h-6 w-6 text-violet-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span className="ml-3 text-zinc-600 dark:text-zinc-400">Cargando operaciones...</span>
-          </div>
-        </div>
-      ) : operationsError ? (
-        <div className="p-6 text-center">
-          <div className="bg-rose-50 dark:bg-rose-900/20 rounded-lg p-4 space-y-3">
-            <div className="flex items-center justify-center gap-3">
-              <AlertTriangle className="w-5 h-5 text-rose-500" />
-              <span className="text-sm text-rose-700 dark:text-rose-300">{operationsError}</span>
-            </div>
-            {onRetry && (
+      {/* Header simplificado y más limpio */}
+      <div className="border-b border-zinc-200 dark:border-zinc-700">
+        <div className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
               <button
-                onClick={onRetry}
-                className="mt-3 px-4 py-2 text-xs font-medium text-white bg-violet-500 hover:bg-violet-600 dark:bg-violet-600 dark:hover:bg-violet-700 rounded-md transition-colors"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="flex items-center gap-3 text-lg font-semibold text-zinc-900 dark:text-white hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
               >
-                Reintentar
+                <div className="w-1 h-6 bg-gradient-to-b from-violet-500 to-blue-500 rounded-full"></div>
+                <span>Operaciones Activas</span>
+                <ChevronDown className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
               </button>
+              
+              {/* Badges informativos */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                  <Target className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                  <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{positionsCount}</span>
+                </div>
+                <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+                  <Clock className="w-3 h-3 text-orange-600 dark:text-orange-400" />
+                  <span className="text-xs font-medium text-orange-700 dark:text-orange-300">{ordersCount}</span>
+                </div>
+                {totalProfit !== 0 && (
+                  <div className={`flex items-center gap-1 px-2 py-1 rounded-full ${
+                    totalProfit >= 0
+                      ? 'bg-emerald-100 dark:bg-emerald-900/30'
+                      : 'bg-red-100 dark:bg-red-900/30'
+                  }`}>
+                    <Activity className="w-3 h-3" />
+                    <span className={`text-xs font-medium ${
+                      totalProfit >= 0
+                        ? 'text-emerald-700 dark:text-emerald-300'
+                        : 'text-red-700 dark:text-red-300'
+                    }`}>
+                      {totalProfit >= 0 ? '+' : ''}${formatNumber(totalProfit)}
+                    </span>
+                </div>
+              )}
+                </div>
+              </div>
+              
+            {/* Filtros simples */}
+            {isExpanded && openOperations.length > 0 && (
+              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-700 rounded-lg p-1">
+                <button 
+                  onClick={() => setFilterType('all')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    filterType === 'all'
+                      ? 'bg-white dark:bg-zinc-600 shadow-sm text-zinc-900 dark:text-white'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                  }`}
+                >
+                  Todas ({openOperations.length})
+                </button>
+                <button 
+                  onClick={() => setFilterType('positions')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    filterType === 'positions'
+                      ? 'bg-white dark:bg-zinc-600 shadow-sm text-blue-700 dark:text-blue-300'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-blue-700 dark:hover:text-blue-300'
+                  }`}
+                >
+                  Posiciones ({positionsCount})
+                </button>
+              <button 
+                  onClick={() => setFilterType('orders')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    filterType === 'orders'
+                      ? 'bg-white dark:bg-zinc-600 shadow-sm text-orange-700 dark:text-orange-300'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-orange-700 dark:hover:text-orange-300'
+                  }`}
+                >
+                  Órdenes ({ordersCount})
+              </button>
+            </div>
             )}
           </div>
         </div>
-      ) : openOperations.length === 0 ? (
-        <div className="p-8 text-center">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            No hay operaciones abiertas
-          </p>
-        </div>
-      ) : (
-        <div className="p-4 space-y-3">
-          {openOperations.map((operation) => (
-            <div 
-              key={operation.id}
-              className={`bg-white dark:bg-zinc-800 rounded-lg p-4 transition-all duration-300 ${
-                operation.side === 'buy' 
-                  ? 'border-emerald-200 dark:border-emerald-800/30 hover:border-emerald-300 dark:hover:border-emerald-700/50' 
-                  : 'border-rose-200 dark:border-rose-800/30 hover:border-rose-300 dark:hover:border-rose-700/50'
-              } ${hasRecentlyChanged(operation.id) ? 'ring-2 ring-violet-500/20' : ''} ${
-                hasRecentlyChanged(operation.id) 
-                  ? getChangeEffectClass(operation.id, operation.profit).includes('green') 
-                    ? 'border-2 border-emerald-400 dark:border-emerald-500'
-                    : getChangeEffectClass(operation.id, operation.profit).includes('red')
-                      ? 'border-2 border-rose-400 dark:border-rose-500'
-                      : getChangeEffectClass(operation.id, operation.profit).includes('blue')
-                        ? 'border-2 border-blue-400 dark:border-blue-500'
-                        : 'border-2'
-                  : 'border-2'
-              }`}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    operation.side === 'buy'
-                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                      : 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
-                  }`}>
-                    {operation.side === 'buy' ? 'LONG' : 'SHORT'}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-zinc-900 dark:text-white">
-                        {operation.symbol}
-                      </span>
-                      {operation.leverage && (
-                        <span className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded text-xs font-medium">
-                          {operation.leverage}x
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {subAccounts.find(acc => acc.id === operation.subAccountId)?.name || 'Subcuenta'}
-                      </span>
-                      <span className="text-xs px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-700 rounded text-zinc-500 dark:text-zinc-400">
-                        {operation.exchange}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                {operation.profit !== undefined && (() => {
-                  const priceDirection = getPriceDirection(operation);
-                  const isProfit = (operation.profit || 0) >= 0;
-                  return (
-                    <div className={`flex flex-col items-end gap-1 px-3 py-2 rounded-lg ${
-                      isProfit
-                        ? 'bg-emerald-100/50 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400'
-                        : 'bg-rose-100/50 text-rose-800 dark:bg-rose-900/20 dark:text-rose-400'
-                    }`}>
-                      <div className="flex items-center gap-1">
-                        <span className={`text-sm font-semibold ${
-                          hasRecentlyChanged(operation.id) && priceDirection.direction === 'up' ? 'animate-price-up' :
-                          hasRecentlyChanged(operation.id) && priceDirection.direction === 'down' ? 'animate-price-down' : ''
-                        }`}>
-                          {operation.profit && operation.profit >= 0 ? '+' : ''}${operation.profit ? operation.profit.toFixed(2) : '0.00'}
-                        </span>
-                        <span className={`${
-                          hasRecentlyChanged(operation.id) && priceDirection.direction === 'up' ? 'animate-arrow-up' :
-                          hasRecentlyChanged(operation.id) && priceDirection.direction === 'down' ? 'animate-arrow-down' : ''
-                        }`}>
-                          {isProfit 
-                            ? <TrendingUp className="w-3.5 h-3.5" />
-                            : <TrendingDown className="w-3.5 h-3.5" />
-                          }
-                        </span>
-                      </div>
-                      {operation.profitPercentage !== undefined && (
-                        <span className={`text-xs font-medium ${
-                          hasRecentlyChanged(operation.id) && priceDirection.direction === 'up' ? 'animate-price-up' :
-                          hasRecentlyChanged(operation.id) && priceDirection.direction === 'down' ? 'animate-price-down' : ''
-                        }`}>
-                          {operation.profitPercentage >= 0 ? '+' : ''}{operation.profitPercentage.toFixed(2)}%
-                        </span>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-700">
-                <div>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 block">Precio entrada</span>
-                  <span className={`text-sm font-medium text-zinc-900 dark:text-white transition-all duration-300 ${
-                    hasRecentlyChanged(operation.id) ? 'animate-price-up' : ''
-                  }`}>
-                    ${operation.price !== undefined && operation.price !== null && operation.price > 0 
-                      ? operation.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 6}) 
-                      : 'N/A'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 block">Precio liquidación</span>
-                  <span className={`text-sm font-medium transition-all duration-300 ${
-                    hasRecentlyChanged(operation.id) 
-                      ? operation.liquidationPrice && operation.price && operation.liquidationPrice < operation.price
-                        ? 'text-rose-600 dark:text-rose-400 animate-price-down'
-                        : 'text-amber-600 dark:text-amber-400 animate-price-up'
-                      : 'text-zinc-900 dark:text-white'
-                  }`}>
-                    ${operation.liquidationPrice !== undefined && operation.liquidationPrice !== null && operation.liquidationPrice > 0 
-                      ? operation.liquidationPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 6})
-                      : 'N/A'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 block">Cantidad</span>
-                  <span className="text-sm font-medium text-zinc-900 dark:text-white">
-                    {operation.quantity && operation.quantity > 0 
-                      ? operation.quantity.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 6}) 
-                      : '0'} {operation.symbol}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 block">Valor total</span>
-                  <span className="text-sm font-medium text-zinc-900 dark:text-white">
-                    ${operation.positionValue && operation.positionValue > 0 
-                      ? operation.positionValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})
-                                          : operation.price !== null && operation.quantity && operation.price > 0 && operation.quantity > 0 
-                      ? (operation.price * operation.quantity).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})
-                      : 'N/A'}
-                  </span>
-                </div>
-              </div>
-              
-              {/* Precio actual del mercado */}
-              {operation.markPrice && (() => {
-                const priceDirection = getPriceDirection(operation);
-                return (
-                  <div className={`mt-4 p-3 rounded-lg border transition-all duration-300 ${
-                    priceDirection.direction === 'up' 
-                      ? 'bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 border-emerald-200 dark:border-emerald-800/30' 
-                      : priceDirection.direction === 'down'
-                        ? 'bg-gradient-to-r from-rose-50 to-red-50 dark:from-rose-900/20 dark:to-red-900/20 border-rose-200 dark:border-rose-800/30'
-                        : 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800/30'
-                  } ${priceDirection.glowClass}`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full animate-pulse ${
-                          priceDirection.direction === 'up' 
-                            ? 'bg-emerald-500' 
-                            : priceDirection.direction === 'down'
-                              ? 'bg-rose-500'
-                              : 'bg-blue-500'
-                        }`}></div>
-                        <span className={`text-xs font-medium ${
-                          priceDirection.direction === 'up' 
-                            ? 'text-emerald-700 dark:text-emerald-300' 
-                            : priceDirection.direction === 'down'
-                              ? 'text-rose-700 dark:text-rose-300'
-                              : 'text-blue-700 dark:text-blue-300'
-                        }`}>
-                          Precio Actual
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <div className={`text-lg font-bold transition-all duration-300 ${
-                          priceDirection.direction === 'up' 
-                            ? 'text-emerald-900 dark:text-emerald-100' 
-                            : priceDirection.direction === 'down'
-                              ? 'text-rose-900 dark:text-rose-100'
-                              : 'text-blue-900 dark:text-blue-100'
-                        } ${priceDirection.priceClass}`}>
-                          ${operation.markPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 6})}
-                        </div>
-                        {operation.price !== null && operation.price > 0 && (
-                          <div className={`text-xs font-medium flex items-center justify-end gap-1 ${
-                            operation.markPrice > operation.price 
-                              ? 'text-emerald-600 dark:text-emerald-400' 
-                              : operation.markPrice < operation.price
-                                ? 'text-rose-600 dark:text-rose-400'
-                                : 'text-zinc-600 dark:text-zinc-400'
-                          }`}>
-                            <span className={`${priceDirection.arrowClass}`}>
-                              {operation.markPrice > operation.price ? '↗' : operation.markPrice < operation.price ? '↘' : '→'}
-                            </span>
-                            <span>
-                              {operation.markPrice > operation.price ? '+' : ''}
-                              ${(operation.markPrice - operation.price).toFixed(2)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-              
-              <div className="flex items-center justify-between mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-700">
-                <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
-                  <Clock className="w-3 h-3" />
-                  {operation.openTime ? new Date(operation.openTime).toLocaleString() : 'N/A'}
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onClosePosition?.(operation.id);
-                  }}
-                  className="px-3 py-1 text-xs font-medium text-white bg-violet-500 hover:bg-violet-600 dark:bg-violet-600 dark:hover:bg-violet-700 rounded-md transition-colors"
-                >
-                  Cerrar
-                </button>
+      </div>
+
+      {/* Contenido */}
+      {isExpanded && (
+        <div className="p-4">
+          {isLoadingOperations ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-zinc-600 dark:text-zinc-400">Cargando operaciones...</span>
               </div>
             </div>
-          ))}
+          ) : operationsError ? (
+            <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+                <span className="text-sm text-red-700 dark:text-red-300">{operationsError}</span>
+              </div>
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="px-4 py-2 text-sm font-medium text-white bg-violet-500 hover:bg-violet-600 rounded-lg transition-colors"
+                >
+                  Reintentar
+                </button>
+              )}
+            </div>
+          ) : filteredOperations.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-12 h-12 bg-zinc-100 dark:bg-zinc-700 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Activity className="w-6 h-6 text-zinc-400" />
+              </div>
+              <p className="text-zinc-500 dark:text-zinc-400">
+                {filterType === 'all' 
+                  ? 'No hay operaciones abiertas' 
+                  : filterType === 'positions'
+                  ? 'No hay posiciones abiertas'
+                  : 'No hay órdenes pendientes'
+                }
+              </p>
+            </div>
+          ) : (
+            /* Lista detallada agrupada por subcuenta */
+            <div className="space-y-4">
+              {Object.entries(groupedBySubAccount).map(([subAccountId, group]) => {
+                const isSubAccountExpanded = expandedSubAccounts[subAccountId] !== false; // Por defecto expandido
+                const subAccountProfit = group.operations.reduce((sum, op) => sum + (op.profit || 0), 0);
+                const subAccountPositions = group.operations.filter(op => getOperationType(op) === 'position').length;
+                const subAccountOrders = group.operations.filter(op => getOperationType(op) === 'order').length;
+
+    return (
+                  <div key={subAccountId} className="bg-zinc-50 dark:bg-zinc-700/30 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-600">
+                    {/* Header de la subcuenta */}
+        <div 
+                      onClick={() => toggleSubAccount(subAccountId)}
+                      className="px-4 py-3 bg-zinc-100 dark:bg-zinc-700 border-b border-zinc-200 dark:border-zinc-600 cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors"
+        >
+                      <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+              <span className="font-semibold text-zinc-900 dark:text-white">
+                              {cleanAccountName(group.subAccount.name)}
+              </span>
+              {group.subAccount.is_demo && (
+                              <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded-full">
+                  Demo
+                </span>
+              )}
+            </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs px-2 py-1 bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 rounded-full font-medium">
+                              {group.operations[0]?.exchange || 'Bybit'}
+                            </span>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            {/* Estadísticas de la subcuenta */}
+                          <div className="flex items-center gap-3 text-sm">
+                            <div className="flex items-center gap-1">
+                <Target className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-zinc-600 dark:text-zinc-400">
+                                {subAccountPositions}
+                </span>
+              </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                <span className="text-zinc-600 dark:text-zinc-400">
+                                {subAccountOrders}
+                </span>
+              </div>
+                            {subAccountProfit !== 0 && (
+                              <div className={`flex items-center gap-1 px-2 py-1 rounded-full ${
+                                subAccountProfit >= 0
+                                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                  : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                }`}>
+                                <Activity className="w-3 h-3" />
+                                <span className="text-xs font-medium">
+                                  {subAccountProfit >= 0 ? '+' : ''}${formatNumber(subAccountProfit)}
+                  </span>
+                </div>
+              )}
+            </div>
+            
+                          <ChevronDown className={`w-4 h-4 transition-transform ${
+                            isSubAccountExpanded ? 'rotate-180' : ''
+                          }`} />
+                        </div>
+          </div>
         </div>
-      )}
-    </div>
-    </>
+        
+                    {/* Operaciones de la subcuenta */}
+                    {isSubAccountExpanded && (
+                      <div className="divide-y divide-zinc-200 dark:divide-zinc-600">
+                        {group.operations.map((operation) => {
+                          const operationType = getOperationType(operation);
+                          
+                          return (
+                            <div
+                              key={operation.id}
+                              className={`p-4 hover:bg-white dark:hover:bg-zinc-600/50 transition-colors ${
+                                hasRecentlyChanged(operation.id) ? 'bg-violet-50 dark:bg-violet-900/20 border-l-4 border-violet-500' : ''
+                              }`}
+                            >
+                              {/* Información principal de la operación */}
+                              <div className="space-y-4">
+                                {/* Header de la operación */}
+                                <div className="flex items-start justify-between">
+                                  <div className="flex items-center gap-4">
+                                    {/* Tipo e icono */}
+                                    <div className="flex flex-col items-center gap-1">
+                                      <div className={`p-2 rounded-lg ${
+                                        operationType === 'position'
+                                          ? 'bg-blue-100 dark:bg-blue-900/30'
+                                          : 'bg-orange-100 dark:bg-orange-900/30'
+                                      }`}>
+                                        {operationType === 'position' ? (
+                                          <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                        ) : (
+                                          <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  )}
+                </div>
+                                      <span className={`text-xs font-medium ${
+                                        operationType === 'position'
+                                          ? 'text-blue-700 dark:text-blue-300'
+                                          : 'text-orange-700 dark:text-orange-300'
+                                      }`}>
+                                        {operationType === 'position' ? 'Posición' : 'Orden'}
+                </span>
+            </div>
+            
+                                    {/* Información básica */}
+                                    <div className="space-y-2">
+            <div className="flex items-center gap-3">
+                                        <span className="text-xl font-bold text-zinc-900 dark:text-white">
+                                          {operation.symbol}
+                                        </span>
+                                        <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                                          operation.side === 'buy'
+                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                                        }`}>
+                                          {operation.side === 'buy' ? 'LONG' : 'SHORT'}
+                                        </span>
+                                        {operation.leverage && (
+                                          <span className="px-3 py-1 text-sm font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded-full">
+                                            {operation.leverage}x
+                                          </span>
+                                        )}
+                                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                          operation.status === 'open'
+                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                            : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
+                                        }`}>
+                                          {operation.status.toUpperCase()}
+                                        </span>
+            </div>
+          </div>
+        </div>
+        
+                                  {/* P&L destacado */}
+                                  {operation.profit !== undefined && (
+                                    <div className="text-right">
+                                      <div className={`text-2xl font-bold ${
+                                        operation.profit >= 0
+                                          ? 'text-emerald-600 dark:text-emerald-400'
+                                          : 'text-red-600 dark:text-red-400'
+                                      } ${getChangeEffectClass(operation.id, operation.profit)}`}>
+                                        {operation.profit >= 0 ? '+' : ''}${formatNumber(operation.profit)}
+                </div>
+                                      {operation.profitPercentage !== undefined && (
+                                        <div className={`text-lg font-medium ${
+                                          operation.profitPercentage >= 0
+                                            ? 'text-emerald-600 dark:text-emerald-400'
+                                            : 'text-red-600 dark:text-red-400'
+                                        }`}>
+                                          {operation.profitPercentage >= 0 ? '+' : ''}{formatNumber(operation.profitPercentage)}%
+                  </div>
+                  )}
+                </div>
+                      )}
+                    </div>
+
+                                {/* Grid de información detallada */}
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                  {/* Precio de entrada */}
+                                  <div className="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-zinc-200 dark:border-zinc-700">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <DollarSign className="w-4 h-4 text-zinc-500" />
+                                      <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Precio de Entrada</span>
+                                    </div>
+                                    <span className="text-lg font-bold text-zinc-900 dark:text-white">
+                                      ${operation.price ? formatNumber(operation.price) : 'N/A'}
+                                    </span>
+                                  </div>
+
+                                  {/* Cantidad */}
+                                  <div className="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-zinc-200 dark:border-zinc-700">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <BarChart3 className="w-4 h-4 text-zinc-500" />
+                                      <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Cantidad</span>
+                                    </div>
+                                    <span className="text-lg font-bold text-zinc-900 dark:text-white">
+                                      {formatNumber(operation.quantity, 4)}
+                                      </span>
+                                    {operationType === 'order' && operation.remainingQuantity && (
+                                      <div className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                                        Pendiente: {formatNumber(operation.remainingQuantity, 4)}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Valor de posición */}
+                                  <div className="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-zinc-200 dark:border-zinc-700">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <TrendUp className="w-4 h-4 text-zinc-500" />
+                                      <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Valor Posición</span>
+                                    </div>
+                                    <span className="text-lg font-bold text-zinc-900 dark:text-white">
+                                      {operation.positionValue ? `$${formatNumber(operation.positionValue)}` : '--'}
+                                    </span>
+                                  </div>
+
+                                  {/* Precio de liquidación */}
+                                  <div className="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-zinc-200 dark:border-zinc-700">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <AlertTriangle className="w-4 h-4 text-zinc-500" />
+                                      <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Liquidación</span>
+                                    </div>
+                                    <span className="text-lg font-bold text-zinc-900 dark:text-white">
+                                      {operation.liquidationPrice !== undefined && operation.liquidationPrice !== null 
+                                        ? `$${formatNumber(operation.liquidationPrice)}` 
+                                        : '--'
+                                      }
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Información adicional si existe */}
+                                {(operation.markPrice || operation.fee || operation.filledQuantity) && (
+                                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-3 border-t border-zinc-200 dark:border-zinc-700">
+                                    {/* Precio de marca */}
+                                    {operation.markPrice && (
+                                      <div className="flex items-center justify-between bg-zinc-50 dark:bg-zinc-700 rounded-lg p-3">
+                                        <span className="text-sm text-zinc-600 dark:text-zinc-400">Precio de Marca:</span>
+                                        <span className="font-semibold text-zinc-900 dark:text-white">
+                                          ${formatNumber(operation.markPrice)}
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {/* Comisión */}
+                                    {operation.fee && (
+                                      <div className="flex items-center justify-between bg-zinc-50 dark:bg-zinc-700 rounded-lg p-3">
+                                        <span className="text-sm text-zinc-600 dark:text-zinc-400">Comisión:</span>
+                                        <span className="font-semibold text-zinc-900 dark:text-white">
+                                          ${formatNumber(operation.fee)}
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {/* Cantidad ejecutada */}
+                                    {operation.filledQuantity && (
+                                      <div className="flex items-center justify-between bg-zinc-50 dark:bg-zinc-700 rounded-lg p-3">
+                                        <span className="text-sm text-zinc-600 dark:text-zinc-400">Ejecutada:</span>
+                                        <span className="font-semibold text-zinc-900 dark:text-white">
+                                          {formatNumber(operation.filledQuantity, 4)}
+                                        </span>
+                    </div>
+                  )}
+                </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                      </div>
+                );
+              })}
+                  </div>
+                )}
+        </div>
+        )}
+      </div>
   );
 } 

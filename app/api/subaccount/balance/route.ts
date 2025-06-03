@@ -121,15 +121,44 @@ export async function POST(request: Request) {
     const processedAssetsBybit = apiResponse.result?.list?.[0]?.coin?.map((asset: any) => {
          const usdVal = parseFloat(asset.usdValue || '0');
          calculatedUsdTotalBybit += usdVal;
-         // Asegurarse de que walletBalance también se parsea
+         // Procesamiento mejorado de assets con más campos
          const walletBalance = parseFloat(asset.walletBalance || '0');
-         return { coin: asset.coin, walletBalance: walletBalance, usdValue: usdVal };
+         const equity = parseFloat(asset.equity || '0');
+         const unrealisedPnl = parseFloat(asset.unrealisedPnl || '0');
+         const availableToWithdraw = parseFloat(asset.availableToWithdraw || '0');
+         
+         return { 
+           coin: asset.coin, 
+           walletBalance: walletBalance, 
+           usdValue: usdVal,
+           equity: equity,
+           unrealisedPnl: unrealisedPnl,
+           availableToWithdraw: availableToWithdraw
+         };
     }).filter((a: any) => a.walletBalance > 0) || [];
     
-    // *** Estructura de respuesta simplificada ***
+    // Extraer información de balance a nivel de cuenta
+    const accountInfo = apiResponse.result?.list?.[0];
+    const totalMarginBalance = parseFloat(accountInfo?.totalMarginBalance || '0');
+    const totalAvailableBalance = parseFloat(accountInfo?.totalAvailableBalance || '0');
+    const totalWalletBalance = parseFloat(accountInfo?.totalWalletBalance || '0');
+    const totalEquity = parseFloat(accountInfo?.totalEquity || '0');
+    const totalPerpUPL = parseFloat(accountInfo?.totalPerpUPL || '0');
+    const totalInitialMargin = parseFloat(accountInfo?.totalInitialMargin || '0');
+    
+    // *** Estructura de respuesta mejorada ***
     const responseData = {
-        balanceUsd: calculatedUsdTotalBybit, // Directamente del cálculo de Bybit
-        assets: processedAssetsBybit
+        balanceUsd: calculatedUsdTotalBybit, // Para compatibilidad
+        assets: processedAssetsBybit,
+        // Nuevos campos específicos de Bybit
+        accountInfo: {
+          totalMarginBalance,
+          totalAvailableBalance, 
+          totalWalletBalance,
+          totalEquity,
+          totalPerpUPL,
+          totalInitialMargin
+        }
     };
 
     return NextResponse.json({ success: true, data: responseData });

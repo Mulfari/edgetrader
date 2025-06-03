@@ -5,7 +5,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: `${apiUrl}/:path*`,
+        destination: `${apiUrl}/api/:path*`,
       },
     ];
   },
@@ -15,6 +15,11 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'assets.coingecko.com',
         pathname: '/coins/images/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'assets.coingecko.com',
+        pathname: '/coins/images/**/standard/**',
       },
       {
         protocol: 'https',

@@ -39,7 +39,7 @@ export interface PerpetualMarketTicker {
 
 export type MarketTicker = SpotMarketTicker | PerpetualMarketTicker;
 
-const defaultSpotTickers: SpotMarketTicker[] = ['BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOGE', 'LINK', 'UNI', 'SHIB', 'LTC', 'BCH', 'ATOM', 'NEAR', 'AVAX', 'MATIC', 'DOT'].map(symbol => ({
+const defaultSpotTickers: SpotMarketTicker[] = ['BTC', 'ETH', 'SOL', 'XRP', 'SUI', 'ADA', 'LINK', 'HBAR', 'TRX', 'RNDR', 'AVAX', 'DOGE', 'UNI', 'SHIB', 'LTC', 'BCH', 'ATOM', 'NEAR', 'MATIC', 'DOT'].map(symbol => ({
   symbol,
   price: '0.00',
   indexPrice: '0.00',
@@ -54,7 +54,7 @@ const defaultSpotTickers: SpotMarketTicker[] = ['BTC', 'ETH', 'SOL', 'XRP', 'ADA
   favorite: false
 }));
 
-const defaultPerpetualTickers: PerpetualMarketTicker[] = ['BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOGE', 'LINK', 'UNI', 'AVAX', 'MATIC', 'DOT'].map(symbol => ({
+const defaultPerpetualTickers: PerpetualMarketTicker[] = ['BTC', 'ETH', 'SOL', 'XRP', 'SUI', 'ADA', 'LINK', 'HBAR', 'TRX', 'RNDR', 'AVAX', 'DOGE', 'UNI', 'MATIC', 'DOT'].map(symbol => ({
   symbol,
   price: '0.00',
   indexPrice: '0.00',

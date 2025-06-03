@@ -1,44 +1,33 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
-import {
-  ArrowLeft,
-  ChevronDown,
-  Users,
-  Check,
-  Settings,
-  X,
-  PlusCircle,
-  TrendingUp,
-  TrendingDown,
-  ExternalLink,
-  Clock,
-  Search,
-  RefreshCw,
-  Pause,
-  Play,
-  AlertTriangle,
-  ArrowRight,
-  LayoutGrid,
-  List,
+import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
+import { 
+  TrendingUp, TrendingDown, Eye, EyeOff, AlertTriangle, Check, X, 
+  DollarSign, Target, Users, Settings, ArrowRight, Info, Calculator,
+  Clock, ArrowLeftRight, Home, BarChart2,
   ChevronLeft,
   ChevronRight,
   Maximize,
   Minimize,
-  Info,
-  BarChart2,
+  List,
+  LayoutGrid,
   ChevronUp,
+  ChevronDown,
   Layers,
-  Zap
+  Zap,
+  RefreshCw,
+  PlusCircle
 } from 'lucide-react';
-import Link from 'next/link';
-import TradingViewChart from '@/components/TradingViewChart';
-import Image from 'next/image';
-import { useMarketData, SpotMarketTicker, PerpetualMarketTicker, MarketTicker } from '@/hooks/useMarketData';
-import { useAuth } from '@/hooks/useAuth';
-import { getUserSubaccounts, Subaccount } from '@/lib/supabase';
-import React from 'react';
 import OpenOperations from '@/components/OpenOperations';
+import TradingPanel from '@/components/TradingPanel';
+import SubAccountSelector from '@/components/SubAccountSelector';
+import TradingViewChart from '@/components/TradingViewChart';
+import { useMarketData, SpotMarketTicker, PerpetualMarketTicker, MarketTicker } from '@/hooks/useMarketData';
+import { getUserSubaccounts, Subaccount } from '@/lib/supabase';
 
 interface SubAccount {
   id: string;
@@ -63,7 +52,7 @@ interface OrderSummary {
   amount: string;
   total: string;
   leverage: string | null;
-  subAccounts: SubAccount[];
+  subAccount: SubAccount;
   perpetualInfo?: {
     openInterest: number;
     symbol: string;
@@ -186,13 +175,76 @@ interface Operation {
 }
 
 export default function NewOperation() {
-  const { token } = useAuth();
-  const [marketType, setMarketType] = useState<'spot' | 'perpetual'>('spot');
+  const router = useRouter();
+  const { user, loading, token } = useAuth();
+
+  // Estados principales
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
+  const [selectedSubAccount, setSelectedSubAccount] = useState<string | null>(null);
+  const [isLoadingSubAccounts, setIsLoadingSubAccounts] = useState(true);
+  const [isHydrated, setIsHydrated] = useState(false);
+  
+  // Estados del trading
+  const [side, setSide] = useState<'buy' | 'sell'>('buy');
+  const [orderType, setOrderType] = useState<'limit' | 'market'>('limit');
+  const [marketType, setMarketType] = useState<'spot' | 'perpetual'>('perpetual');
+  const [price, setPrice] = useState('');
+  const [amount, setAmount] = useState('');
+  const [leverage, setLeverage] = useState('1');
+  const [total, setTotal] = useState('0');
+  
+  // Estados de la UI
+  const [isLoading, setIsLoading] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(null);
+  
+  // Estados de operaciones abiertas
+  const [openOperations, setOpenOperations] = useState<Operation[]>([]);
+  const [isLoadingOperations, setIsLoadingOperations] = useState(false);
+  const [operationsError, setOperationsError] = useState<string | null>(null);
+  const [lastOperationsPrices, setLastOperationsPrices] = useState<Record<string, number>>({});
+  const [operationChangeEffects, setOperationChangeEffects] = useState<Record<string, string>>({});
+  const [priceDirections, setPriceDirections] = useState<Record<string, 'up' | 'down' | 'neutral'>>({});
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const [consecutiveErrors, setConsecutiveErrors] = useState(0);
+  const hasInitialLoadRef = useRef(false);
+
   const { tickers, loading: marketLoading, error: marketError, toggleFavorite, refreshData } = useMarketData(marketType);
   
   // Referencia para el intervalo de actualización manual
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
+  // Estados para los mejores precios
+  const [bestBidPrice, setBestBidPrice] = useState<string>('0.00');
+  const [bestAskPrice, setBestAskPrice] = useState<string>('0.00');
+
+  // Estados adicionales para la UI
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedQuote, setSelectedQuote] = useState('USDT');
+  const [error, setError] = useState<string>('');
+  
+  const [selectedPair, setSelectedPair] = useState<MarketTicker>(
+    tickers.find(ticker => ticker.symbol === 'BTC') || {
+      symbol: 'BTC',
+      price: '0.00',
+      indexPrice: '0.00',
+      change: '0.00%',
+      volume: '0',
+      high24h: '0.00',
+      low24h: '0.00',
+      volumeUSDT: '0',
+      marketType: 'spot',
+      bidPrice: '0.00',
+      askPrice: '0.00',
+      favorite: false
+    } as SpotMarketTicker
+  );
+
   // Función para probar la API de Bybit directamente
   const testBybitAPI = async () => {
     try {
@@ -242,79 +294,97 @@ export default function NewOperation() {
     };
   }, []);
   
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [orderType, setOrderType] = useState<'limit' | 'market'>('limit');
-  const [side, setSide] = useState<'buy' | 'sell'>('buy');
-  const [price, setPrice] = useState<string>('');
-  const [amount, setAmount] = useState<string>('');
-  const [total, setTotal] = useState<string>('');
-  const [leverage, setLeverage] = useState<string>('1');
-  const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
-  const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(null);
-  const [error, setError] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string>('');
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedQuote, setSelectedQuote] = useState('USDT');
-  const [showSearchResults, setShowSearchResults] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
-  const [selectedPair, setSelectedPair] = useState<MarketTicker>(
-    tickers.find(ticker => ticker.symbol === 'BTC') || {
-      symbol: 'BTC',
-      price: '0.00',
-      indexPrice: '0.00',
-      change: '0.00%',
-      volume: '0',
-      high24h: '0.00',
-      low24h: '0.00',
-      volumeUSDT: '0',
-      marketType: 'spot',
-      bidPrice: '0.00',
-      askPrice: '0.00',
-      favorite: false
-    } as SpotMarketTicker
-  );
-
-  // Estado para las subcuentas
-  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
-  const [selectedSubAccounts, setSelectedSubAccounts] = useState<string[]>([]);
-  const [rememberSubAccountSelection, setRememberSubAccountSelection] = useState(false);
-  const [isSubAccountSelectorOpen, setIsSubAccountSelectorOpen] = useState(false);
-  const subAccountSelectorRef = useRef<HTMLDivElement>(null);
-  
-  // Inicializar desde localStorage si está activada la opción de recordar
-  // Movemos esto a un useEffect para asegurarnos de que solo se ejecute en el cliente
-  useEffect(() => {
-    const remember = safeLocalStorage.getItem('rememberSubAccountSelection') === 'true';
-    setRememberSubAccountSelection(remember);
-    
-    if (remember) {
-      const savedSelection = safeLocalStorage.getItem('selectedSubAccounts');
-      if (savedSelection) {
-        try {
-          const parsed = JSON.parse(savedSelection);
-          setSelectedSubAccounts(Array.isArray(parsed) ? parsed : []);
-        } catch (error) {
-          console.error('Error al parsear selectedSubAccounts:', error);
-        }
+  // Función para cargar subcuentas desde Supabase
+  const loadSubAccounts = async () => {
+    try {
+      setIsLoadingSubAccounts(true);
+      console.log('🔄 Cargando subcuentas desde Supabase...');
+      
+      const { data, error } = await getUserSubaccounts();
+      
+      if (error) {
+        console.error('Error al cargar subcuentas:', error);
+        return false;
       }
+      
+      if (data && data.length > 0) {
+        console.log('✅ Subcuentas cargadas desde Supabase:', data.length);
+            
+        // Transformar los datos al formato que necesitamos
+        const formattedAccounts: SubAccount[] = data.map(account => ({
+          id: account.id,
+          name: account.name,
+          created_at: account.created_at || new Date().toISOString(),
+          api_key: account.api_key,
+          secret_key: account.secret_key,
+          is_demo: account.is_demo,
+          balance: {
+            btc: 0, // Se actualizará con llamadas a la API
+            usdt: 1000, // Valor temporal hasta que el endpoint esté disponible
+          }
+        }));
+            
+        setSubAccounts(formattedAccounts);
+
+        // Validar que la subcuenta seleccionada aún exista (solo después de hidratación)
+        if (isHydrated && selectedSubAccount) {
+          const existingAccount = formattedAccounts.find(acc => acc.id === selectedSubAccount);
+          if (!existingAccount) {
+            // Si la subcuenta seleccionada ya no existe, limpiar la selección
+            setSelectedSubAccount(null);
+            localStorage.removeItem('selectedSubAccount');
+            console.log('⚠️ Subcuenta seleccionada ya no existe, limpiando selección');
+          }
+        }
+            
+        // TEMPORAL: Comentar la carga automática de balances hasta que el endpoint esté disponible
+        // formattedAccounts.forEach(account => {
+        //   loadBalanceForSubAccount(account.id);
+        // });
+            
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error al cargar subcuentas desde Supabase:', error);
+      return false;
+    } finally {
+      setIsLoadingSubAccounts(false);
     }
+  };
+
+  // Cargar subcuentas al inicializar el componente
+  useEffect(() => {
+    if (user && token) {
+      loadSubAccounts();
+    }
+  }, [user, token]);
+
+  // Efecto de hidratación segura desde localStorage
+  useEffect(() => {
+    const savedSubAccount = localStorage.getItem('selectedSubAccount');
+    if (savedSubAccount) {
+      setSelectedSubAccount(savedSubAccount);
+    }
+    setIsHydrated(true);
   }, []);
 
-  // Estados para los mejores precios
-  const [bestBidPrice, setBestBidPrice] = useState<string>('0.00');
-  const [bestAskPrice, setBestAskPrice] = useState<string>('0.00');
+  // Persistir selectedSubAccount en localStorage cuando cambie (solo después de hidratación)
+  useEffect(() => {
+    if (!isHydrated) return; // No persistir hasta que esté hidratado
+    
+    if (selectedSubAccount) {
+      localStorage.setItem('selectedSubAccount', selectedSubAccount);
+    } else {
+      localStorage.removeItem('selectedSubAccount');
+    }
+  }, [selectedSubAccount, isHydrated]);
 
-  // Añadir un nuevo estado para controlar la animación del botón de cerrar
-  const [highlightCloseButton, setHighlightCloseButton] = useState(false);
-
-  // Añadir un estado para rastrear si se han modificado las subcuentas
-  const [initialSubAccountSelection, setInitialSubAccountSelection] = useState<string[]>([]);
-  const [hasModifiedSelection, setHasModifiedSelection] = useState(false);
-
-  // Referencia para saber si es la primera carga
-  const isFirstLoad = useRef(true);
+  // Función para cambiar la subcuenta seleccionada
+  const handleSubAccountChange = (subAccountId: string | null) => {
+    setSelectedSubAccount(subAccountId);
+  };
 
   // Actualizar selectedPair cuando los tickers cambien
   useEffect(() => {
@@ -342,85 +412,6 @@ export default function NewOperation() {
       }
     }
   }, [marketType, tickers]);
-
-  // Efecto para mostrar información en la consola sobre el par seleccionado
-  useEffect(() => {
-    if (marketType === 'perpetual' && selectedPair) {
-      // Verificar si el par tiene todas las propiedades necesarias
-      if (!('openInterest' in selectedPair) || !('fundingRate' in selectedPair) || !('nextFundingTime' in selectedPair)) {
-      } else {
-      }
-    }
-  }, [selectedPair, marketType]);
-
-  // Función para cargar subcuentas desde Supabase
-  const loadSubAccounts = async () => {
-      try {
-      console.log('🔄 Cargando subcuentas desde Supabase...');
-      
-      const { data, error } = await getUserSubaccounts();
-      
-      if (error) {
-        console.error('Error al cargar subcuentas:', error);
-        return false;
-      }
-      
-      if (data && data.length > 0) {
-        console.log('✅ Subcuentas cargadas desde Supabase:', data.length);
-            
-            // Transformar los datos al formato que necesitamos
-        const formattedAccounts: SubAccount[] = data.map(account => ({
-                id: account.id,
-                name: account.name,
-          created_at: account.created_at || new Date().toISOString(),
-          api_key: account.api_key,
-          secret_key: account.secret_key,
-          is_demo: account.is_demo,
-          balance: {
-            btc: 0, // Se actualizará con llamadas a la API
-            usdt: 0, // Se actualizará con llamadas a la API
-          }
-        }));
-            
-            setSubAccounts(formattedAccounts);
-            
-        // Cargar balances para cada subcuenta
-            formattedAccounts.forEach(account => {
-                loadBalanceForSubAccount(account.id);
-            });
-            
-            return true;
-      }
-      
-      return false;
-      } catch (error) {
-      console.error('Error al cargar subcuentas desde Supabase:', error);
-      return false;
-    }
-  };
-
-  // Guardar la selección de subcuentas cuando cambie
-  useEffect(() => {
-    if (rememberSubAccountSelection) {
-      safeLocalStorage.setItem('selectedSubAccounts', JSON.stringify(selectedSubAccounts));
-    } else {
-      // Si se desactiva la opción de recordar, eliminar la selección guardada
-      safeLocalStorage.removeItem('selectedSubAccounts');
-    }
-  }, [selectedSubAccounts, rememberSubAccountSelection]);
-
-  // Guardar la preferencia de recordar selección
-  useEffect(() => {
-    safeLocalStorage.setItem('rememberSubAccountSelection', rememberSubAccountSelection.toString());
-    
-    // Si se activa la opción de recordar, guardar la selección actual
-    if (rememberSubAccountSelection) {
-      safeLocalStorage.setItem('selectedSubAccounts', JSON.stringify(selectedSubAccounts));
-    } else {
-      // Si se desactiva, eliminar la selección guardada
-      safeLocalStorage.removeItem('selectedSubAccounts');
-    }
-  }, [rememberSubAccountSelection, selectedSubAccounts]);
 
   // Categorías de activos
   const topAssets = ['BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOGE', 'AVAX', 'MATIC', 'DOT', 'LINK'];
@@ -452,7 +443,7 @@ export default function NewOperation() {
       const leveragedValue = totalValue * parseFloat(leverage);
       setTotal(leveragedValue.toFixed(2));
     } else {
-      setTotal('');
+      setTotal('0');
     }
   }, [price, amount, leverage]);
 
@@ -508,27 +499,26 @@ export default function NewOperation() {
 
   // Función para calcular el balance disponible del activo seleccionado
   const getAvailableBalance = (assetType: 'base' | 'quote') => {
-    const selectedAccounts = subAccounts.filter(acc => selectedSubAccounts.includes(acc.id));
+    if (!selectedSubAccount) {
+      return assetType === 'base' ? '0.0000' : '0.00';
+    }
     
-    if (selectedAccounts.length === 0) {
+    const account = subAccounts.find(acc => acc.id === selectedSubAccount);
+    if (!account) {
       return assetType === 'base' ? '0.0000' : '0.00';
     }
     
     if (assetType === 'base') {
       // Para el activo base (BTC, ETH, etc.)
-      const baseBalance = selectedAccounts.reduce((sum, acc) => {
-        // Buscar el activo correspondiente al símbolo seleccionado
-        if (selectedPair.symbol === 'BTC') {
-          return sum + acc.balance.btc;
-        } else if (selectedPair.symbol === 'ETH') {
-          // Si hay balance de ETH, usarlo, de lo contrario usar 0
-          return sum + (acc.balance.eth || 0);
-        } else {
-          // Para otros activos, intentar encontrarlos en el balance o usar 0
-          const otherBalance = acc.balance[selectedPair.symbol.toLowerCase()] || 0;
-          return sum + otherBalance;
-        }
-      }, 0);
+      let baseBalance = 0;
+      if (selectedPair.symbol === 'BTC') {
+        baseBalance = account.balance.btc;
+      } else if (selectedPair.symbol === 'ETH') {
+        baseBalance = account.balance.eth || 0;
+      } else {
+        // Para otros activos, intentar encontrarlos en el balance o usar 0
+        baseBalance = account.balance[selectedPair.symbol.toLowerCase()] || 0;
+      }
       
       // Ajustar la precisión según el activo
       return baseBalance.toFixed(
@@ -538,32 +528,37 @@ export default function NewOperation() {
       );
     } else {
       // Para el activo quote (USDT)
-      const quoteBalance = selectedAccounts.reduce((sum, acc) => sum + acc.balance.usdt, 0);
-      return quoteBalance.toFixed(2);
+      return account.balance.usdt.toFixed(2);
     }
   };
 
   // Función para establecer el porcentaje de la cantidad disponible
   const setAmountPercentage = (percentage: number) => {
-    // Calcular el balance disponible del activo seleccionado en las subcuentas seleccionadas
-    const availableAmount = subAccounts
-      .filter(acc => selectedSubAccounts.includes(acc.id))
-      .reduce((sum, acc) => {
-        // Si es compra, usamos el balance de USDT dividido por el precio
-        if (side === 'buy') {
-          const usdtBalance = acc.balance.usdt;
-          const priceValue = parseFloat(price) || parseFloat(selectedPair.price);
-          if (priceValue > 0) {
-            return sum + (usdtBalance / priceValue);
-          }
-          return sum;
-        } 
-        // Si es venta, usamos el balance del activo directamente
-        else {
-          // Usar BTC como ejemplo, pero idealmente debería ser dinámico según el activo seleccionado
-          return sum + acc.balance.btc;
-        }
-      }, 0);
+    if (!selectedSubAccount) return;
+    
+    const account = subAccounts.find(acc => acc.id === selectedSubAccount);
+    if (!account) return;
+
+    let availableAmount = 0;
+
+    // Si es compra, usamos el balance de USDT dividido por el precio
+    if (side === 'buy') {
+      const usdtBalance = account.balance.usdt;
+      const priceValue = parseFloat(price) || parseFloat(selectedPair.price);
+      if (priceValue > 0) {
+        availableAmount = usdtBalance / priceValue;
+      }
+    } 
+    // Si es venta, usamos el balance del activo directamente
+    else {
+      if (selectedPair.symbol === 'BTC') {
+        availableAmount = account.balance.btc;
+      } else if (selectedPair.symbol === 'ETH') {
+        availableAmount = account.balance.eth || 0;
+      } else {
+        availableAmount = account.balance[selectedPair.symbol.toLowerCase()] || 0;
+      }
+    }
 
     // Aplicar el porcentaje al monto disponible
     const calculatedAmount = availableAmount * (percentage / 100);
@@ -638,16 +633,24 @@ export default function NewOperation() {
   const calculateRiskPercentage = () => {
     const risk = calculateRisk();
     
+    if (!selectedSubAccount) return 0;
+    
+    const account = subAccounts.find(acc => acc.id === selectedSubAccount);
+    if (!account) return 0;
+    
     // Obtener el balance total disponible
-    const totalBalance = subAccounts
-      .filter(acc => selectedSubAccounts.includes(acc.id))
-      .reduce((sum, acc) => {
-        return side === 'buy' ? sum + acc.balance.usdt : sum + (
-          selectedPair.symbol === 'BTC' ? acc.balance.btc * parseFloat(selectedPair.price) :
-          selectedPair.symbol === 'ETH' ? (acc.balance.eth || 0) * parseFloat(selectedPair.price) :
-          (acc.balance[selectedPair.symbol.toLowerCase()] || 0) * parseFloat(selectedPair.price)
-        );
-      }, 0);
+    let totalBalance = 0;
+    if (side === 'buy') {
+      totalBalance = account.balance.usdt;
+    } else {
+      if (selectedPair.symbol === 'BTC') {
+        totalBalance = account.balance.btc * parseFloat(selectedPair.price);
+      } else if (selectedPair.symbol === 'ETH') {
+        totalBalance = (account.balance.eth || 0) * parseFloat(selectedPair.price);
+      } else {
+        totalBalance = (account.balance[selectedPair.symbol.toLowerCase()] || 0) * parseFloat(selectedPair.price);
+      }
+    }
     
     // Si no hay balance, devolver 0
     if (totalBalance <= 0) return 0;
@@ -670,30 +673,16 @@ export default function NewOperation() {
   const validateBalance = () => {
     if (!amount) return true;
     
-    // Obtener las subcuentas seleccionadas
-    const selectedAccounts = subAccounts.filter(acc => selectedSubAccounts.includes(acc.id));
+    if (!selectedSubAccount) return false;
     
-    // Si no hay subcuentas seleccionadas, no podemos validar
-    if (selectedAccounts.length === 0) return false;
+    const account = subAccounts.find(acc => acc.id === selectedSubAccount);
+    if (!account) return false;
     
     // Para compras, validamos el balance de USDT
     if (side === 'buy') {
-      // Calcular el costo total de la operación
-      let totalCost = parseFloat(calculateTotal());
+      const totalCost = parseFloat(calculateTotal());
+      const availableUSDT = account.balance.usdt;
       
-      // Para futuros, aplicar el apalancamiento
-      if (marketType === 'perpetual' && leverage) {
-        // El costo es el valor nominal / apalancamiento (margen requerido)
-        const leverageValue = parseFloat(leverage);
-        if (leverageValue > 0) {
-          // El costo ya está calculado con apalancamiento en calculateTotal
-        }
-      }
-      
-      // Obtener el balance disponible de USDT
-      const availableUSDT = selectedAccounts.reduce((sum, acc) => sum + acc.balance.usdt, 0);
-      
-      // Validar si hay suficiente balance
       if (totalCost > availableUSDT) {
         showError(`Balance insuficiente. Necesitas ${totalCost.toFixed(2)} USDT pero solo tienes ${availableUSDT.toFixed(2)} USDT disponible.`);
         return false;
@@ -702,21 +691,16 @@ export default function NewOperation() {
     // Para ventas, validamos el balance del activo seleccionado
     else {
       const amountNeeded = parseFloat(amount);
+      let availableAsset = 0;
       
-      // Obtener el balance del activo seleccionado de forma dinámica
-      const availableAsset = selectedAccounts.reduce((sum, acc) => {
-        if (selectedPair.symbol === 'BTC') {
-          return sum + acc.balance.btc;
-        } else if (selectedPair.symbol === 'ETH') {
-          return sum + (acc.balance.eth || 0);
-        } else {
-          // Para otros activos, intentar encontrarlos en el balance o usar 0
-          const otherBalance = acc.balance[selectedPair.symbol.toLowerCase()] || 0;
-          return sum + otherBalance;
-        }
-      }, 0);
+      if (selectedPair.symbol === 'BTC') {
+        availableAsset = account.balance.btc;
+      } else if (selectedPair.symbol === 'ETH') {
+        availableAsset = account.balance.eth || 0;
+      } else {
+        availableAsset = account.balance[selectedPair.symbol.toLowerCase()] || 0;
+      }
       
-      // Validar si hay suficiente balance
       if (amountNeeded > availableAsset) {
         showError(`Balance insuficiente. Necesitas ${amountNeeded.toFixed(4)} ${selectedPair.symbol} pero solo tienes ${availableAsset.toFixed(4)} ${selectedPair.symbol} disponible.`);
         return false;
@@ -764,8 +748,8 @@ export default function NewOperation() {
       return false;
     }
     
-    if (selectedSubAccounts.length === 0) {
-      showError('Por favor, seleccione al menos una subcuenta.');
+    if (!selectedSubAccount) {
+      showError('Por favor, seleccione una subcuenta.');
       return false;
     }
     
@@ -789,9 +773,11 @@ export default function NewOperation() {
       return;
     }
     
-    const selectedAccounts = subAccounts.filter(account => 
-      selectedSubAccounts.includes(account.id)
-    );
+    const selectedAccount = subAccounts.find(account => account.id === selectedSubAccount);
+    if (!selectedAccount) {
+      showError('Subcuenta no encontrada');
+      return;
+    }
     
     const summary: OrderSummary = {
       marketType: marketType,
@@ -801,7 +787,7 @@ export default function NewOperation() {
       amount,
       total: calculateTotal(),
       leverage: marketType === 'perpetual' ? leverage : null,
-      subAccounts: selectedAccounts
+      subAccount: selectedAccount
     };
     
     setOrderSummary(summary);
@@ -816,10 +802,24 @@ export default function NewOperation() {
         return;
       }
       
-      // Preparar el resumen de la orden
-      const selectedAccounts = subAccounts.filter(account => 
-        selectedSubAccounts.includes(account.id)
-      );
+      // Verificar que hay subcuenta seleccionada
+      if (!selectedSubAccount) {
+        showError('Debe seleccionar una subcuenta');
+        return;
+      }
+
+      // Verificar que hay token de autorización
+      if (!token) {
+        showError('No hay token de autorización. Por favor, inicie sesión nuevamente.');
+        return;
+      }
+      
+      // Obtener la subcuenta seleccionada
+      const selectedAccount = subAccounts.find(account => account.id === selectedSubAccount);
+      if (!selectedAccount) {
+        showError('Subcuenta no encontrada');
+        return;
+      }
       
       // Crear el objeto de resumen con todos los detalles
       const summary: OrderSummary = {
@@ -830,33 +830,93 @@ export default function NewOperation() {
         amount,
         total: calculateTotal(),
         leverage: marketType === 'perpetual' ? leverage : null,
-        subAccounts: selectedAccounts
+        subAccount: selectedAccount
       };
       
       // Actualizar el estado y mostrar confirmación
       setOrderSummary(summary);
       setIsLoading(true);
       
-      // Simular una llamada a la API
-      // Eliminar log innecesario
-      // console.log('Ejecutando orden:', summary);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mostrar mensaje de éxito
-      setSuccessMessage('Orden ejecutada exitosamente');
-      setShowSuccess(true);
-      
-      // Limpiar campos después de ejecutar la orden
-      if (orderType !== 'market') {
-        setPrice('');
+      // Preparar la solicitud de orden para el backend
+      const orderRequest = {
+        symbol: selectedPair.symbol, // BTC, ETH, etc. (sin USDT)
+        side: side, // 'buy' o 'sell'
+        orderType: orderType, // 'limit' o 'market'
+        qty: amount, // cantidad
+        price: orderType === 'limit' ? price : undefined, // precio solo para limit orders
+        category: marketType === 'spot' ? 'spot' : 'linear', // tipo de mercado
+        leverage: marketType === 'perpetual' ? leverage : undefined // apalancamiento solo para futuros
+      };
+
+      const requestBody = {
+        subaccountIds: [selectedSubAccount], // Ahora es un array con un solo elemento
+        orderRequest: orderRequest
+      };
+
+      console.log('🚀 Ejecutando orden:', requestBody);
+
+      // Llamar al endpoint del backend
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) {
+        throw new Error('La URL del API no está configurada');
       }
-      setAmount('');
+
+      const response = await fetch(`${apiUrl}/api/subaccounts/execute-order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Resultado de la ejecución:', result);
+
+      // Procesar resultados
+      if (result.successfulOrders > 0) {
+        const successMessage = `Orden ejecutada exitosamente en la subcuenta`;
+        
+        setSuccessMessage(successMessage);
+        setShowSuccess(true);
+        
+        // Limpiar campos después de ejecutar
+        setAmount('');
+        setPrice('');
+        
+        // Recargar balances
+        if (selectedAccount) {
+          loadBalanceForSubAccount(selectedAccount.id);
+        }
+        
+        // Recargar operaciones abiertas si estamos en futuros
+        if (marketType === 'perpetual') {
+          setTimeout(() => {
+            fetchOpenOperations(false);
+          }, 2000);
+        }
+      } else {
+        setSuccessMessage('No se pudo ejecutar la orden');
+        setShowSuccess(true);
+      }
+
+      // Mostrar detalles de errores si los hay
+      if (result.errors && result.errors.length > 0) {
+        console.warn('⚠️ Errores:', result.errors);
+      }
+
+      // Ocultar confirmación
+      setShowConfirmation(false);
       
-      // Ocultar mensaje de éxito después de un tiempo
-      setTimeout(() => setShowSuccess(false), 3000);
-    } catch (error) {
-      console.error('Error al ejecutar la orden:', error);
-      showError('Error al ejecutar la orden. Por favor, intente nuevamente.');
+    } catch (error: any) {
+      console.error('❌ Error al ejecutar orden:', error);
+      showError(error.message || 'Error al ejecutar la orden');
+      setShowConfirmation(false);
     } finally {
       setIsLoading(false);
     }
@@ -877,23 +937,26 @@ export default function NewOperation() {
 
   // Función para obtener el mejor precio de compra/venta
   const getBestPrice = (orderSide: 'buy' | 'sell') => {
-    return orderSide === 'buy' ? bestBidPrice : bestAskPrice;
+    if (marketType === 'spot') {
+      const spotPair = selectedPair as SpotMarketTicker;
+      return orderSide === 'buy' ? spotPair.askPrice : spotPair.bidPrice;
+    } else {
+      const perpPair = selectedPair as PerpetualMarketTicker;
+      return orderSide === 'buy' ? perpPair.askPrice : perpPair.bidPrice;
+    }
   };
 
-  // Actualizar el precio cuando cambia el par seleccionado, pero solo si está vacío o es la primera carga
+  // Efecto para establecer el precio automáticamente
   useEffect(() => {
-    // Solo actualizar el precio si:
+    // Establecer precio automáticamente si:
     // 1. Es la primera carga del componente
     // 2. El campo de precio está vacío
     // 3. El tipo de orden es límite
-    if ((isFirstLoad.current || !price) && orderType === 'limit' && selectedPair) {
+    if ((!price || price === '0') && orderType === 'limit' && selectedPair) {
       setPrice(parseFloat(selectedPair.price).toFixed(
         parseFloat(selectedPair.price) < 1 ? 4 : 
         parseFloat(selectedPair.price) < 100 ? 2 : 0
       ));
-      
-      // Ya no es la primera carga
-      isFirstLoad.current = false;
     }
   }, [selectedPair, orderType, price]);
 
@@ -916,66 +979,57 @@ export default function NewOperation() {
   }, [selectedPair]);
 
   // Actualizar la función que maneja la apertura del selector de subcuentas
-  const handleToggleSubAccountSelector = () => {
-    if (!isSubAccountSelectorOpen) {
-      // Al abrir el selector, guardar la selección inicial
-      setInitialSubAccountSelection([...selectedSubAccounts]);
-      setHasModifiedSelection(false);
-    } else {
-      // Al cerrar el selector, resetear el estado de modificación
-      setHasModifiedSelection(false);
-    }
-    setIsSubAccountSelectorOpen(!isSubAccountSelectorOpen);
-  };
 
+  
   // Función para cargar el balance de una subcuenta específica
   const loadBalanceForSubAccount = async (accountId: string) => {
     try {
-    console.log(`📊 Cargando balance para subcuenta ${accountId}...`);
-    
-      // Llamar a la API para obtener el balance real
-      const response = await fetch('/api/subaccount/balance', {
-        method: 'POST',
+      console.log(`🔄 Cargando balance para subcuenta: ${accountId}`);
+      
+      if (!token) {
+        console.warn(`⚠️ Token no disponible para cargar balance de subcuenta ${accountId}`);
+        return;
+      }
+      
+      // TEMPORAL: Comentar hasta que el endpoint esté disponible en el backend
+      console.log(`ℹ️ Endpoint de balance no disponible aún para subcuenta ${accountId}`);
+      return;
+      
+      // Implementar llamada al backend para obtener balance (cuando el endpoint esté disponible)
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) {
+        console.error('❌ NEXT_PUBLIC_API_URL no está configurada');
+        return;
+      }
+      
+      const response = await fetch(`${apiUrl}/api/subaccounts/${accountId}/balance`, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ subaccountId: accountId })
       });
-
+      
       if (!response.ok) {
-        throw new Error(`Error ${response.status} al obtener balance`);
+        console.error(`❌ Error al obtener balance de subcuenta ${accountId}:`, response.status);
+        return;
       }
-
-      const result = await response.json();
-
-      if (result.success && result.data) {
-        // Actualizar el balance de la subcuenta en el estado
-        setSubAccounts(prev => 
-          prev.map(acc => {
-            if (acc.id === accountId) {
-              return {
-                ...acc,
-                balance: {
-                  ...acc.balance,
-                  usdt: result.data.balanceUsd || 0,
-                  btc: result.data.assets?.find((asset: any) => asset.coin === 'BTC')?.walletBalance || 0
-                }
-              };
-            }
-            return acc;
-          })
-        );
-        
-        console.log(`✅ Balance actualizado para subcuenta ${accountId}`);
-      }
-      } catch (error) {
-        console.error(`Error al cargar balance para subcuenta ${accountId}:`, error);
+      
+      const balanceData = await response.json();
+      console.log(`✅ Balance obtenido para subcuenta ${accountId}:`, balanceData);
+      
+      // Actualizar el balance en el estado
+      setSubAccounts(prev => prev.map(acc => 
+        acc.id === accountId 
+          ? { ...acc, balance: balanceData.balance || acc.balance }
+          : acc
+      ));
+    } catch (error) {
+      console.error(`Error al cargar balance para subcuenta ${accountId}:`, error);
     }
   };
-  // Estados para operaciones abiertas
-  const [openOperations, setOpenOperations] = useState<Operation[]>([]);
-  const [isLoadingOperations, setIsLoadingOperations] = useState(false);
-  const [operationsError, setOperationsError] = useState<string | null>(null);
+
+  // Estados adicionales para operaciones abiertas
   const [isLiveUpdating, setIsLiveUpdating] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   const [updateInterval, setUpdateInterval] = useState<number>(5000);
@@ -987,9 +1041,7 @@ export default function NewOperation() {
     priceDirection?: 'up' | 'down' | 'neutral';
     previousMarkPrice?: number;
   }>>({});
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [consecutiveErrors, setConsecutiveErrors] = useState(0);
   
   // Estados para controlar la visualización de operaciones
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
@@ -1096,7 +1148,7 @@ export default function NewOperation() {
       }
       
       // Detectar cambios en las operaciones
-      const newChangedOperations = { ...changedOperations };
+      const newChangedOperations = { ...operationChangeEffects };
       
       // Detectar operaciones nuevas
       data.operations.forEach((newOp: Operation) => {
@@ -1104,11 +1156,7 @@ export default function NewOperation() {
         
         if (!existingOp) {
           // Operación nueva
-          newChangedOperations[newOp.id] = {
-            profit: newOp.profit || 0,
-            timestamp: Date.now(),
-            isNew: true
-          };
+          newChangedOperations[newOp.id] = 'new';
           console.log(`🆕 Nueva operación detectada: ${newOp.symbol} ${newOp.side}`);
         } else {
           // Verificar cambios en múltiples campos
@@ -1128,13 +1176,22 @@ export default function NewOperation() {
               }
             }
             
-            newChangedOperations[newOp.id] = {
-              profit: newOp.profit || 0,
-              timestamp: Date.now(),
-              previousProfit: existingOp.profit || 0,
-              priceDirection: priceDirection,
-              previousMarkPrice: existingOp.markPrice || 0
-            };
+            setPriceDirections(prev => ({
+              ...prev,
+              [newOp.id]: priceDirection
+            }));
+            
+            // Establecer el efecto de cambio
+            if (profitChanged) {
+              const currentProfit = newOp.profit || 0;
+              const previousProfit = existingOp.profit || 0;
+              
+              if (currentProfit > previousProfit) {
+                newChangedOperations[newOp.id] = 'profit-up';
+              } else if (currentProfit < previousProfit) {
+                newChangedOperations[newOp.id] = 'profit-down';
+              }
+            }
             
             // Log específico para cada tipo de cambio
             if (profitChanged) {
@@ -1161,9 +1218,8 @@ export default function NewOperation() {
         }
       });
       
-      setChangedOperations(newChangedOperations);
+      setOperationChangeEffects(newChangedOperations);
       setOpenOperations(data.operations);
-      setLastUpdateTime(new Date());
       
       // Resetear contador de errores consecutivos
       setConsecutiveErrors(0);
@@ -1190,12 +1246,6 @@ export default function NewOperation() {
         // Detener inmediatamente para errores 500
         setAutoRefreshEnabled(false);
         
-        // Limpiar el intervalo si existe
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-        
         console.warn('⚠️ Error 500 detectado. Se deshabilitaron las actualizaciones automáticas inmediatamente.');
       } else {
         // Para otros errores, usar el contador
@@ -1205,12 +1255,6 @@ export default function NewOperation() {
         // Deshabilitar actualizaciones automáticas después de 3 errores consecutivos
         if (newErrorCount >= 3) {
           setAutoRefreshEnabled(false);
-          
-          // Limpiar el intervalo si existe
-          if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-          }
           
           console.warn(`⚠️ Se deshabilitaron las actualizaciones automáticas después de ${newErrorCount} errores consecutivos`);
         }
@@ -1223,7 +1267,7 @@ export default function NewOperation() {
   };
 
   // Variable para controlar si ya se hizo la carga inicial
-  const hasInitialLoadRef = useRef(false);
+
 
   // Efecto para manejar las actualizaciones en vivo - Simplificado para tiempo real automático
   useEffect(() => {
@@ -1962,670 +2006,49 @@ export default function NewOperation() {
           {/* Panel Lateral */}
           <div className="space-y-6">
             {/* Selector de Subcuentas */}
-            <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden">
-              {/* Encabezado con título centrado y botones a la derecha */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80">
-                <h3 className="text-sm font-medium text-zinc-900 dark:text-white flex items-center">
-                  <Users className="w-4 h-4 text-violet-500 mr-1.5" />
-                  Subcuentas
-                  </h3>
-                <div className="flex items-center gap-1.5">
-                  {isSubAccountSelectorOpen && (
-                    <button
-                      onClick={() => setRememberSubAccountSelection(!rememberSubAccountSelection)}
-                      className="flex items-center text-xs text-zinc-500 dark:text-zinc-400 hover:text-violet-500 dark:hover:text-violet-400 transition-colors"
-                      title={rememberSubAccountSelection ? "No recordar selección" : "Recordar selección"}
-                    >
-                      <div className={`w-3.5 h-3.5 rounded-sm mr-1 border flex items-center justify-center transition-colors ${
-                        rememberSubAccountSelection 
-                          ? 'bg-violet-500 border-violet-500' 
-                          : 'border-zinc-300 dark:border-zinc-600'
-                      }`}>
-                        {rememberSubAccountSelection && (
-                          <Check className="w-2.5 h-2.5 text-white" />
-                        )}
-                </div>
-                      <span className="hidden sm:inline">Recordar</span>
-                    </button>
-                  )}
-                <button
-                    onClick={handleToggleSubAccountSelector}
-                    className={`ml-2 p-1.5 rounded-full transition-colors ${
-                      isSubAccountSelectorOpen 
-                        ? hasModifiedSelection
-                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'
-                          : 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-900/50'
-                        : 'text-zinc-500 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 dark:hover:text-violet-400'
-                    }`}
-                    title={isSubAccountSelectorOpen ? (hasModifiedSelection ? "Confirmar selección" : "Cerrar selector") : "Gestionar subcuentas"}
-                  >
-                    {isSubAccountSelectorOpen ? (
-                      hasModifiedSelection ? (
-                        <Check className="w-4 h-4" />
-                      ) : (
-                        <X className="w-4 h-4" />
-                      )
-                    ) : (
-                      <Settings className="w-4 h-4" />
-                    )}
-                </button>
-                </div>
-              </div>
-
-              {/* Contenido del selector */}
-              <div className="p-4">
-                {subAccounts.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
-                    <div className="bg-zinc-100 dark:bg-zinc-800 rounded-full p-3">
-                      <Users className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                        No hay subcuentas disponibles
-                      </p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto">
-                        Necesitas añadir subcuentas para poder operar. Las subcuentas te permiten organizar tus fondos y operaciones.
-                      </p>
-                    </div>
-                    <Link href="/dashboard" className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-violet-500 rounded-lg hover:bg-violet-600 transition-colors">
-                      <PlusCircle className="w-4 h-4" />
-                      Añadir subcuenta
-                    </Link>
-                  </div>
-                ) : isSubAccountSelectorOpen ? (
-                <div className="space-y-2">
-                  {subAccounts.map((account) => (
-                    <div
-                      key={account.id}
-                      onClick={() => {
-                          let newSelection;
-                        if (selectedSubAccounts.includes(account.id)) {
-                            newSelection = selectedSubAccounts.filter(id => id !== account.id);
-                        } else {
-                            newSelection = [...selectedSubAccounts, account.id];
-                          }
-                          setSelectedSubAccounts(newSelection);
-                          
-                          // Comprobar si la selección actual es diferente de la inicial
-                          const isModified = JSON.stringify(newSelection.sort()) !== JSON.stringify(initialSubAccountSelection.sort());
-                          setHasModifiedSelection(isModified);
-                          
-                          // Activar la animación del botón de cerrar si se ha modificado
-                          if (isModified) {
-                            setHighlightCloseButton(true);
-                            setTimeout(() => {
-                              setHighlightCloseButton(false);
-                            }, 3000);
-                          }
-                        }}
-                        className={`flex items-center justify-between p-3 h-[72px] rounded-lg cursor-pointer transition-colors ${
-                        selectedSubAccounts.includes(account.id)
-                            ? 'bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800'
-                            : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/50 border border-transparent'
-                      }`}
-                    >
-                        <div className="flex items-center gap-3 w-[60%]">
-                          <div className={`min-w-5 w-5 h-5 rounded-md border flex items-center justify-center ${
-                          selectedSubAccounts.includes(account.id)
-                            ? 'bg-violet-500 border-violet-500'
-                            : 'border-zinc-300 dark:border-zinc-600'
-                        }`}>
-                          {selectedSubAccounts.includes(account.id) && (
-                              <Check className="w-3.5 h-3.5 text-white" />
-                          )}
-                        </div>
-                          <div className="truncate">
-                            <span className="text-sm font-medium text-zinc-900 dark:text-white block truncate">
-                          {account.name}
-                        </span>
-                            <span className="text-xs text-zinc-500 dark:text-zinc-400 block">
-                              ID: {account.id.substring(0, 8)}...
-                            </span>
-                      </div>
-                          </div>
-                        <div className="flex flex-col items-end gap-2 w-[40%]">
-                          <div className="flex items-center w-full">
-                            <div className="flex items-center justify-between w-[120px] bg-zinc-100 dark:bg-zinc-800 rounded-full px-3 py-1">
-                              <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-                                <Image 
-                                  src="https://assets.coingecko.com/coins/images/1/small/bitcoin.png"
-                                  alt="BTC" 
-                                  width={16} 
-                                  height={16}
-                                  className="object-contain rounded-full"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f7931a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpath d='M9.5 9.5h4.5a2 2 0 0 1 0 4H9.5'%3E%3C/path%3E%3Cpath d='M9.5 13.5h5a2 2 0 0 1 0 4H9.5'%3E%3C/path%3E%3Cpath d='M12 6v2'%3E%3C/path%3E%3Cpath d='M12 16v2'%3E%3C/path%3E%3C/svg%3E";
-                                  }}
-                                />
-                          </div>
-                              <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200 text-right ml-2 truncate">
-                                {Math.floor(account.balance.btc)}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center w-full">
-                            <div className="flex items-center justify-between w-[120px] bg-zinc-100 dark:bg-zinc-800 rounded-full px-3 py-1">
-                              <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-                                <Image 
-                                  src="https://assets.coingecko.com/coins/images/325/small/Tether.png"
-                                  alt="USDT" 
-                                  width={16} 
-                                  height={16}
-                                  className="object-contain rounded-full"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2326a17b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpath d='M12 6v12'%3E%3C/path%3E%3Cpath d='M8 10h8'%3E%3C/path%3E%3C/svg%3E";
-                                  }}
-                                />
-                              </div>
-                              <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200 text-right ml-2 truncate">
-                                {Math.floor(account.balance.usdt)}
-                              </span>
-                            </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {selectedSubAccounts.length > 0 ? (
-                    subAccounts
-                      .filter(account => selectedSubAccounts.includes(account.id))
-                      .map((account) => (
-                          <div key={account.id} className="flex items-center justify-between p-3 h-[72px] rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/50 dark:bg-violet-900/10">
-                            <div className="w-[60%] truncate">
-                              <span className="text-sm font-medium text-zinc-900 dark:text-white block truncate">
-                            {account.name}
-                          </span>
-                              {/* El ID se ha eliminado para aprovechar mejor el espacio */}
-                            </div>
-                            <div className="flex flex-col items-end gap-2 w-[40%]">
-                              <div className="flex items-center w-full">
-                                <div className="flex items-center justify-between w-[120px] bg-zinc-100 dark:bg-zinc-800 rounded-full px-3 py-1">
-                                  <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-                                    <Image 
-                                      src="https://assets.coingecko.com/coins/images/1/small/bitcoin.png"
-                                      alt="BTC" 
-                                      width={16} 
-                                      height={16}
-                                      className="object-contain rounded-full"
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f7931a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpath d='M9.5 9.5h4.5a2 2 0 0 1 0 4H9.5'%3E%3C/path%3E%3Cpath d='M9.5 13.5h5a2 2 0 0 1 0 4H9.5'%3E%3C/path%3E%3Cpath d='M12 6v2'%3E%3C/path%3E%3Cpath d='M12 16v2'%3E%3C/path%3E%3C/svg%3E";
-                                          }}
-                                    />
-                                  </div>
-                                  <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200 text-right ml-2 truncate">
-                                    {Math.floor(account.balance.btc)}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="flex items-center w-full">
-                                <div className="flex items-center justify-between w-[120px] bg-zinc-100 dark:bg-zinc-800 rounded-full px-3 py-1">
-                                  <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-                                    <Image 
-                                      src="https://assets.coingecko.com/coins/images/325/small/Tether.png"
-                                      alt="USDT" 
-                                      width={16} 
-                                      height={16}
-                                      className="object-contain rounded-full"
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2326a17b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpath d='M12 6v12'%3E%3C/path%3E%3Cpath d='M8 10h8'%3E%3C/path%3E%3C/svg%3E";
-                                          }}
-                                    />
-                                  </div>
-                                  <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200 text-right ml-2 truncate">
-                                    {Math.floor(account.balance.usdt)}
-                                  </span>
-                                </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                  ) : (
-                      <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
-                        <div className="bg-zinc-100 dark:bg-zinc-800 rounded-full p-3">
-                          <Users className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                        No hay subcuentas seleccionadas
-                          </p>
-                          <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto">
-                            Haz clic en el botón "Gestionar" para seleccionar las subcuentas que deseas utilizar para esta operación.
-                          </p>
-                        </div>
-                        <button
-                          onClick={handleToggleSubAccountSelector}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-violet-500 rounded-lg hover:bg-violet-600 transition-colors"
-                        >
-                          <Settings className="w-4 h-4" />
-                          Gestionar subcuentas
-                        </button>
-                    </div>
-                  )}
-                </div>
-              )}
-              </div>
-            </div>
+            <SubAccountSelector
+              subAccounts={subAccounts}
+              selectedSubAccount={selectedSubAccount}
+              onSubAccountChange={handleSubAccountChange}
+              isLoading={isLoadingSubAccounts}
+            />
 
             {/* Panel de Operaciones */}
-            <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700 p-6">
-              {/* Compra/Venta Tabs */}
-              <div className="mb-8">
-                <div className="flex items-stretch h-14 bg-zinc-100 dark:bg-zinc-700 rounded-lg p-1">
-                  <button 
-                    onClick={() => setSide('buy')}
-                    className={`flex-1 text-base font-medium rounded-md transition-all duration-200 ${
-                      side === 'buy'
-                        ? 'bg-emerald-500 text-white shadow-lg'
-                        : 'text-zinc-600 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-white/50 dark:hover:bg-zinc-600/50'
-                    }`}
-                  >
-                    Comprar
-                  </button>
-                  <button 
-                    onClick={() => setSide('sell')}
-                    className={`flex-1 text-base font-medium rounded-md transition-all duration-200 ${
-                      side === 'sell'
-                        ? 'bg-rose-500 text-white shadow-lg'
-                        : 'text-zinc-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-white/50 dark:hover:bg-zinc-600/50'
-                    }`}
-                  >
-                    Vender
-                  </button>
-                </div>
-              </div>
-
-              {/* Tipo de Orden */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Tipo de Orden
-                  </label>
-                </div>
-                
-                {/* Tipos de órdenes básicas */}
-                <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-700 rounded-lg p-1 mb-2">
-                  <button 
-                    onClick={() => {
-                      setOrderType('limit');
-                    }}
-                    className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-md transition-all duration-200 ${
-                      orderType === 'limit'
-                        ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
-                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-white/50 dark:hover:bg-zinc-600/50'
-                    }`}
-                  >
-                    Límite
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setOrderType('market');
-                    }}
-                    className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-md transition-all duration-200 ${
-                      orderType === 'market'
-                        ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
-                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-white/50 dark:hover:bg-zinc-600/50'
-                    }`}
-                  >
-                    Mercado
-                  </button>
-                </div>
-                
-                {/* Descripción del tipo de orden */}
-                <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 mb-2">
-                  {orderType === 'market' && (
-                    <span>Orden a mercado: se ejecuta inmediatamente al mejor precio disponible.</span>
-                  )}
-                  {orderType === 'limit' && (
-                    <span>Orden límite: se ejecuta solo cuando el precio alcanza o mejora el valor especificado.</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Parámetros de la Orden */}
-              <div className="space-y-6">
-                {/* Precio */}
-                {orderType === 'limit' && (
-                  <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                        Precio
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                          Mejor {side === 'buy' ? 'venta' : 'compra'}:
-                        </span>
-                        <button 
-                          onClick={() => setPrice(getBestPrice(side === 'buy' ? 'sell' : 'buy'))}
-                          className={`text-xs font-medium ${
-                            side === 'buy' ? 'text-rose-500 hover:text-rose-600' : 'text-emerald-500 hover:text-emerald-600'
-                          }`}
-                        >
-                          {getBestPrice(side === 'buy' ? 'sell' : 'buy')}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                        className="w-full pl-4 pr-24 py-3 text-base border-zinc-300 dark:border-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 sm:text-sm rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
-                        placeholder="0.00"
-                        step={selectedPair.symbol === 'BTC' ? "0.1" : selectedPair.symbol === 'ETH' ? "0.01" : "0.001"}
-                      />
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                        <button 
-                          onClick={() => adjustPrice(false)}
-                          className="p-1.5 hover:text-violet-500 dark:hover:text-violet-400 bg-zinc-100 dark:bg-zinc-700 rounded-md mr-1"
-                        >
-                          <span className="text-sm font-medium">-</span>
-                        </button>
-                        <span className="text-sm text-zinc-500 dark:text-zinc-400 mx-2">USDT</span>
-                        <button 
-                          onClick={() => adjustPrice(true)}
-                          className="p-1.5 hover:text-violet-500 dark:hover:text-violet-400 bg-zinc-100 dark:bg-zinc-700 rounded-md ml-1"
-                        >
-                          <span className="text-sm font-medium">+</span>
-                        </button>
-                      </div>
-                    </div>
-                    {/* Botones de precios rápidos */}
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      <button 
-                        onClick={() => setPrice(bestBidPrice)}
-                        className="py-1.5 text-xs font-medium rounded-md bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-                      >
-                        Mejor compra: {bestBidPrice}
-                      </button>
-                      <button 
-                        onClick={() => setPrice(bestAskPrice)}
-                        className="py-1.5 text-xs font-medium rounded-md bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
-                      >
-                        Mejor venta: {bestAskPrice}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Cantidad con Porcentajes */}
-                <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      Cantidad
-                    </label>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                        Disponible:
-                      </span>
-                      <span className="text-xs font-medium text-zinc-900 dark:text-white">
-                        {getAvailableBalance('base')} {selectedPair.symbol}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="relative mb-3">
-                    <input
-                      type="number"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      className="w-full pl-4 pr-24 py-3 text-base border-zinc-300 dark:border-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 sm:text-sm rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
-                      placeholder="0.00"
-                      step={selectedPair.symbol === 'BTC' ? "0.0001" : selectedPair.symbol === 'ETH' ? "0.001" : "0.01"}
-                    />
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                      <button 
-                        onClick={() => adjustAmount(false)}
-                        className="p-1.5 hover:text-violet-500 dark:hover:text-violet-400 bg-zinc-100 dark:bg-zinc-700 rounded-md mr-1"
-                      >
-                        <span className="text-sm font-medium">-</span>
-                      </button>
-                      <span className="text-sm text-zinc-500 dark:text-zinc-400 mx-2">{selectedPair.symbol}</span>
-                      <button 
-                        onClick={() => adjustAmount(true)}
-                        className="p-1.5 hover:text-violet-500 dark:hover:text-violet-400 bg-zinc-100 dark:bg-zinc-700 rounded-md ml-1"
-                      >
-                        <span className="text-sm font-medium">+</span>
-                      </button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[25, 50, 75, 100].map((percentage) => (
-                      <button 
-                        key={percentage}
-                        onClick={() => setAmountPercentage(percentage)}
-                        className="py-2 text-xs font-medium rounded-md bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors relative overflow-hidden group"
-                      >
-                        <span className="relative z-10">{percentage}%</span>
-                        <div 
-                          className={`absolute inset-0 ${
-                            side === 'buy' ? 'bg-emerald-500/10' : 'bg-rose-500/10'
-                          } transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left`}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Apalancamiento (solo para futuros) */}
-                {marketType === 'perpetual' && (
-                  <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                        Apalancamiento
-                      </label>
-                      <span className="text-sm text-zinc-500 dark:text-zinc-400">{leverage}x</span>
-                    </div>
-                    <div className="relative mb-3">
-                      <input
-                        type="number"
-                        value={leverage}
-                        onChange={(e) => setLeverage(e.target.value)}
-                        min="1"
-                        max="100"
-                        className="w-full pl-4 pr-8 py-3 text-base border-zinc-300 dark:border-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 sm:text-sm rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
-                      />
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                        <span className="text-sm text-zinc-500 dark:text-zinc-400">x</span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2">
-                      {[1, 5, 10, 20].map((value) => (
-                        <button 
-                          key={value}
-                          onClick={() => setLeverage(value.toString())}
-                          className="py-2 text-xs font-medium rounded-md bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors relative overflow-hidden group"
-                        >
-                          <span className="relative z-10">{value}x</span>
-                          <div 
-                            className="absolute inset-0 bg-amber-500/10 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Total y Resumen */}
-                <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      Total de la Orden
-                    </label>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                        Disponible:
-                      </span>
-                      <span className="text-xs font-medium text-zinc-900 dark:text-white">
-                        {getAvailableBalance('quote')} USDT
-                      </span>
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={total}
-                      readOnly
-                      className="w-full pl-4 pr-16 py-3 text-base border-zinc-300 dark:border-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 sm:text-sm rounded-lg bg-zinc-50 dark:bg-zinc-700/50 text-zinc-900 dark:text-white font-medium"
-                      placeholder="0.00"
-                    />
-                    <div className="absolute inset-y-0 right-0 flex items-center px-4">
-                      <span className="text-sm text-zinc-500 dark:text-zinc-400">USDT</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Información de Riesgo y Balance */}
-              <div className="mt-6 p-4 rounded-lg space-y-3 border border-zinc-200 dark:border-zinc-700 bg-gradient-to-r from-zinc-50 to-zinc-100 dark:from-zinc-700/50 dark:to-zinc-700/30">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">Riesgo Total</span>
-                  <span className="text-sm font-medium text-zinc-900 dark:text-white">
-                    {formatNumber(calculateRisk())} USDT
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">Balance Disponible</span>
-                  <span className="text-sm font-medium text-zinc-900 dark:text-white">
-                    {formatNumber(
-                      subAccounts
-                        .filter(acc => selectedSubAccounts.includes(acc.id))
-                          .reduce((sum, acc) => sum + acc.balance.usdt, 0)
-                    )} USDT
-                  </span>
-                </div>
-              </div>
-
-              {/* Sección de Riesgo */}
-              <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 mt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Análisis de Riesgo
-                  </label>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">Valor de la operación:</span>
-                    <span className="text-sm font-medium text-zinc-900 dark:text-white">
-                      {formatNumber(calculateRisk())} USDT
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">Porcentaje del balance:</span>
-                    <span className={`text-sm font-medium ${
-                      calculateRiskPercentage() > 20 ? 'text-rose-500' : 
-                      calculateRiskPercentage() > 10 ? 'text-amber-500' : 
-                      'text-emerald-500'
-                    }`}>
-                      {calculateRiskPercentage().toFixed(2)}%
-                    </span>
-                  </div>
-                  
-                  <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-1.5 mt-1">
-                    <div 
-                      className={`h-1.5 rounded-full ${
-                        calculateRiskPercentage() > 20 ? 'bg-rose-500' : 
-                        calculateRiskPercentage() > 10 ? 'bg-amber-500' : 
-                        'bg-emerald-500'
-                      }`} 
-                      style={{ width: `${Math.min(calculateRiskPercentage(), 100)}%` }}
-                    ></div>
-                  </div>
-                  
-                  <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                    {calculateRiskPercentage() > 20 ? (
-                      <span className="text-rose-500">Riesgo alto. Considere reducir el tamaño de la operación.</span>
-                    ) : calculateRiskPercentage() > 10 ? (
-                      <span className="text-amber-500">Riesgo moderado. Dentro de los límites recomendados.</span>
-                    ) : (
-                      <span className="text-emerald-500">Riesgo bajo. Operación conservadora.</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Botón de Ejecutar Orden */}
-              <button
-                onClick={executeOrder}
-                disabled={isLoading}
-                className={`w-full py-4 px-6 rounded-xl text-white font-medium text-base transition-all ${
-                  side === 'buy'
-                    ? 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700'
-                    : 'bg-rose-500 hover:bg-rose-600 active:bg-rose-700'
-                } ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Procesando...
-                  </span>
-                ) : (
-                  <span>
-                    {side === 'buy' ? 'Comprar' : 'Vender'} {selectedPair.symbol}
-                    {orderType !== 'market' && ` a ${price} USDT`}
-                  </span>
-                )}
-              </button>
-
-              {/* Resumen de la orden */}
-              <div className="mt-4 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                <h4 className="text-sm font-medium text-zinc-900 dark:text-white mb-2">Resumen de la Orden</h4>
-                <div className="space-y-1 text-xs text-zinc-500 dark:text-zinc-400">
-                  <div className="flex justify-between">
-                    <span>Tipo:</span>
-                    <span className="font-medium text-zinc-900 dark:text-white">
-                      {orderType === 'market' && 'Mercado'}
-                      {orderType === 'limit' && 'Límite'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Par:</span>
-                    <span className="font-medium text-zinc-900 dark:text-white">{selectedPair.symbol}/USDT</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Lado:</span>
-                    <span className={`font-medium ${side === 'buy' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {side === 'buy' ? 'Compra' : 'Venta'}
-                    </span>
-                  </div>
-                  {orderType !== 'market' && (
-                    <div className="flex justify-between">
-                      <span>Precio:</span>
-                      <span className="font-medium text-zinc-900 dark:text-white">{price} USDT</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span>Cantidad:</span>
-                    <span className="font-medium text-zinc-900 dark:text-white">{amount} {selectedPair.symbol}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Total:</span>
-                    <span className="font-medium text-zinc-900 dark:text-white">{calculateTotal()} USDT</span>
-                  </div>
-                  {marketType === 'perpetual' && (
-                    <div className="flex justify-between">
-                      <span>Apalancamiento:</span>
-                      <span className="font-medium text-zinc-900 dark:text-white">{leverage}x</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span>Subcuentas:</span>
-                    <span className="font-medium text-zinc-900 dark:text-white">
-                      {selectedSubAccounts.length} seleccionada{selectedSubAccounts.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <TradingPanel
+              // Estados del trading
+              side={side}
+              setSide={setSide}
+              orderType={orderType}
+              setOrderType={setOrderType}
+              price={price}
+              setPrice={setPrice}
+              amount={amount}
+              setAmount={setAmount}
+              leverage={leverage}
+              setLeverage={setLeverage}
+              total={total}
+              marketType={marketType}
+              selectedPair={selectedPair}
+              isLoading={isLoading}
+              selectedSubAccount={isHydrated ? selectedSubAccount : null}
+              subAccounts={subAccounts}
+              
+              // Funciones
+              adjustPrice={adjustPrice}
+              adjustAmount={adjustAmount}
+              setAmountPercentage={setAmountPercentage}
+              getAvailableBalance={getAvailableBalance}
+              getBestPrice={getBestPrice}
+              formatNumber={formatNumber}
+              calculateRisk={calculateRisk}
+              calculateRiskPercentage={calculateRiskPercentage}
+              calculateTotal={calculateTotal}
+              executeOrder={executeOrder}
+              
+              // Precios
+              bestBidPrice={bestBidPrice}
+              bestAskPrice={bestAskPrice}
+            />
 
             {/* Book de Órdenes */}
             <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700 p-4">
@@ -2758,7 +2181,7 @@ export default function NewOperation() {
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-500 dark:text-zinc-400">Subcuentas</span>
                 <span className="text-sm font-medium text-zinc-900 dark:text-white">
-                  {orderSummary?.subAccounts.map((acc: SubAccount) => acc.name).join(', ')}
+                  {orderSummary?.subAccount.name}
                 </span>
               </div>
 
@@ -2775,9 +2198,9 @@ export default function NewOperation() {
                 <span className="text-sm text-zinc-500 dark:text-zinc-400">Balance Disponible</span>
                 <span className="text-sm font-medium text-zinc-900 dark:text-white">
                   {formatNumber(
-                    subAccounts
-                      .filter(acc => selectedSubAccounts.includes(acc.id))
-                        .reduce((sum, acc) => sum + acc.balance.usdt, 0)
+                    selectedSubAccount ? 
+                      subAccounts.find(acc => acc.id === selectedSubAccount)?.balance.usdt || 0
+                      : 0
                   )} USDT
                 </span>
               </div>

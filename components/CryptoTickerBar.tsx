@@ -15,10 +15,16 @@ const cryptoConfig = [
   { symbol: 'BTCUSDT', name: 'Bitcoin', color: 'from-orange-500 to-amber-600' },
   { symbol: 'ETHUSDT', name: 'Ethereum', color: 'from-indigo-500 to-blue-600' },
   { symbol: 'SOLUSDT', name: 'Solana', color: 'from-fuchsia-500 to-purple-600' },
-  { symbol: 'BNBUSDT', name: 'Binance', color: 'from-yellow-400 to-yellow-600' },
-  { symbol: 'ADAUSDT', name: 'Cardano', color: 'from-blue-500 to-indigo-600' },
-  { symbol: 'DOGEUSDT', name: 'Dogecoin', color: 'from-yellow-500 to-amber-500' },
   { symbol: 'XRPUSDT', name: 'Ripple', color: 'from-blue-500 to-cyan-600' },
+  { symbol: 'SUIUSDT', name: 'Sui', color: 'from-cyan-500 to-blue-600' },
+  { symbol: 'ADAUSDT', name: 'Cardano', color: 'from-blue-500 to-indigo-600' },
+  { symbol: 'LINKUSDT', name: 'Chainlink', color: 'from-blue-600 to-indigo-700' },
+  { symbol: 'HBARUSDT', name: 'Hedera', color: 'from-purple-600 to-pink-600' },
+  { symbol: 'TRXUSDT', name: 'Tron', color: 'from-red-500 to-rose-600' },
+  { symbol: 'RNDRUSDT', name: 'Render', color: 'from-green-600 to-teal-600' },
+  { symbol: 'AVAXUSDT', name: 'Avalanche', color: 'from-red-600 to-orange-600' },
+  { symbol: 'BNBUSDT', name: 'Binance', color: 'from-yellow-400 to-yellow-600' },
+  { symbol: 'DOGEUSDT', name: 'Dogecoin', color: 'from-yellow-500 to-amber-500' },
   { symbol: 'DOTUSDT', name: 'Polkadot', color: 'from-pink-500 to-rose-600' },
 ];
 
@@ -135,7 +141,7 @@ const CryptoTickerBar = () => {
                   {item.name}
                 </div>
                 
-                {['BTC', 'ETH', 'SOL', 'BNB', 'ADA', 'XRP', 'DOGE', 'DOT'].includes(item.symbol) ? (
+                {['BTC', 'ETH', 'SOL', 'XRP', 'SUI', 'ADA', 'LINK', 'HBAR', 'TRX', 'RENDER', 'AVAX', 'BNB', 'DOGE', 'DOT'].includes(item.symbol) ? (
                   <div className="w-6 h-6 flex items-center justify-center">
                     <Image
                       src={`/images/${item.symbol}.svg`}
